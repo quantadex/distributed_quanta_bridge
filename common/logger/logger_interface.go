@@ -12,6 +12,6 @@ type Logger interface {
     Debug(msg string)
 }
 
-func NewLogger() (*Logger, error) {
+func NewLogger() (Logger, error) {
     return nil, nil
 }

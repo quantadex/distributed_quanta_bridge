@@ -1,7 +1,7 @@
 package quanta
 
 import (
-    "trust/peer_contact"
+    "github.com/quantadex/distributed_quanta_bridge/trust/peer_contact"
 )
 
 /**
@@ -52,7 +52,7 @@ type Quanta interface {
      * Once enough nodes have signed the deposit the last node sends it to quanta to
      * transfer the funds into the user's quanta account
      */
-    ProcessDeposit(deposit *peer_contact.PeerMessage) error
+    ProcessDeposit(deposit peer_contact.PeerMessage) error
 }
 
 func NewQuanta() (*Quanta, error) {

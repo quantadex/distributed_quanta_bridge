@@ -1,2 +1,2 @@
-# distrubutes_quanta_bridge
+# distributed
 The distributed version of the quanta bridge

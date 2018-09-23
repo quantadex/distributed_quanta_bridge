@@ -48,6 +48,6 @@ type Listener interface {
     Run(host string, port int) error
 }
 
-func NewListener() (*Listener, error) {
+func NewListener() (Listener, error) {
     return nil, nil
 }

@@ -1,16 +1,16 @@
 package control
 
 import (
-    "common/logger"
-    "common/manifest"
-    "common/kv_store"
-    "trust/key_manager"
-    "trust/peer_contact"
-    "trust/coin"
-    "encode/json"
+    "github.com/quantadex/distributed_quanta_bridge/common/logger"
+    "github.com/quantadex/distributed_quanta_bridge/common/manifest"
+    "github.com/quantadex/distributed_quanta_bridge/common/kv_store"
+    "github.com/quantadex/distributed_quanta_bridge/trust/key_manager"
+    "github.com/quantadex/distributed_quanta_bridge/trust/peer_contact"
+    "github.com/quantadex/distributed_quanta_bridge/trust/coin"
+    "encoding/json"
 )
 
-const "DELAY_PENALTY" = 10
+const DELAY_PENALTY = 10
 
 /**
  * RoundRobinSigner
@@ -18,12 +18,12 @@ const "DELAY_PENALTY" = 10
  * Implements the peer node distributed signing algorithm
  */
 type RoundRobinSigner struct {
-    log *logger.Logger
+    log logger.Logger
     man *manifest.Manifest
     myNodeID int
-    kM *key_manager.KeyManager
-    db *kv_store.KVStore
-    peer *peer_contact.PeerContact
+    kM key_manager.KeyManager
+    db kv_store.KVStore
+    peer peer_contact.PeerContact
     deferQ map[int][]*peer_contact.PeerMessage
     curEpoch int
 }
@@ -36,12 +36,12 @@ type RoundRobinSigner struct {
  * All modules must already by initialized and passed in.
  *
  */
-func NewRoundRobinSigner(   log *logger.Logger,
+func NewRoundRobinSigner(   log logger.Logger,
                             man *manifest.Manifest,
                             myNodeID int,
-                            kM *key_manager.KeyManager,
-                            db *kv_store.KVStore,
-                            peer *peer_contact.PeerContact ) *RoundRobinSigner {
+                            kM key_manager.KeyManager,
+                            db kv_store.KVStore,
+                            peer peer_contact.PeerContact ) *RoundRobinSigner {
 
     res := &RoundRobinSigner{}
     res.log = log
@@ -50,8 +50,8 @@ func NewRoundRobinSigner(   log *logger.Logger,
     res.kM = kM
     res.db = db
     res.peer = peer
-    deferQ := make(map[int][]*peer_contact.PeerMessage, 0)
-    curEpoch := 0
+    res.deferQ = make(map[int][]*peer_contact.PeerMessage, 0)
+    res.curEpoch = 0
     return res
 }
 
@@ -119,7 +119,7 @@ func (r *RoundRobinSigner) getExpiredMsgs() []*peer_contact.PeerMessage {
  */
 func (r *RoundRobinSigner) validateTransaction(msg *peer_contact.PeerMessage) bool {
     txKey := getKeyName(msg.Proposal.CoinName, msg.Proposal.QuantaAdress, msg.Proposal.BlockID)
-    state := getState(r.db, COIN_CONFIRMED, txtKey)
+    state := getState(r.db, COIN_CONFIRMED, txKey)
     if state == CONFIRMED {
         return true
     }
@@ -158,7 +158,7 @@ func (r *RoundRobinSigner) validateIntegrity(msg *peer_contact.PeerMessage) bool
     if decoded.CoinName != msg.Proposal.CoinName {
         return false
     }
-    if decoded.QuantaAddr != msg.Proposal.QuantaAddr {
+    if decoded.QuantaAdress != msg.Proposal.QuantaAdress {
         return false
     }
     if decoded.Amount != msg.Proposal.Amount {
@@ -177,10 +177,10 @@ func (r *RoundRobinSigner) createNewPeerMsg(deposit *coin.Deposit, missedNodes i
     payment := &peer_contact.PaymentReq{}
     payment.BlockID = deposit.BlockID
     payment.CoinName = deposit.CoinName
-    payment.QuantaAddr = deposit.QuantaAddr
+    payment.QuantaAdress = deposit.QuantaAddr
     payment.Amount = deposit.Amount
 
-    msg := &peer_contact.PeerMessage
+    msg := &peer_contact.PeerMessage{}
     msg.Proposal = *payment
     msg.SignedBy = make([]int, 0)
     msg.NodesMissed = missedNodes
@@ -197,7 +197,7 @@ func (r *RoundRobinSigner) createNewPeerMsg(deposit *coin.Deposit, missedNodes i
  */
 func (r *RoundRobinSigner) signPeerMsg(msg *peer_contact.PeerMessage) bool {
     txKey := getKeyName(msg.Proposal.CoinName, msg.Proposal.QuantaAdress, msg.Proposal.BlockID)
-    success := signTx(r.db, r.COIN_CONFIRMED, txKey)
+    success := signTx(r.db, COIN_CONFIRMED, txKey)
     if !success {
         r.log.Error("Failed to mark as signed")
         return false
@@ -205,13 +205,13 @@ func (r *RoundRobinSigner) signPeerMsg(msg *peer_contact.PeerMessage) bool {
     data := msg.MSG
     var err error
     if len(msg.SignedBy) == 0 {
-        data, err = json.Marshal(msg.PaymentReq)
+        data, err = json.Marshal(msg.Proposal)
         if err != nil {
             r.log.Error("Failed to marshal payment req")
             return false
         }
     }
-    data, err := r.kM.SignMessage(data)
+    data, err = r.kM.SignMessage(data)
     if err != nil {
         r.log.Error("Failed to encrypt the message")
         return false
@@ -232,8 +232,8 @@ func (r *RoundRobinSigner) sendMessage(msg *peer_contact.PeerMessage) bool {
         destination := (r.myNodeID + 1) % r.man.N
         tolerance := r.man.N - r.man.Q
         for msg.NodesMissed < tolerance {
-            success := peer_contact.SendMsg(r.man, destination, msg)
-            if success {
+            err := r.peer.SendMsg(r.man, destination, msg)
+            if err == nil {
                 return true
             }
             destination = (destination + 1) % r.man.Na
@@ -264,8 +264,8 @@ func (r *RoundRobinSigner) processNewDeposits(deposits []*coin.Deposit) {
         if missedNodes > tolerance {
             continue
         }
-        msg := createNewPeerMsg(deposit, missedNodes)
-        addToDeferQ(msg)
+        msg := r.createNewPeerMsg(deposit, missedNodes)
+        r.addToDeferQ(msg)
     }
 }
 
@@ -281,15 +281,15 @@ func (r *RoundRobinSigner) processNewPeerMsgs(msgs []*peer_contact.PeerMessage) 
 
     toSend := make([]*peer_contact.PeerMessage, 0)
     for _, msg := range msgs {
-        success := validateTransaction(msg)
+        success := r.validateTransaction(msg)
         if !success {
             continue
         }
-        success = validateIntegrity(msg)
+        success = r.validateIntegrity(msg)
         if !success {
             continue
         }
-        success = signPeerMsg(msg)
+        success = r.signPeerMsg(msg)
         if !success {
             continue
         }
@@ -301,7 +301,7 @@ func (r *RoundRobinSigner) processNewPeerMsgs(msgs []*peer_contact.PeerMessage) 
             toSend = append(toSend, msg)
             continue
         }
-        success = sendMessage(msg)
+        success = r.sendMessage(msg)
         if !success {
             r.log.Error("Failed to send message to peers")
         }

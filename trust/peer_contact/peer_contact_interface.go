@@ -1,7 +1,7 @@
 package peer_contact
 
 import (
-        "common/manifest"
+        "github.com/quantadex/distributed_quanta_bridge/common/manifest"
 )
 
 /**
@@ -12,7 +12,7 @@ import (
 type PaymentReq struct {
     BlockID  int // The coin block where payment was made
     CoinName string // The coin type represented (e.g ETH)
-    QuantaAddr string // The address where to pay
+    QuantaAdress string // The address where to pay
     Amount  int // The amount to pay
 }
 

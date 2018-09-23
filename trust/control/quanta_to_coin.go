@@ -1,12 +1,12 @@
 package control
 
 import (
-    "common/logger"
-    "common/kv_store"
-    "trust/quanta"
-    "trust/coin"
-    "errors"
+    "github.com/quantadex/distributed_quanta_bridge/common/logger"
+    "github.com/quantadex/distributed_quanta_bridge/common/kv_store"
+    "github.com/quantadex/distributed_quanta_bridge/trust/quanta"
+    "github.com/quantadex/distributed_quanta_bridge/trust/coin"
     "encoding/json"
+    "github.com/quantadex/distributed_quanta_bridge/trust/key_manager"
 )
 
 const QUANTA = "QUANTA"
@@ -18,14 +18,14 @@ const QUANTA = "QUANTA"
  * It validates and signs the the withdrawls and issues them to the coin's smart contract.
  */
 type QuantaToCoin struct {
-    log *logger.Logger
-    db *kv_store.KVStore
-    coinChannel *coin.Coin
-    quantaChannel *quanta.Quanta
-    quantaTrustAddress string,
-    coinContractAddress string,
-    kM *key_manager.KeyManager,
-    coinName string,
+    log logger.Logger
+    db kv_store.KVStore
+    coinChannel coin.Coin
+    quantaChannel quanta.Quanta
+    quantaTrustAddress string
+    coinContractAddress string
+    kM key_manager.KeyManager
+    coinName string
     nodeID int
 }
 
@@ -35,16 +35,16 @@ type QuantaToCoin struct {
  * Create a new instance of the class. This does not initialize modules.
  * All modules must already have been initialized and passed in here.
  */
-func NewQuantaToCoin(   log *logger.Logger,
-                        db *kv_store.KVStore,
-                        c *coin.Coin,
-                        q *quanta.Quanta,
+func NewQuantaToCoin(   log logger.Logger,
+                        db kv_store.KVStore,
+                        c coin.Coin,
+                        q quanta.Quanta,
                         quantaTrustAddress string,
-                        coinContractAdress string,
-                        kM *key_manager.KeyManager,
+                        coinContractAddress string,
+                        kM key_manager.KeyManager,
                         coinName string,
                         nodeID int ) *QuantaToCoin {
-    res := &quantaToCoin{}
+    res := &QuantaToCoin{}
     res.log = log
     res.db = db
     res.coinChannel = c

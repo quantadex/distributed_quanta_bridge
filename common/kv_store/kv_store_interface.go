@@ -57,7 +57,7 @@ type KVStore interface {
      * Retrieves the value associated with the given key. If access error encountered error is
      * propogated. If the key is not found both value and error are nil
     */
-    GetValue(tableName string, key string) (value string, err error)
+    GetValue(tableName string, key string) (value *string, err error)
 
     /*
      * SetValue

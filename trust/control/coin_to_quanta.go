@@ -1,14 +1,13 @@
 package control
 
 import (
-    "common/logger"
-    "common/kv_store"
-    "common/manifest"
-    "trust/quanta"
-    "trust/coin"
-    "trust/key_manager"
-    "trust/peer_contact"
-    "errors"
+    "github.com/quantadex/distributed_quanta_bridge/common/logger"
+    "github.com/quantadex/distributed_quanta_bridge/common/kv_store"
+    "github.com/quantadex/distributed_quanta_bridge/common/manifest"
+    "github.com/quantadex/distributed_quanta_bridge/trust/quanta"
+    "github.com/quantadex/distributed_quanta_bridge/trust/coin"
+    "github.com/quantadex/distributed_quanta_bridge/trust/key_manager"
+    "github.com/quantadex/distributed_quanta_bridge/trust/peer_contact"
 )
 
 /**
@@ -18,12 +17,12 @@ import (
  * and using the round robin module creates transactions in quanta
  */
 type CoinToQuanta struct {
-    log *logger.Logger
-    coinChannel *coin.Coin
-    quantaChannel *quanta.Quanta
-    db *kv_store.KVStore
+    log logger.Logger
+    coinChannel coin.Coin
+    quantaChannel quanta.Quanta
+    db kv_store.KVStore
     man *manifest.Manifest
-    peer *peer_contact.PeerContact
+    peer peer_contact.PeerContact
     coinName string
     rr *RoundRobinSigner
 }
@@ -34,16 +33,16 @@ type CoinToQuanta struct {
  * Returns a new instance of the module
  * Initializes nothing so it should all be already initialized.
  */
-func NewCoinToQuanta(   log *logger.Logger,
-                        db *kv_store.KVStore,
-                        c *coin.Coin,
-                        q *quanta.Quanta,
+func NewCoinToQuanta(   log logger.Logger,
+                        db kv_store.KVStore,
+                        c coin.Coin,
+                        q quanta.Quanta,
                         man *manifest.Manifest,
-                        kM *key_manager.keyManager,
+                        kM key_manager.KeyManager,
                         coinName string,
                         nodeID int,
-                        peer *peer_contact.PeerContact ) *CoinToQuanta {
-    res := &coinToQuanta{}
+                        peer peer_contact.PeerContact ) *CoinToQuanta {
+    res := &CoinToQuanta{}
     res.log = log
     res.coinChannel = c
     res.quantaChannel = q

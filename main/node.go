@@ -3,16 +3,15 @@ package main
 import (
     "os"
     "time"
-    "common/logger"
-    "common/kv_store"
-    "common/manifest"
-    "trust/quanta"
-    "trust/coin"
-    "trust/key_manager"
-    "trust/peer_contact"
-    "trust/control"
-    "trust/registrar_contact"
-    "errors"
+    "github.com/quantadex/distributed_quanta_bridge/common/logger"
+    "github.com/quantadex/distributed_quanta_bridge/common/kv_store"
+    "github.com/quantadex/distributed_quanta_bridge/common/manifest"
+    "github.com/quantadex/distributed_quanta_bridge/trust/quanta"
+    "github.com/quantadex/distributed_quanta_bridge/trust/coin"
+    "github.com/quantadex/distributed_quanta_bridge/trust/key_manager"
+    "github.com/quantadex/distributed_quanta_bridge/trust/peer_contact"
+    "github.com/quantadex/distributed_quanta_bridge/trust/control"
+    "github.com/quantadex/distributed_quanta_bridge/trust/registrar_contact"
 )
 
 const (
@@ -28,15 +27,15 @@ const (
  *
  * The top-most object holding all state for the trust node.
  */
-type trustNode struct {
-    log *logger.Logger
-    kM *key_manager.KeyManager
+type TrustNode struct {
+    log logger.Logger
+    kM key_manager.KeyManager
     man *manifest.Manifest
-    q *quanta.Quanta
-    c *coin.Coin
-    db *kv_store.KVStore
-    peer *peer_contact.PeerContact
-    reg *registrar_contact.Registrar.Contact
+    q quanta.Quanta
+    c coin.Coin
+    db kv_store.KVStore
+    peer peer_contact.PeerContact
+    reg registrar_contact.RegistrarContact
     cTQ *control.CoinToQuanta
     qTC *control.QuantaToCoin
     nodeID int
@@ -48,15 +47,15 @@ type trustNode struct {
  *
  * Initialize all sub-modules. Attach to databases.
  */
-func init() (*trustNode, bool) {
+func initNode() (*TrustNode, bool) {
     var err error
-    node := &trustNode{}
-    node.log, err := logger.NewLogger()
+    node := &TrustNode{}
+    node.log, err = logger.NewLogger()
     if err != nil {
         return nil, false
     }
 
-    node.kM, err = key_manager.NewkeyManager()
+    node.kM, err = key_manager.NewKeyManager()
     if err != nil {
         node.log.Error("Failed to create key manager")
         return nil, false
@@ -83,7 +82,7 @@ func init() (*trustNode, bool) {
         return nil, false
     }
 
-    node.c, err = coin_interface.NewCoin()
+    node.c, err = coin.NewCoin()
     if err != nil {
         node.log.Error("Failed to create new coin")
         return nil, false
@@ -95,7 +94,7 @@ func init() (*trustNode, bool) {
         return nil, false
     }
 
-    node.q, err = quanta_interface.NewQuanta()
+    node.q, err = quanta.NewQuanta()
     if err != nil {
         node.log.Error("Failed to create quanta")
         return nil, false
@@ -106,7 +105,7 @@ func init() (*trustNode, bool) {
         return nil, false
     }
 
-    node.peer, err = peer_contact_interface.NewPeerContact()
+    node.peer, err = peer_contact.NewPeerContact()
     if err != nil {
         node.log.Error("Failed to create peer interface")
         return nil, false
@@ -143,7 +142,7 @@ func init() (*trustNode, bool) {
  * When a quorum has been created of which this node is a part of, the registrar
  * will send it the manifest. Upon receiving a manifest this function returns
  */
-func (n *trustNode) registerNode() bool {
+func (n *TrustNode) registerNode() bool {
     nodeIP := os.Getenv(NODE_IP)
     nodePort := os.Getenv(NODE_PORT)
     if nodeIP == "" || nodePort == "" {
@@ -157,14 +156,14 @@ func (n *trustNode) registerNode() bool {
         return false
     }
 
-    err = n.reg.RegisterNode(nodeIP, nodePort, nodeLey)
+    err = n.reg.RegisterNode(nodeIP, nodePort, nodeKey)
     if err != nil {
         n.log.Error("Failed to send node info to registrar")
         return false
     }
 
     // Now we sit and wait to be added to quorum
-    for true {
+    for {
         time.Sleep(time.Second)
         if n.reg.HealthCheckRequested() {
             err = n.reg.SendHealth("READY")
@@ -191,7 +190,8 @@ func (n *trustNode) registerNode() bool {
  *
  * Once we are part of a quorum we can create the trusts.
  */
-func initTrusts() {
+func (n *TrustNode) initTrust() {
+    node := &TrustNode{}
     node.qTC = control.NewQuantaToCoin( n.log,
                                         n.db,
                                         n.c,
@@ -211,7 +211,6 @@ func initTrusts() {
                                         n.coinName,
                                         n.nodeID,
                                         n.peer)
-
 }
 
 /**
@@ -219,7 +218,7 @@ func initTrusts() {
  *
  * An infinite loop where we sleep 1 second. Then process trusts.
  */
-func (n *trustNode) run() {
+func (n *TrustNode) run() {
     for true {
         if n.reg.HealthCheckRequested() {
             n.reg.SendHealth("RUNNING")
@@ -236,7 +235,7 @@ func (n *trustNode) run() {
  * Runs the trust node
  */
 func main() {
-    node, success := init()
+    node, success := initNode()
     if !success {
         return
     }
@@ -244,6 +243,6 @@ func main() {
     if !success {
         return
     }
-    initTrusts()
-    run()
+    node.initTrust()
+    node.run()
 }

@@ -1,7 +1,7 @@
 package registrar_contact
 
 import (
-    "common/manifest"
+    "github.com/quantadex/distributed_quanta_bridge/common/manifest"
 )
 
 /**
@@ -72,6 +72,6 @@ type RegistrarContact interface {
     HealthCheckRequested() bool
 }
 
-func NewRegistrar (*Registrar, error) {
+func NewRegistrar() (RegistrarContact, error) {
     return nil, nil
 }

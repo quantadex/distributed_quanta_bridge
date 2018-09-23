@@ -2,8 +2,8 @@ package main
 
 import (
 	"os"
-	"common/listener"
-	"common/logger"
+	"github.com/quantadex/distributed_quanta_bridge/common/listener"
+	"github.com/quantadex/distributed_quanta_bridge/common/logger"
 )
 
 const QUEUE_NAME = "NODE_LISTENER_QUEUE"
