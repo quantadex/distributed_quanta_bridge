@@ -16,8 +16,8 @@ type Server struct {
 
 
 func (server *Server) Start() {
-	fmt.Printf("Server will be started at %s...\n", server.Url)
-	if err := http.ListenAndServe(server.Url,  server.Handlers); err != nil {
+	fmt.Printf("Server will be started at %s...\n", server.url)
+	if err := http.ListenAndServe(server.url,  server.handlers); err != nil {
 		fmt.Println(err)
 		return
 	}
@@ -72,7 +72,12 @@ func (server *Server) receiveHealthCheck(w http.ResponseWriter, request *http.Re
 }
 
 func (server *Server) manifest(w http.ResponseWriter, request *http.Request) {
-
+	m := server.registry.Manifest()
+	if data, err := json.Marshal(&m); err == nil {
+		w.Write(data)
+	} else {
+		w.WriteHeader(http.StatusInternalServerError)
+	}
 }
 
 func main() {

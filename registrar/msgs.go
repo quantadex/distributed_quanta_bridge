@@ -17,6 +17,6 @@ type PingBody struct {
 }
 
 type PingReq struct {
-	Body        PingBody		`json: "body"`
+	Body        PingBody	`json: "body"`
 	Signature   string      `json: "signature"`
 }
