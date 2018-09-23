@@ -20,9 +20,9 @@ type Manifest struct {
     N int // Total number of nodes in trust
     Q int // Number nodes needed to spend trust
     Nodes map[int]TrustNode // The nodes in the trust. The key is the nodeID which is the order they were added.
-    ContractAddress // The address of the coin contract
-    ContractCallSite // The address where nodes post to the contract
-    QuantaAddress // The quanta-trust address
+    ContractAddress string // The address of the coin contract
+    ContractCallSite string // The address where nodes post to the contract
+    QuantaAddress string // The quanta-trust address
 }
 
 /**

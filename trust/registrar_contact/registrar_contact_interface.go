@@ -39,6 +39,7 @@ type RegistrarContact interface {
      * RegisterNode
      *
      * Sends your node's info to the registrar's node_registry endpoint
+     * POST /register
      * Return error if failed to send or did not get status OK
      */
     RegisterNode(nodeIP string, nodePort string, nodeKey string) error
@@ -47,6 +48,7 @@ type RegistrarContact interface {
      * SendHealth
      *
      * Send the given status to the registrar's node_healthcheck endpoint
+     * POST /health
      * Return error if failed to send or did not get status OK
      */
     SendHealth(nodeState string) error
@@ -56,6 +58,7 @@ type RegistrarContact interface {
      *
      * Returns the manifest provided by the registrar.
      * Checks the listener queue-service for the queue corresponding to the "manifest" endpoint.
+     * GET /manifest
      * If item is available pulls it off and returns.
      * Otherwise returns nil
      */

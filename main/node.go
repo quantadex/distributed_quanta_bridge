@@ -12,6 +12,8 @@ import (
     "github.com/quantadex/distributed_quanta_bridge/trust/peer_contact"
     "github.com/quantadex/distributed_quanta_bridge/trust/control"
     "github.com/quantadex/distributed_quanta_bridge/trust/registrar_contact"
+    "github.com/spf13/viper"
+    "fmt"
 )
 
 const (
@@ -235,6 +237,13 @@ func (n *TrustNode) run() {
  * Runs the trust node
  */
 func main() {
+    viper.SetConfigName("config")
+    viper.AddConfigPath(".")
+    err := viper.ReadInConfig()
+    if err != nil {
+        panic(fmt.Errorf("Fatal error config file: %s \n", err))
+    }
+
     node, success := initNode()
     if !success {
         return
