@@ -1,7 +1,6 @@
 package main
 
 import (
-    "os"
     "time"
     "github.com/quantadex/distributed_quanta_bridge/common/logger"
     "github.com/quantadex/distributed_quanta_bridge/common/kv_store"
@@ -17,11 +16,11 @@ import (
 )
 
 const (
-    USE_PREV_KEYS = "ENV_USE_PREV_KEYS"
-    DB_NAME = "ENV_KV_STORE_NAME"
-    COIN_NAME = "ENV_COIN_NAME"
-    NODE_IP = "ENV_NODE_IP"
-    NODE_PORT = "ENV_NODE_PORT"
+    USE_PREV_KEYS = "USE_PREV_KEYS"
+    DB_NAME = "KV_STORE_NAME"
+    COIN_NAME = "COIN_NAME"
+    LISTEN_IP = "LISTEN_IP"
+    LISTEN_PORT = "LISTEN_PORT"
 )
 
 /**
@@ -62,8 +61,8 @@ func initNode() (*TrustNode, bool) {
         node.log.Error("Failed to create key manager")
         return nil, false
     }
-    reuseKeys := os.Getenv(USE_PREV_KEYS)
-    if reuseKeys == "TRUE" {
+    reuseKeys := viper.GetBool(USE_PREV_KEYS)
+    if reuseKeys == true {
        err = node.kM.LoadNodeKeys()
     } else {
        err = node.kM.CreateNodeKeys()
@@ -78,7 +77,7 @@ func initNode() (*TrustNode, bool) {
         node.log.Error("Failed to create database")
         return nil, false
     }
-    err = node.db.Connect(os.Getenv(DB_NAME))
+    err = node.db.Connect(viper.GetString(DB_NAME))
     if err != nil {
         node.log.Error("Failed to connect to database")
         return nil, false
@@ -89,7 +88,7 @@ func initNode() (*TrustNode, bool) {
         node.log.Error("Failed to create new coin")
         return nil, false
     }
-    node.coinName = os.Getenv(COIN_NAME)
+    node.coinName = viper.GetString(COIN_NAME)
     err = node.c.Attach(node.coinName)
     if err != nil {
         node.log.Error("Failed to attach to coin")
@@ -145,8 +144,8 @@ func initNode() (*TrustNode, bool) {
  * will send it the manifest. Upon receiving a manifest this function returns
  */
 func (n *TrustNode) registerNode() bool {
-    nodeIP := os.Getenv(NODE_IP)
-    nodePort := os.Getenv(NODE_PORT)
+    nodeIP := viper.GetString(LISTEN_IP)
+    nodePort := viper.GetString(LISTEN_PORT)
     if nodeIP == "" || nodePort == "" {
         n.log.Error("Node IP and port not set")
         return false
@@ -168,7 +167,7 @@ func (n *TrustNode) registerNode() bool {
     for {
         time.Sleep(time.Second)
         if n.reg.HealthCheckRequested() {
-            err = n.reg.SendHealth("READY")
+            err = n.reg.SendHealth("READY", nodeKey)
             if err != nil {
                 n.log.Error("Failed to send health status to registrar")
                 return false
@@ -221,9 +220,14 @@ func (n *TrustNode) initTrust() {
  * An infinite loop where we sleep 1 second. Then process trusts.
  */
 func (n *TrustNode) run() {
+    nodeKey, err := n.kM.GetPublicKey()
+    if err != nil {
+        n.log.Error("Failed to get public key")
+    }
+
     for true {
         if n.reg.HealthCheckRequested() {
-            n.reg.SendHealth("RUNNING")
+            n.reg.SendHealth("RUNNING", nodeKey)
         }
         n.cTQ.DoLoop()
         n.qTC.DoLoop()
@@ -253,5 +257,7 @@ func main() {
         return
     }
     node.initTrust()
+
+    go nodeAgent()
     node.run()
 }

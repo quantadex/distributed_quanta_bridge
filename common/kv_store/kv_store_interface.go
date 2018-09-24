@@ -78,6 +78,6 @@ type KVStore interface {
     SetValue(tableName string, key string, oldValue string, newValue string) error
 }
 
-func NewKVStore() (*KVStore, error) {
+func NewKVStore() (KVStore, error) {
     return nil, nil
 }
