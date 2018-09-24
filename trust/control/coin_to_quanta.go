@@ -60,7 +60,7 @@ func NewCoinToQuanta(   log logger.Logger,
  * Returns a list of new blocks added to the coin block chain.
  */
 func (c *CoinToQuanta) getNewCoinBlockIDs() []int {
-    lastProcessed, valid := getLastBlock(d.db, c.coinName)
+    lastProcessed, valid := getLastBlock(c.db, c.coinName)
     if !valid {
         c.log.Error("Failed to get last processed ID")
         return nil
@@ -93,7 +93,7 @@ func (c *CoinToQuanta) getNewCoinBlockIDs() []int {
  *
  * Returns deposits made to the coin trust account in this block
  */
-func (c *CoinToQuanta) getDepositsInBlock(blockID int) []coin.Deposit {
+func (c *CoinToQuanta) getDepositsInBlock(blockID int) []*coin.Deposit {
     deposits, err := c.coinChannel.GetDepositsInBlock(blockID, c.man.ContractAddress)
     if err != nil {
         c.log.Error("Failed to get deposits from block")
@@ -109,7 +109,7 @@ func (c *CoinToQuanta) getDepositsInBlock(blockID int) []coin.Deposit {
  */
 func (c *CoinToQuanta) submitMessages(msgs []*peer_contact.PeerMessage) {
     for _, msg := range msgs {
-        err := c.quantaChannel.ProcessDeposit(msg)
+        err := c.quantaChannel.ProcessDeposit(*msg)
         if err != nil {
             c.log.Error("Failed to submit deposut")
         }
@@ -125,16 +125,16 @@ func (c *CoinToQuanta) submitMessages(msgs []*peer_contact.PeerMessage) {
  */
 func (c *CoinToQuanta) DoLoop() {
     c.rr.addTick()
-    blockIDs := getNewCoinBlockIDs()
+    blockIDs := c.getNewCoinBlockIDs()
     if blockIDs == nil {
         return
     }
     for _, blockID := range blockIDs {
-        deposits := getDepositsInBlock(blockID)
-        if deposists == nil {
+        deposits := c.getDepositsInBlock(blockID)
+        if deposits == nil {
             continue
         }
-        c.rr.processNewDeposits(deposists)
+        c.rr.processNewDeposits(deposits)
     }
     allMsgs := c.rr.getExpiredMsgs()
     for true {

@@ -11,7 +11,7 @@ import (
     "github.com/quantadex/distributed_quanta_bridge/trust/key_manager"
     "github.com/quantadex/distributed_quanta_bridge/trust/peer_contact"
     "github.com/quantadex/distributed_quanta_bridge/trust/control"
-    "github.com/quantadex/distributed_quanta_bridge/trust/registrar_contact"
+    "github.com/quantadex/distributed_quanta_bridge/trust/registrar_client"
     "github.com/spf13/viper"
     "fmt"
 )
@@ -30,17 +30,17 @@ const (
  * The top-most object holding all state for the trust node.
  */
 type TrustNode struct {
-    log logger.Logger
-    kM key_manager.KeyManager
-    man *manifest.Manifest
-    q quanta.Quanta
-    c coin.Coin
-    db kv_store.KVStore
-    peer peer_contact.PeerContact
-    reg registrar_contact.RegistrarContact
-    cTQ *control.CoinToQuanta
-    qTC *control.QuantaToCoin
-    nodeID int
+    log      logger.Logger
+    kM       key_manager.KeyManager
+    man      *manifest.Manifest
+    q        quanta.Quanta
+    c        coin.Coin
+    db       kv_store.KVStore
+    peer     peer_contact.PeerContact
+    reg      registrar_client.RegistrarContact
+    cTQ      *control.CoinToQuanta
+    qTC      *control.QuantaToCoin
+    nodeID   int
     coinName string
 }
 
@@ -118,7 +118,7 @@ func initNode() (*TrustNode, bool) {
         return nil, false
     }
 
-    node.reg, err = registrar_contact.NewRegistrar()
+    node.reg, err = registrar_client.NewRegistrar()
     if err != nil {
         node.log.Error("Failed to create registrar interface")
         return nil, false
@@ -177,7 +177,7 @@ func (n *TrustNode) registerNode() bool {
         man := n.reg.GetManifest()
         if man != nil {
             n.man = man
-            n.nodeID, err = n.man.FindNode(nodeIP, nodePort)
+            n.nodeID, err = n.man.FindNode(nodeIP, nodePort, nodeKey)
             if err != nil {
                 n.log.Error("Node was not added to manifest")
                 return false

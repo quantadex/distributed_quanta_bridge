@@ -56,7 +56,7 @@ type Coin interface {
      * Returns nil if no matching deposits.
      * Returns error of error encountered
      */
-    GetDepositsInBlock(blockID int, trustAddress string) ([]Deposit, error)
+    GetDepositsInBlock(blockID int, trustAddress string) ([]*Deposit, error)
 
     /**
      * SendWithdrawl

@@ -1,4 +1,4 @@
-package registrar_contact
+package registrar_client
 
 import (
     "github.com/quantadex/distributed_quanta_bridge/common/manifest"
@@ -76,5 +76,5 @@ type RegistrarContact interface {
 }
 
 func NewRegistrar() (RegistrarContact, error) {
-    return nil, nil
+    return &RegistrarClient{}, nil
 }

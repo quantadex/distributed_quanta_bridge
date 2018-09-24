@@ -236,7 +236,7 @@ func (r *RoundRobinSigner) sendMessage(msg *peer_contact.PeerMessage) bool {
             if err == nil {
                 return true
             }
-            destination = (destination + 1) % r.man.Na
+            destination = (destination + 1) % r.man.N
             msg.NodesMissed++
         }
         return false
@@ -260,6 +260,7 @@ func (r *RoundRobinSigner) processNewDeposits(deposits []*coin.Deposit) {
             }
             missedNodes++
         }
+        // if too many nodes missed, just skip for this deposit
         tolerance := r.man.N - r.man.Q
         if missedNodes > tolerance {
             continue

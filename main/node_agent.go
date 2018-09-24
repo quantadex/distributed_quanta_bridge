@@ -47,7 +47,7 @@ func main() {
     }
     err = listener.Run(os.Getenv(NODE_IP), os.Getenv(NODE_PORT))
     if err != nil {
-        log.Error("Failed to start listenere")
+        log.Error("Failed to start listener")
         return
     }
 }
