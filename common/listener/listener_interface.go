@@ -49,5 +49,5 @@ type Listener interface {
 }
 
 func NewListener() (Listener, error) {
-    return nil, nil
+    return &HttpListener{}, nil
 }

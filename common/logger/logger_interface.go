@@ -13,5 +13,5 @@ type Logger interface {
 }
 
 func NewLogger() (Logger, error) {
-    return nil, nil
+    return &GoLogger{}, nil
 }

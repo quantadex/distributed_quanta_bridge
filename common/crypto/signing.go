@@ -28,3 +28,19 @@ func VerifyMessage(msg interface{}, publicKey string, signature string) bool {
 
 	return true
 }
+
+func SignMessage(msg interface{}, publicKey string) *string {
+	key, err := keypair.Parse(publicKey)
+
+	if err != nil {
+		return nil
+	}
+
+	bData := new(bytes.Buffer)
+	json.NewEncoder(bData).Encode(msg)
+
+	signed, _ := key.Sign(bData.Bytes())
+	signedbase64 := base64.StdEncoding.EncodeToString(signed)
+
+	return &signedbase64
+}

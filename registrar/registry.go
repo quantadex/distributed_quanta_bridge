@@ -1,4 +1,4 @@
-package main
+package registrar
 
 import "github.com/quantadex/distributed_quanta_bridge/common/manifest"
 

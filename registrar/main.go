@@ -1,4 +1,4 @@
-package main
+package registrar
 
 import (
 	"fmt"
@@ -6,6 +6,8 @@ import (
 	"github.com/spf13/viper"
 	"encoding/json"
 	"github.com/quantadex/distributed_quanta_bridge/common/crypto"
+	"time"
+	"github.com/quantadex/distributed_quanta_bridge/common/manifest"
 )
 
 type Server struct {
@@ -14,9 +16,25 @@ type Server struct {
 	handlers *http.ServeMux
 }
 
+func SendHealthCheck(n *manifest.TrustNode) {
+	url := fmt.Sprintf("http://%s:%p/node/api/healthcheck")
+	http.Get(url)
+}
+
+func (server *Server) DoHealthCheck() {
+	ticker := time.NewTicker(time.Millisecond * time.Duration(viper.GetInt("HEALTH_INTERVAL")))
+	go func() {
+		for range ticker.C {
+			for _, v := range server.registry.manifest.Nodes {
+				SendHealthCheck(v)
+			}
+		}
+	}()
+}
 
 func (server *Server) Start() {
 	fmt.Printf("Server will be started at %s...\n", server.url)
+
 	if err := http.ListenAndServe(server.url,  server.handlers); err != nil {
 		fmt.Println(err)
 		return
@@ -24,9 +42,9 @@ func (server *Server) Start() {
 }
 
 func (server *Server) setRoute() {
-	server.handlers.HandleFunc("/health", server.receiveHealthCheck)
-	server.handlers.HandleFunc("/manifest", server.manifest)
-	server.handlers.HandleFunc("/register", server.register)
+	server.handlers.HandleFunc("/registry/api/health", server.receiveHealthCheck)
+	server.handlers.HandleFunc("/registry/api/manifest", server.manifest)
+	server.handlers.HandleFunc("/registry/api/register", server.register)
 }
 
 func (server *Server) register(w http.ResponseWriter, request *http.Request) {
@@ -93,4 +111,6 @@ func main() {
 	s.registry = NewRegistry()
 	s.url = viper.GetString("server_url")
 
+	s.DoHealthCheck()
+	s.Start()
 }

@@ -51,7 +51,7 @@ type RegistrarContact interface {
      * POST /health
      * Return error if failed to send or did not get status OK
      */
-    SendHealth(nodeState string) error
+    SendHealth(nodeState string, nodeKey string) error
 
     /**
      * GetManifest
