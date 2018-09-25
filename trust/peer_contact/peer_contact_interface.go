@@ -2,6 +2,7 @@ package peer_contact
 
 import (
         "github.com/quantadex/distributed_quanta_bridge/common/manifest"
+    "github.com/quantadex/distributed_quanta_bridge/common/queue"
 )
 
 /**
@@ -22,6 +23,7 @@ type PaymentReq struct {
  * This is the message that is being passed between nodes to gain signatures
  */
 type PeerMessage struct {
+    Proposer int
     Proposal PaymentReq // The unsigned (raw) version of the msg
     SignedBy []int // List of nodeIDs (in-order) of nodes that signed
     NodesMissed int // Number of skipped nodes (not-signed)
@@ -45,7 +47,7 @@ type PeerContact interface {
      * Stash the Queue object in the local object
      * Return error if no variable or propogate error from Connect()
      */
-    AttachToListener() error
+    AttachQueue(queue queue.Queue) error
 
     /**
      *  SendMsg

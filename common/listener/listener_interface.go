@@ -1,5 +1,7 @@
 package listener
 
+import "github.com/quantadex/distributed_quanta_bridge/common/queue"
+
 /**
  * Listener
  *
@@ -22,7 +24,7 @@ type Listener interface {
      *
      * Attaches to the named queue service via the queue interface
      */
-    AttachQueue(queueName string) error
+    AttachQueue(queueName queue.Queue) error
 
     /**
      * AddEndpoint

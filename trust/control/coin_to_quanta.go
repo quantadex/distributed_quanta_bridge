@@ -8,6 +8,7 @@ import (
     "github.com/quantadex/distributed_quanta_bridge/trust/coin"
     "github.com/quantadex/distributed_quanta_bridge/trust/key_manager"
     "github.com/quantadex/distributed_quanta_bridge/trust/peer_contact"
+    "fmt"
 )
 
 /**
@@ -78,13 +79,15 @@ func (c *CoinToQuanta) getNewCoinBlockIDs() []int {
     }
 
     if lastProcessed == currentTop {
-        c.log.Debug("Coin2Quanta: No new block")
+        c.log.Debug(fmt.Sprintf("Coin2Quanta: No new block last=%d top=%d", lastProcessed, currentTop))
         return nil
     }
     blocks := make([]int, 0)
     for i := lastProcessed+1; i <= currentTop; i++ {
         blocks = append(blocks, i)
     }
+    c.log.Info(fmt.Sprintf("Got blocks %v", blocks))
+
     return blocks
 }
 
@@ -125,12 +128,16 @@ func (c *CoinToQuanta) submitMessages(msgs []*peer_contact.PeerMessage) {
  */
 func (c *CoinToQuanta) DoLoop() {
     c.rr.addTick()
+    c.log.Info(fmt.Sprintf("Epoch %d", c.rr.curEpoch))
+
     blockIDs := c.getNewCoinBlockIDs()
     if blockIDs == nil {
         return
     }
     for _, blockID := range blockIDs {
         deposits := c.getDepositsInBlock(blockID)
+        c.log.Info(fmt.Sprintf("Got deposits %v", deposits))
+
         if deposits == nil {
             continue
         }

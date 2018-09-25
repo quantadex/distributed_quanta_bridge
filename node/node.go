@@ -13,6 +13,7 @@ import (
     "github.com/quantadex/distributed_quanta_bridge/trust/registrar_client"
     "github.com/spf13/viper"
     "fmt"
+    "github.com/quantadex/distributed_quanta_bridge/common/queue"
 )
 
 const (
@@ -41,6 +42,7 @@ type TrustNode struct {
     qTC      *control.QuantaToCoin
     nodeID   int
     coinName string
+    queue    queue.Queue
 }
 
 /**
@@ -51,7 +53,8 @@ type TrustNode struct {
 func initNode() (*TrustNode, bool) {
     var err error
     node := &TrustNode{}
-    node.log, err = logger.NewLogger()
+    node.queue = queue.NewMemoryQueue()
+    node.log, err = logger.NewLogger(viper.GetString(LISTEN_PORT))
     if err != nil {
         return nil, false
     }
@@ -119,7 +122,7 @@ func initNode() (*TrustNode, bool) {
         node.log.Error("Failed to create peer interface")
         return nil, false
     }
-    err = node.peer.AttachToListener()
+    err = node.peer.AttachQueue(node.queue)
     if err != nil {
         node.log.Error("Failed to attach to peer listener")
         return nil, false
@@ -135,7 +138,7 @@ func initNode() (*TrustNode, bool) {
         node.log.Error("Failed to get to registrar")
         return nil, false
     }
-    err = node.reg.AttachToListener()
+    err = node.reg.AttachQueue(node.queue)
     if err != nil {
         node.log.Error("Failed to attach to reg listener")
         return nil, false
@@ -173,6 +176,7 @@ func (n *TrustNode) registerNode() bool {
 
     // Now we sit and wait to be added to quorum
     for {
+        n.log.Info("Wait to be added to quorum")
         time.Sleep(time.Second)
         if n.reg.HealthCheckRequested() {
             err = n.reg.SendHealth("READY", n.kM)
@@ -189,6 +193,7 @@ func (n *TrustNode) registerNode() bool {
                 n.log.Error("Node was not added to manifest")
                 return false
             }
+            n.log.Info("Added to quorum")
             return true
         }
     }
@@ -234,10 +239,29 @@ func (n *TrustNode) run() {
         }
         n.cTQ.DoLoop()
         n.qTC.DoLoop()
-        time.Sleep(time.Second * 5)
+        time.Sleep(time.Second * 1)
     }
 }
 
+func bootstrapNode() *TrustNode {
+    node, success := initNode()
+    if !success {
+        node.log.Error("Failed to init node")
+        return nil
+    }
+
+    // start our http listener
+    go nodeAgent(node.queue)
+
+    success = node.registerNode()
+    if !success {
+        node.log.Error("Failed to register node")
+        return nil
+    }
+    node.initTrust()
+
+    return node
+}
 /**
  * main
  *
@@ -252,16 +276,6 @@ func main() {
         panic(fmt.Errorf("Fatal error config file: %s \n", err))
     }
 
-    node, success := initNode()
-    if !success {
-        return
-    }
-    success = node.registerNode()
-    if !success {
-        return
-    }
-    node.initTrust()
-
-    go nodeAgent()
+    node := bootstrapNode()
     node.run()
 }

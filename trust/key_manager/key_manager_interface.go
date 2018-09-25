@@ -52,7 +52,7 @@ type KeyManager interface {
      * Uses the provided key to decode the given message. Returns decoded.
      * Note. This does not use the local node's keys but the provided key.
      */
-     DecodeMessage(original []byte, key string) ([]byte, error)
+    VerifySignatureObj(original interface{}, key string) bool
 }
 
 func NewKeyManager() (KeyManager, error) {

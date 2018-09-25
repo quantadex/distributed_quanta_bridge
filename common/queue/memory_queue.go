@@ -3,7 +3,6 @@ package queue
 import (
 	dll "github.com/emirpasic/gods/lists/doublylinkedlist"
 	"errors"
-	"sync"
 )
 
 type MemoryQueue struct {
@@ -14,16 +13,6 @@ type MemoryQueue struct {
 func NewMemoryQueue() Queue {
 	q := &MemoryQueue{ queues: map[string]*dll.List{}}
 	return q
-}
-
-var instance Queue
-var once sync.Once
-
-func GetGlobalQueue() Queue {
-	once.Do(func() {
-		instance = NewMemoryQueue()
-	})
-	return instance
 }
 
 func (q *MemoryQueue) Connect(name string) error {

@@ -6,6 +6,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"encoding/base64"
+	"github.com/quantadex/distributed_quanta_bridge/common/crypto"
 )
 
 type QuantaKeyManager struct {
@@ -31,8 +32,8 @@ func (k *QuantaKeyManager) SignMessage(original []byte) ([]byte, error) {
 	return k.key.Sign(original)
 }
 
-func (k *QuantaKeyManager) DecodeMessage(original []byte, signature string) ([]byte, error) {
-	return nil, nil
+func (k *QuantaKeyManager) VerifySignatureObj(msg interface{}, signature string) bool {
+	return crypto.VerifyMessage(msg, k.key.Address(), signature)
 }
 
 func (k *QuantaKeyManager) SignMessageObj(msg interface{}) *string {

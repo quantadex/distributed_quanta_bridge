@@ -10,6 +10,7 @@ import (
 	"github.com/quantadex/distributed_quanta_bridge/common/manifest"
 	"github.com/quantadex/distributed_quanta_bridge/common/msgs"
 	"github.com/quantadex/distributed_quanta_bridge/common/logger"
+	"bytes"
 )
 
 type Server struct {
@@ -20,12 +21,12 @@ type Server struct {
 }
 
 func SendHealthCheck(n *manifest.TrustNode) {
-	url := fmt.Sprintf("http://%s:%p/node/api/healthcheck")
+	url := fmt.Sprintf("http://%s:%s/node/api/healthcheck", n.IP, n.Port)
 	http.Get(url)
 }
 
 func (server *Server) DoHealthCheck() {
-	ticker := time.NewTicker(time.Millisecond * time.Duration(viper.GetInt("HEALTH_INTERVAL")))
+	ticker := time.NewTicker(time.Second * time.Duration(viper.GetInt("HEALTH_INTERVAL")))
 	go func() {
 		for range ticker.C {
 			for _, v := range server.registry.manifest.Nodes {
@@ -74,10 +75,12 @@ func (server *Server) register(w http.ResponseWriter, request *http.Request) {
 	if err != nil {
 		server.logger.Error(err.Error())
 		w.WriteHeader(http.StatusOK) // fail silently
-		return
+	} else {
+		server.logger.Info(fmt.Sprintf("Node %s:%s added to registry", msg.Body.NodeIp, msg.Body.NodePort))
+		w.WriteHeader(http.StatusOK)
 	}
-	server.logger.Info(fmt.Sprintf("Node %s:%s added to registry", msg.Body.NodeIp, msg.Body.NodePort))
-	w.WriteHeader(http.StatusOK)
+
+	go server.Broadcast(server.registry.Manifest())
 }
 
 func (server *Server) receiveHealthCheck(w http.ResponseWriter, request *http.Request) {
@@ -110,6 +113,15 @@ func (server *Server) manifest(w http.ResponseWriter, request *http.Request) {
 	}
 }
 
+func (server *Server) Broadcast(m *manifest.Manifest) {
+	for _, n := range m.Nodes {
+		url := fmt.Sprintf("http://%s:%s/node/api/manifest", n.IP, n.Port)
+		jsonBytes, _ := m.GetJSON()
+		fmt.Println("Send manifest to ", url)
+		http.Post(url, "application/json", bytes.NewReader(jsonBytes))
+	}
+}
+
 func main() {
 	viper.SetConfigName("config")
 	viper.AddConfigPath(".")
@@ -121,7 +133,7 @@ func main() {
 	s := &Server{}
 	s.registry = NewRegistry()
 	s.url = viper.GetString("server_url")
-	s.logger, _ = logger.NewLogger()
+	s.logger, _ = logger.NewLogger("registrar")
 	s.DoHealthCheck()
 	s.Start()
 }

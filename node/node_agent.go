@@ -14,8 +14,8 @@ import (
  *
  * The queue is polled by the actual node logic
  */
-func nodeAgent() {
-    log, err := logger.NewLogger()
+func nodeAgent(q queue.Queue) {
+    log, err := logger.NewLogger(viper.GetString(LISTEN_PORT))
     if err != nil {
         return
     }
@@ -24,16 +24,19 @@ func nodeAgent() {
         log.Error("Failed to create listener module")
         return
     }
-    err = listener.AttachQueue("")
+    err = listener.AttachQueue(q)
     if err != nil {
         log.Error("Failed to attach to listener queue")
         return
     }
-    //err = listener.AddEndpoint("manifest", "/node/api/manifest")
-    //if err != nil {
-    //    log.Error("Failed to create endpoint")
-    //    return
-    //}
+
+    // manifest update from registry
+    err = listener.AddEndpoint(queue.MANIFEST_QUEUE, "/node/api/manifest")
+    if err != nil {
+       log.Error("Failed to create endpoint")
+       return
+    }
+
     err = listener.AddEndpoint(queue.HEALTH_QUEUE, "/node/api/healthcheck")
     if err != nil {
         log.Error("Failed to create endpoint")

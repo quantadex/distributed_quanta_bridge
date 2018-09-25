@@ -3,6 +3,7 @@ package registrar_client
 import (
     "github.com/quantadex/distributed_quanta_bridge/common/manifest"
     "github.com/quantadex/distributed_quanta_bridge/trust/key_manager"
+    "github.com/quantadex/distributed_quanta_bridge/common/queue"
 )
 
 /**
@@ -34,7 +35,7 @@ type RegistrarContact interface {
      * Stash the Queue object in the local object
      * Return error if no variable or propogate error from Connect()
      */
-    AttachToListener() error
+    AttachQueue(queue queue.Queue) error
 
     /**
      * RegisterNode

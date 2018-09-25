@@ -13,16 +13,18 @@ import (
 )
 
 type PeerClient struct {
-
+	q queue.Queue
 }
 
-func (p *PeerClient) AttachToListener() error {
+func (p *PeerClient) AttachQueue(queue queue.Queue) error {
+	p.q = queue
 	return nil
 }
 
 func (p *PeerClient) SendMsg(m *manifest.Manifest, destinationNodeID int, peermsg *PeerMessage) error {
 	peer := m.Nodes[destinationNodeID]
-	url := fmt.Sprintf("http://%s:%s", peer.IP, peer.Port)
+	url := fmt.Sprintf("http://%s:%s/node/api/peer", peer.IP, peer.Port)
+	//fmt.Println("Send to peer " + url)
 
 	msg := &PeerMsgRequest{}
 	msg.Body = *peermsg
@@ -35,24 +37,24 @@ func (p *PeerClient) SendMsg(m *manifest.Manifest, destinationNodeID int, peerms
 		if err != nil {
 			return errors.New("unable to marshall")
 		}
-		http.Post(url + "/node/api/peer", "application/json", bytes.NewReader(data))
+		http.Post(url, "application/json", bytes.NewReader(data))
 		return nil
 	}
 	return errors.New("unable to sign message")
 }
 
 func (p *PeerClient) GetMsg() *PeerMessage {
-	q := queue.GetGlobalQueue()
-	data, err := q.Get(queue.PEERMSG_QUEUE)
+	data, err := p.q.Get(queue.PEERMSG_QUEUE)
 	if err != nil {
 		return nil
 	}
 
-	msg := &PeerMessage{}
+	msg := &PeerMsgRequest{}
 	err = json.Unmarshal(data, msg)
 	if err != nil {
 		fmt.Printf("Unable to parse json")
 		return nil
 	}
-	return msg
+	println("parsed peer message")
+	return &msg.Body
 }

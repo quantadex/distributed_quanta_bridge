@@ -19,6 +19,7 @@ type RegistrarClient struct{
 	port int
 	url string
 	healthQueueName string
+	q queue.Queue
 }
 
 func (r *RegistrarClient) GetRegistrar() error {
@@ -33,8 +34,9 @@ func (r *RegistrarClient) GetRegistrar() error {
 /**
  * Listen to the node's calls
  */
-func (r *RegistrarClient) AttachToListener() error {
+func (r *RegistrarClient) AttachQueue(queue queue.Queue) error{
 	// memory queue, not necessary
+	r.q = queue
 	return nil
 }
 
@@ -43,7 +45,6 @@ func (r *RegistrarClient) RegisterNode(nodeIP string, nodePort string, km key_ma
 	msg := msgs.RegisterReq{}
 	nodeKey, _ := km.GetPublicKey()
 	msg.Body = msgs.NodeInfo{ nodeIP, nodePort, nodeKey }
-	fmt.Printf("Send to %s %s\n", r.url, nodeKey)
 
 	if signature := km.SignMessageObj(msg.Body); signature != nil {
 		msg.Signature = *signature
@@ -77,7 +78,7 @@ func (r *RegistrarClient) SendHealth(nodeState string, km key_manager.KeyManager
 	return errors.New("unable to sign message")
 }
 
-func (r *RegistrarClient) GetManifest() *manifest.Manifest {
+func (r *RegistrarClient) SendManifestRequest() *manifest.Manifest {
 	res, err := http.Get(r.url + "/registry/api/manifest")
 	if err != nil {
 		return nil
@@ -95,9 +96,22 @@ func (r *RegistrarClient) GetManifest() *manifest.Manifest {
 	return manifest
 }
 
+func (r *RegistrarClient) GetManifest() *manifest.Manifest {
+	bodyBytes, err := r.q.Get(queue.MANIFEST_QUEUE)
+	if err != nil {
+		return nil
+	}
+
+	manifest, err := manifest.CreateManifestFromJSON(bodyBytes)
+	if err != nil {
+		return nil
+	}
+
+	return manifest
+}
+
 func (r *RegistrarClient) HealthCheckRequested() bool {
-	q := queue.GetGlobalQueue()
-	_, err := q.Get(queue.HEALTH_QUEUE)
+	_, err := r.q.Get(queue.HEALTH_QUEUE)
 	if err != nil {
 		return false
 	}

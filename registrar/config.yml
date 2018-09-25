@@ -1,4 +1,4 @@
 # config for registrar
 
-HEALTH_INTERVAL: 30
+HEALTH_INTERVAL: 5
 server_url: "localhost:5001"

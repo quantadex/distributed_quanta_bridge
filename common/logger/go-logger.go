@@ -3,21 +3,32 @@ package logger
 import "github.com/op/go-logging"
 
 type GoLogger struct {
-
+	log *logging.Logger
 }
 
-var log = logging.MustGetLogger("bridge")
+var Formatter = logging.MustStringFormatter("%{level:.1s} [%{module}] %{message}")
+
+func NewGoLogger(module string ) *GoLogger {
+	logging.SetFormatter(Formatter)
+	var log = logging.MustGetLogger(module)
+
+	return &GoLogger{log}
+}
 
 func (l *GoLogger) Error(msg string) {
-	log.Error(msg)
+	l.log.Error(msg)
 }
 
 func (l *GoLogger) Info(msg string) {
-	log.Info(msg)
+	l.log.Info(msg)
+}
+
+func (l *GoLogger) Infof(format string, args ...interface{}) {
+	l.log.Infof(format, args...)
 }
 
 func (l *GoLogger) Debug(msg string) {
-	log.Debug(msg)
+	l.log.Debug(msg)
 }
 
 

@@ -9,22 +9,25 @@ import (
 
 type HttpListener struct {
 	handlers *http.ServeMux
+	queue queue.Queue
 }
 
-func (h *HttpListener) AttachQueue(queueName string) error {
+func (h *HttpListener) AttachQueue(queue queue.Queue) error {
+	h.queue = queue
 	return nil
 }
 
 func (h *HttpListener) AddEndpoint(name string, route string) error {
-	queue.GetGlobalQueue().CreateQueue(name)
+	h.queue.CreateQueue(name)
 
 	if h.handlers == nil{
 		h.handlers = http.NewServeMux()
 	}
 
 	h.handlers.HandleFunc(route, func(w http.ResponseWriter, r *http.Request) {
+		//fmt.Println("http request on " + route)
 		bodyBytes, _ := ioutil.ReadAll(r.Body)
-		queue.GetGlobalQueue().Put(name, bodyBytes)
+		h.queue.Put(name, bodyBytes)
 	})
 
 	return nil

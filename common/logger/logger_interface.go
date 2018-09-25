@@ -10,8 +10,9 @@ type Logger interface {
     Error(msg string)
     Info(msg string)
     Debug(msg string)
+    Infof(format string, args ...interface{})
 }
 
-func NewLogger() (Logger, error) {
-    return &GoLogger{}, nil
+func NewLogger(module string) (Logger, error) {
+    return NewGoLogger(module), nil
 }
