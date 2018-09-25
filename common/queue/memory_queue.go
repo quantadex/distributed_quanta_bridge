@@ -12,7 +12,7 @@ type MemoryQueue struct {
 
 
 func NewMemoryQueue() Queue {
-	q := &MemoryQueue{}
+	q := &MemoryQueue{ queues: map[string]*dll.List{}}
 	return q
 }
 

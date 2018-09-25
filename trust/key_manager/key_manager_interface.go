@@ -37,6 +37,15 @@ type KeyManager interface {
      */
     SignMessage(original []byte) ([]byte, error)
 
+
+    /**
+     * SignMessage
+     *
+     * Uses the private key to sign the given message and returns the signed message
+     * returns base64 signature
+     */
+    SignMessageObj(original interface{}) (*string)
+
     /**
      * DecodeMessage
      *

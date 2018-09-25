@@ -1,12 +1,15 @@
 package main
 
-import "github.com/quantadex/distributed_quanta_bridge/common/manifest"
+import (
+	"github.com/quantadex/distributed_quanta_bridge/common/manifest"
+	"github.com/quantadex/distributed_quanta_bridge/common/msgs"
+)
 
 type Registry struct {
 	manifest *manifest.Manifest
 }
 
-func (r *Registry) AddNode(n *NodeInfo) error {
+func (r *Registry) AddNode(n *msgs.NodeInfo) error {
 	return r.manifest.AddNode(n.NodeIp, n.NodePort,n.NodeKey)
 }
 

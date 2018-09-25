@@ -2,6 +2,7 @@ package registrar_client
 
 import (
     "github.com/quantadex/distributed_quanta_bridge/common/manifest"
+    "github.com/quantadex/distributed_quanta_bridge/trust/key_manager"
 )
 
 /**
@@ -42,7 +43,7 @@ type RegistrarContact interface {
      * POST /register
      * Return error if failed to send or did not get status OK
      */
-    RegisterNode(nodeIP string, nodePort string, nodeKey string) error
+    RegisterNode(nodeIP string, nodePort string, km key_manager.KeyManager) error
 
     /**
      * SendHealth
@@ -51,7 +52,7 @@ type RegistrarContact interface {
      * POST /health
      * Return error if failed to send or did not get status OK
      */
-    SendHealth(nodeState string, nodeKey string) error
+    SendHealth(nodeState string, km key_manager.KeyManager) error
 
     /**
      * GetManifest

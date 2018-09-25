@@ -8,12 +8,15 @@ import (
 	"github.com/quantadex/distributed_quanta_bridge/common/crypto"
 	"time"
 	"github.com/quantadex/distributed_quanta_bridge/common/manifest"
+	"github.com/quantadex/distributed_quanta_bridge/common/msgs"
+	"github.com/quantadex/distributed_quanta_bridge/common/logger"
 )
 
 type Server struct {
 	url string
 	registry *Registry
 	handlers *http.ServeMux
+	logger logger.Logger
 }
 
 func SendHealthCheck(n *manifest.TrustNode) {
@@ -50,11 +53,11 @@ func (server *Server) setRoute() {
 }
 
 func (server *Server) register(w http.ResponseWriter, request *http.Request) {
-	var msg RegisterReq
+	var msg msgs.RegisterReq
 	err := json.NewDecoder(request.Body).Decode(&msg)
 
 	if err != nil {
-		fmt.Println(err)
+		server.logger.Error("Cannot decode register msg")
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
@@ -63,15 +66,22 @@ func (server *Server) register(w http.ResponseWriter, request *http.Request) {
 
 	if !verified {
 		w.WriteHeader(http.StatusUnauthorized)
+		server.logger.Error("Message fail signature verification")
 		return
 	}
 
-	server.registry.AddNode(&msg.Body)
+	err = server.registry.AddNode(&msg.Body)
+	if err != nil {
+		server.logger.Error(err.Error())
+		w.WriteHeader(http.StatusOK) // fail silently
+		return
+	}
+	server.logger.Info(fmt.Sprintf("Node %s:%s added to registry", msg.Body.NodeIp, msg.Body.NodePort))
 	w.WriteHeader(http.StatusOK)
 }
 
 func (server *Server) receiveHealthCheck(w http.ResponseWriter, request *http.Request) {
-	var msg PingReq
+	var msg msgs.PingReq
 	err := json.NewDecoder(request.Body).Decode(&msg)
 
 	if err != nil {
@@ -111,7 +121,7 @@ func main() {
 	s := &Server{}
 	s.registry = NewRegistry()
 	s.url = viper.GetString("server_url")
-
+	s.logger, _ = logger.NewLogger()
 	s.DoHealthCheck()
 	s.Start()
 }

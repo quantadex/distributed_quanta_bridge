@@ -39,7 +39,7 @@ type Manifest struct {
  * trust node list
  */
 func CreateNewManifest(quorumNodes int) (*Manifest) {
-    return &Manifest{Q: quorumNodes}
+    return &Manifest{Q: quorumNodes, Nodes: map[int]*TrustNode{}}
 }
 
 /**
@@ -82,6 +82,7 @@ func (m *Manifest) AddNode(ip string, port string, pubKey string) error {
     if err != nil {
        m.Nodes[m.N] = &TrustNode{ ip, port, pubKey, "ADDED"}
        m.N++
+       return nil
     }
 
     return errors.New("Node already exist on " + strconv.Itoa(nodeId))
@@ -93,7 +94,7 @@ func (m *Manifest) AddNode(ip string, port string, pubKey string) error {
  * Returns true if the Mnaifest has exactly N nodes. False otherwise.
  */
 func (m *Manifest) ManifestComplete() bool {
-    return true
+    return m.N >= m.Q
 }
 
 /**

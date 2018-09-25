@@ -18,6 +18,10 @@ func (h *HttpListener) AttachQueue(queueName string) error {
 func (h *HttpListener) AddEndpoint(name string, route string) error {
 	queue.GetGlobalQueue().CreateQueue(name)
 
+	if h.handlers == nil{
+		h.handlers = http.NewServeMux()
+	}
+
 	h.handlers.HandleFunc(route, func(w http.ResponseWriter, r *http.Request) {
 		bodyBytes, _ := ioutil.ReadAll(r.Body)
 		queue.GetGlobalQueue().Put(name, bodyBytes)

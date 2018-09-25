@@ -30,7 +30,7 @@ const (
  * Is passed an attached KVStore.
  * Creates tables for keeping coin and quanta state
  */
-func initLedger(kv kv_store.KVStore) error {
+func InitLedger(kv kv_store.KVStore) error {
     err := kv.CreateTable(QUANTA_CONFIRMED)
     if err != nil {
         return errors.New("Failed to create table")
@@ -111,7 +111,7 @@ func getLastBlock(db kv_store.KVStore, coinName string) (int, bool) {
     v, err := db.GetValue(LAST_BLOCK, coinName)
     if err != nil {
         return 0, false
-        }
+    }
     if v == nil {
         return 0, true
     }

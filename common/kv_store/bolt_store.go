@@ -45,9 +45,13 @@ func (s *BoltStore) GetValue(tableName string, key string) (*string, error) {
 
 	err := s.db.View(func(tx *bolt.Tx) error {
 		b := tx.Bucket([]byte(tableName))
+		if b == nil {
+			return errors.New("bucket not found")
+		}
+
 		r := b.Get([]byte(key))
 		if r == nil {
-			return errors.New("not found")
+			return nil // silent error
 		}
 		s := string(r)
 		value = &s

@@ -78,7 +78,7 @@ func (c *CoinToQuanta) getNewCoinBlockIDs() []int {
     }
 
     if lastProcessed == currentTop {
-        c.log.Debug("No new block")
+        c.log.Debug("Coin2Quanta: No new block")
         return nil
     }
     blocks := make([]int, 0)

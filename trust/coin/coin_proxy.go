@@ -5,6 +5,7 @@ type CoinProxy struct {
 }
 
 func (c *CoinProxy) Attach(coinName string) error {
+	c.coin = &DummyCoin{}
 	return nil
 }
 

@@ -5,13 +5,13 @@ import (
 	"github.com/quantadex/distributed_quanta_bridge/common/manifest"
 	"fmt"
 	"net/http"
-	"github.com/quantadex/distributed_quanta_bridge/common/crypto"
 	"errors"
 	"encoding/json"
 	"bytes"
 	"io/ioutil"
 	"github.com/quantadex/distributed_quanta_bridge/common/queue"
 	"github.com/quantadex/distributed_quanta_bridge/common/msgs"
+	"github.com/quantadex/distributed_quanta_bridge/trust/key_manager"
 )
 
 type RegistrarClient struct{
@@ -39,12 +39,13 @@ func (r *RegistrarClient) AttachToListener() error {
 }
 
 
-func (r *RegistrarClient) RegisterNode(nodeIP string, nodePort string, nodeKey string) error {
+func (r *RegistrarClient) RegisterNode(nodeIP string, nodePort string, km key_manager.KeyManager) error {
 	msg := msgs.RegisterReq{}
+	nodeKey, _ := km.GetPublicKey()
 	msg.Body = msgs.NodeInfo{ nodeIP, nodePort, nodeKey }
-	fmt.Printf("Send to %s\n", r.url)
+	fmt.Printf("Send to %s %s\n", r.url, nodeKey)
 
-	if signature := crypto.SignMessage(msg.Body, nodeKey); signature != nil {
+	if signature := km.SignMessageObj(msg.Body); signature != nil {
 		msg.Signature = *signature
 
 		data, err := json.Marshal(&msg)
@@ -52,15 +53,17 @@ func (r *RegistrarClient) RegisterNode(nodeIP string, nodePort string, nodeKey s
 			return errors.New("unable to marshall")
 		}
 		http.Post(r.url + "/registry/api/register", "application/json", bytes.NewReader(data))
+		return nil
 	}
 	return errors.New("unable to sign message")
 }
 
-func (r *RegistrarClient) SendHealth(nodeState string, nodeKey string) error {
+func (r *RegistrarClient) SendHealth(nodeState string, km key_manager.KeyManager) error {
 	msg := msgs.PingReq{}
+	nodeKey, _ := km.GetPublicKey()
 	msg.Body = msgs.PingBody{ nodeState, nodeKey }
 
-	if signature := crypto.SignMessage(msg.Body, nodeKey); signature != nil {
+	if signature := km.SignMessageObj(msg.Body); signature != nil {
 		msg.Signature = *signature
 
 		data, err := json.Marshal(&msg)
@@ -68,7 +71,9 @@ func (r *RegistrarClient) SendHealth(nodeState string, nodeKey string) error {
 			return errors.New("unable to marshall")
 		}
 		http.Post(r.url + "/registry/api/health", "application/json", bytes.NewReader(data))
+		return nil
 	}
+
 	return errors.New("unable to sign message")
 }
 

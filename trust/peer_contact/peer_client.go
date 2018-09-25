@@ -36,6 +36,7 @@ func (p *PeerClient) SendMsg(m *manifest.Manifest, destinationNodeID int, peerms
 			return errors.New("unable to marshall")
 		}
 		http.Post(url + "/node/api/peer", "application/json", bytes.NewReader(data))
+		return nil
 	}
 	return errors.New("unable to sign message")
 }

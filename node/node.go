@@ -72,15 +72,23 @@ func initNode() (*TrustNode, bool) {
         return nil, false
     }
 
+    needsInitialize := !kv_store.DbExists(viper.GetString(KV_DB_NAME))
+
     node.db, err = kv_store.NewKVStore()
     if err != nil {
         node.log.Error("Failed to create database")
         return nil, false
     }
+
     err = node.db.Connect(viper.GetString(KV_DB_NAME))
     if err != nil {
         node.log.Error("Failed to connect to database")
         return nil, false
+    }
+
+    if needsInitialize {
+        node.log.Info("Initialize ledger")
+        control.InitLedger(node.db)
     }
 
     node.c, err = coin.NewCoin()
@@ -157,9 +165,9 @@ func (n *TrustNode) registerNode() bool {
         return false
     }
 
-    err = n.reg.RegisterNode(nodeIP, nodePort, nodeKey)
+    err = n.reg.RegisterNode(nodeIP, nodePort, n.kM)
     if err != nil {
-        n.log.Error("Failed to send node info to registrar")
+        n.log.Error("Failed to send node info to registrar " + err.Error())
         return false
     }
 
@@ -167,7 +175,7 @@ func (n *TrustNode) registerNode() bool {
     for {
         time.Sleep(time.Second)
         if n.reg.HealthCheckRequested() {
-            err = n.reg.SendHealth("READY", nodeKey)
+            err = n.reg.SendHealth("READY", n.kM)
             if err != nil {
                 n.log.Error("Failed to send health status to registrar")
                 return false
@@ -192,8 +200,8 @@ func (n *TrustNode) registerNode() bool {
  * Once we are part of a quorum we can create the trusts.
  */
 func (n *TrustNode) initTrust() {
-    node := &TrustNode{}
-    node.qTC = control.NewQuantaToCoin( n.log,
+    n.log.Info("Trust initialized")
+    n.qTC = control.NewQuantaToCoin( n.log,
                                         n.db,
                                         n.c,
                                         n.q,
@@ -203,7 +211,7 @@ func (n *TrustNode) initTrust() {
                                         n.coinName,
                                         n.nodeID)
 
-    node.cTQ = control.NewCoinToQuanta( n.log,
+    n.cTQ = control.NewCoinToQuanta( n.log,
                                         n.db,
                                         n.c,
                                         n.q,
@@ -220,18 +228,13 @@ func (n *TrustNode) initTrust() {
  * An infinite loop where we sleep 1 second. Then process trusts.
  */
 func (n *TrustNode) run() {
-    nodeKey, err := n.kM.GetPublicKey()
-    if err != nil {
-        n.log.Error("Failed to get public key")
-    }
-
     for true {
         if n.reg.HealthCheckRequested() {
-            n.reg.SendHealth("RUNNING", nodeKey)
+            n.reg.SendHealth("RUNNING", n.kM)
         }
         n.cTQ.DoLoop()
         n.qTC.DoLoop()
-        time.Sleep(time.Second)
+        time.Sleep(time.Second * 5)
     }
 }
 

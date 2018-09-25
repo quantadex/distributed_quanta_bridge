@@ -10,7 +10,7 @@ var instance *DummyCoin
 
 func GetDummyInstance() *DummyCoin {
 	if instance == nil {
-		instance = &DummyCoin{}
+		instance = &DummyCoin{ deposits: map[int][]*Deposit{}}
 	}
 	return instance
 }
