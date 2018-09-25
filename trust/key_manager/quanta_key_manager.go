@@ -10,17 +10,18 @@ type QuantaKeyManager struct {
 }
 
 func (k *QuantaKeyManager) CreateNodeKeys() error {
+	return nil
 }
 
 func (k *QuantaKeyManager) LoadNodeKeys() error {
 	var err error
-	publicKey := viper.GetString("NODE_KEY")
-	k.key, err = keypair.Parse(publicKey)
+	privateKey := viper.GetString("NODE_KEY")
+	k.key, err = keypair.Parse(privateKey)
 	return err
 }
 
 func (k *QuantaKeyManager) GetPublicKey() (string, error) {
-	return k.GetPublicKey()
+	return k.key.Address(), nil
 }
 
 func (k *QuantaKeyManager) SignMessage(original []byte) ([]byte, error) {

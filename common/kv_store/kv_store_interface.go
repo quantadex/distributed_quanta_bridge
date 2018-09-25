@@ -79,5 +79,5 @@ type KVStore interface {
 }
 
 func NewKVStore() (KVStore, error) {
-    return nil, nil
+    return &BoltStore{}, nil
 }

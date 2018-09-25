@@ -38,8 +38,8 @@ type Manifest struct {
  * Creates a new Manifest struct with N and Q set and an empty
  * trust node list
  */
-func CreateNewManifest(totalNodes string, quorumNodes string) (*Manifest, error) {
-    return nil, nil
+func CreateNewManifest(quorumNodes int) (*Manifest) {
+    return &Manifest{Q: quorumNodes}
 }
 
 /**

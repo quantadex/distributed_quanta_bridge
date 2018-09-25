@@ -8,7 +8,7 @@ import (
 )
 
 
-const dbFile = "db/%s.db"
+const dbFile = "%s.db"
 
 func DbFileName(name string) string {
 	return fmt.Sprintf(dbFile, name)
@@ -29,7 +29,7 @@ type BoltStore struct {
 
 func (s *BoltStore) Connect(name string) error {
 	var err error
-	s.db, err = bolt.Open(dbFile, 0600, nil)
+	s.db, err = bolt.Open(DbFileName(name), 0600, nil)
 	return err
 }
 

@@ -20,7 +20,7 @@ type Deposit struct {
 type Withdrawal struct {
     NodeID int // The Node authorizing this
     CoinName string // The type of coin (e.g. ETH)
-    DestinationAddr string // Where this money is going
+    DestinationAddress string // Where this money is going
     QuantaBlockID int // Which block this transaction was processed in quanta
     Amount int // The withdrawal size
 }
@@ -71,6 +71,6 @@ type Coin interface {
     SendWithdrawal(apiAddress string, w Withdrawal, s []byte) error
 }
 
-func NewCoin() (*Coin, error) {
-    return nil, nil
+func NewCoin() (Coin, error) {
+    return &CoinProxy{}, nil
 }

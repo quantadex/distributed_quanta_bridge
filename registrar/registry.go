@@ -1,4 +1,4 @@
-package registrar
+package main
 
 import "github.com/quantadex/distributed_quanta_bridge/common/manifest"
 
@@ -20,5 +20,6 @@ func (r *Registry) Manifest() *manifest.Manifest {
 
 func NewRegistry() *Registry {
 	r := &Registry{}
+	r.manifest = manifest.CreateNewManifest(2)
 	return r
 }

@@ -17,7 +17,7 @@ import (
 
 const (
     USE_PREV_KEYS = "USE_PREV_KEYS"
-    DB_NAME = "KV_STORE_NAME"
+    KV_DB_NAME = "KV_DB_NAME"
     COIN_NAME = "COIN_NAME"
     LISTEN_IP = "LISTEN_IP"
     LISTEN_PORT = "LISTEN_PORT"
@@ -77,7 +77,7 @@ func initNode() (*TrustNode, bool) {
         node.log.Error("Failed to create database")
         return nil, false
     }
-    err = node.db.Connect(viper.GetString(DB_NAME))
+    err = node.db.Connect(viper.GetString(KV_DB_NAME))
     if err != nil {
         node.log.Error("Failed to connect to database")
         return nil, false
@@ -243,6 +243,7 @@ func (n *TrustNode) run() {
 func main() {
     viper.SetConfigName("config")
     viper.AddConfigPath(".")
+    viper.AddConfigPath("node")
     err := viper.ReadInConfig()
     if err != nil {
         panic(fmt.Errorf("Fatal error config file: %s \n", err))

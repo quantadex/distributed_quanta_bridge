@@ -1,4 +1,4 @@
-package registrar
+package msgs
 
 type NodeInfo struct {
 	NodeIp 		string		`json: "node_ip"`

@@ -55,6 +55,6 @@ type Quanta interface {
     ProcessDeposit(deposit peer_contact.PeerMessage) error
 }
 
-func NewQuanta() (*Quanta, error) {
-    return nil, nil
+func NewQuanta() (Quanta, error) {
+    return &QuantaClient{}, nil
 }

@@ -1,4 +1,4 @@
-package registrar
+package main
 
 import (
 	"fmt"
@@ -34,6 +34,7 @@ func (server *Server) DoHealthCheck() {
 
 func (server *Server) Start() {
 	fmt.Printf("Server will be started at %s...\n", server.url)
+	server.setRoute()
 
 	if err := http.ListenAndServe(server.url,  server.handlers); err != nil {
 		fmt.Println(err)
@@ -42,6 +43,7 @@ func (server *Server) Start() {
 }
 
 func (server *Server) setRoute() {
+	server.handlers = http.NewServeMux()
 	server.handlers.HandleFunc("/registry/api/health", server.receiveHealthCheck)
 	server.handlers.HandleFunc("/registry/api/manifest", server.manifest)
 	server.handlers.HandleFunc("/registry/api/register", server.register)
@@ -107,7 +109,6 @@ func main() {
 	}
 
 	s := &Server{}
-	s.setRoute()
 	s.registry = NewRegistry()
 	s.url = viper.GetString("server_url")
 

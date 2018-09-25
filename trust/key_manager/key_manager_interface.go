@@ -46,6 +46,6 @@ type KeyManager interface {
      DecodeMessage(original []byte, key string) ([]byte, error)
 }
 
-func NewKeyManager() (*KeyManager, error) {
-    return nil, nil
+func NewKeyManager() (KeyManager, error) {
+    return &QuantaKeyManager{}, nil
 }

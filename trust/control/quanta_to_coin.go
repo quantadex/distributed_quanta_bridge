@@ -18,7 +18,7 @@ const QUANTA = "QUANTA"
  * It validates and signs the the withdrawls and issues them to the coin's smart contract.
  */
 type QuantaToCoin struct {
-    log logger.Logger
+    logger logger.Logger
     db kv_store.KVStore
     coinChannel coin.Coin
     quantaChannel quanta.Quanta
@@ -45,7 +45,7 @@ func NewQuantaToCoin(   log logger.Logger,
                         coinName string,
                         nodeID int ) *QuantaToCoin {
     res := &QuantaToCoin{}
-    res.log = log
+    res.logger = log
     res.db = db
     res.coinChannel = c
     res.quantaChannel = q
@@ -65,23 +65,23 @@ func NewQuantaToCoin(   log logger.Logger,
 func (c *QuantaToCoin) getNewBlockIDs() []int {
     lastProcessed, valid := getLastBlock(c.db, QUANTA)
     if !valid {
-        c.log.Error("Failed to get last processed block ID")
+        c.logger.Error("Failed to get last processed block ID")
         return nil
     }
 
     currentTop, err := c.quantaChannel.GetTopBlockID()
     if err != nil {
-        c.log.Error("Failed to get top quanta block ID")
+        c.logger.Error("Failed to get top quanta block ID")
         return nil
     }
 
     if lastProcessed > currentTop {
-        c.log.Error("Quanta top block smaller than last processed")
+        c.logger.Error("Quanta top block smaller than last processed")
         return nil
     }
 
     if lastProcessed == currentTop {
-        c.log.Debug("No new block")
+        c.logger.Debug("No new block")
         return nil
     }
     blocks := make([]int, 0)
@@ -99,7 +99,7 @@ func (c *QuantaToCoin) getNewBlockIDs() []int {
 func (c *QuantaToCoin) getRefundsInBlock(blockID int) []quanta.Refund {
     refunds, err := c.quantaChannel.GetRefundsInBlock(blockID, c.quantaTrustAddress)
     if err != nil {
-        c.log.Error("Failed to get refunds in quanta block")
+        c.logger.Error("Failed to get refunds in quanta block")
         return nil
     }
     return refunds
@@ -111,7 +111,7 @@ func (c *QuantaToCoin) getRefundsInBlock(blockID int) []quanta.Refund {
  * Checks that the refund has not been previously issued and marks it signed in DB.
  */
 func (c *QuantaToCoin) validateAndSignRefund(refund *quanta.Refund) bool {
-    refkey := getKeyName(refund.CoinName, refund.DestinationAddress, refund.BlockID)
+    refKey := getKeyName(refund.CoinName, refund.DestinationAddress, refund.BlockID)
     success := confirmTx(c.db, QUANTA_CONFIRMED, refKey)
     if !success {
         c.logger.Error("Failed to confirm transaction")
@@ -149,7 +149,7 @@ func (c *QuantaToCoin) submitRefund(refund *quanta.Refund) bool {
         return false
     }
 
-    err = c.coinChannel.SendWithdrawal(c.coinContractAddress, w, s)
+    err = c.coinChannel.SendWithdrawal(c.coinContractAddress, *w, s)
     if err != nil {
         c.logger.Error("Failed to send withdrawal")
         return false
@@ -170,7 +170,7 @@ func (c *QuantaToCoin) DoLoop() {
     for _, blockID := range newBlocks {
         success := setLastBlock(c.db, QUANTA, blockID)
         if !success {
-            c.log.Error("Failed to mark block as signed")
+            c.logger.Error("Failed to mark block as signed")
             continue // should skip
         }
         refunds := c.getRefundsInBlock(blockID)
@@ -178,11 +178,11 @@ func (c *QuantaToCoin) DoLoop() {
             continue
         }
         for _, refund := range refunds {
-            valid := c.validateAndSignRefund(refund)
+            valid := c.validateAndSignRefund(&refund)
             if !valid {
                 continue //skip invalid. Probably log.
             }
-            c.submitRefund(refund)
+            c.submitRefund(&refund)
         }
     }
 

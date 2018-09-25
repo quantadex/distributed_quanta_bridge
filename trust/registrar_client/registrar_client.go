@@ -5,13 +5,13 @@ import (
 	"github.com/quantadex/distributed_quanta_bridge/common/manifest"
 	"fmt"
 	"net/http"
-	"github.com/quantadex/distributed_quanta_bridge/registrar"
 	"github.com/quantadex/distributed_quanta_bridge/common/crypto"
 	"errors"
 	"encoding/json"
 	"bytes"
 	"io/ioutil"
 	"github.com/quantadex/distributed_quanta_bridge/common/queue"
+	"github.com/quantadex/distributed_quanta_bridge/common/msgs"
 )
 
 type RegistrarClient struct{
@@ -40,8 +40,9 @@ func (r *RegistrarClient) AttachToListener() error {
 
 
 func (r *RegistrarClient) RegisterNode(nodeIP string, nodePort string, nodeKey string) error {
-	msg := registrar.RegisterReq{}
-	msg.Body = registrar.NodeInfo{ nodeIP, nodePort, nodeKey }
+	msg := msgs.RegisterReq{}
+	msg.Body = msgs.NodeInfo{ nodeIP, nodePort, nodeKey }
+	fmt.Printf("Send to %s\n", r.url)
 
 	if signature := crypto.SignMessage(msg.Body, nodeKey); signature != nil {
 		msg.Signature = *signature
@@ -56,8 +57,8 @@ func (r *RegistrarClient) RegisterNode(nodeIP string, nodePort string, nodeKey s
 }
 
 func (r *RegistrarClient) SendHealth(nodeState string, nodeKey string) error {
-	msg := registrar.PingReq{}
-	msg.Body = registrar.PingBody{ nodeState, nodeKey }
+	msg := msgs.PingReq{}
+	msg.Body = msgs.PingBody{ nodeState, nodeKey }
 
 	if signature := crypto.SignMessage(msg.Body, nodeKey); signature != nil {
 		msg.Signature = *signature

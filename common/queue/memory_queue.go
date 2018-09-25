@@ -52,7 +52,10 @@ func (q *MemoryQueue) Empty(queueName string) error {
 
 func (q *MemoryQueue) Get(queueName string) (data []byte, err error) {
 	if q := q.queues[queueName]; q != nil {
-		data, _ := q.Get(0)
+		data, found := q.Get(0)
+		if found == false {
+			return nil, errors.New("no item")
+		}
 		q.Remove(0)
 		return data.([]byte), nil
 	}
