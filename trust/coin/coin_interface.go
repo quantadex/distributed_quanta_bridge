@@ -8,7 +8,7 @@ package coin
 type Deposit struct {
     CoinName string // Type of coin (e.g. ETH)
     QuantaAddr string // Destination quanta acount
-    Amount int // Deposit size
+    Amount int64 // Deposit size
     BlockID int // The blockID in which this deposit was found
 }
 

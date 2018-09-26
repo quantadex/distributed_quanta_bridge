@@ -2,6 +2,7 @@ package quanta
 
 import (
     "github.com/quantadex/distributed_quanta_bridge/trust/peer_contact"
+    "github.com/quantadex/distributed_quanta_bridge/trust/coin"
 )
 
 /**
@@ -53,6 +54,8 @@ type Quanta interface {
      * transfer the funds into the user's quanta account
      */
     ProcessDeposit(deposit peer_contact.PeerMessage) error
+
+    CreateProposeTransaction(*coin.Deposit) (string, error) // base64 tx envelope
 }
 
 func NewQuanta() (Quanta, error) {

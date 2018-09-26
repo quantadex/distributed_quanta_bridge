@@ -8,9 +8,9 @@ import (
     "github.com/quantadex/distributed_quanta_bridge/trust/peer_contact"
     "github.com/quantadex/distributed_quanta_bridge/trust/coin"
     dll "github.com/emirpasic/gods/lists/doublylinkedlist"
-    "encoding/json"
     "fmt"
     "github.com/quantadex/distributed_quanta_bridge/common"
+    "github.com/quantadex/distributed_quanta_bridge/trust/quanta"
 )
 
 const DELAY_PENALTY = 5
@@ -28,6 +28,7 @@ type RoundRobinSigner struct {
     db kv_store.KVStore
     peer peer_contact.PeerContact
     deferQ map[int]*dll.List
+    quanta quanta.Quanta
     curEpoch int
 }
 
@@ -44,6 +45,7 @@ func NewRoundRobinSigner(   log logger.Logger,
                             myNodeID int,
                             kM key_manager.KeyManager,
                             db kv_store.KVStore,
+                            quanta quanta.Quanta,
                             peer peer_contact.PeerContact ) *RoundRobinSigner {
 
     res := &RoundRobinSigner{}
@@ -53,6 +55,7 @@ func NewRoundRobinSigner(   log logger.Logger,
     res.kM = kM
     res.db = db
     res.peer = peer
+    res.quanta = quanta
     res.deferQ = make(map[int]*dll.List, 0)
     res.curEpoch = 0
     return res
@@ -146,32 +149,29 @@ func (r *RoundRobinSigner) validateIntegrity(msg *peer_contact.PeerMessage) bool
     if len(msg.SignedBy) == 0 {
         return true
     }
-    target := make([]byte, 0)
-    copy(target, msg.MSG)
-    var err error
+    valid, err := r.kM.VerifyTransaction(msg.MSG)
+    if !valid {
+        r.log.Error("validateIntegrity: failed to verify message " + err.Error())
+        return false
+    }
 
-    for _, nodeID := range msg.SignedBy {
-        pubKey := r.man.Nodes[nodeID].PubKey
-        target, err = r.kM.VerifySignature(target, pubKey)
-        if err != nil {
-            return false
-        }
-    }
-    decoded := &peer_contact.PaymentReq{}
-    err = json.Unmarshal(target, decoded)
+    decoded, err := r.kM.DecodeTransaction(msg.MSG)
     if err != nil {
+        r.log.Error("validateIntegrity: failed to decode message")
         return false
     }
-    if decoded.BlockID != msg.Proposal.BlockID {
-        return false
-    }
-    if decoded.CoinName != msg.Proposal.CoinName {
-        return false
-    }
-    if decoded.QuantaAdress != msg.Proposal.QuantaAdress {
+    //if decoded.BlockID != msg.Proposal.BlockID {
+    //    return false
+    //}
+    //if decoded.CoinName != msg.Proposal.CoinName {
+    //    return false
+    //}
+    if decoded.QuantaAddr != msg.Proposal.QuantaAdress {
+        r.log.Error("validateIntegrity: address mismatch")
         return false
     }
     if decoded.Amount != msg.Proposal.Amount {
+        r.log.Error("validateIntegrity: amount mismatch")
         return false
     }
     return true
@@ -194,7 +194,11 @@ func (r *RoundRobinSigner) createNewPeerMsg(deposit *coin.Deposit, missedNodes i
     msg.Proposal = *payment
     msg.SignedBy = make([]int, 0)
     msg.NodesMissed = missedNodes
-    msg.MSG = make([]byte, 0)
+    var err error
+    msg.MSG, err = r.quanta.CreateProposeTransaction(deposit)
+    if err != nil {
+        r.log.Error("error creating tx " + err.Error())
+    }
     return msg
 }
 
@@ -214,16 +218,21 @@ func (r *RoundRobinSigner) signPeerMsg(msg *peer_contact.PeerMessage) bool {
     }
     data := msg.MSG
     var err error
-    if len(msg.SignedBy) == 0 {
-        data, err = json.Marshal(msg.Proposal)
-        if err != nil {
-            r.log.Error("Failed to marshal payment req")
-            return false
-        }
-    }
-    data, err = r.kM.SignMessage(data)
+
+    // need to check if we signed it
+
+    //if len(msg.SignedBy) == 0 {
+    //    data, err = json.Marshal(msg.Proposal)
+    //    if err != nil {
+    //        r.log.Error("Failed to marshal payment req")
+    //        return false
+    //    }
+    //}
+    r.log.Infof("sign peer msg %v", msg.SignedBy)
+
+    data, err = r.kM.SignTransaction(data)
     if err != nil {
-        r.log.Error("Failed to encrypt the message")
+        r.log.Error("Failed to encrypt the message: " + err.Error())
         return false
     }
     msg.MSG = data
@@ -266,7 +275,7 @@ func (r *RoundRobinSigner) processNewDeposits(deposits []*coin.Deposit) {
     for _, deposit := range deposits {
 
         // let's confirm them
-        r.log.Infof("Confirm transaction %x", deposit)
+        r.log.Infof("Confirm transaction %d", deposit.Amount)
         confirmTx(r.db, COIN_CONFIRMED, getKeyName(deposit.CoinName, deposit.QuantaAddr, deposit.BlockID))
 
         startNode := deposit.BlockID % r.man.N
@@ -319,6 +328,8 @@ func (r *RoundRobinSigner) processNewPeerMsgs(msgs []*peer_contact.PeerMessage) 
             r.log.Error("Too many signatures")
             continue
         }
+
+        r.log.Infof("signed by n=%d q=%d", len(msg.SignedBy), r.man.Q)
         if len(msg.SignedBy) == r.man.Q {
             toSend = append(toSend, msg)
             continue

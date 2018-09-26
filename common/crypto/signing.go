@@ -1,7 +1,7 @@
 package crypto
 
 import (
-	"github.com/stellar/go/keypair"
+	"github.com/quantadex/stellar_go/keypair"
 	"bytes"
 	"encoding/json"
 	"encoding/base64"

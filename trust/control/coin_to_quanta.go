@@ -51,7 +51,7 @@ func NewCoinToQuanta(   log logger.Logger,
     res.man = man
     res.coinName = coinName
     res.peer = peer
-    res.rr = NewRoundRobinSigner(log, man, nodeID, kM, db, peer)
+    res.rr = NewRoundRobinSigner(log, man, nodeID, kM, db, q, peer)
     return res
 }
 
@@ -113,6 +113,8 @@ func (c *CoinToQuanta) getDepositsInBlock(blockID int) []*coin.Deposit {
 func (c *CoinToQuanta) submitMessages(msgs []*peer_contact.PeerMessage) {
     for _, msg := range msgs {
         err := c.quantaChannel.ProcessDeposit(*msg)
+        c.log.Infof("Process deposit to %s %d",
+                        msg.Proposal.QuantaAdress, msg.Proposal.Amount)
         if err != nil {
             c.log.Error("Failed to submit deposut")
         }
@@ -128,7 +130,7 @@ func (c *CoinToQuanta) submitMessages(msgs []*peer_contact.PeerMessage) {
  */
 func (c *CoinToQuanta) DoLoop() {
     c.rr.addTick()
-    c.log.Info(fmt.Sprintf("Epoch %d", c.rr.curEpoch))
+    c.log.Info(fmt.Sprintf("***** Start of Epoch %d *** ", c.rr.curEpoch))
 
     blockIDs := c.getNewCoinBlockIDs()
     if blockIDs == nil {

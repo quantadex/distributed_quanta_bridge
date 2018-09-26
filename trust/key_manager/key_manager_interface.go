@@ -1,5 +1,7 @@
 package key_manager
 
+import "github.com/quantadex/distributed_quanta_bridge/trust/coin"
+
 /**
  * KeyManager
  *
@@ -53,6 +55,24 @@ type KeyManager interface {
      * Note. This does not use the local node's keys but the provided key.
      */
     VerifySignatureObj(original interface{}, key string) bool
+
+    /**
+     * SignTX
+     * Decodes the transaction envelope, and adds our signature
+     */
+     SignTransaction(base64 string) (string, error)
+
+    /**
+     * VerifyTX
+     * Decode the transaction envelope, and check the signature
+     */
+    VerifyTransaction(base64 string) (bool, error)
+
+    /**
+     * DecodeMessage
+     * Converts the base64 tx back to Deposit
+     */
+     DecodeTransaction(base64 string) (*coin.Deposit, error)
 }
 
 func NewKeyManager() (KeyManager, error) {
