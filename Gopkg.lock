@@ -21,6 +21,14 @@
   version = "v1.3.1"
 
 [[projects]]
+  digest = "1:fed1f537c2f1269fe475a8556c393fe466641682d73ef8fd0491cd3aa1e47bad"
+  name = "github.com/certifi/gocertifi"
+  packages = ["."]
+  pruneopts = "UT"
+  revision = "deb3ae2ef2610fde3330947281941c562861188b"
+  version = "2018.01.18"
+
+[[projects]]
   digest = "1:ffe9824d294da03b391f44e1ae8281281b4afc1bdaa9588c9097785e3af10cec"
   name = "github.com/davecgh/go-spew"
   packages = ["spew"]
@@ -48,6 +56,14 @@
   pruneopts = "UT"
   revision = "c2828203cd70a50dcccfb2761f8b1f8ceef9a8e9"
   version = "v1.4.7"
+
+[[projects]]
+  branch = "master"
+  digest = "1:64ef2c2f0f508690f06c1b009e1e3103441ce60c2db0323ff94d8d1c560ec10b"
+  name = "github.com/getsentry/raven-go"
+  packages = ["."]
+  pruneopts = "UT"
+  revision = "084a9de9eb0361fbd5ded14b55c84e5493a5d7f6"
 
 [[projects]]
   digest = "1:aacef5f5e45685f2aeda5534d0a750dee6859de7e9088cdd06192787bb01ae6d"
@@ -104,12 +120,20 @@
   revision = "ee05b128a739a0fb76c7ebd3ae4810c1de808d6d"
 
 [[projects]]
-  digest = "1:645110e089152bd0f4a011a2648fbb0e4df5977be73ca605781157ac297f50c4"
+  digest = "1:044bb363b17077710e79605aec51f6d41d43c84c4a7cb1399ec4d3b76c566771"
   name = "github.com/mitchellh/mapstructure"
   packages = ["."]
   pruneopts = "UT"
-  revision = "fa473d140ef3c6adf42d6b391fe76707f1f243c8"
-  version = "v1.0.0"
+  revision = "4632c4f49fb352596def0d4005bcbe7f38fe9008"
+  version = "v1.1.0"
+
+[[projects]]
+  branch = "master"
+  digest = "1:3169196542342e193c4e0bacbaf5039712051f8178b16aaa94a67fd78cde6e2e"
+  name = "github.com/nullstyle/go-xdr"
+  packages = ["xdr3"]
+  pruneopts = "UT"
+  revision = "f4c839f750778158541decf4c318fc7625ec066b"
 
 [[projects]]
   digest = "1:5b3b29ce0e569f62935d9541dff2e16cc09df981ebde48e82259076a73a3d0c7"
@@ -142,33 +166,6 @@
   pruneopts = "UT"
   revision = "792786c7400a136282c1664665ae0a8db921c6c2"
   version = "v1.0.0"
-
-[[projects]]
-  branch = "master"
-  digest = "1:e0fe64fa868ac68705b91cfd0189cfb3102130beaec3b13fa1599d44cdf0d0e2"
-  name = "github.com/quantadex/stellar_go"
-  packages = [
-    "amount",
-    "build",
-    "clients/horizon",
-    "crc16",
-    "hash",
-    "keypair",
-    "network",
-    "price",
-    "protocols/horizon",
-    "protocols/horizon/base",
-    "strkey",
-    "support/errors",
-    "support/http/mutil",
-    "support/log",
-    "support/render/hal",
-    "support/render/problem",
-    "support/url",
-    "xdr",
-  ]
-  pruneopts = "UT"
-  revision = "279130429ed300742ec5643029545ae9d36b9f78"
 
 [[projects]]
   digest = "1:54bd573538ca13ccf85d18c99249d934f17957f17263256b42565a11c854c1de"
@@ -224,36 +221,36 @@
   version = "v1.0.2"
 
 [[projects]]
-  digest = "1:6e30a27eac59a148b3f7a32e0ba54706b31dcde5a42f63b22cb47873b62fa343"
+  digest = "1:214775c11fd26da94a100111a62daa25339198a4f9c57cb4aab352da889f5b93"
   name = "github.com/spf13/viper"
   packages = ["."]
   pruneopts = "UT"
-  revision = "8fb642006536c8d3760c99d4fa2389f5e2205631"
-  version = "v1.2.0"
+  revision = "2c12c60302a5a0e62ee102ca9bc996277c2f64f5"
+  version = "v1.2.1"
 
 [[projects]]
-  branch = "master"
-  digest = "1:c3388b2a90a1396c2a98fae93412eb9f10cb44853032acfd37d572eb57218230"
+  branch = "quanta"
+  digest = "1:8a39bbe14bc35e9036d9d5997d08590b82b5e41eb3ee382c39a2ee3c40fce562"
   name = "github.com/stellar/go"
   packages = [
+    "amount",
+    "build",
+    "clients/horizon",
     "crc16",
     "hash",
     "keypair",
     "network",
+    "price",
     "strkey",
     "support/errors",
+    "support/http/mutil",
+    "support/log",
+    "support/render/problem",
     "xdr",
   ]
   pruneopts = "UT"
-  revision = "a0ce6987f24f009d18691d08435d4fabd00ae0ac"
-
-[[projects]]
-  branch = "master"
-  digest = "1:6c08cb31e67fed09170edb8c194705b3ffe9e76b90b51c25b6673244ca8bbe89"
-  name = "github.com/stellar/go-xdr"
-  packages = ["xdr3"]
-  pruneopts = "UT"
-  revision = "0bc96f33a18ef2f963e75431dbed042129eb421b"
+  revision = "4212372976a014528ee16b8820a97a72ec35ed50"
+  source = "https://github.com/quantadex/stellar_go.git"
 
 [[projects]]
   digest = "1:ac83cf90d08b63ad5f7e020ef480d319ae890c208f8524622a2f3136e2686b02"
@@ -276,11 +273,19 @@
 
 [[projects]]
   branch = "master"
-  digest = "1:6c54cefa33de85c47075aae30f1d1a333967c405272010bb76aa943467e4cbae"
+  digest = "1:76ee51c3f468493aff39dbacc401e8831fbb765104cbf613b89bef01cf4bad70"
+  name = "golang.org/x/net"
+  packages = ["context"]
+  pruneopts = "UT"
+  revision = "4dfa2610cdf3b287375bbba5b8f2a14d3b01d8de"
+
+[[projects]]
+  branch = "master"
+  digest = "1:e2ced6fdf654069e8713c96012275fbd245381673d53e8c8ace640b28441a28b"
   name = "golang.org/x/sys"
   packages = ["unix"]
   pruneopts = "UT"
-  revision = "d47a0f3392421c5624713c9a19fe781f651f8a50"
+  revision = "e4b3c5e9061176387e7cea65e4dc5853801f3fb7"
 
 [[projects]]
   digest = "1:8029e9743749d4be5bc9f7d42ea1659471767860f0cdc34d37c3111bd308a295"
@@ -313,12 +318,11 @@
     "github.com/emirpasic/gods/lists/doublylinkedlist",
     "github.com/op/go-logging",
     "github.com/pkg/errors",
-    "github.com/quantadex/stellar_go/build",
-    "github.com/quantadex/stellar_go/clients/horizon",
-    "github.com/quantadex/stellar_go/keypair",
-    "github.com/quantadex/stellar_go/xdr",
     "github.com/spf13/viper",
+    "github.com/stellar/go/build",
+    "github.com/stellar/go/clients/horizon",
     "github.com/stellar/go/keypair",
+    "github.com/stellar/go/xdr",
   ]
   solver-name = "gps-cdcl"
   solver-version = 1

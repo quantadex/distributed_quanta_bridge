@@ -46,15 +46,16 @@ func (p *PeerClient) SendMsg(m *manifest.Manifest, destinationNodeID int, peerms
 func (p *PeerClient) GetMsg() *PeerMessage {
 	data, err := p.q.Get(queue.PEERMSG_QUEUE)
 	if err != nil {
+		//fmt.Printf("queue is empty\n")
 		return nil
 	}
 
 	msg := &PeerMsgRequest{}
 	err = json.Unmarshal(data, msg)
 	if err != nil {
-		fmt.Printf("Unable to parse json")
+		fmt.Printf("Unable to parse json\n")
 		return nil
 	}
-	println("parsed peer message")
+	//println("parsed peer message")
 	return &msg.Body
 }

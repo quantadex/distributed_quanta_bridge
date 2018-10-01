@@ -116,7 +116,7 @@ func (c *CoinToQuanta) submitMessages(msgs []*peer_contact.PeerMessage) {
         c.log.Infof("Process deposit to %s %d",
                         msg.Proposal.QuantaAdress, msg.Proposal.Amount)
         if err != nil {
-            c.log.Error("Failed to submit deposut")
+            c.log.Error("Failed to submit deposit " + err.Error())
         }
     }
 }
@@ -133,28 +133,35 @@ func (c *CoinToQuanta) DoLoop() {
     c.log.Info(fmt.Sprintf("***** Start of Epoch %d *** ", c.rr.curEpoch))
 
     blockIDs := c.getNewCoinBlockIDs()
-    if blockIDs == nil {
-        return
-    }
-    for _, blockID := range blockIDs {
-        deposits := c.getDepositsInBlock(blockID)
-        c.log.Info(fmt.Sprintf("Got deposits %v", deposits))
+    if blockIDs != nil {
+        for _, blockID := range blockIDs {
+            deposits := c.getDepositsInBlock(blockID)
+            c.log.Info(fmt.Sprintf("Got deposits %v", deposits))
 
-        if deposits == nil {
-            continue
+            if deposits == nil {
+                continue
+            }
+            c.rr.processNewDeposits(deposits)
         }
-        c.rr.processNewDeposits(deposits)
     }
+
     allMsgs := c.rr.getExpiredMsgs()
     for true {
         msg := c.peer.GetMsg()
         if msg == nil {
             break
         }
+        c.log.Infof("Got peer message %v", msg)
         allMsgs = append(allMsgs, msg)
     }
     toSend := c.rr.processNewPeerMsgs(allMsgs)
     if len(toSend) > 0 {
         c.submitMessages(toSend)
+    }
+
+    if len(blockIDs) > 0 {
+        lastBlockId := blockIDs[len(blockIDs)-1]
+        c.log.Infof("set last block coin=%s height=%d", c.coinName, lastBlockId)
+        setLastBlock(c.db, c.coinName, lastBlockId)
     }
 }

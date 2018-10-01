@@ -232,7 +232,7 @@ func (r *RoundRobinSigner) signPeerMsg(msg *peer_contact.PeerMessage) bool {
 
     data, err = r.kM.SignTransaction(data)
     if err != nil {
-        r.log.Error("Failed to encrypt the message: " + err.Error())
+        r.log.Error("Failed to sign the message: " + err.Error())
         return false
     }
     msg.MSG = data
@@ -250,7 +250,7 @@ func (r *RoundRobinSigner) signPeerMsg(msg *peer_contact.PeerMessage) bool {
 func (r *RoundRobinSigner) sendMessage(msg *peer_contact.PeerMessage) bool {
         destination := (r.myNodeID + 1) % r.man.N
         tolerance := common.MaxInt(1, r.man.N - r.man.Q)
-        r.log.Infof("sendMessage missed=%d tolerance=%d", msg.NodesMissed, tolerance)
+        r.log.Infof("sendMessage to peer %d missed=%d tolerance=%d", destination, msg.NodesMissed, tolerance)
 
         for msg.NodesMissed < tolerance {
             err := r.peer.SendMsg(r.man, destination, msg)
@@ -281,18 +281,18 @@ func (r *RoundRobinSigner) processNewDeposits(deposits []*coin.Deposit) {
         startNode := deposit.BlockID % r.man.N
         missedNodes := 0
         for i := 0; i < r.man.N; i++ {
-            nodeID := (r.myNodeID + i) % r.man.N
-            if nodeID == startNode {
-                break
-            }
-            missedNodes++
+           nodeID := (r.myNodeID + i) % r.man.N
+           if nodeID == startNode {
+               break
+           }
+           missedNodes++
         }
         // if too many nodes missed, just skip for this deposit
         tolerance := r.man.N - r.man.Q
         if missedNodes > tolerance {
-            continue
+           continue
         }
-        msg := r.createNewPeerMsg(deposit, missedNodes)
+        msg := r.createNewPeerMsg(deposit, 0)
         msg.Proposer = r.myNodeID
         r.addToDeferQ(msg)
     }

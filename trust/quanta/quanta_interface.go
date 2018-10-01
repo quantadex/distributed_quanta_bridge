@@ -3,6 +3,7 @@ package quanta
 import (
     "github.com/quantadex/distributed_quanta_bridge/trust/peer_contact"
     "github.com/quantadex/distributed_quanta_bridge/trust/coin"
+    "github.com/quantadex/distributed_quanta_bridge/common/queue"
 )
 
 /**
@@ -33,6 +34,13 @@ type Quanta interface {
     Attach() error
 
     /**
+     * AttachQueue
+     *
+     * Connects to the quanta-core node. Returns error if this fails.
+     */
+    AttachQueue(queue queue.Queue) error
+
+    /**
      * GetTopBlockID
      *
      * Returns the id of the latest quanta block.
@@ -60,4 +68,18 @@ type Quanta interface {
 
 func NewQuanta() (Quanta, error) {
     return &QuantaClient{}, nil
+}
+
+/**
+ * Submitworker's job is to submit the deposits into
+ * the horizon service, and retry as neccessary
+ * Decouples whether horizon is online or not
+ */
+type SubmitWorker interface {
+    Dispatch()
+    AttachQueue(queue queue.Queue) error
+}
+
+func NewSubmitWorker() (SubmitWorker) {
+    return &SubmitWorkerImpl{}
 }

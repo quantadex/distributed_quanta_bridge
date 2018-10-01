@@ -10,7 +10,18 @@ import (
 	"time"
 )
 
-func SetConfig(port int) {
+var NODE_KEYS = []string {
+	"ZBYEUJIWP2AXG2V6ZW4F5OTM5APW3SOTTM6YGMKO6MQSY7U3IHFJZHWQ",
+	"ZAFYSHEOQIK67O6S6SD5X7PVTLULQH3WQ3AMAGOO4NHSRM5SIKWCWFZB",
+	"ZC4U5P5DWNXGRUENOCOKZFHAWFKBE7JFOB2BCEKCM7BKXXKQE3DARXIJ",
+}
+
+//address:QCAO4HRMJDGFPUHRCLCSWARQTJXY2XTAFQUIRG2FAR3SCF26KQLAWZRN weight:1
+//address:QCNKL7QKKQZD63UW27JLY7LDLR6MME3WNLUJ47VP25EZH5THRPEZRSAK weight:1
+//address:QCN2DWLVXNAZW6ALR6KXJWGQB4J2J5TBJVPYLQMIU2TDCXIOBID5WRU5 weight:1
+//address:QAHXFPFJ33VV4C4BTXECIQCNI7CXRKA6KKG5FP3TJFNWGE7YUC4MBNFB weight:1 *** Issuer
+
+func SetConfig(key string, port int) {
 	viper.SetConfigType("yaml") // or viper.SetConfigType("YAML")
 
 	// any approach to require this configuration into your program.
@@ -19,41 +30,48 @@ LISTEN_IP: 0.0.0.0
 LISTEN_PORT: %d
 USE_PREV_KEYS: true
 KV_DB_NAME: kv_db_%d
-ISSUER_ADDRESS: QAXCTOY7IOZ3OEIY434CWTXBVGNZYVNTMVZSYRYQE5VDCH64BOJ2XYFM
-NODE_KEY: ZBLOHXXVNJVEU7NHNWFHFIZ5PMD6TQQIY6MOTZI4GULH633D2XAXPYUT
-HORIZON_URL: https://horizon-testnet.stellar.org
-NETWORK_PASSPHRASE: QUANTA NETWORK
+COIN_NAME: ETH
+ISSUER_ADDRESS: QAHXFPFJ33VV4C4BTXECIQCNI7CXRKA6KKG5FP3TJFNWGE7YUC4MBNFB
+NODE_KEY: %s
+HORIZON_URL: http://testnet-02.quantachain.io:8000/
+NETWORK_PASSPHRASE: QUANTA Test Network ; September 2018
 REGISTRAR_IP: localhost
 REGISTRAR_PORT: 5001
-`, port, port))
+`, port, port, key))
 
 	viper.ReadConfig(bytes.NewBuffer(config))
 }
 
+func StartNodes(n int)[]*TrustNode {
+	nodes := []*TrustNode{}
+
+	for i := 0; i < n; i++ {
+		os.Remove(fmt.Sprintf("./kv_db_%d.db", 5100+i))
+		SetConfig(NODE_KEYS[i], 5100 + i)
+		nodes = append(nodes, bootstrapNode())
+	}
+
+	return nodes
+}
+
+func DoLoop(nodes []*TrustNode) {
+	for _, n := range nodes {
+		n.cTQ.DoLoop()
+	}
+}
+
 func TestNode(t *testing.T) {
-	os.Remove("./node/kv_db.db")
+	nodes := StartNodes(3)
 
-	SetConfig(5100)
-	n1 := bootstrapNode()
-
-	SetConfig(5101)
-	n2 := bootstrapNode()
-
-	//go n1.run()
-	//go n2.run()
 	time.Sleep(time.Second)
 
 	dummy := coin.GetDummyInstance()
 	dummy.CreateNewBlock()
-	dummy.AddDeposit(&coin.Deposit{"TEST", "QDCFARPB4ZR7VGTEL2XII5OPPUPPX2PQAYZURXRVR6Z34GNWTUHGVSXT",12345, 1})
+	dummy.AddDeposit(&coin.Deposit{"ETH", "QDCFARPB4ZR7VGTEL2XII5OPPUPPX2PQAYZURXRVR6Z34GNWTUHGVSXT",15*10000000, 1})
 
-	// run 1 epoch
-	n1.cTQ.DoLoop()
-	n2.cTQ.DoLoop()
+	DoLoop(nodes)
 
-	// run 2 epoch
-	n1.cTQ.DoLoop()
-	n2.cTQ.DoLoop()
+	DoLoop(nodes)
 
 	time.Sleep(time.Second * 12)
 }

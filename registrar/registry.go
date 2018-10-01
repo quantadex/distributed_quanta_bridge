@@ -23,6 +23,6 @@ func (r *Registry) Manifest() *manifest.Manifest {
 
 func NewRegistry() *Registry {
 	r := &Registry{}
-	r.manifest = manifest.CreateNewManifest(2)
+	r.manifest = manifest.CreateNewManifest(3)
 	return r
 }

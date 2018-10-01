@@ -32,3 +32,12 @@
 [prune]
   go-tests = true
   unused-packages = true
+
+[[override]]
+  name = "github.com/stellar/go"
+  branch = "quanta"
+  source = "https://github.com/quantadex/stellar_go.git"
+
+[[override]]
+  name = "github.com/sirupsen/logrus"
+  revision = "68cec9f21fbf3ea8d8f98c044bc6ce05f17b267a"

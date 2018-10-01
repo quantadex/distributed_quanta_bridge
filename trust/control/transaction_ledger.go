@@ -136,8 +136,9 @@ func setLastBlock(db kv_store.KVStore, coinName string, newVal int) bool {
     if newVal < prevBlock {
         return false
     }
-    err := db.SetValue(coinName, LAST_BLOCK,  strconv.Itoa(prevBlock), strconv.Itoa(newVal))
+    err := db.SetValue(LAST_BLOCK, coinName, strconv.Itoa(prevBlock), strconv.Itoa(newVal))
     if err != nil {
+        println("Bucket is not found.")
         return false
     }
     return true

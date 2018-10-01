@@ -107,6 +107,7 @@ func initNode() (*TrustNode, bool) {
     }
 
     node.q, err = quanta.NewQuanta()
+    node.q.AttachQueue(node.queue)
     if err != nil {
         node.log.Error("Failed to create quanta")
         return nil, false

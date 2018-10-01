@@ -36,7 +36,10 @@ func (s *BoltStore) Connect(name string) error {
 func (s *BoltStore) CreateTable(tableName string) error {
 	return s.db.Update(func(tx *bolt.Tx) error {
 		_, err := tx.CreateBucket([]byte(tableName))
-		return err
+		if err != nil {
+			return fmt.Errorf("create bucket: %s", err)
+		}
+		return nil
 	})
 }
 
@@ -65,6 +68,9 @@ func (s *BoltStore) GetValue(tableName string, key string) (*string, error) {
 func (s *BoltStore) SetValue(tableName string, key string, oldValue string, newValue string) error {
 	return s.db.Update(func(tx *bolt.Tx) error {
 		b := tx.Bucket([]byte(tableName))
+		if b == nil {
+			return errors.New("bucket not found")
+		}
 		return b.Put([]byte(key), []byte(newValue))
 	})
 }
