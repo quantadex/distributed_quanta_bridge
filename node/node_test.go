@@ -37,6 +37,8 @@ HORIZON_URL: http://testnet-02.quantachain.io:8000/
 NETWORK_PASSPHRASE: QUANTA Test Network ; September 2018
 REGISTRAR_IP: localhost
 REGISTRAR_PORT: 5001
+ETHEREUM_NETWORK_ID: 3
+ETHEREUM_RPC: testnet-02.quantachain.io:8545
 `, port, port, key))
 
 	viper.ReadConfig(bytes.NewBuffer(config))
@@ -67,10 +69,17 @@ func TestNode(t *testing.T) {
 
 	dummy := coin.GetDummyInstance()
 	dummy.CreateNewBlock()
-	dummy.AddDeposit(&coin.Deposit{"ETH", "QDCFARPB4ZR7VGTEL2XII5OPPUPPX2PQAYZURXRVR6Z34GNWTUHGVSXT",15*10000000, 1})
+
+	// user generated ETH address from Quanta address
+	// assume it is deposited to ETH address
+	// 0x0f8d1c23a90795a7a738d90380ec8bb5e984ce9259b78ee7c5d1592253e4798c
+	// with our system associating to QDCFARPB4ZR7VGTEL2XII5OPPUPPX2PQAYZURXRVR6Z34GNWTUHGVSXT
+	dummy.AddDeposit(&coin.Deposit{"ETH",
+					"QDCFARPB4ZR7VGTEL2XII5OPPUPPX2PQAYZURXRVR6Z34GNWTUHGVSXT",
+					15*10000000, 1})
 
 	DoLoop(nodes)
-
+	DoLoop(nodes)
 	DoLoop(nodes)
 
 	time.Sleep(time.Second * 12)

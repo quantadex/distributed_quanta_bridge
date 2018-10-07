@@ -9,11 +9,11 @@ func (c *CoinProxy) Attach(coinName string) error {
 	return nil
 }
 
-func (c *CoinProxy) GetTopBlockID() (int, error) {
+func (c *CoinProxy) GetTopBlockID() (int64, error) {
 	return c.coin.GetTopBlockID()
 }
 
-func (c *CoinProxy) GetDepositsInBlock(blockID int, trustAddress string) ([]*Deposit, error) {
+func (c *CoinProxy) GetDepositsInBlock(blockID int64, trustAddress string) ([]*Deposit, error) {
 	return c.coin.GetDepositsInBlock(blockID, trustAddress)
 }
 

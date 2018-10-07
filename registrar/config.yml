@@ -1,4 +1,5 @@
 # config for registrar
 
 HEALTH_INTERVAL: 5
+TRUST_ETHEREUM_ADDRESS: keystore/key--7cd737655dff6f95d55b711975d2a4ace32d256e
 server_url: "localhost:5001"

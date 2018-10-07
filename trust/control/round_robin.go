@@ -132,7 +132,7 @@ func (r *RoundRobinSigner) getExpiredMsgs() []*peer_contact.PeerMessage {
 func (r *RoundRobinSigner) validateTransaction(msg *peer_contact.PeerMessage) bool {
     txKey := getKeyName(msg.Proposal.CoinName, msg.Proposal.QuantaAdress, msg.Proposal.BlockID)
     state := getState(r.db, COIN_CONFIRMED, txKey)
-    r.log.Infof("Validate key=%s state=%s", txKey, state)
+    r.log.Infof("Validate transaction key=%s state=%s", txKey, state)
     if state == CONFIRMED {
         return true
     }
@@ -228,7 +228,7 @@ func (r *RoundRobinSigner) signPeerMsg(msg *peer_contact.PeerMessage) bool {
     //        return false
     //    }
     //}
-    r.log.Infof("sign peer msg %v", msg.SignedBy)
+    r.log.Infof("Transaction valid, sign peer msg %v", msg.SignedBy)
 
     data, err = r.kM.SignTransaction(data)
     if err != nil {
@@ -250,7 +250,7 @@ func (r *RoundRobinSigner) signPeerMsg(msg *peer_contact.PeerMessage) bool {
 func (r *RoundRobinSigner) sendMessage(msg *peer_contact.PeerMessage) bool {
         destination := (r.myNodeID + 1) % r.man.N
         tolerance := common.MaxInt(1, r.man.N - r.man.Q)
-        r.log.Infof("sendMessage to peer %d missed=%d tolerance=%d", destination, msg.NodesMissed, tolerance)
+        //r.log.Infof("sendMessage to peer %d missed=%d tolerance=%d", destination, msg.NodesMissed, tolerance)
 
         for msg.NodesMissed < tolerance {
             err := r.peer.SendMsg(r.man, destination, msg)
@@ -329,7 +329,7 @@ func (r *RoundRobinSigner) processNewPeerMsgs(msgs []*peer_contact.PeerMessage) 
             continue
         }
 
-        r.log.Infof("signed by n=%d q=%d", len(msg.SignedBy), r.man.Q)
+        r.log.Infof("processNewPeerMsgs, so far signed by n=%d q=%d", len(msg.SignedBy), r.man.Q)
         if len(msg.SignedBy) == r.man.Q {
             toSend = append(toSend, msg)
             continue

@@ -38,14 +38,14 @@ type Coin interface {
      *
      * Connect to the specified coin core node. Return error if failed.
      */
-    Attach(coinName string) error
+    Attach() error
 
     /**
      * GetTopBlockID
      *
      * Returns the ID of the newest block in the chain.
      */
-    GetTopBlockID() (int, error)
+    GetTopBlockID() (int64, error)
 
     /**
      * GetDepositsInBlock
@@ -56,7 +56,7 @@ type Coin interface {
      * Returns nil if no matching deposits.
      * Returns error of error encountered
      */
-    GetDepositsInBlock(blockID int, trustAddress string) ([]*Deposit, error)
+    GetDepositsInBlock(blockID int64, trustAddress string) ([]*Deposit, error)
 
     /**
      * SendWithdrawl
@@ -71,6 +71,11 @@ type Coin interface {
     SendWithdrawal(apiAddress string, w Withdrawal, s []byte) error
 }
 
-func NewCoin() (Coin, error) {
-    return &CoinProxy{}, nil
+func NewDummyCoin() (Coin, error) {
+    return &DummyCoin{}, nil
+}
+
+
+func NewEthereumCoin() (Coin, error) {
+    return &EthereumCoin{}, nil
 }

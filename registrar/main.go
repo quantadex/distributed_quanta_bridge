@@ -11,6 +11,7 @@ import (
 	"github.com/quantadex/distributed_quanta_bridge/common/msgs"
 	"github.com/quantadex/distributed_quanta_bridge/common/logger"
 	"bytes"
+	"strings"
 )
 
 type Server struct {
@@ -51,6 +52,21 @@ func (server *Server) setRoute() {
 	server.handlers.HandleFunc("/registry/api/health", server.receiveHealthCheck)
 	server.handlers.HandleFunc("/registry/api/manifest", server.manifest)
 	server.handlers.HandleFunc("/registry/api/register", server.register)
+	server.handlers.HandleFunc("/registry/api/getaddr", server.getaddress)
+	fs := http.FileServer(http.Dir("static"))
+	server.handlers.Handle("/static/", http.StripPrefix("/static/", fs))
+}
+
+func (server *Server) getaddress(w http.ResponseWriter, request *http.Request) {
+	query := request.URL.Query().Get("token")
+	auth := strings.Split(request.Header.Get("Authorization"),":")
+
+	if query == "ETH" {
+		server.registry.GetAddress(auth[0])
+	} else {
+		w.WriteHeader(http.StatusBadRequest)
+		w.Write([]byte("Unsupported coin"))
+	}
 }
 
 func (server *Server) register(w http.ResponseWriter, request *http.Request) {
