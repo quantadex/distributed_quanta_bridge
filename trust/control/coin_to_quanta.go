@@ -9,6 +9,8 @@ import (
     "github.com/quantadex/distributed_quanta_bridge/trust/key_manager"
     "github.com/quantadex/distributed_quanta_bridge/trust/peer_contact"
     "fmt"
+    "github.com/ethereum/go-ethereum/common"
+    "github.com/spf13/viper"
 )
 
 /**
@@ -25,6 +27,7 @@ type CoinToQuanta struct {
     man *manifest.Manifest
     peer peer_contact.PeerContact
     coinName string
+    trustAddress common.Address
     rr *RoundRobinSigner
 }
 
@@ -52,6 +55,7 @@ func NewCoinToQuanta(   log logger.Logger,
     res.coinName = coinName
     res.peer = peer
     res.rr = NewRoundRobinSigner(log, man, nodeID, kM, db, q, peer)
+    res.trustAddress = common.HexToAddress(viper.GetString("TRUST_ETHEREUM_ADDR"))
     return res
 }
 
@@ -60,7 +64,7 @@ func NewCoinToQuanta(   log logger.Logger,
  *
  * Returns a list of new blocks added to the coin block chain.
  */
-func (c *CoinToQuanta) getNewCoinBlockIDs() []int {
+func (c *CoinToQuanta) getNewCoinBlockIDs() []int64 {
     lastProcessed, valid := getLastBlock(c.db, c.coinName)
     if !valid {
         c.log.Error("Failed to get last processed ID")
@@ -82,7 +86,7 @@ func (c *CoinToQuanta) getNewCoinBlockIDs() []int {
         c.log.Debug(fmt.Sprintf("Coin2Quanta: No new block last=%d top=%d", lastProcessed, currentTop))
         return nil
     }
-    blocks := make([]int, 0)
+    blocks := make([]int64, 0)
     for i := lastProcessed+1; i <= currentTop; i++ {
         blocks = append(blocks, i)
     }
@@ -96,13 +100,24 @@ func (c *CoinToQuanta) getNewCoinBlockIDs() []int {
  *
  * Returns deposits made to the coin trust account in this block
  */
-func (c *CoinToQuanta) getDepositsInBlock(blockID int) []*coin.Deposit {
+func (c *CoinToQuanta) getDepositsInBlock(blockID int64) []*coin.Deposit {
     deposits, err := c.coinChannel.GetDepositsInBlock(blockID, c.man.ContractAddress)
     if err != nil {
         c.log.Error("Failed to get deposits from block")
         return nil
     }
-    return deposits
+
+    // let's make sure we can associate with quanta addresses
+    linkedDeposits := []*coin.Deposit{}
+    for _, d := range deposits {
+        if q, e := c.db.GetValue(ETHADDR_QUANTAADDR, d.SenderAddr); e == nil && q != nil {
+            d.QuantaAddr = *q
+            linkedDeposits = append(linkedDeposits, d)
+            c.log.Infof("Deposit is linked to %s", d.QuantaAddr)
+        }
+    }
+
+    return linkedDeposits
 }
 
 /**
@@ -142,6 +157,22 @@ func (c *CoinToQuanta) DoLoop() {
                 continue
             }
             c.rr.processNewDeposits(deposits)
+        }
+
+        for _, blockID := range blockIDs {
+            addresses, err := c.coinChannel.GetForwardersInBlock(blockID)
+            if err != nil {
+                continue
+            }
+
+            for _, addr := range addresses {
+                if addr.Trust.Hex() == c.trustAddress.Hex() {
+                    c.db.SetValue(ETHADDR_QUANTAADDR, addr.ContractAddress.Hex(),"", addr.QuantaAddr)
+                    c.log.Infof("Got new ETH->QUANTA address, %s -> %s", addr.ContractAddress.Hex(), addr.QuantaAddr)
+                } else {
+                    c.log.Error("Forward does not point to our trust address " + addr.Trust.Hex())
+                }
+            }
         }
     }
 

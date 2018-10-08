@@ -284,18 +284,26 @@ func (l *Listener) GetForwardContract(blockNumber int64) ([]*ForwardInput, error
 	events := []*ForwardInput{}
 	for _, tx := range blocks.Transactions() {
 		data := common.Bytes2Hex(tx.Data())
-		println(data)
+		//println(data)
 
 		// matches our forwarding contract
 		if strings.HasPrefix(data, Forwarder.ForwarderBin) {
 			remain := strings.TrimPrefix(data, Forwarder.ForwarderBin)
+			println(remain)
 
 			input := &ForwardInput{}
-			err = ABI.Unpack(input, "", common.Hex2Bytes(remain))
+			vals, err := ABI.Constructor.Inputs.UnpackValues(common.Hex2Bytes(remain))
 			if err != nil {
-				println("Cannot unpack ", err)
+				println("Cannot unpack ", err.Error())
 				continue
 			}
+			if len(vals) != 2 {
+				println("Values should be 2")
+				continue
+			}
+			input.ContractAddress = tx.To()
+			input.Trust = vals[0].(common.Address)
+			input.QuantaAddr = vals[1].(string)
 
 			events = append(events, input)
 		}

@@ -3,6 +3,7 @@ package coin
 import (
 	"testing"
 	"github.com/ethereum/go-ethereum/ethclient"
+	"fmt"
 )
 
 // https://goethereumbook.org/event-read-erc20/
@@ -48,7 +49,7 @@ func TestForwardScan(t *testing.T) {
 	//to := "0xe0006458963c3773b051e767c5c63fee24cd7ff9"
 
 	client := &Listener{NetworkID: ROPSTEN_NETWORK_ID}
-	ethereumClient, err := ethclient.Dial("http://" + server)
+	ethereumClient, err := ethclient.Dial("https://ropsten.infura.io/v3/7b880b2fb55c454985d1c1540f47cbf6")
 	if err != nil {
 		t.Error(err)
 		return
@@ -56,10 +57,12 @@ func TestForwardScan(t *testing.T) {
 
 	client.Client = ethereumClient
 	client.Start()
-	_, err = client.GetForwardContract(4185674)
+	contracts, err := client.GetForwardContract(4186074)
 	if err != nil {
 		println("err... " + err.Error())
 		t.Error(err)
 		return
 	}
+
+	fmt.Printf("%d %v\n", len(contracts), contracts[0].QuantaAddr)
 }

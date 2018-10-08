@@ -38,7 +38,8 @@ NETWORK_PASSPHRASE: QUANTA Test Network ; September 2018
 REGISTRAR_IP: localhost
 REGISTRAR_PORT: 5001
 ETHEREUM_NETWORK_ID: 3
-ETHEREUM_RPC: testnet-02.quantachain.io:8545
+ETHEREUM_RPC: https://ropsten.infura.io/v3/7b880b2fb55c454985d1c1540f47cbf6
+TRUST_ETHEREUM_ADDR: 0xe0006458963c3773b051e767c5c63fee24cd7ff9
 `, port, port, key))
 
 	viper.ReadConfig(bytes.NewBuffer(config))

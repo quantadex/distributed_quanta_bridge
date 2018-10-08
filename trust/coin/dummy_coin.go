@@ -43,6 +43,10 @@ func (c *DummyCoin) SendWithdrawal(apiAddress string, w Withdrawal, s []byte) er
 	panic("implement me")
 }
 
+func (c *DummyCoin) GetForwardersInBlock(blockID int64, trustAddress string) ([]*ForwardInput, error) {
+	return []*ForwardInput{}, nil
+}
+
 func (c *DummyCoin) Attach() error {
 	return nil
 }

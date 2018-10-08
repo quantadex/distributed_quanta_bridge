@@ -94,13 +94,13 @@ func initNode() (*TrustNode, bool) {
         control.InitLedger(node.db)
     }
 
-    node.c, err = coin.NewCoin()
+    node.c, err = coin.NewEthereumCoin()
     if err != nil {
         node.log.Error("Failed to create new coin")
         return nil, false
     }
     node.coinName = viper.GetString(COIN_NAME)
-    err = node.c.Attach(node.coinName)
+    err = node.c.Attach()
     if err != nil {
         node.log.Error("Failed to attach to coin")
         return nil, false
@@ -188,6 +188,8 @@ func (n *TrustNode) registerNode() bool {
         }
         man := n.reg.GetManifest()
         if man != nil {
+            // OVERRIDE WITH OUR OWN
+            man.ContractAddress = viper.GetString("TRUST_ETHEREUM_ADDR")
             n.man = man
             n.nodeID, err = n.man.FindNode(nodeIP, nodePort, nodeKey)
             if err != nil {

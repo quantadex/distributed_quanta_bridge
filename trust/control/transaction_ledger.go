@@ -18,6 +18,7 @@ const (
     QUANTA_CONFIRMED= "quanta_confirmed"
     COIN_CONFIRMED = "coin_confirmed"
     LAST_BLOCK = "last_block"
+    ETHADDR_QUANTAADDR = "ethaddr2quantaaddr"
     CONFIRMED = "C"
     SIGNED = "S"
     ERROR = "E"
@@ -40,6 +41,10 @@ func InitLedger(kv kv_store.KVStore) error {
         return errors.New("Failed to create table")
     }
     err = kv.CreateTable(LAST_BLOCK)
+    if err != nil {
+        return errors.New("Failed to create table")
+    }
+    err = kv.CreateTable(ETHADDR_QUANTAADDR)
     if err != nil {
         return errors.New("Failed to create table")
     }
@@ -107,7 +112,7 @@ func signTx(db kv_store.KVStore, table string, k string) bool {
  * Returns the last processed block for a coin.
  * Valid is true if succeeded. False otherwise.
  */
-func getLastBlock(db kv_store.KVStore, coinName string) (int, bool) {
+func getLastBlock(db kv_store.KVStore, coinName string) (int64, bool) {
     v, err := db.GetValue(LAST_BLOCK, coinName)
     if err != nil {
         return 0, false
@@ -115,7 +120,7 @@ func getLastBlock(db kv_store.KVStore, coinName string) (int, bool) {
     if v == nil {
         return 0, true
     }
-    i, err := strconv.Atoi(*v)
+    i, err := strconv.ParseInt(*v, 10, 64)
     if err != nil {
         return 0, false
     }
@@ -128,7 +133,7 @@ func getLastBlock(db kv_store.KVStore, coinName string) (int, bool) {
  * Updates the last processed block. Only if new value is greater than previous value.
  * Returns true if succeeded in update.
  */
-func setLastBlock(db kv_store.KVStore, coinName string, newVal int) bool {
+func setLastBlock(db kv_store.KVStore, coinName string, newVal int64) bool {
     prevBlock, valid := getLastBlock(db, coinName)
     if !valid {
         return false
@@ -136,7 +141,7 @@ func setLastBlock(db kv_store.KVStore, coinName string, newVal int) bool {
     if newVal < prevBlock {
         return false
     }
-    err := db.SetValue(LAST_BLOCK, coinName, strconv.Itoa(prevBlock), strconv.Itoa(newVal))
+    err := db.SetValue(LAST_BLOCK, coinName, strconv.FormatInt(prevBlock,10), strconv.FormatInt(newVal,10))
     if err != nil {
         println("Bucket is not found.")
         return false

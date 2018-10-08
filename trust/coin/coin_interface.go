@@ -7,6 +7,7 @@ package coin
  */
 type Deposit struct {
     CoinName string // Type of coin (e.g. ETH)
+    SenderAddr string
     QuantaAddr string // Destination quanta acount
     Amount int64 // Deposit size
     BlockID int // The blockID in which this deposit was found
@@ -57,6 +58,15 @@ type Coin interface {
      * Returns error of error encountered
      */
     GetDepositsInBlock(blockID int64, trustAddress string) ([]*Deposit, error)
+
+    /**
+     * GetForwardersInBlock
+     *
+     * Forwarders are smart contracts that are pointing into our trust address
+     * with information about QUANTA Address
+     * We will record this in our KV later, to know where deposits came from.
+     */
+    GetForwardersInBlock(blockID int64) ([]*ForwardInput, error)
 
     /**
      * SendWithdrawl

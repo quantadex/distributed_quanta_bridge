@@ -73,7 +73,8 @@ func WeiToStellar(valueInWei int64) int64 {
 }
 
 type ForwardInput struct {
-	address common.Address
-	quantaAddress string
+	ContractAddress *common.Address
+	Trust common.Address
+	QuantaAddr string
 }
 
