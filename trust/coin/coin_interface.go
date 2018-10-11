@@ -81,6 +81,9 @@ type Coin interface {
      * Return error if one was encountered
      */
     SendWithdrawal(apiAddress string, w Withdrawal, s []byte) error
+
+    EncodeRefund(w Withdrawal) (string, error)
+    DecodeRefund(encoded string) (*Withdrawal, error)
 }
 
 func NewDummyCoin() (Coin, error) {

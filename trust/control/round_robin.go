@@ -155,7 +155,7 @@ func (r *RoundRobinSigner) validateIntegrity(msg *peer_contact.PeerMessage) bool
         return false
     }
 
-    decoded, err := r.kM.DecodeTransaction(msg.MSG)
+    decoded, err := r.quanta.DecodeTransaction(msg.MSG)
     if err != nil {
         r.log.Error("validateIntegrity: failed to decode message")
         return false
@@ -271,8 +271,6 @@ func (r *RoundRobinSigner) sendMessage(msg *peer_contact.PeerMessage) bool {
  * into defered queue.
  */
 func (r *RoundRobinSigner) processNewDeposits(deposits []*coin.Deposit) {
-
-
     for _, deposit := range deposits {
 
         // let's confirm them

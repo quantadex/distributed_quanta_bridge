@@ -1,16 +1,16 @@
 package main
 
 import (
-	"testing"
 	"github.com/spf13/viper"
 	"bytes"
 	"fmt"
-	"time"
 	"github.com/quantadex/distributed_quanta_bridge/registrar/service"
 	"github.com/quantadex/distributed_quanta_bridge/common/logger"
 	"github.com/quantadex/distributed_quanta_bridge/trust/coin"
 	"sync"
 	"os"
+	"testing"
+	"time"
 )
 
 var NODE_KEYS = []string {
@@ -95,12 +95,28 @@ func DoLoop(nodes []*TrustNode, blockIds []int64) {
 	}
 }
 
-func TestNode(t *testing.T) {
+/**
+ * This one test native token from block 4186072
+ */
+func TestRopstenNativeETH(t *testing.T) {
 	StartRegistry()
-
 	nodes := StartNodes(3)
-
 	time.Sleep(time.Millisecond*250)
+	DoLoop(nodes, []int64{4186072, 4186072, 4186074}) // we create the original smart contract on 74
+	DoLoop(nodes, []int64{4196673})  // we make deposit
+	DoLoop(nodes, []int64{4196674})
+}
+
+func TestRopstenERC20Token(t *testing.T) {
+	StartRegistry()
+	nodes := StartNodes(3)
+	time.Sleep(time.Millisecond*250)
+	DoLoop(nodes, []int64{4186072, 4186072, 4186074}) // we create the original smart contract on 74
+	DoLoop(nodes, []int64{4196673})  // we make deposit
+	DoLoop(nodes, []int64{4196674})
+}
+
+func TestDummyCoin(t *testing.T) {
 
 	//dummy := coin.GetDummyInstance()
 	//dummy.CreateNewBlock()
@@ -112,9 +128,4 @@ func TestNode(t *testing.T) {
 	//dummy.AddDeposit(&coin.Deposit{"ETH", "",
 	//				"QDCFARPB4ZR7VGTEL2XII5OPPUPPX2PQAYZURXRVR6Z34GNWTUHGVSXT",
 	//				15*10000000, 1})
-
-	DoLoop(nodes, []int64{4186072, 4186072, 4186074}) // we create the original smart contract on 74
-	DoLoop(nodes, []int64{4196673})  // we make deposit
-	DoLoop(nodes, []int64{4196674})
-
 }

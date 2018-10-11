@@ -7,6 +7,13 @@ import (
     "github.com/quantadex/distributed_quanta_bridge/trust/coin"
     "encoding/json"
     "github.com/quantadex/distributed_quanta_bridge/trust/key_manager"
+    "github.com/quantadex/distributed_quanta_bridge/common/manifest"
+    "github.com/quantadex/distributed_quanta_bridge/trust/peer_contact"
+    "github.com/quantadex/quanta_book/consensus/cosi"
+    "time"
+    "github.com/quantadex/distributed_quanta_bridge/common/queue"
+    "github.com/pkg/errors"
+    "encoding/base64"
 )
 
 const QUANTA = "QUANTA"
@@ -27,6 +34,9 @@ type QuantaToCoin struct {
     kM key_manager.KeyManager
     coinName string
     nodeID int
+    rr *RoundRobinSigner
+    cosi *cosi.Cosi
+    trustPeer *peer_contact.TrustPeerNode
 }
 
 /**
@@ -39,10 +49,13 @@ func NewQuantaToCoin(   log logger.Logger,
                         db kv_store.KVStore,
                         c coin.Coin,
                         q quanta.Quanta,
+                        man *manifest.Manifest,
                         quantaTrustAddress string,
                         coinContractAddress string,
                         kM key_manager.KeyManager,
                         coinName string,
+                        peer peer_contact.PeerContact,
+                        queue_ queue.Queue,
                         nodeID int ) *QuantaToCoin {
     res := &QuantaToCoin{}
     res.logger = log
@@ -54,6 +67,57 @@ func NewQuantaToCoin(   log logger.Logger,
     res.kM = kM
     res.coinName = coinName
     res.nodeID = nodeID
+    res.trustPeer = peer_contact.NewTrustPeerNode(man, peer, nodeID, queue_)
+    res.cosi = cosi.NewProtocol(res.trustPeer, nodeID == 0, time.Second*3)
+
+    res.cosi.Verify = func(msg string) error {
+        withdrawal, err := res.coinChannel.DecodeRefund(msg)
+        if err != nil {
+            log.Error("Unable to decode refund at persist")
+            return err
+        }
+
+        refKey := getKeyName(withdrawal.CoinName, withdrawal.DestinationAddress, withdrawal.QuantaBlockID)
+        state := getState(db, QUANTA_CONFIRMED, refKey)
+        if state == CONFIRMED {
+            return nil
+        }
+        return errors.New("Unable to verify: " + refKey)
+    }
+
+    res.cosi.Persist = func(msg string) error {
+        withdrawal, err := res.coinChannel.DecodeRefund(msg)
+        if err != nil {
+            log.Error("Unable to decode refund at persist")
+            return err
+        }
+
+        refKey := getKeyName(withdrawal.CoinName, withdrawal.DestinationAddress, withdrawal.QuantaBlockID)
+
+        success := signTx(db, QUANTA_CONFIRMED, refKey)
+        if !success {
+            res.logger.Error("Failed to confirm transaction")
+            return errors.New("Failed to confirm transaction")
+        }
+        return nil
+    }
+
+    res.cosi.SignMsg = func(msg string) (string, error) {
+        decoded, err := base64.StdEncoding.DecodeString(msg)
+        if err != nil {
+            log.Error("Unable to Sign refund msg")
+            return "", err
+        }
+        encodedSig, err := res.kM.SignMessage(decoded)
+        if err != nil {
+            log.Error("Unable to Sign/encode refund msg")
+            return "", err
+        }
+
+        return base64.StdEncoding.EncodeToString(encodedSig), nil
+    }
+
+    res.cosi.Start()
     return res
 }
 
@@ -103,25 +167,6 @@ func (c *QuantaToCoin) getRefundsInBlock(blockID int64) []quanta.Refund {
         return nil
     }
     return refunds
-}
-
-/**
- * validateAndSignRefund
- *
- * Checks that the refund has not been previously issued and marks it signed in DB.
- */
-func (c *QuantaToCoin) validateAndSignRefund(refund *quanta.Refund) bool {
-    refKey := getKeyName(refund.CoinName, refund.DestinationAddress, refund.BlockID)
-    success := confirmTx(c.db, QUANTA_CONFIRMED, refKey)
-    if !success {
-        c.logger.Error("Failed to confirm transaction")
-        return false
-    }
-    success = signTx(c.db, QUANTA_CONFIRMED, refKey)
-    if !success {
-        return false
-    }
-    return true
 }
 
 /**
@@ -177,12 +222,38 @@ func (c *QuantaToCoin) DoLoop() {
         if refunds == nil {
             continue
         }
+
+        // feed messages back
+        msg := c.trustPeer.GetMsg()
+        c.cosi.CosiMsgChan <- msg
+
         for _, refund := range refunds {
-            valid := c.validateAndSignRefund(&refund)
-            if !valid {
-                continue //skip invalid. Probably log.
+            refKey := getKeyName(refund.CoinName, refund.DestinationAddress, refund.BlockID)
+            confirmTx(c.db, QUANTA_CONFIRMED, refKey)
+
+            if c.nodeID == 0 {
+                encoded, err := c.coinChannel.EncodeRefund(coin.Withdrawal{
+                    CoinName: refund.CoinName,
+                    DestinationAddress: refund.DestinationAddress,
+                    QuantaBlockID: refund.BlockID,
+                })
+
+                if err != nil {
+                    c.logger.Error("Failed to encode refund " + err.Error())
+                    continue
+                }
+
+                c.cosi.StartNewRound(encoded)
+
+                result := <- c.cosi.FinalSigChan
+
+                if result.Msg == nil {
+                    c.logger.Error("Unable to sign for refund")
+                } else {
+                    c.logger.Infof("Great! Cosi successfully signed refund")
+                    c.submitRefund(nil)
+                }
             }
-            c.submitRefund(&refund)
         }
     }
 

@@ -37,6 +37,9 @@
     unused-packages = false
     non-go = false
 
+[[override]]
+  name = "github.com/quantadex/quanta_book"
+  branch = "develop"
 
 [[override]]
   name = "github.com/stellar/go"

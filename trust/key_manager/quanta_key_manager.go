@@ -8,8 +8,6 @@ import (
 	"github.com/stellar/go/xdr"
 	"github.com/stellar/go/build"
 	"github.com/stellar/go/keypair"
-	"github.com/quantadex/distributed_quanta_bridge/trust/coin"
-	"github.com/pkg/errors"
 	"log"
 )
 
@@ -41,6 +39,7 @@ func (k *QuantaKeyManager) SignTransaction(base64 string) (string, error) {
 	}
 	return xdr.MarshalBase64(b.E)
 }
+
 
 func (k *QuantaKeyManager) VerifyTransaction(base64 string) (bool, error) {
 	txe := &xdr.TransactionEnvelope{}
@@ -85,12 +84,14 @@ func (k *QuantaKeyManager) GetPublicKey() (string, error) {
 	return k.key.Address(), nil
 }
 
-func (k *QuantaKeyManager) SignMessage(original []byte) ([]byte, error) {
-	return k.key.Sign(original)
-}
 
 func (k *QuantaKeyManager) VerifySignatureObj(msg interface{}, signature string) bool {
 	return crypto.VerifyMessage(msg, k.key.Address(), signature)
+}
+
+
+func (k *QuantaKeyManager) SignMessage(original []byte) ([]byte, error) {
+	return k.key.Sign(original)
 }
 
 func (k *QuantaKeyManager) SignMessageObj(msg interface{}) *string {
@@ -101,28 +102,4 @@ func (k *QuantaKeyManager) SignMessageObj(msg interface{}) *string {
 	signed, _ := k.key.Sign(bData.Bytes())
 	signedbase64 := base64.StdEncoding.EncodeToString(signed)
 	return &signedbase64
-}
-
-func (k *QuantaKeyManager) DecodeTransaction(base64 string) (*coin.Deposit, error) {
-	txe := &xdr.TransactionEnvelope{}
-	err := xdr.SafeUnmarshalBase64(base64, txe)
-	if err != nil {
-		return nil, err
-	}
-
-	ops := txe.Tx.Operations
-	if len(ops) != 1 {
-		return nil, errors.New("no operations found")
-	}
-
-	paymentOp, success := ops[0].Body.GetPaymentOp()
-	if !success {
-		return nil, errors.New("no payment op found")
-	}
-
-	return &coin.Deposit{ CoinName: paymentOp.Asset.String(),
-					QuantaAddr: paymentOp.Destination.Address(),
-					Amount: int64(paymentOp.Amount),
-					BlockID: 0,
-	}, nil
 }

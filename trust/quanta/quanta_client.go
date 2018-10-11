@@ -11,6 +11,8 @@ import (
 	"github.com/quantadex/distributed_quanta_bridge/common/queue"
 	"encoding/json"
 	"github.com/quantadex/distributed_quanta_bridge/common/logger"
+	"github.com/stellar/go/xdr"
+	"errors"
 )
 
 type QuantaClientOptions struct {
@@ -54,6 +56,32 @@ func (q *QuantaClient) CreateProposeTransaction(deposit *coin.Deposit) (string, 
 
 	return txe.Base64()
 }
+
+
+func (k *QuantaClient) DecodeTransaction(base64 string) (*coin.Deposit, error) {
+	txe := &xdr.TransactionEnvelope{}
+	err := xdr.SafeUnmarshalBase64(base64, txe)
+	if err != nil {
+		return nil, err
+	}
+
+	ops := txe.Tx.Operations
+	if len(ops) != 1 {
+		return nil, errors.New("no operations found")
+	}
+
+	paymentOp, success := ops[0].Body.GetPaymentOp()
+	if !success {
+		return nil, errors.New("no payment op found")
+	}
+
+	return &coin.Deposit{ CoinName: paymentOp.Asset.String(),
+		QuantaAddr: paymentOp.Destination.Address(),
+		Amount: int64(paymentOp.Amount),
+		BlockID: 0,
+	}, nil
+}
+
 
 func (q *QuantaClient) Attach() error {
 	q.horizonClient = &horizon.Client{

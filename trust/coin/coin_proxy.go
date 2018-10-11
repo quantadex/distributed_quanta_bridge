@@ -22,3 +22,6 @@ func (c *CoinProxy) SendWithdrawal(apiAddress string, w Withdrawal, s []byte) er
 }
 
 
+func (c *CoinProxy) EncodeRefund(w Withdrawal) (string, error) {
+	return "", nil
+}

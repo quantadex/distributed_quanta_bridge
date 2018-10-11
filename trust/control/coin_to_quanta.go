@@ -166,7 +166,7 @@ func (c *CoinToQuanta) DoLoop(blockIDs []int64) {
 
             for _, addr := range addresses {
                 if addr.Trust.Hex() == c.trustAddress.Hex() {
-                    c.log.Infof("Got new ETH->QUANTA address, %s -> %s", addr.ContractAddress.Hex(), addr.QuantaAddr)
+                    c.log.Infof("New Forwarder Address ETH->QUANTA address, %s -> %s", addr.ContractAddress.Hex(), addr.QuantaAddr)
                     c.db.SetValue(ETHADDR_QUANTAADDR, addr.ContractAddress.Hex(),"", addr.QuantaAddr)
                 } else {
                     c.log.Error("Forward does not point to our trust address " + addr.Trust.Hex())

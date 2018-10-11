@@ -1,7 +1,5 @@
 package key_manager
 
-import "github.com/quantadex/distributed_quanta_bridge/trust/coin"
-
 /**
  * KeyManager
  *
@@ -68,11 +66,6 @@ type KeyManager interface {
      */
     VerifyTransaction(base64 string) (bool, error)
 
-    /**
-     * DecodeMessage
-     * Converts the base64 tx back to Deposit
-     */
-     DecodeTransaction(base64 string) (*coin.Deposit, error)
 }
 
 func NewKeyManager(network string) (KeyManager, error) {

@@ -47,6 +47,13 @@ func nodeAgent(q queue.Queue, listenIp string, listenPort int) {
         log.Error("Failed to create endpoint")
         return
     }
+
+    err = listener.AddEndpoint(queue.REFUNDMSG_QUEUE, "/node/api/refund")
+    if err != nil {
+        log.Error("Failed to create endpoint")
+        return
+    }
+
     err = listener.Run(listenIp, listenPort)
     if err != nil {
         log.Error("Failed to start listener")

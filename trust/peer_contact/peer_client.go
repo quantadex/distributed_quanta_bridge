@@ -55,6 +55,10 @@ func (p *PeerClient) GetMsg() *PeerMessage {
 		fmt.Printf("Unable to parse json\n")
 		return nil
 	}
+
+	// verify signature here.
+
+
 	//println("parsed peer message")
 	return &msg.Body
 }

@@ -53,12 +53,54 @@
   version = "v1.1.1"
 
 [[projects]]
+  digest = "1:e921c3d4324ffdcb4fd39d5f47a832f2112d44731a5f21d8ae0ccfe82e608711"
+  name = "github.com/daviddengcn/go-colortext"
+  packages = ["."]
+  pruneopts = "T"
+  revision = "17e75f6184bc9e727756cd0d82e0af58b1fc7191"
+  version = "1.0.0"
+
+[[projects]]
   digest = "1:e47d51dab652d26c3fba6f8cba403f922d02757a82abdc77e90df7948daf296e"
   name = "github.com/deckarep/golang-set"
   packages = ["."]
   pruneopts = "T"
   revision = "cbaa98ba5575e67703b32b4b19f73c91f3c4159e"
   version = "v1.7.1"
+
+[[projects]]
+  digest = "1:acbf301843e8b932e8db489e0314916f0ddad2a9b7ae11f21f4683933f79d669"
+  name = "github.com/dedis/cothority"
+  packages = [
+    "lib/cliutils",
+    "lib/crypto",
+    "lib/dbg",
+    "lib/monitor",
+    "lib/network",
+  ]
+  pruneopts = "T"
+  revision = "a8d5a67dc0bd423014d5cba3cc23493bba18b882"
+  version = "0.7.5"
+
+[[projects]]
+  branch = "v0"
+  digest = "1:e9c15c3f53ea1b981680adfa6ac70b19fa77ee71e5c9ba4a9dcdde651fe86d7a"
+  name = "github.com/dedis/crypto"
+  packages = [
+    "abstract",
+    "edwards",
+    "random",
+  ]
+  pruneopts = "T"
+  revision = "8f53a63e87fd1781107812c75bc30004543e5b9c"
+
+[[projects]]
+  digest = "1:2bc670753d702d189816576bff13ad9abe6a3a23ffe9d2e06b8b92799856598f"
+  name = "github.com/dedis/protobuf"
+  packages = ["."]
+  pruneopts = "T"
+  revision = "ed0d97d677d4dc2485814e88dcacaa1637c46c8e"
+  version = "v1.0.3"
 
 [[projects]]
   branch = "master"
@@ -75,6 +117,10 @@
     "containers",
     "lists",
     "lists/doublylinkedlist",
+    "maps",
+    "maps/treemap",
+    "trees",
+    "trees/redblacktree",
     "utils",
   ]
   pruneopts = "T"
@@ -161,6 +207,14 @@
   version = "v1.8.0"
 
 [[projects]]
+  digest = "1:a2ecb56e5053d942aafc86738915fb94c9131bac848c543b8b6764365fd69080"
+  name = "github.com/golang/protobuf"
+  packages = ["proto"]
+  pruneopts = "T"
+  revision = "aa810b61a9c79d51363740d207bb46cf8e620ed5"
+  version = "v1.2.0"
+
+[[projects]]
   branch = "master"
   digest = "1:6027b20c168728321bd99ad01f35118eded457b01c03e647a84833ab331f2f5b"
   name = "github.com/golang/snappy"
@@ -242,6 +296,14 @@
   version = "v1.1.0"
 
 [[projects]]
+  digest = "1:a26a096cdbb694e8e3eaa212033cfcf14b4e363bc124facd8198dac9037f6408"
+  name = "github.com/montanaflynn/stats"
+  packages = ["."]
+  pruneopts = "T"
+  revision = "1bf9dbcd8cbe1fdb75add3785b1d4a9a646269ab"
+  version = "0.3.0"
+
+[[projects]]
   branch = "master"
   digest = "1:7e60fc45b5bbeb666c6cc239d3813e54851d836d2c3976fd23737e45905ed06c"
   name = "github.com/nullstyle/go-xdr"
@@ -290,6 +352,19 @@
   version = "v1.0.0"
 
 [[projects]]
+  branch = "develop"
+  digest = "1:326945832640370fe0dc32b080d9a6df34dec8410022dccdee3269fad90d64b3"
+  name = "github.com/quantadex/quanta_book"
+  packages = [
+    "common",
+    "consensus",
+    "orderbook",
+    "storage/pb",
+  ]
+  pruneopts = "T"
+  revision = "220d75b9b9b919abafed964a8edb96b5c200a661"
+
+[[projects]]
   digest = "1:9787d2d3220cbfd444596afd03ab0abcf391df169b789fbe3eae27fa2e426cf6"
   name = "github.com/rjeczalik/notify"
   packages = ["."]
@@ -304,6 +379,22 @@
   pruneopts = "T"
   revision = "3fb1b69b103a84de38a19c3c6ec073dd6caa4d3f"
   version = "v1.5.0"
+
+[[projects]]
+  branch = "master"
+  digest = "1:4a1ffd13b6538dbc2241054a103255c0c3f966a73e324c8cf174e9e76576fb81"
+  name = "github.com/ryszard/goskiplist"
+  packages = ["skiplist"]
+  pruneopts = "T"
+  revision = "2dfbae5fcf46374f166f8969cb07e167f1be6273"
+
+[[projects]]
+  digest = "1:274f67cb6fed9588ea2521ecdac05a6d62a8c51c074c1fccc6a49a40ba80e925"
+  name = "github.com/satori/go.uuid"
+  packages = ["."]
+  pruneopts = "T"
+  revision = "f58768cc1a7a7e77a3bd49e98cdd21419399b6a3"
+  version = "v1.2.0"
 
 [[projects]]
   digest = "1:54bd573538ca13ccf85d18c99249d934f17957f17263256b42565a11c854c1de"
@@ -492,6 +583,25 @@
   revision = "f60d9635b16a5a57b06eaa119614ba4df421966a"
 
 [[projects]]
+  branch = "v0"
+  digest = "1:e9c15c3f53ea1b981680adfa6ac70b19fa77ee71e5c9ba4a9dcdde651fe86d7a"
+  name = "gopkg.in/dedis/crypto.v0"
+  packages = [
+    "abstract",
+    "cipher",
+    "cipher/sha3",
+    "group",
+    "ints",
+    "math",
+    "nist",
+    "random",
+    "subtle",
+    "util",
+  ]
+  pruneopts = "T"
+  revision = "8f53a63e87fd1781107812c75bc30004543e5b9c"
+
+[[projects]]
   branch = "v2"
   digest = "1:3d3f9391ab615be8655ae0d686a1564f3fec413979bb1aaf018bac1ec1bb1cc7"
   name = "gopkg.in/natefinch/npipe.v2"
@@ -517,6 +627,7 @@
     "github.com/ethereum/go-ethereum/accounts/abi",
     "github.com/ethereum/go-ethereum/accounts/abi/bind",
     "github.com/ethereum/go-ethereum/accounts/abi/bind/backends",
+    "github.com/ethereum/go-ethereum/accounts/keystore",
     "github.com/ethereum/go-ethereum/common",
     "github.com/ethereum/go-ethereum/core",
     "github.com/ethereum/go-ethereum/core/types",
@@ -524,6 +635,7 @@
     "github.com/ethereum/go-ethereum/ethclient",
     "github.com/op/go-logging",
     "github.com/pkg/errors",
+    "github.com/quantadex/quanta_book/consensus",
     "github.com/spf13/viper",
     "github.com/stellar/go/build",
     "github.com/stellar/go/clients/horizon",

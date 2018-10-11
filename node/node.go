@@ -145,6 +145,7 @@ func initNode(config Config, targetCoin coin.Coin) (*TrustNode, bool) {
         node.log.Error("Failed to create peer interface")
         return nil, false
     }
+
     err = node.peer.AttachQueue(node.queue)
     if err != nil {
         node.log.Error("Failed to attach to peer listener")
