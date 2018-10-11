@@ -4,6 +4,7 @@ import (
     "github.com/quantadex/distributed_quanta_bridge/trust/peer_contact"
     "github.com/quantadex/distributed_quanta_bridge/trust/coin"
     "github.com/quantadex/distributed_quanta_bridge/common/queue"
+    "github.com/quantadex/distributed_quanta_bridge/common/logger"
 )
 
 /**
@@ -45,7 +46,7 @@ type Quanta interface {
      *
      * Returns the id of the latest quanta block.
      */
-    GetTopBlockID() (int, error)
+    GetTopBlockID() (int64, error)
 
     /**
      * GetRefundsInBlock
@@ -53,7 +54,7 @@ type Quanta interface {
      * Returns a list of refunds that were made to the specified address in the given block.
      * Return nil if no matching deposits.
      */
-    GetRefundsInBlock(blockID int, trustAddress string) ([]Refund, error)
+    GetRefundsInBlock(blockID int64, trustAddress string) ([]Refund, error)
 
     /**
      * ProcessDeposit
@@ -66,8 +67,8 @@ type Quanta interface {
     CreateProposeTransaction(*coin.Deposit) (string, error) // base64 tx envelope
 }
 
-func NewQuanta() (Quanta, error) {
-    return &QuantaClient{}, nil
+func NewQuanta(options QuantaClientOptions) (Quanta, error) {
+    return &QuantaClient{QuantaClientOptions: options}, nil
 }
 
 /**
@@ -80,6 +81,6 @@ type SubmitWorker interface {
     AttachQueue(queue queue.Queue) error
 }
 
-func NewSubmitWorker() (SubmitWorker) {
-    return &SubmitWorkerImpl{}
+func NewSubmitWorker(horizonUrl string, logger logger.Logger) (SubmitWorker) {
+    return &SubmitWorkerImpl{logger: logger, horizonUrl: horizonUrl}
 }

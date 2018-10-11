@@ -35,7 +35,7 @@ func (c *DummyCoin) GetTopBlockID() (int64, error) {
 	return c.index, nil
 }
 
-func (c *DummyCoin) GetDepositsInBlock(blockID int64, trustAddress string) ([]*Deposit, error) {
+func (c *DummyCoin) GetDepositsInBlock(blockID int64, trustAddress map[string]string) ([]*Deposit, error) {
 	return c.deposits[int(blockID)], nil
 }
 
@@ -43,7 +43,7 @@ func (c *DummyCoin) SendWithdrawal(apiAddress string, w Withdrawal, s []byte) er
 	panic("implement me")
 }
 
-func (c *DummyCoin) GetForwardersInBlock(blockID int64, trustAddress string) ([]*ForwardInput, error) {
+func (c *DummyCoin) GetForwardersInBlock(blockID int64) ([]*ForwardInput, error) {
 	return []*ForwardInput{}, nil
 }
 

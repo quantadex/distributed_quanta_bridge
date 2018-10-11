@@ -1,7 +1,6 @@
 package key_manager
 
 import (
-	"github.com/spf13/viper"
 	"bytes"
 	"encoding/json"
 	"encoding/base64"
@@ -73,12 +72,11 @@ func (k *QuantaKeyManager) CreateNodeKeys() error {
 	return nil
 }
 
-func (k *QuantaKeyManager) LoadNodeKeys() error {
+func (k *QuantaKeyManager) LoadNodeKeys(privkey string) error {
 	var err error
-	privateKey := viper.GetString("NODE_KEY")
+	privateKey := privkey
 	k.key, err = keypair.Parse(privateKey)
 	k.seed = privateKey
-	k.network = viper.GetString("NETWORK_PASSPHRASE")
 
 	return err
 }

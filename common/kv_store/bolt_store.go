@@ -75,4 +75,21 @@ func (s *BoltStore) SetValue(tableName string, key string, oldValue string, newV
 	})
 }
 
+func (s *BoltStore) GetAllValues(tableName string) (map[string]string, error) {
+	values := map[string]string{}
+
+	err := s.db.View(func(tx *bolt.Tx) error {
+		b := tx.Bucket([]byte(tableName))
+		if b == nil {
+			return errors.New("bucket not found")
+		}
+
+		return b.ForEach(func(k, v []byte) error {
+			values[string(k)] = string(v)
+			return nil
+		})
+	})
+
+	return values, err
+}
 

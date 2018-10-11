@@ -2,29 +2,37 @@ package coin
 
 import (
 	"github.com/ethereum/go-ethereum/ethclient"
-	"github.com/spf13/viper"
+	"github.com/quantadex/distributed_quanta_bridge/common"
 )
 
 type EthereumCoin struct {
 	client *Listener
+	maxRange int64
+	networkId string
+	ethereumRpc string
 }
 
 func (c *EthereumCoin) Attach() error {
-	client := &Listener{NetworkID: viper.GetString("ETHEREUM_NETWORK_ID")}
-	ethereumClient, err := ethclient.Dial(viper.GetString("ETHEREUM_RPC"))
+	c.client = &Listener{NetworkID: c.networkId}
+	ethereumClient, err := ethclient.Dial(c.ethereumRpc)
 	if err != nil {
 		return err
 	}
 
-	client.Client = ethereumClient
-	return client.Start()
+	c.client.Client = ethereumClient
+	return c.client.Start()
 }
 
 func (c *EthereumCoin) GetTopBlockID() (int64, error) {
-	return c.client.GetTopBlockNumber()
+	topBlockId, err := c.client.GetTopBlockNumber()
+	if err != nil {
+		return 0, err
+	}
+
+	return common.Min64(c.maxRange, topBlockId), nil
 }
 
-func (c *EthereumCoin) GetDepositsInBlock(blockID int64, trustAddress string) ([]*Deposit, error) {
+func (c *EthereumCoin) GetDepositsInBlock(blockID int64, trustAddress map[string]string) ([]*Deposit, error) {
 	ndeposits, err := c.client.GetNativeDeposits(blockID, trustAddress)
 	if err != nil {
 		return nil, err

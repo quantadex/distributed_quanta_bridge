@@ -62,7 +62,7 @@ func NewQuantaToCoin(   log logger.Logger,
  *
  * Gets a list of new quanta blocks since last processed.
  */
-func (c *QuantaToCoin) getNewBlockIDs() []int {
+func (c *QuantaToCoin) getNewBlockIDs() []int64 {
     lastProcessed, valid := getLastBlock(c.db, QUANTA)
     if !valid {
         c.logger.Error("Failed to get last processed block ID")
@@ -84,7 +84,7 @@ func (c *QuantaToCoin) getNewBlockIDs() []int {
         c.logger.Debug("Quanta2Coin: No new block")
         return nil
     }
-    blocks := make([]int, 0)
+    blocks := make([]int64, 0)
     for i := lastProcessed+1; i <= currentTop; i++ {
         blocks = append(blocks, i)
     }
@@ -96,7 +96,7 @@ func (c *QuantaToCoin) getNewBlockIDs() []int {
  *
  * Gets all the quanta refunds in a given block
  */
-func (c *QuantaToCoin) getRefundsInBlock(blockID int) []quanta.Refund {
+func (c *QuantaToCoin) getRefundsInBlock(blockID int64) []quanta.Refund {
     refunds, err := c.quantaChannel.GetRefundsInBlock(blockID, c.quantaTrustAddress)
     if err != nil {
         c.logger.Error("Failed to get refunds in quanta block")

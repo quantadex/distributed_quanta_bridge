@@ -64,5 +64,5 @@ func TestForwardScan(t *testing.T) {
 		return
 	}
 
-	fmt.Printf("%d %v\n", len(contracts), contracts[0].QuantaAddr)
+	fmt.Printf("%d %v %v\n", len(contracts), contracts[0].QuantaAddr, contracts[0].ContractAddress)
 }

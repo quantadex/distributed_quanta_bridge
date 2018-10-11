@@ -77,6 +77,6 @@ type RegistrarContact interface {
     HealthCheckRequested() bool
 }
 
-func NewRegistrar() (RegistrarContact, error) {
-    return &RegistrarClient{}, nil
+func NewRegistrar(address string, port int) (RegistrarContact, error) {
+    return &RegistrarClient{address:address, port: port}, nil
 }

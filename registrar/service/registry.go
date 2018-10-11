@@ -1,4 +1,4 @@
-package main
+package service
 
 import (
 	"github.com/quantadex/distributed_quanta_bridge/common/manifest"

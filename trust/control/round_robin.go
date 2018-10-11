@@ -272,10 +272,13 @@ func (r *RoundRobinSigner) sendMessage(msg *peer_contact.PeerMessage) bool {
  */
 func (r *RoundRobinSigner) processNewDeposits(deposits []*coin.Deposit) {
 
+
     for _, deposit := range deposits {
 
         // let's confirm them
-        r.log.Infof("Confirm transaction %d", deposit.Amount)
+        r.log.Infof("processNewDeposit: %s->%s token=%s  amount=%d",
+            deposit.SenderAddr, deposit.QuantaAddr, deposit.CoinName, deposit.Amount)
+
         confirmTx(r.db, COIN_CONFIRMED, getKeyName(deposit.CoinName, deposit.QuantaAddr, deposit.BlockID))
 
         startNode := deposit.BlockID % r.man.N
@@ -289,6 +292,9 @@ func (r *RoundRobinSigner) processNewDeposits(deposits []*coin.Deposit) {
         }
         // if too many nodes missed, just skip for this deposit
         tolerance := r.man.N - r.man.Q
+
+        r.log.Infof("StartNode=%d Tolerance=%d missed=%d", startNode, tolerance, missedNodes)
+
         if missedNodes > tolerance {
            continue
         }

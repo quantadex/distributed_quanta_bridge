@@ -3,8 +3,8 @@ package main
 import (
     "github.com/quantadex/distributed_quanta_bridge/common/listener"
     "github.com/quantadex/distributed_quanta_bridge/common/logger"
-    "github.com/spf13/viper"
     "github.com/quantadex/distributed_quanta_bridge/common/queue"
+    "strconv"
 )
 
 /**
@@ -14,8 +14,8 @@ import (
  *
  * The queue is polled by the actual node logic
  */
-func nodeAgent(q queue.Queue) {
-    log, err := logger.NewLogger(viper.GetString(LISTEN_PORT))
+func nodeAgent(q queue.Queue, listenIp string, listenPort int) {
+    log, err := logger.NewLogger(strconv.Itoa(listenPort))
     if err != nil {
         return
     }
@@ -47,7 +47,7 @@ func nodeAgent(q queue.Queue) {
         log.Error("Failed to create endpoint")
         return
     }
-    err = listener.Run(viper.GetString("LISTEN_IP"), viper.GetInt("LISTEN_PORT"))
+    err = listener.Run(listenIp, listenPort)
     if err != nil {
         log.Error("Failed to start listener")
         return

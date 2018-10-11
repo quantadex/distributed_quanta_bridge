@@ -8,7 +8,6 @@ import (
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/stellar/go/support/errors"
 	"github.com/stellar/go/support/log"
-	"fmt"
 	"strings"
 	"github.com/ethereum/go-ethereum/accounts/abi"
 	"github.com/ethereum/go-ethereum/crypto"
@@ -40,7 +39,7 @@ func (l *Listener) Start() error {
 		return err
 	}
 
-	println("Created RPC listener with id " + id.String(), l.NetworkID)
+	l.log.Logger.Infof("Created RPC listener with id %s", l.NetworkID)
 
 	if id.String() != l.NetworkID {
 		return errors.Errorf("Invalid network ID (have=%s, want=%s)", id.String(), l.NetworkID)
@@ -170,7 +169,7 @@ func (l *Listener) GetTopBlockNumber() (int64, error){
 	return header.Number.Int64(), nil
 }
 
-func (l *Listener) GetNativeDeposits(blockNumber int64, toAddress string) ([]*Deposit, error) {
+func (l *Listener) GetNativeDeposits(blockNumber int64, toAddress map[string]string) ([]*Deposit, error) {
 	blocks, err := l.GetBlock(blockNumber)
 	if err != nil {
 		return nil, err
@@ -179,17 +178,21 @@ func (l *Listener) GetNativeDeposits(blockNumber int64, toAddress string) ([]*De
 		return nil, errors.Wrap(err, "Block not found " + err.Error())
 	}
 
-	filterAddress := common.HexToAddress(toAddress)
 	events := []*Deposit{}
 	for _, tx := range blocks.Transactions() {
-		if filterAddress.Hex() != tx.To().Hex() {
+		if tx.To() == nil {
 			continue
 		}
-		if tx.Value().Cmp(big.NewInt(0)) != 0 {
-			events = append(events, &Deposit{
-				CoinName: "ETH",
-				Amount: WeiToStellar(tx.Value().Int64()),
-			})
+
+		if quantaAddr, ok := toAddress[tx.To().Hex()]; ok {
+			if tx.Value().Cmp(big.NewInt(0)) != 0 {
+				events = append(events, &Deposit{
+					QuantaAddr: quantaAddr,
+					CoinName: "ETH",
+					SenderAddr:tx.To().Hex(),
+					Amount: WeiToStellar(tx.Value().Int64()),
+				})
+			}
 		}
 	}
 
@@ -197,7 +200,7 @@ func (l *Listener) GetNativeDeposits(blockNumber int64, toAddress string) ([]*De
 }
 
 
-func (l *Listener) FilterTransferEvent(blockNumber int64, toAddress string) ([]*Deposit, error)  {
+func (l *Listener) FilterTransferEvent(blockNumber int64, toAddress map[string]string) ([]*Deposit, error)  {
 	query := ethereum.FilterQuery{
 		FromBlock: big.NewInt(blockNumber),
 		ToBlock:   big.NewInt(blockNumber),
@@ -218,18 +221,17 @@ func (l *Listener) FilterTransferEvent(blockNumber int64, toAddress string) ([]*
 
 	logTransferSig := []byte("Transfer(address,address,uint256)")
 	logTransferSigHash := crypto.Keccak256Hash(logTransferSig)
-	filterAddress := common.HexToAddress(toAddress)
 
-	fmt.Printf("Number of log events %d transferHash=%s\n", len(logsEvent), logTransferSigHash.Hex())
+	//fmt.Printf("Number of log events %d transferHash=%s\n", len(logsEvent), logTransferSigHash.Hex())
 	events := []*Deposit{}
 	for _, vLog := range logsEvent {
-		fmt.Printf("Log Block Number: %d\n", vLog.BlockNumber)
-		fmt.Printf("Log Index: %d %s\n", vLog.Index, vLog.Topics[0].Hex())
-		fmt.Println(vLog.TxHash.Hex())
+		//fmt.Printf("Log Block Number: %d\n", vLog.BlockNumber)
+		//fmt.Printf("Log Index: %d %s\n", vLog.Index, vLog.Topics[0].Hex())
+		//fmt.Println(vLog.TxHash.Hex())
 		switch vLog.Topics[0].Hex() {
 		case logTransferSigHash.Hex():
 
-			fmt.Printf("Log Name: Transfer %s\n", vLog.Address.Hex())
+			//fmt.Printf("Log Name: Transfer %s\n", vLog.Address.Hex())
 
 			var transferEvent LogTransfer
 
@@ -237,17 +239,23 @@ func (l *Listener) FilterTransferEvent(blockNumber int64, toAddress string) ([]*
 			if err != nil {
 				continue
 			}
+			if len(vLog.Topics) < 3 {
+				//fmt.Println("not enough topics")
+				continue
+			}
 
 			transferEvent.From = common.HexToAddress(vLog.Topics[1].Hex())
 			transferEvent.To = common.HexToAddress(vLog.Topics[2].Hex())
 
-			if filterAddress == transferEvent.To {
-				fmt.Printf("From: %s\n", transferEvent.From.Hex())
-				fmt.Printf("To: %s\n", transferEvent.To.Hex())
-				fmt.Printf("Tokens: %s\n", transferEvent.Tokens.String())
+			if quantaAddr, ok := toAddress[transferEvent.To.Hex()]; ok {
+				//fmt.Printf("From: %s\n", transferEvent.From.Hex())
+				//fmt.Printf("To: %s\n", transferEvent.To.Hex())
+				//fmt.Printf("Tokens: %s\n", transferEvent.Tokens.String())
 
 				events = append(events, &Deposit{
+					QuantaAddr: quantaAddr,
 					CoinName: vLog.Address.Hex(),
+					SenderAddr: transferEvent.To.Hex(),
 					Amount: WeiToStellar(transferEvent.Tokens.Int64()),
 				})
 			}
@@ -270,16 +278,9 @@ func (l *Listener) GetForwardContract(blockNumber int64) ([]*ForwardInput, error
 		return nil, err
 	}
 
-	data, err := ABI.Pack("", common.HexToAddress("0xe0006458963c3773b051e767c5c63fee24cd7ff9"),"QQQWEQWE")
-	if err != nil {
-		return nil, err
-	}
-	println("input", common.Bytes2Hex(data))
-
 	if blocks == nil {
 		return nil, errors.New("Block not found ")
 	}
-
 
 	events := []*ForwardInput{}
 	for _, tx := range blocks.Transactions() {
@@ -289,7 +290,6 @@ func (l *Listener) GetForwardContract(blockNumber int64) ([]*ForwardInput, error
 		// matches our forwarding contract
 		if strings.HasPrefix(data, Forwarder.ForwarderBin) {
 			remain := strings.TrimPrefix(data, Forwarder.ForwarderBin)
-			println(remain)
 
 			input := &ForwardInput{}
 			vals, err := ABI.Constructor.Inputs.UnpackValues(common.Hex2Bytes(remain))
@@ -301,7 +301,15 @@ func (l *Listener) GetForwardContract(blockNumber int64) ([]*ForwardInput, error
 				println("Values should be 2")
 				continue
 			}
-			input.ContractAddress = tx.To()
+
+			tr, err := l.Client.TransactionReceipt(context.Background(), tx.Hash())
+
+			if err != nil {
+				println("Cannot get receipt ", err.Error())
+				continue
+			}
+
+			input.ContractAddress = tr.ContractAddress
 			input.Trust = vals[0].(common.Address)
 			input.QuantaAddr = vals[1].(string)
 

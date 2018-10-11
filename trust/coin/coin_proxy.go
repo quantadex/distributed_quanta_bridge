@@ -13,7 +13,7 @@ func (c *CoinProxy) GetTopBlockID() (int64, error) {
 	return c.coin.GetTopBlockID()
 }
 
-func (c *CoinProxy) GetDepositsInBlock(blockID int64, trustAddress string) ([]*Deposit, error) {
+func (c *CoinProxy) GetDepositsInBlock(blockID int64, trustAddress map[string]string) ([]*Deposit, error) {
 	return c.coin.GetDepositsInBlock(blockID, trustAddress)
 }
 

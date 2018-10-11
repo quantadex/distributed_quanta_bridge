@@ -14,6 +14,7 @@ import (
     "github.com/spf13/viper"
     "fmt"
     "github.com/quantadex/distributed_quanta_bridge/common/queue"
+    "strconv"
 )
 
 const (
@@ -45,28 +46,46 @@ type TrustNode struct {
     queue    queue.Queue
 }
 
+type Config struct {
+    ListenIp string
+    ListenPort int
+    UsePrevKeys bool
+    KvDbName string
+    CoinName string
+    IssuerAddress string
+    NodeKey string
+    HorizonUrl string
+    NetworkPassphrase string
+    RegistrarIp string
+    RegistrarPort int
+    EthereumNetworkId string
+    EthereumBlockStart int64
+    EthereumRpc string
+    EthereumTrustAddr string
+}
+
 /**
  * init
  *
  * Initialize all sub-modules. Attach to databases.
  */
-func initNode() (*TrustNode, bool) {
+func initNode(config Config, targetCoin coin.Coin) (*TrustNode, bool) {
     var err error
     node := &TrustNode{}
     node.queue = queue.NewMemoryQueue()
-    node.log, err = logger.NewLogger(viper.GetString(LISTEN_PORT))
+    node.log, err = logger.NewLogger(strconv.Itoa(config.ListenPort))
     if err != nil {
         return nil, false
     }
 
-    node.kM, err = key_manager.NewKeyManager()
+    node.kM, err = key_manager.NewKeyManager(config.NetworkPassphrase)
     if err != nil {
         node.log.Error("Failed to create key manager")
         return nil, false
     }
-    reuseKeys := viper.GetBool(USE_PREV_KEYS)
+    reuseKeys := config.UsePrevKeys
     if reuseKeys == true {
-       err = node.kM.LoadNodeKeys()
+       err = node.kM.LoadNodeKeys(config.NodeKey)
     } else {
        err = node.kM.CreateNodeKeys()
     }
@@ -75,7 +94,7 @@ func initNode() (*TrustNode, bool) {
         return nil, false
     }
 
-    needsInitialize := !kv_store.DbExists(viper.GetString(KV_DB_NAME))
+    needsInitialize := !kv_store.DbExists(config.KvDbName)
 
     node.db, err = kv_store.NewKVStore()
     if err != nil {
@@ -83,7 +102,7 @@ func initNode() (*TrustNode, bool) {
         return nil, false
     }
 
-    err = node.db.Connect(viper.GetString(KV_DB_NAME))
+    err = node.db.Connect(config.KvDbName)
     if err != nil {
         node.log.Error("Failed to connect to database")
         return nil, false
@@ -94,19 +113,22 @@ func initNode() (*TrustNode, bool) {
         control.InitLedger(node.db)
     }
 
-    node.c, err = coin.NewEthereumCoin()
-    if err != nil {
-        node.log.Error("Failed to create new coin")
-        return nil, false
-    }
-    node.coinName = viper.GetString(COIN_NAME)
+    node.c = targetCoin
+
+    node.coinName = config.CoinName
     err = node.c.Attach()
     if err != nil {
         node.log.Error("Failed to attach to coin")
         return nil, false
     }
 
-    node.q, err = quanta.NewQuanta()
+    node.q, err = quanta.NewQuanta(quanta.QuantaClientOptions{
+        node.log,
+        config.NetworkPassphrase,
+        config.IssuerAddress,
+        config.HorizonUrl,
+    })
+
     node.q.AttachQueue(node.queue)
     if err != nil {
         node.log.Error("Failed to create quanta")
@@ -118,7 +140,7 @@ func initNode() (*TrustNode, bool) {
         return nil, false
     }
 
-    node.peer, err = peer_contact.NewPeerContact()
+    node.peer, err = peer_contact.NewPeerContact(config.NodeKey)
     if err != nil {
         node.log.Error("Failed to create peer interface")
         return nil, false
@@ -129,7 +151,7 @@ func initNode() (*TrustNode, bool) {
         return nil, false
     }
 
-    node.reg, err = registrar_client.NewRegistrar()
+    node.reg, err = registrar_client.NewRegistrar(config.RegistrarIp, config.RegistrarPort)
     if err != nil {
         node.log.Error("Failed to create registrar interface")
         return nil, false
@@ -155,10 +177,10 @@ func initNode() (*TrustNode, bool) {
  * When a quorum has been created of which this node is a part of, the registrar
  * will send it the manifest. Upon receiving a manifest this function returns
  */
-func (n *TrustNode) registerNode() bool {
-    nodeIP := viper.GetString(LISTEN_IP)
-    nodePort := viper.GetString(LISTEN_PORT)
-    if nodeIP == "" || nodePort == "" {
+func (n *TrustNode) registerNode(config Config) bool {
+    nodeIP := config.ListenIp
+    nodePort := config.ListenPort
+    if nodeIP == "" {
         n.log.Error("Node IP and port not set")
         return false
     }
@@ -169,7 +191,7 @@ func (n *TrustNode) registerNode() bool {
         return false
     }
 
-    err = n.reg.RegisterNode(nodeIP, nodePort, n.kM)
+    err = n.reg.RegisterNode(nodeIP, strconv.Itoa(nodePort), n.kM)
     if err != nil {
         n.log.Error("Failed to send node info to registrar " + err.Error())
         return false
@@ -189,9 +211,9 @@ func (n *TrustNode) registerNode() bool {
         man := n.reg.GetManifest()
         if man != nil {
             // OVERRIDE WITH OUR OWN
-            man.ContractAddress = viper.GetString("TRUST_ETHEREUM_ADDR")
+            // man.ContractAddress = viper.GetString("TRUST_ETHEREUM_ADDR")
             n.man = man
-            n.nodeID, err = n.man.FindNode(nodeIP, nodePort, nodeKey)
+            n.nodeID, err = n.man.FindNode(nodeIP, strconv.Itoa(nodePort), nodeKey)
             if err != nil {
                 n.log.Error("Node was not added to manifest")
                 return false
@@ -207,7 +229,7 @@ func (n *TrustNode) registerNode() bool {
  *
  * Once we are part of a quorum we can create the trusts.
  */
-func (n *TrustNode) initTrust() {
+func (n *TrustNode) initTrust(config Config) {
     n.log.Info("Trust initialized")
     n.qTC = control.NewQuantaToCoin( n.log,
                                         n.db,
@@ -227,7 +249,11 @@ func (n *TrustNode) initTrust() {
                                         n.kM,
                                         n.coinName,
                                         n.nodeID,
-                                        n.peer)
+                                        n.peer,
+                                        control.C2QOptions{
+                                            config.EthereumTrustAddr,
+                                            config.EthereumBlockStart,
+                                        })
 }
 
 /**
@@ -240,28 +266,29 @@ func (n *TrustNode) run() {
         if n.reg.HealthCheckRequested() {
             n.reg.SendHealth("RUNNING", n.kM)
         }
-        n.cTQ.DoLoop()
+        blockIDs := n.cTQ.GetNewCoinBlockIDs()
+        n.cTQ.DoLoop(blockIDs)
         n.qTC.DoLoop()
         time.Sleep(time.Second * 1)
     }
 }
 
-func bootstrapNode() *TrustNode {
-    node, success := initNode()
+func bootstrapNode(config Config, targetCoin coin.Coin) *TrustNode {
+    node, success := initNode(config, targetCoin)
     if !success {
         node.log.Error("Failed to init node")
         return nil
     }
 
     // start our http listener
-    go nodeAgent(node.queue)
+    go nodeAgent(node.queue, config.ListenIp, config.ListenPort)
 
-    success = node.registerNode()
+    success = node.registerNode(config)
     if !success {
         node.log.Error("Failed to register node")
         return nil
     }
-    node.initTrust()
+    node.initTrust(config)
 
     return node
 }
@@ -274,11 +301,22 @@ func main() {
     viper.SetConfigName("config")
     viper.AddConfigPath(".")
     viper.AddConfigPath("node")
+
     err := viper.ReadInConfig()
     if err != nil {
         panic(fmt.Errorf("Fatal error config file: %s \n", err))
     }
+    config := Config {}
+    err = viper.Unmarshal(&config)
+    if err != nil {
+        panic(fmt.Errorf("Fatal error config file: %s \n", err))
+    }
 
-    node := bootstrapNode()
+    coin, err := coin.NewEthereumCoin(config.EthereumNetworkId, config.EthereumRpc)
+    if err != nil {
+        panic(fmt.Errorf("cannot create ethereum listener"))
+    }
+
+    node := bootstrapNode(config, coin)
     node.run()
 }

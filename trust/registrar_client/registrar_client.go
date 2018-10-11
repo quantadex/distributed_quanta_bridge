@@ -23,8 +23,6 @@ type RegistrarClient struct{
 }
 
 func (r *RegistrarClient) GetRegistrar() error {
-	r.address = viper.GetString("REGISTRAR_IP")
-	r.port = viper.GetInt("REGISTRAR_PORT")
 	r.url = fmt.Sprintf("http://%s:%d", r.address, r.port)
 	r.healthQueueName = viper.GetString("HEALTH_QUEUE")
 

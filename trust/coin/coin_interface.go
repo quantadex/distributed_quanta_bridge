@@ -1,5 +1,7 @@
 package coin
 
+import "github.com/quantadex/distributed_quanta_bridge/common"
+
 /**
  * Deposit
  *
@@ -57,7 +59,7 @@ type Coin interface {
      * Returns nil if no matching deposits.
      * Returns error of error encountered
      */
-    GetDepositsInBlock(blockID int64, trustAddress string) ([]*Deposit, error)
+    GetDepositsInBlock(blockID int64, trustAddress map[string]string) ([]*Deposit, error)
 
     /**
      * GetForwardersInBlock
@@ -86,6 +88,13 @@ func NewDummyCoin() (Coin, error) {
 }
 
 
-func NewEthereumCoin() (Coin, error) {
-    return &EthereumCoin{}, nil
+func NewEthereumCoin(networkId string, ethereumRpc string) (Coin, error) {
+    return &EthereumCoin{maxRange: common.MaxNumberInt64, networkId: networkId, ethereumRpc: ethereumRpc}, nil
+}
+
+/**
+ * Used for testing
+ */
+func NewEthereumCoinWithMax(max int64)  (Coin, error) {
+    return &EthereumCoin{maxRange: max}, nil
 }

@@ -2,7 +2,6 @@ package peer_contact
 
 import (
 	"github.com/quantadex/distributed_quanta_bridge/common/manifest"
-	"github.com/spf13/viper"
 	"github.com/quantadex/distributed_quanta_bridge/common/queue"
 	"github.com/quantadex/distributed_quanta_bridge/common/crypto"
 	"encoding/json"
@@ -14,6 +13,7 @@ import (
 
 type PeerClient struct {
 	q queue.Queue
+	privateKey string
 }
 
 func (p *PeerClient) AttachQueue(queue queue.Queue) error {
@@ -28,9 +28,8 @@ func (p *PeerClient) SendMsg(m *manifest.Manifest, destinationNodeID int, peerms
 
 	msg := &PeerMsgRequest{}
 	msg.Body = *peermsg
-	privateKey := viper.GetString("NODE_KEY")
 
-	if signature := crypto.SignMessage(msg.Body, privateKey); signature != nil {
+	if signature := crypto.SignMessage(msg.Body, p.privateKey); signature != nil {
 		msg.Signature = *signature
 
 		data, err := json.Marshal(&msg)

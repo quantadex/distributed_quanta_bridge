@@ -23,7 +23,7 @@ type KeyManager interface {
      * 
      * Loads the keys from the node key store.
      */
-    LoadNodeKeys() error
+    LoadNodeKeys(privKey string) error
 
     /**
      * GetPublicKey
@@ -75,6 +75,6 @@ type KeyManager interface {
      DecodeTransaction(base64 string) (*coin.Deposit, error)
 }
 
-func NewKeyManager() (KeyManager, error) {
-    return &QuantaKeyManager{}, nil
+func NewKeyManager(network string) (KeyManager, error) {
+    return &QuantaKeyManager{network: network, }, nil
 }

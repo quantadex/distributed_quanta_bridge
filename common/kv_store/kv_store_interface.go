@@ -60,6 +60,13 @@ type KVStore interface {
     GetValue(tableName string, key string) (value *string, err error)
 
     /*
+     * GetAllValues
+     *
+     * Return all KV in the table as a map
+     */
+    GetAllValues(tableName string) (map[string]string, error)
+
+    /*
      * SetValue
      *
      * Inputs:

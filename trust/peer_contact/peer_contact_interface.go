@@ -67,6 +67,6 @@ type PeerContact interface {
     GetMsg() *PeerMessage
 }
 
-func NewPeerContact() (PeerContact, error) {
-    return &PeerClient{}, nil
+func NewPeerContact(privKey string) (PeerContact, error) {
+    return &PeerClient{privateKey: privKey}, nil
 }
