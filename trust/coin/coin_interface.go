@@ -25,7 +25,7 @@ type Withdrawal struct {
     CoinName string // The type of coin (e.g. ETH)
     DestinationAddress string // Where this money is going
     QuantaBlockID int // Which block this transaction was processed in quanta
-    Amount int // The withdrawal size
+    Amount int64 // The withdrawal size
 }
 
 /**

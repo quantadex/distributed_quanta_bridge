@@ -1,7 +1,5 @@
 package key_manager
 
-import "github.com/quantadex/distributed_quanta_bridge/trust/coin"
-
 type EthereumKeyManager struct{}
 
 func (e *EthereumKeyManager) CreateNodeKeys() error {
@@ -33,9 +31,5 @@ func (e *EthereumKeyManager) SignTransaction(base64 string) (string, error) {
 }
 
 func (e *EthereumKeyManager) VerifyTransaction(base64 string) (bool, error) {
-	panic("implement me")
-}
-
-func (e *EthereumKeyManager) DecodeTransaction(base64 string) (*coin.Deposit, error) {
 	panic("implement me")
 }

@@ -52,9 +52,9 @@ func (c *DummyCoin) Attach() error {
 }
 
 func (c *DummyCoin) EncodeRefund(w Withdrawal) (string, error) {
-
+	return "", nil
 }
 
 func (c *DummyCoin)  DecodeRefund(encoded string) (*Withdrawal, error) {
-
+	return nil, nil
 }

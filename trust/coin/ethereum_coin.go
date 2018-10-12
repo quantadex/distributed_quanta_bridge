@@ -4,35 +4,23 @@ import (
 	"github.com/ethereum/go-ethereum/ethclient"
 	"github.com/quantadex/distributed_quanta_bridge/common"
 	"strings"
-	"github.com/ethereum/go-ethereum/accounts/abi"
 	common2 "github.com/ethereum/go-ethereum/common"
 	"encoding/base64"
+	"bytes"
+	"github.com/ethereum/go-ethereum/accounts/abi"
+	"math/big"
 )
-
-const paymentTx = "paymentTx"
-
-const abiJson = `
-[
-	{ "type" : "function", "name" : "paymentTx",  "constant" : false, "inputs" : [ { "name" : "tx_id", "type" : "uint64" }, { "name" : "erc20Address", "type" : "address" }, { "name" : "to", "type" : "address" }, { "name" : "amount", "type" : "uint256" } ] },
-]`
-
 
 type EthereumCoin struct {
 	client *Listener
 	maxRange int64
 	networkId string
 	ethereumRpc string
-	abi abi.ABI
 }
 
 func (c *EthereumCoin) Attach() error {
 	c.client = &Listener{NetworkID: c.networkId}
 	ethereumClient, err := ethclient.Dial(c.ethereumRpc)
-	if err != nil {
-		return err
-	}
-
-	c.abi, err = abi.JSON(strings.NewReader(abiJson))
 	if err != nil {
 		return err
 	}
@@ -76,14 +64,46 @@ func (c *EthereumCoin) SendWithdrawal(apiAddress string, w Withdrawal, s []byte)
 }
 
 func (c *EthereumCoin) EncodeRefund(w Withdrawal) (string, error) {
-	data, err := c.abi.Pack(paymentTx, w.NodeID, common2.HexToAddress(w.DestinationAddress), w.Amount)
-	if err != nil {
-		return "", err
+	var encoded bytes.Buffer
+	var smartAddress string
+	parts := strings.Split(w.CoinName,",")
+
+	if len(parts) == 2 {
+		smartAddress = parts[1]
+	} else {
+		smartAddress = ""
 	}
 
-	return base64.StdEncoding.EncodeToString(data), nil
+	var number = common2.Big256
+	number.SetInt64(w.Amount)
+	encoded.Write(common2.HexToAddress(strings.ToLower(smartAddress)).Bytes())
+	encoded.Write(common2.HexToAddress(strings.ToLower(w.DestinationAddress)).Bytes())
+	encoded.Write(abi.U256(new(big.Int).SetUint64(uint64(w.Amount))))
+
+	return base64.StdEncoding.EncodeToString(encoded.Bytes()), nil
 }
 
 func (c *EthereumCoin)  DecodeRefund(encoded string) (*Withdrawal, error) {
-	return nil, nil
+	decoded, err := base64.StdEncoding.DecodeString(encoded)
+	if err != nil {
+		return nil, err
+	}
+	w := &Withdrawal{}
+	println(len(decoded))
+
+	smartAddress := decoded[0:20]
+	destAddress := decoded[20:40]
+	amount := decoded[40: 40 + 32]
+	smartNumber := new(big.Int).SetBytes(smartAddress)
+
+	if smartNumber.Cmp(big.NewInt(0)) == 0 {
+		w.CoinName = "ETH"
+	} else {
+		w.CoinName = "," + strings.ToLower(common2.BytesToAddress(smartAddress).Hex())
+	}
+
+	w.DestinationAddress = strings.ToLower(common2.BytesToAddress(destAddress).Hex())
+	w.Amount = new(big.Int).SetBytes(amount).Int64()
+
+	return w, nil
 }
