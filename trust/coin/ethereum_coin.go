@@ -9,7 +9,10 @@ import (
 	"bytes"
 	"github.com/ethereum/go-ethereum/accounts/abi"
 	"math/big"
+	"github.com/go-errors/errors"
 )
+
+const sign_prefix = "\x19Ethereum Signed Message:\n"
 
 type EthereumCoin struct {
 	client *Listener
@@ -76,6 +79,7 @@ func (c *EthereumCoin) EncodeRefund(w Withdrawal) (string, error) {
 
 	var number = common2.Big256
 	number.SetInt64(w.Amount)
+	encoded.WriteString(sign_prefix)
 	encoded.Write(common2.HexToAddress(strings.ToLower(smartAddress)).Bytes())
 	encoded.Write(common2.HexToAddress(strings.ToLower(w.DestinationAddress)).Bytes())
 	encoded.Write(abi.U256(new(big.Int).SetUint64(uint64(w.Amount))))
@@ -91,9 +95,15 @@ func (c *EthereumCoin)  DecodeRefund(encoded string) (*Withdrawal, error) {
 	w := &Withdrawal{}
 	println(len(decoded))
 
-	smartAddress := decoded[0:20]
-	destAddress := decoded[20:40]
-	amount := decoded[40: 40 + 32]
+	pl := len(sign_prefix)
+	header := decoded[0:pl]
+	if string(header) != sign_prefix {
+		return nil, errors.New("Unexpected prefix")
+	}
+	
+	smartAddress := decoded[pl:pl+20]
+	destAddress := decoded[pl+20:pl+40]
+	amount := decoded[pl+40: pl+40 + 32]
 	smartNumber := new(big.Int).SetBytes(smartAddress)
 
 	if smartNumber.Cmp(big.NewInt(0)) == 0 {
