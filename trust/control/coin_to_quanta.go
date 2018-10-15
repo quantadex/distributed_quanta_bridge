@@ -1,14 +1,16 @@
 package control
 
 import (
-    "common/logger"
-    "common/kv_store"
-    "common/manifest"
-    "trust/quanta"
-    "trust/coin"
-    "trust/key_manager"
-    "trust/peer_contact"
-    "errors"
+    "github.com/quantadex/distributed_quanta_bridge/common/logger"
+    "github.com/quantadex/distributed_quanta_bridge/common/kv_store"
+    "github.com/quantadex/distributed_quanta_bridge/common/manifest"
+    "github.com/quantadex/distributed_quanta_bridge/trust/quanta"
+    "github.com/quantadex/distributed_quanta_bridge/trust/coin"
+    "github.com/quantadex/distributed_quanta_bridge/trust/key_manager"
+    "github.com/quantadex/distributed_quanta_bridge/trust/peer_contact"
+    "fmt"
+    "github.com/ethereum/go-ethereum/common"
+    common2 "github.com/quantadex/distributed_quanta_bridge/common"
 )
 
 /**
@@ -18,32 +20,39 @@ import (
  * and using the round robin module creates transactions in quanta
  */
 type CoinToQuanta struct {
-    log *logger.Logger
-    coinChannel *coin.Coin
-    quantaChannel *quanta.Quanta
-    db *kv_store.KVStore
+    log logger.Logger
+    coinChannel coin.Coin
+    quantaChannel quanta.Quanta
+    db kv_store.KVStore
     man *manifest.Manifest
-    peer *peer_contact.PeerContact
+    peer peer_contact.PeerContact
     coinName string
+    trustAddress common.Address
     rr *RoundRobinSigner
+    C2QOptions
 }
 
+type C2QOptions struct {
+    EthTrustAddress string
+    BlockStartID int64
+}
 /**
  * NewCoinToQuanta
  *
  * Returns a new instance of the module
  * Initializes nothing so it should all be already initialized.
  */
-func NewCoinToQuanta(   log *logger.Logger,
-                        db *kv_store.KVStore,
-                        c *coin.Coin,
-                        q *quanta.Quanta,
+func NewCoinToQuanta(   log logger.Logger,
+                        db kv_store.KVStore,
+                        c coin.Coin,
+                        q quanta.Quanta,
                         man *manifest.Manifest,
-                        kM *key_manager.keyManager,
+                        kM key_manager.KeyManager,
                         coinName string,
                         nodeID int,
-                        peer *peer_contact.PeerContact ) *CoinToQuanta {
-    res := &coinToQuanta{}
+                        peer peer_contact.PeerContact,
+                        options C2QOptions) *CoinToQuanta {
+    res := &CoinToQuanta{C2QOptions: options}
     res.log = log
     res.coinChannel = c
     res.quantaChannel = q
@@ -51,7 +60,8 @@ func NewCoinToQuanta(   log *logger.Logger,
     res.man = man
     res.coinName = coinName
     res.peer = peer
-    res.rr = NewRoundRobinSigner(log, man, nodeID, kM, db, peer)
+    res.rr = NewRoundRobinSigner(log, man, nodeID, kM, db, q, peer)
+    res.trustAddress = common.HexToAddress(options.EthTrustAddress)
     return res
 }
 
@@ -60,8 +70,8 @@ func NewCoinToQuanta(   log *logger.Logger,
  *
  * Returns a list of new blocks added to the coin block chain.
  */
-func (c *CoinToQuanta) getNewCoinBlockIDs() []int {
-    lastProcessed, valid := getLastBlock(d.db, c.coinName)
+func (c *CoinToQuanta) GetNewCoinBlockIDs() []int64 {
+    lastProcessed, valid := getLastBlock(c.db, c.coinName)
     if !valid {
         c.log.Error("Failed to get last processed ID")
         return nil
@@ -79,13 +89,15 @@ func (c *CoinToQuanta) getNewCoinBlockIDs() []int {
     }
 
     if lastProcessed == currentTop {
-        c.log.Debug("No new block")
+        c.log.Debug(fmt.Sprintf("Coin2Quanta: No new block last=%d top=%d", lastProcessed, currentTop))
         return nil
     }
-    blocks := make([]int, 0)
-    for i := lastProcessed+1; i <= currentTop; i++ {
+    blocks := make([]int64, 0)
+    for i := common2.MaxInt64(c.BlockStartID, lastProcessed+1); i <= currentTop; i++ {
         blocks = append(blocks, i)
     }
+    c.log.Info(fmt.Sprintf("Got blocks %v", blocks))
+
     return blocks
 }
 
@@ -94,12 +106,19 @@ func (c *CoinToQuanta) getNewCoinBlockIDs() []int {
  *
  * Returns deposits made to the coin trust account in this block
  */
-func (c *CoinToQuanta) getDepositsInBlock(blockID int) []coin.Deposit {
-    deposits, err := c.coinChannel.GetDepositsInBlock(blockID, c.man.ContractAddress)
+func (c *CoinToQuanta) getDepositsInBlock(blockID int64) []*coin.Deposit {
+    watchAddresses, err := c.db.GetAllValues(ETHADDR_QUANTAADDR)
+    if err != nil {
+        c.log.Error("Failed to get watch addresses")
+        return nil
+    }
+
+    deposits, err := c.coinChannel.GetDepositsInBlock(blockID, watchAddresses)
     if err != nil {
         c.log.Error("Failed to get deposits from block")
         return nil
     }
+
     return deposits
 }
 
@@ -110,9 +129,11 @@ func (c *CoinToQuanta) getDepositsInBlock(blockID int) []coin.Deposit {
  */
 func (c *CoinToQuanta) submitMessages(msgs []*peer_contact.PeerMessage) {
     for _, msg := range msgs {
-        err := c.quantaChannel.ProcessDeposit(msg)
+        err := c.quantaChannel.ProcessDeposit(*msg)
+        c.log.Infof("Process deposit to %s %d",
+                        msg.Proposal.QuantaAdress, msg.Proposal.Amount)
         if err != nil {
-            c.log.Error("Failed to submit deposut")
+            c.log.Error("Failed to submit deposit " + err.Error())
         }
     }
 }
@@ -124,29 +145,53 @@ func (c *CoinToQuanta) submitMessages(msgs []*peer_contact.PeerMessage) {
  * Shoot those into round robin
  * Get all ready messages from RR and send these to quanta.
  */
-func (c *CoinToQuanta) DoLoop() {
+func (c *CoinToQuanta) DoLoop(blockIDs []int64) {
     c.rr.addTick()
-    blockIDs := getNewCoinBlockIDs()
-    if blockIDs == nil {
-        return
-    }
-    for _, blockID := range blockIDs {
-        deposits := getDepositsInBlock(blockID)
-        if deposists == nil {
-            continue
+    c.log.Info(fmt.Sprintf("***** Start of Epoch %d # of blocks=%d man.N=%d,man.Q=%d *** ",
+                        c.rr.curEpoch, len(blockIDs), c.man.N, c.man.Q))
+
+    if blockIDs != nil {
+        for _, blockID := range blockIDs {
+            deposits := c.getDepositsInBlock(blockID)
+            if deposits != nil {
+                c.log.Info(fmt.Sprintf("Block %d Got deposits %d %v", blockID, len(deposits), deposits))
+                c.rr.processNewDeposits(deposits)
+            }
+
+            addresses, err := c.coinChannel.GetForwardersInBlock(blockID)
+            if err != nil {
+                c.log.Error(err.Error())
+                continue
+            }
+
+            for _, addr := range addresses {
+                if addr.Trust.Hex() == c.trustAddress.Hex() {
+                    c.log.Infof("New Forwarder Address ETH->QUANTA address, %s -> %s", addr.ContractAddress.Hex(), addr.QuantaAddr)
+                    c.db.SetValue(ETHADDR_QUANTAADDR, addr.ContractAddress.Hex(),"", addr.QuantaAddr)
+                } else {
+                    c.log.Error("Forward does not point to our trust address " + addr.Trust.Hex())
+                }
+            }
         }
-        c.rr.processNewDeposits(deposists)
     }
+
     allMsgs := c.rr.getExpiredMsgs()
     for true {
         msg := c.peer.GetMsg()
         if msg == nil {
             break
         }
+        c.log.Infof("Got peer message %v", msg)
         allMsgs = append(allMsgs, msg)
     }
     toSend := c.rr.processNewPeerMsgs(allMsgs)
     if len(toSend) > 0 {
         c.submitMessages(toSend)
+    }
+
+    if len(blockIDs) > 0 {
+        lastBlockId := blockIDs[len(blockIDs)-1]
+        c.log.Infof("set last block coin=%s height=%d", c.coinName, lastBlockId)
+        setLastBlock(c.db, c.coinName, lastBlockId)
     }
 }

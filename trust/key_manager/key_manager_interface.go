@@ -21,7 +21,7 @@ type KeyManager interface {
      * 
      * Loads the keys from the node key store.
      */
-    LoadNodeKeys() error
+    LoadNodeKeys(privKey string) error
 
     /**
      * GetPublicKey
@@ -37,15 +37,37 @@ type KeyManager interface {
      */
     SignMessage(original []byte) ([]byte, error)
 
+
+    /**
+     * SignMessage
+     *
+     * Uses the private key to sign the given message and returns the signed message
+     * returns base64 signature
+     */
+    SignMessageObj(original interface{}) (*string)
+
     /**
      * DecodeMessage
      *
      * Uses the provided key to decode the given message. Returns decoded.
      * Note. This does not use the local node's keys but the provided key.
      */
-     DecodeMessage(original []byte, key string) ([]byte, error)
+    VerifySignatureObj(original interface{}, key string) bool
+
+    /**
+     * SignTX
+     * Decodes the transaction envelope, and adds our signature
+     */
+     SignTransaction(base64 string) (string, error)
+
+    /**
+     * VerifyTX
+     * Decode the transaction envelope, and check the signature
+     */
+    VerifyTransaction(base64 string) (bool, error)
+
 }
 
-func NewKeyManager() (*KeyManager, error) {
-    return nil, nil
+func NewKeyManager(network string) (KeyManager, error) {
+    return &QuantaKeyManager{network: network, }, nil
 }

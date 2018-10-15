@@ -1,16 +1,19 @@
 package control
 
 import (
-    "common/logger"
-    "common/manifest"
-    "common/kv_store"
-    "trust/key_manager"
-    "trust/peer_contact"
-    "trust/coin"
-    "encode/json"
+    "github.com/quantadex/distributed_quanta_bridge/common/logger"
+    "github.com/quantadex/distributed_quanta_bridge/common/manifest"
+    "github.com/quantadex/distributed_quanta_bridge/common/kv_store"
+    "github.com/quantadex/distributed_quanta_bridge/trust/key_manager"
+    "github.com/quantadex/distributed_quanta_bridge/trust/peer_contact"
+    "github.com/quantadex/distributed_quanta_bridge/trust/coin"
+    dll "github.com/emirpasic/gods/lists/doublylinkedlist"
+    "fmt"
+    "github.com/quantadex/distributed_quanta_bridge/common"
+    "github.com/quantadex/distributed_quanta_bridge/trust/quanta"
 )
 
-const "DELAY_PENALTY" = 10
+const DELAY_PENALTY = 5
 
 /**
  * RoundRobinSigner
@@ -18,13 +21,14 @@ const "DELAY_PENALTY" = 10
  * Implements the peer node distributed signing algorithm
  */
 type RoundRobinSigner struct {
-    log *logger.Logger
+    log logger.Logger
     man *manifest.Manifest
     myNodeID int
-    kM *key_manager.KeyManager
-    db *kv_store.KVStore
-    peer *peer_contact.PeerContact
-    deferQ map[int][]*peer_contact.PeerMessage
+    kM key_manager.KeyManager
+    db kv_store.KVStore
+    peer peer_contact.PeerContact
+    deferQ map[int]*dll.List
+    quanta quanta.Quanta
     curEpoch int
 }
 
@@ -36,12 +40,13 @@ type RoundRobinSigner struct {
  * All modules must already by initialized and passed in.
  *
  */
-func NewRoundRobinSigner(   log *logger.Logger,
+func NewRoundRobinSigner(   log logger.Logger,
                             man *manifest.Manifest,
                             myNodeID int,
-                            kM *key_manager.KeyManager,
-                            db *kv_store.KVStore,
-                            peer *peer_contact.PeerContact ) *RoundRobinSigner {
+                            kM key_manager.KeyManager,
+                            db kv_store.KVStore,
+                            quanta quanta.Quanta,
+                            peer peer_contact.PeerContact ) *RoundRobinSigner {
 
     res := &RoundRobinSigner{}
     res.log = log
@@ -50,8 +55,9 @@ func NewRoundRobinSigner(   log *logger.Logger,
     res.kM = kM
     res.db = db
     res.peer = peer
-    deferQ := make(map[int][]*peer_contact.PeerMessage, 0)
-    curEpoch := 0
+    res.quanta = quanta
+    res.deferQ = make(map[int]*dll.List, 0)
+    res.curEpoch = 0
     return res
 }
 
@@ -63,14 +69,17 @@ func NewRoundRobinSigner(   log *logger.Logger,
  */
 func (r *RoundRobinSigner) addToDeferQ(msg *peer_contact.PeerMessage) {
     expires := r.curEpoch + (msg.NodesMissed*DELAY_PENALTY)
-    var deferList []*peer_contact.PeerMessage
+    r.log.Info(fmt.Sprintf("Added msg to DeferQ at expiration=%d epoch=%d", expires, r.curEpoch))
+
+    var deferList *dll.List
     var found bool
 
     deferList, found = r.deferQ[expires]
     if !found {
-        deferList = make([]*peer_contact.PeerMessage, 0)
+        deferList = dll.New()
+        r.deferQ[expires] = deferList
     }
-    deferList = append(deferList, msg)
+    deferList.Append(msg)
 }
 
 /**
@@ -96,8 +105,9 @@ func (r *RoundRobinSigner) getExpiredMsgs() []*peer_contact.PeerMessage {
     for k, v := range r.deferQ {
         if k <= r.curEpoch {
             hits = append(hits, k)
-            for _, msg := range v {
-                results = append(results, msg)
+            it := v.Iterator()
+            for it.Next() {
+                results = append(results, it.Value().(*peer_contact.PeerMessage))
             }
         }
     }
@@ -107,6 +117,8 @@ func (r *RoundRobinSigner) getExpiredMsgs() []*peer_contact.PeerMessage {
     for _, k := range hits {
         delete(r.deferQ, k)
     }
+    r.log.Info(fmt.Sprintf("Expired? %v %v\n", hits, results))
+
     return results
 }
 
@@ -119,7 +131,8 @@ func (r *RoundRobinSigner) getExpiredMsgs() []*peer_contact.PeerMessage {
  */
 func (r *RoundRobinSigner) validateTransaction(msg *peer_contact.PeerMessage) bool {
     txKey := getKeyName(msg.Proposal.CoinName, msg.Proposal.QuantaAdress, msg.Proposal.BlockID)
-    state := getState(r.db, COIN_CONFIRMED, txtKey)
+    state := getState(r.db, COIN_CONFIRMED, txKey)
+    r.log.Infof("Validate transaction key=%s state=%s", txKey, state)
     if state == CONFIRMED {
         return true
     }
@@ -136,32 +149,29 @@ func (r *RoundRobinSigner) validateIntegrity(msg *peer_contact.PeerMessage) bool
     if len(msg.SignedBy) == 0 {
         return true
     }
-    target := make([]byte, 0)
-    copy(target, msg.MSG)
-    var err error
+    valid, err := r.kM.VerifyTransaction(msg.MSG)
+    if !valid {
+        r.log.Error("validateIntegrity: failed to verify message " + err.Error())
+        return false
+    }
 
-    for _, nodeID := range msg.SignedBy {
-        pubKey := r.man.Nodes[nodeID].PubKey
-        target, err = r.kM.DecodeMessage(target, pubKey)
-        if err != nil {
-            return false
-        }
-    }
-    decoded := &peer_contact.PaymentReq{}
-    err = json.Unmarshal(target, decoded)
+    decoded, err := r.quanta.DecodeTransaction(msg.MSG)
     if err != nil {
+        r.log.Error("validateIntegrity: failed to decode message")
         return false
     }
-    if decoded.BlockID != msg.Proposal.BlockID {
-        return false
-    }
-    if decoded.CoinName != msg.Proposal.CoinName {
-        return false
-    }
-    if decoded.QuantaAddr != msg.Proposal.QuantaAddr {
+    //if decoded.BlockID != msg.Proposal.BlockID {
+    //    return false
+    //}
+    //if decoded.CoinName != msg.Proposal.CoinName {
+    //    return false
+    //}
+    if decoded.QuantaAddr != msg.Proposal.QuantaAdress {
+        r.log.Error("validateIntegrity: address mismatch")
         return false
     }
     if decoded.Amount != msg.Proposal.Amount {
+        r.log.Error("validateIntegrity: amount mismatch")
         return false
     }
     return true
@@ -177,14 +187,18 @@ func (r *RoundRobinSigner) createNewPeerMsg(deposit *coin.Deposit, missedNodes i
     payment := &peer_contact.PaymentReq{}
     payment.BlockID = deposit.BlockID
     payment.CoinName = deposit.CoinName
-    payment.QuantaAddr = deposit.QuantaAddr
+    payment.QuantaAdress = deposit.QuantaAddr
     payment.Amount = deposit.Amount
 
-    msg := &peer_contact.PeerMessage
+    msg := &peer_contact.PeerMessage{}
     msg.Proposal = *payment
     msg.SignedBy = make([]int, 0)
     msg.NodesMissed = missedNodes
-    msg.MSG = make([]byte, 0)
+    var err error
+    msg.MSG, err = r.quanta.CreateProposeTransaction(deposit)
+    if err != nil {
+        r.log.Error("error creating tx " + err.Error())
+    }
     return msg
 }
 
@@ -197,23 +211,28 @@ func (r *RoundRobinSigner) createNewPeerMsg(deposit *coin.Deposit, missedNodes i
  */
 func (r *RoundRobinSigner) signPeerMsg(msg *peer_contact.PeerMessage) bool {
     txKey := getKeyName(msg.Proposal.CoinName, msg.Proposal.QuantaAdress, msg.Proposal.BlockID)
-    success := signTx(r.db, r.COIN_CONFIRMED, txKey)
+    success := signTx(r.db, COIN_CONFIRMED, txKey)
     if !success {
         r.log.Error("Failed to mark as signed")
         return false
     }
     data := msg.MSG
     var err error
-    if len(msg.SignedBy) == 0 {
-        data, err = json.Marshal(msg.PaymentReq)
-        if err != nil {
-            r.log.Error("Failed to marshal payment req")
-            return false
-        }
-    }
-    data, err := r.kM.SignMessage(data)
+
+    // need to check if we signed it
+
+    //if len(msg.SignedBy) == 0 {
+    //    data, err = json.Marshal(msg.Proposal)
+    //    if err != nil {
+    //        r.log.Error("Failed to marshal payment req")
+    //        return false
+    //    }
+    //}
+    r.log.Infof("Transaction valid, sign peer msg %v", msg.SignedBy)
+
+    data, err = r.kM.SignTransaction(data)
     if err != nil {
-        r.log.Error("Failed to encrypt the message")
+        r.log.Error("Failed to sign the message: " + err.Error())
         return false
     }
     msg.MSG = data
@@ -230,13 +249,15 @@ func (r *RoundRobinSigner) signPeerMsg(msg *peer_contact.PeerMessage) bool {
  */
 func (r *RoundRobinSigner) sendMessage(msg *peer_contact.PeerMessage) bool {
         destination := (r.myNodeID + 1) % r.man.N
-        tolerance := r.man.N - r.man.Q
+        tolerance := common.MaxInt(1, r.man.N - r.man.Q)
+        //r.log.Infof("sendMessage to peer %d missed=%d tolerance=%d", destination, msg.NodesMissed, tolerance)
+
         for msg.NodesMissed < tolerance {
-            success := peer_contact.SendMsg(r.man, destination, msg)
-            if success {
+            err := r.peer.SendMsg(r.man, destination, msg)
+            if err == nil {
                 return true
             }
-            destination = (destination + 1) % r.man.Na
+            destination = (destination + 1) % r.man.N
             msg.NodesMissed++
         }
         return false
@@ -251,21 +272,33 @@ func (r *RoundRobinSigner) sendMessage(msg *peer_contact.PeerMessage) bool {
  */
 func (r *RoundRobinSigner) processNewDeposits(deposits []*coin.Deposit) {
     for _, deposit := range deposits {
+
+        // let's confirm them
+        r.log.Infof("processNewDeposit: %s->%s token=%s  amount=%d",
+            deposit.SenderAddr, deposit.QuantaAddr, deposit.CoinName, deposit.Amount)
+
+        confirmTx(r.db, COIN_CONFIRMED, getKeyName(deposit.CoinName, deposit.QuantaAddr, deposit.BlockID))
+
         startNode := deposit.BlockID % r.man.N
         missedNodes := 0
         for i := 0; i < r.man.N; i++ {
-            nodeID := (r.myNodeID + i) % r.man.N
-            if nodeID == startNode {
-                break
-            }
-            missedNodes++
+           nodeID := (r.myNodeID + i) % r.man.N
+           if nodeID == startNode {
+               break
+           }
+           missedNodes++
         }
+        // if too many nodes missed, just skip for this deposit
         tolerance := r.man.N - r.man.Q
+
+        r.log.Infof("StartNode=%d Tolerance=%d missed=%d", startNode, tolerance, missedNodes)
+
         if missedNodes > tolerance {
-            continue
+           continue
         }
-        msg := createNewPeerMsg(deposit, missedNodes)
-        addToDeferQ(msg)
+        msg := r.createNewPeerMsg(deposit, 0)
+        msg.Proposer = r.myNodeID
+        r.addToDeferQ(msg)
     }
 }
 
@@ -281,15 +314,17 @@ func (r *RoundRobinSigner) processNewPeerMsgs(msgs []*peer_contact.PeerMessage) 
 
     toSend := make([]*peer_contact.PeerMessage, 0)
     for _, msg := range msgs {
-        success := validateTransaction(msg)
+        success := r.validateTransaction(msg)
         if !success {
+            r.log.Infof("Msg failed validate transaction proposer=%d", msg.Proposer)
             continue
         }
-        success = validateIntegrity(msg)
+        success = r.validateIntegrity(msg)
         if !success {
+            r.log.Infof("Msg failed validate integrity")
             continue
         }
-        success = signPeerMsg(msg)
+        success = r.signPeerMsg(msg)
         if !success {
             continue
         }
@@ -297,11 +332,13 @@ func (r *RoundRobinSigner) processNewPeerMsgs(msgs []*peer_contact.PeerMessage) 
             r.log.Error("Too many signatures")
             continue
         }
+
+        r.log.Infof("processNewPeerMsgs, so far signed by n=%d q=%d", len(msg.SignedBy), r.man.Q)
         if len(msg.SignedBy) == r.man.Q {
             toSend = append(toSend, msg)
             continue
         }
-        success = sendMessage(msg)
+        success = r.sendMessage(msg)
         if !success {
             r.log.Error("Failed to send message to peers")
         }

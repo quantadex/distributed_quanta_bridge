@@ -1,5 +1,11 @@
 package manifest
 
+import (
+    "errors"
+    "strconv"
+    "encoding/json"
+)
+
 /**
  * TrustNode
  *
@@ -9,6 +15,7 @@ type TrustNode struct {
     IP string
     Port string
     PubKey string
+    State string
 }
 
 /**
@@ -19,10 +26,10 @@ type TrustNode struct {
 type Manifest struct {
     N int // Total number of nodes in trust
     Q int // Number nodes needed to spend trust
-    Nodes map[int]TrustNode // The nodes in the trust. The key is the nodeID which is the order they were added.
-    ContractAddress // The address of the coin contract
-    ContractCallSite // The address where nodes post to the contract
-    QuantaAddress // The quanta-trust address
+    Nodes map[int]*TrustNode // The nodes in the trust. The key is the nodeID which is the order they were added.
+    ContractAddress string // The address of the coin contract
+    ContractCallSite string // The address where nodes post to the contract
+    QuantaAddress string // The quanta-trust address
 }
 
 /**
@@ -31,8 +38,8 @@ type Manifest struct {
  * Creates a new Manifest struct with N and Q set and an empty
  * trust node list
  */
-func CreateNewManifest(totalNodes string, quorumNodes string) (*Manifest, error) {
-    return nil, nil
+func CreateNewManifest(quorumNodes int) (*Manifest) {
+    return &Manifest{Q: quorumNodes, Nodes: map[int]*TrustNode{}}
 }
 
 /**
@@ -43,7 +50,9 @@ func CreateNewManifest(totalNodes string, quorumNodes string) (*Manifest, error)
  *
  */
 func CreateManifestFromJSON(data []byte) (*Manifest, error) {
-    return nil, nil
+    m := Manifest{}
+    err := json.Unmarshal(data, &m)
+    return &m, err
 }
 
 /**
@@ -53,7 +62,7 @@ func CreateManifestFromJSON(data []byte) (*Manifest, error) {
  * This is the inverse of CreateNewManifestFromJSON
  */
 func (m *Manifest) GetJSON() ([]byte, error) {
-    return nil, nil
+    return json.Marshal(&m)
 }
 
 /**
@@ -65,7 +74,18 @@ func (m *Manifest) GetJSON() ([]byte, error) {
  * 
  */
 func (m *Manifest) AddNode(ip string, port string, pubKey string) error {
-    return nil
+    if m.ManifestComplete() {
+        return errors.New("Manifest already completed")
+    }
+
+    nodeId, err := m.FindNode(ip, port, pubKey)
+    if err != nil {
+       m.Nodes[m.N] = &TrustNode{ ip, port, pubKey, "ADDED"}
+       m.N++
+       return nil
+    }
+
+    return errors.New("Node already exist on " + strconv.Itoa(nodeId))
 }
 
 /**
@@ -74,7 +94,7 @@ func (m *Manifest) AddNode(ip string, port string, pubKey string) error {
  * Returns true if the Mnaifest has exactly N nodes. False otherwise.
  */
 func (m *Manifest) ManifestComplete() bool {
-    return true
+    return m.N >= m.Q
 }
 
 /**
@@ -82,6 +102,25 @@ func (m *Manifest) ManifestComplete() bool {
  *
  * If a node with the given IP/port exists return it's nodeID. Otherwise return error
  */
-func (m *Manifest) FindNode(ip string, port string) (nodeID int, err error) {
-    return 0, nil
+func (m *Manifest) FindNode(ip string, port string, pubKey string) (nodeID int, err error) {
+    for k, v := range m.Nodes {
+        if v.IP == ip && v.Port == port && v.PubKey == pubKey {
+            return k, nil
+        }
+    }
+    return 0, errors.New("cannot find node")
+}
+
+/**
+ * Update state
+ */
+func (m *Manifest) UpdateState(nodeKey string, state string) error {
+    for _, v := range m.Nodes {
+        if v.PubKey == nodeKey {
+            v.State = state
+            return nil
+        }
+    }
+
+    return errors.New("Node not found for pubkey="+ nodeKey)
 }

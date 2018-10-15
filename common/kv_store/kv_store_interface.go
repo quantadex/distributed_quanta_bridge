@@ -57,7 +57,14 @@ type KVStore interface {
      * Retrieves the value associated with the given key. If access error encountered error is
      * propogated. If the key is not found both value and error are nil
     */
-    GetValue(tableName string, key string) (value string, err error)
+    GetValue(tableName string, key string) (value *string, err error)
+
+    /*
+     * GetAllValues
+     *
+     * Return all KV in the table as a map
+     */
+    GetAllValues(tableName string) (map[string]string, error)
 
     /*
      * SetValue
@@ -78,6 +85,6 @@ type KVStore interface {
     SetValue(tableName string, key string, oldValue string, newValue string) error
 }
 
-func NewKVStore() (*KVStore, error) {
-    return nil, nil
+func NewKVStore() (KVStore, error) {
+    return &BoltStore{}, nil
 }

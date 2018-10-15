@@ -1,0 +1,128 @@
+package coin
+
+import (
+	"github.com/ethereum/go-ethereum/ethclient"
+	"github.com/quantadex/distributed_quanta_bridge/common"
+	"strings"
+	common2 "github.com/ethereum/go-ethereum/common"
+	"encoding/base64"
+	"bytes"
+	"github.com/ethereum/go-ethereum/accounts/abi"
+	"math/big"
+	"github.com/go-errors/errors"
+	"encoding/binary"
+)
+
+const sign_prefix = "\x19Ethereum Signed Message:\n"
+
+type EthereumCoin struct {
+	client *Listener
+	maxRange int64
+	networkId string
+	ethereumRpc string
+}
+
+func (c *EthereumCoin) Attach() error {
+	c.client = &Listener{NetworkID: c.networkId}
+	ethereumClient, err := ethclient.Dial(c.ethereumRpc)
+	if err != nil {
+		return err
+	}
+
+	c.client.Client = ethereumClient
+	return c.client.Start()
+}
+
+func (c *EthereumCoin) GetTopBlockID() (int64, error) {
+	topBlockId, err := c.client.GetTopBlockNumber()
+	if err != nil {
+		return 0, err
+	}
+
+	return common.Min64(c.maxRange, topBlockId), nil
+}
+
+func (c *EthereumCoin) GetDepositsInBlock(blockID int64, trustAddress map[string]string) ([]*Deposit, error) {
+	ndeposits, err := c.client.GetNativeDeposits(blockID, trustAddress)
+	if err != nil {
+		return nil, err
+	}
+	deps, err := c.client.FilterTransferEvent(blockID, trustAddress)
+	if err != nil {
+		return nil, err
+	}
+
+	return append(ndeposits, deps...), nil
+}
+
+func (c *EthereumCoin) GetForwardersInBlock(blockID int64) ([]*ForwardInput, error) {
+	forwarders, err := c.client.GetForwardContract(blockID)
+	if err != nil {
+		return nil, err
+	}
+	return forwarders, nil
+}
+
+func (c *EthereumCoin) SendWithdrawal(apiAddress string, w Withdrawal, s []byte) error {
+	panic("implement me")
+}
+
+func (c *EthereumCoin) EncodeRefund(w Withdrawal) (string, error) {
+	var encoded bytes.Buffer
+	var smartAddress string
+	parts := strings.Split(w.CoinName,",")
+
+	if len(parts) == 2 {
+		smartAddress = parts[1]
+	} else {
+		smartAddress = ""
+	}
+
+	var number = common2.Big256
+	number.SetInt64(w.Amount)
+	encoded.WriteString(sign_prefix)
+	binary.Write(&encoded, binary.BigEndian, int32(20+20+32))
+	encoded.Write(common2.HexToAddress(strings.ToLower(smartAddress)).Bytes())
+	encoded.Write(common2.HexToAddress(strings.ToLower(w.DestinationAddress)).Bytes())
+	encoded.Write(abi.U256(new(big.Int).SetUint64(uint64(w.Amount))))
+	println("# of bytes " , encoded.Len())
+
+	return base64.StdEncoding.EncodeToString(encoded.Bytes()), nil
+}
+
+func (c *EthereumCoin)  DecodeRefund(encoded string) (*Withdrawal, error) {
+	decoded, err := base64.StdEncoding.DecodeString(encoded)
+	if err != nil {
+		return nil, err
+	}
+	w := &Withdrawal{}
+	println(len(decoded))
+
+	pl := len(sign_prefix)
+	header := decoded[0:pl]
+	if string(header) != sign_prefix {
+		return nil, errors.New("Unexpected prefix")
+	}
+
+	// skip 4 bytes to length
+	pl += 4
+	smartAddress := decoded[pl:pl+20]
+
+	pl += 20
+	destAddress := decoded[pl:pl+20]
+
+	pl += 20
+	amount := decoded[pl: pl + 32]
+	smartNumber := new(big.Int).SetBytes(smartAddress)
+
+	if smartNumber.Cmp(big.NewInt(0)) == 0 {
+		w.CoinName = "ETH"
+	} else {
+		w.CoinName = "," + strings.ToLower(common2.BytesToAddress(smartAddress).Hex())
+	}
+
+	w.DestinationAddress = strings.ToLower(common2.BytesToAddress(destAddress).Hex())
+	w.Amount = new(big.Int).SetBytes(amount).Int64()
+
+	return w, nil
+}

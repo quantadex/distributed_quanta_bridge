@@ -1,7 +1,9 @@
-package registrar_contact
+package registrar_client
 
 import (
-    "common/manifest"
+    "github.com/quantadex/distributed_quanta_bridge/common/manifest"
+    "github.com/quantadex/distributed_quanta_bridge/trust/key_manager"
+    "github.com/quantadex/distributed_quanta_bridge/common/queue"
 )
 
 /**
@@ -33,29 +35,32 @@ type RegistrarContact interface {
      * Stash the Queue object in the local object
      * Return error if no variable or propogate error from Connect()
      */
-    AttachToListener() error
+    AttachQueue(queue queue.Queue) error
 
     /**
      * RegisterNode
      *
      * Sends your node's info to the registrar's node_registry endpoint
+     * POST /register
      * Return error if failed to send or did not get status OK
      */
-    RegisterNode(nodeIP string, nodePort string, nodeKey string) error
+    RegisterNode(nodeIP string, nodePort string, km key_manager.KeyManager) error
 
     /**
      * SendHealth
      *
      * Send the given status to the registrar's node_healthcheck endpoint
+     * POST /health
      * Return error if failed to send or did not get status OK
      */
-    SendHealth(nodeState string) error
+    SendHealth(nodeState string, km key_manager.KeyManager) error
 
     /**
      * GetManifest
      *
      * Returns the manifest provided by the registrar.
      * Checks the listener queue-service for the queue corresponding to the "manifest" endpoint.
+     * GET /manifest
      * If item is available pulls it off and returns.
      * Otherwise returns nil
      */
@@ -72,6 +77,6 @@ type RegistrarContact interface {
     HealthCheckRequested() bool
 }
 
-func NewRegistrar (*Registrar, error) {
-    return nil, nil
+func NewRegistrar(address string, port int) (RegistrarContact, error) {
+    return &RegistrarClient{address:address, port: port}, nil
 }

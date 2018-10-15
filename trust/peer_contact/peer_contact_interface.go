@@ -1,7 +1,8 @@
 package peer_contact
 
 import (
-        "common/manifest"
+        "github.com/quantadex/distributed_quanta_bridge/common/manifest"
+    "github.com/quantadex/distributed_quanta_bridge/common/queue"
 )
 
 /**
@@ -12,8 +13,8 @@ import (
 type PaymentReq struct {
     BlockID  int // The coin block where payment was made
     CoinName string // The coin type represented (e.g ETH)
-    QuantaAddr string // The address where to pay
-    Amount  int // The amount to pay
+    QuantaAdress string // The address where to pay
+    Amount  int64 // The amount to pay
 }
 
 /**
@@ -22,10 +23,11 @@ type PaymentReq struct {
  * This is the message that is being passed between nodes to gain signatures
  */
 type PeerMessage struct {
+    Proposer int
     Proposal PaymentReq // The unsigned (raw) version of the msg
     SignedBy []int // List of nodeIDs (in-order) of nodes that signed
     NodesMissed int // Number of skipped nodes (not-signed)
-    MSG []byte // The actual signed message
+    MSG string // The actual signed message (base64 transaction envelope)
 }
 
 /**
@@ -45,7 +47,7 @@ type PeerContact interface {
      * Stash the Queue object in the local object
      * Return error if no variable or propogate error from Connect()
      */
-    AttachToListener() error
+    AttachQueue(queue queue.Queue) error
 
     /**
      *  SendMsg
@@ -65,6 +67,6 @@ type PeerContact interface {
     GetMsg() *PeerMessage
 }
 
-func NewPeerContact() (*PeerContact, error) {
-    return nil, nil
+func NewPeerContact(privKey string) (PeerContact, error) {
+    return &PeerClient{privateKey: privKey}, nil
 }

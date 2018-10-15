@@ -1,5 +1,7 @@
 package coin
 
+import "github.com/quantadex/distributed_quanta_bridge/common"
+
 /**
  * Deposit
  *
@@ -7,8 +9,9 @@ package coin
  */
 type Deposit struct {
     CoinName string // Type of coin (e.g. ETH)
+    SenderAddr string
     QuantaAddr string // Destination quanta acount
-    Amount int // Deposit size
+    Amount int64 // Deposit size
     BlockID int // The blockID in which this deposit was found
 }
 
@@ -20,9 +23,9 @@ type Deposit struct {
 type Withdrawal struct {
     NodeID int // The Node authorizing this
     CoinName string // The type of coin (e.g. ETH)
-    DestinationAddr string // Where this money is going
+    DestinationAddress string // Where this money is going
     QuantaBlockID int // Which block this transaction was processed in quanta
-    Amount int // The withdrawal size
+    Amount int64 // The withdrawal size
 }
 
 /**
@@ -38,14 +41,14 @@ type Coin interface {
      *
      * Connect to the specified coin core node. Return error if failed.
      */
-    Attach(coinName string) error
+    Attach() error
 
     /**
      * GetTopBlockID
      *
      * Returns the ID of the newest block in the chain.
      */
-    GetTopBlockID() (int, error)
+    GetTopBlockID() (int64, error)
 
     /**
      * GetDepositsInBlock
@@ -56,7 +59,16 @@ type Coin interface {
      * Returns nil if no matching deposits.
      * Returns error of error encountered
      */
-    GetDepositsInBlock(blockID int, trustAddress string) ([]Deposit, error)
+    GetDepositsInBlock(blockID int64, trustAddress map[string]string) ([]*Deposit, error)
+
+    /**
+     * GetForwardersInBlock
+     *
+     * Forwarders are smart contracts that are pointing into our trust address
+     * with information about QUANTA Address
+     * We will record this in our KV later, to know where deposits came from.
+     */
+    GetForwardersInBlock(blockID int64) ([]*ForwardInput, error)
 
     /**
      * SendWithdrawl
@@ -69,8 +81,23 @@ type Coin interface {
      * Return error if one was encountered
      */
     SendWithdrawal(apiAddress string, w Withdrawal, s []byte) error
+
+    EncodeRefund(w Withdrawal) (string, error)
+    DecodeRefund(encoded string) (*Withdrawal, error)
 }
 
-func NewCoin() (*Coin, error) {
-    return nil, nil
+func NewDummyCoin() (Coin, error) {
+    return &DummyCoin{}, nil
+}
+
+
+func NewEthereumCoin(networkId string, ethereumRpc string) (Coin, error) {
+    return &EthereumCoin{maxRange: common.MaxNumberInt64, networkId: networkId, ethereumRpc: ethereumRpc}, nil
+}
+
+/**
+ * Used for testing
+ */
+func NewEthereumCoinWithMax(max int64)  (Coin, error) {
+    return &EthereumCoin{maxRange: max}, nil
 }
