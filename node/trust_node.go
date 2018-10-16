@@ -30,7 +30,8 @@ const (
  */
 type TrustNode struct {
     log      logger.Logger
-    kM       key_manager.KeyManager
+    quantakM       key_manager.KeyManager
+    coinkM         key_manager.KeyManager
     man      *manifest.Manifest
     q        quanta.Quanta
     c        coin.Coin
@@ -60,6 +61,7 @@ type Config struct {
     EthereumBlockStart int64
     EthereumRpc string
     EthereumTrustAddr string
+    EthereumKeyStore string
 }
 
 /**
@@ -76,17 +78,29 @@ func initNode(config Config, targetCoin coin.Coin) (*TrustNode, bool) {
         return nil, false
     }
 
-    node.kM, err = key_manager.NewKeyManager(config.NetworkPassphrase)
+    node.quantakM, err = key_manager.NewKeyManager(config.NetworkPassphrase)
     if err != nil {
         node.log.Error("Failed to create key manager")
         return nil, false
     }
     reuseKeys := config.UsePrevKeys
     if reuseKeys == true {
-       err = node.kM.LoadNodeKeys(config.NodeKey)
+       err = node.quantakM.LoadNodeKeys(config.NodeKey)
     } else {
-       err = node.kM.CreateNodeKeys()
+       err = node.quantakM.CreateNodeKeys()
     }
+    if err != nil {
+        node.log.Error("Failed to set up node keys")
+        return nil, false
+    }
+
+    node.coinkM, err = key_manager.NewEthKeyManager()
+    if err != nil {
+        node.log.Error("Failed to create key manager")
+        return nil, false
+    }
+
+    err = node.coinkM.LoadNodeKeys(config.EthereumKeyStore)
     if err != nil {
         node.log.Error("Failed to set up node keys")
         return nil, false
@@ -184,13 +198,13 @@ func (n *TrustNode) registerNode(config Config) bool {
         return false
     }
 
-    nodeKey, err := n.kM.GetPublicKey()
+    nodeKey, err := n.quantakM.GetPublicKey()
     if err != nil {
         n.log.Error("Failed to get public key")
         return false
     }
 
-    err = n.reg.RegisterNode(nodeIP, strconv.Itoa(nodePort), n.kM)
+    err = n.reg.RegisterNode(nodeIP, strconv.Itoa(nodePort), n.quantakM)
     if err != nil {
         n.log.Error("Failed to send node info to registrar " + err.Error())
         return false
@@ -201,7 +215,7 @@ func (n *TrustNode) registerNode(config Config) bool {
         n.log.Info("Wait to be added to quorum")
         time.Sleep(time.Second)
         if n.reg.HealthCheckRequested() {
-            err = n.reg.SendHealth("READY", n.kM)
+            err = n.reg.SendHealth("READY", n.quantakM)
             if err != nil {
                 n.log.Error("Failed to send health status to registrar")
                 return false
@@ -237,7 +251,7 @@ func (n *TrustNode) initTrust(config Config) {
                                         n.man,
                                         n.man.QuantaAddress,
                                         config.EthereumTrustAddr,
-                                        n.kM,
+                                        n.quantakM,
                                         n.coinName,
                                         n.peer,
                                         n.queue,
@@ -248,7 +262,7 @@ func (n *TrustNode) initTrust(config Config) {
                                         n.c,
                                         n.q,
                                         n.man,
-                                        n.kM,
+                                        n.coinkM,
                                         n.coinName,
                                         n.nodeID,
                                         n.peer,
@@ -266,12 +280,13 @@ func (n *TrustNode) initTrust(config Config) {
 func (n *TrustNode) run() {
     for true {
         if n.reg.HealthCheckRequested() {
-            n.reg.SendHealth("RUNNING", n.kM)
+            n.reg.SendHealth("RUNNING", n.quantakM)
         }
         blockIDs := n.cTQ.GetNewCoinBlockIDs()
-        newBlocks := n.qTC.GetNewBlockIDs()
         n.cTQ.DoLoop(blockIDs)
-        n.qTC.DoLoop(newBlocks)
+
+        cursor, _ := control.GetLastBlock(n.db, control.QUANTA)
+        n.qTC.DoLoop(cursor)
         time.Sleep(time.Second * 1)
     }
 }

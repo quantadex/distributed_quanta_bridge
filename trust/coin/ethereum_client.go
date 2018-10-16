@@ -322,6 +322,13 @@ func (l *Listener) GetForwardContract(blockNumber int64) ([]*ForwardInput, error
 	return events, nil
 }
 
+func (l *Listener) SendWithDrawalToRPC(trustAddress common.Address,
+	ownerKey *ecdsa.PrivateKey,
+	w *Withdrawal) (string, error) {
+
+	return l.SendWithdrawal(l.Client.(bind.ContractBackend), trustAddress, ownerKey, w)
+}
+
 func (l *Listener) SendWithdrawal(conn bind.ContractBackend,
 								trustAddress common.Address,
 								ownerKey *ecdsa.PrivateKey,
@@ -367,4 +374,18 @@ func (l *Listener) SendWithdrawal(conn bind.ContractBackend,
 	}
 
 	return tx.Hash().Hex(), nil
+}
+
+func (l *Listener) GetTxID(conn bind.ContractBackend, trustAddress common.Address) (uint64, error) {
+
+	if conn == nil {
+		conn = l.Client.(bind.ContractBackend)
+	}
+	contract, err := NewTrustContract(trustAddress, conn)
+
+	if err != nil {
+		return 0, err
+	}
+
+	return contract.TxIdLast(nil)
 }

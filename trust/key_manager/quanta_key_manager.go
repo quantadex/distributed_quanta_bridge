@@ -9,6 +9,7 @@ import (
 	"github.com/stellar/go/build"
 	"github.com/stellar/go/keypair"
 	"log"
+	"crypto/ecdsa"
 )
 
 type QuantaKeyManager struct {
@@ -84,6 +85,9 @@ func (k *QuantaKeyManager) GetPublicKey() (string, error) {
 	return k.key.Address(), nil
 }
 
+func (k *QuantaKeyManager) GetPrivateKey() (*ecdsa.PrivateKey) {
+	return nil
+}
 
 func (k *QuantaKeyManager) VerifySignatureObj(msg interface{}, signature string) bool {
 	return crypto.VerifyMessage(msg, k.key.Address(), signature)

@@ -71,7 +71,7 @@ func NewCoinToQuanta(   log logger.Logger,
  * Returns a list of new blocks added to the coin block chain.
  */
 func (c *CoinToQuanta) GetNewCoinBlockIDs() []int64 {
-    lastProcessed, valid := getLastBlock(c.db, c.coinName)
+    lastProcessed, valid := GetLastBlock(c.db, c.coinName)
     if !valid {
         c.log.Error("Failed to get last processed ID")
         return nil

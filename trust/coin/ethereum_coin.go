@@ -10,6 +10,7 @@ import (
 	"math/big"
 	"github.com/go-errors/errors"
 	"encoding/binary"
+	"crypto/ecdsa"
 )
 
 const sign_prefix = "\x19Ethereum Signed Message:\n"
@@ -46,6 +47,10 @@ func (c *EthereumCoin) GetTopBlockID() (int64, error) {
 	return common.Min64(c.maxRange, topBlockId), nil
 }
 
+func (c *EthereumCoin) GetTxID(trustAddress common2.Address) (uint64, error) {
+	return c.client.GetTxID(nil, trustAddress)
+}
+
 func (c *EthereumCoin) GetDepositsInBlock(blockID int64, trustAddress map[string]string) ([]*Deposit, error) {
 	ndeposits, err := c.client.GetNativeDeposits(blockID, trustAddress)
 	if err != nil {
@@ -68,11 +73,10 @@ func (c *EthereumCoin) GetForwardersInBlock(blockID int64) ([]*ForwardInput, err
 }
 
 //
-func (c *EthereumCoin) SendWithdrawal(apiAddress string, w Withdrawal, s []byte) error {
-//	return c.client.Client.SendTransaction(context.Background(), tx)
-
-
-	return nil
+func (c *EthereumCoin) SendWithdrawal(trustAddress common2.Address,
+	ownerKey *ecdsa.PrivateKey,
+	w *Withdrawal) (string, error) {
+	return c.client.SendWithDrawalToRPC(trustAddress, ownerKey, w)
 }
 
 func (c *EthereumCoin) EncodeRefund(w Withdrawal) (string, error) {

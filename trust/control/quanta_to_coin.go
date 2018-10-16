@@ -5,7 +5,6 @@ import (
     "github.com/quantadex/distributed_quanta_bridge/common/kv_store"
     "github.com/quantadex/distributed_quanta_bridge/trust/quanta"
     "github.com/quantadex/distributed_quanta_bridge/trust/coin"
-    "encoding/json"
     "github.com/quantadex/distributed_quanta_bridge/trust/key_manager"
     "github.com/quantadex/distributed_quanta_bridge/common/manifest"
     "github.com/quantadex/distributed_quanta_bridge/trust/peer_contact"
@@ -13,7 +12,7 @@ import (
     "time"
     "github.com/quantadex/distributed_quanta_bridge/common/queue"
     "github.com/pkg/errors"
-    "encoding/base64"
+    "github.com/ethereum/go-ethereum/common"
 )
 
 const QUANTA = "QUANTA"
@@ -31,7 +30,7 @@ type QuantaToCoin struct {
     quantaChannel quanta.Quanta
     quantaTrustAddress string
     coinContractAddress string
-    kM key_manager.KeyManager
+    coinkM key_manager.KeyManager
     coinName string
     nodeID int
     rr *RoundRobinSigner
@@ -64,7 +63,7 @@ func NewQuantaToCoin(   log logger.Logger,
     res.quantaChannel = q
     res.quantaTrustAddress = quantaTrustAddress
     res.coinContractAddress = coinContractAddress
-    res.kM = kM
+    res.coinkM = kM
     res.coinName = coinName
     res.nodeID = nodeID
     res.trustPeer = peer_contact.NewTrustPeerNode(man, peer, nodeID, queue_)
@@ -103,103 +102,27 @@ func NewQuantaToCoin(   log logger.Logger,
     }
 
     res.cosi.SignMsg = func(msg string) (string, error) {
-        decoded, err := base64.StdEncoding.DecodeString(msg)
-        if err != nil {
-            log.Error("Unable to Sign refund msg")
-            return "", err
-        }
-        encodedSig, err := res.kM.SignMessage(decoded)
+        encodedSig, err := res.coinkM.SignTransaction(msg)
         if err != nil {
             log.Error("Unable to Sign/encode refund msg")
             return "", err
         }
 
-        return base64.StdEncoding.EncodeToString(encodedSig), nil
+        return encodedSig, nil
     }
 
     res.cosi.Start()
+
+    go func() {
+        for {
+            // feed messages back
+            msg := res.trustPeer.GetMsg()
+            res.cosi.CosiMsgChan <- msg
+            time.Sleep(500 * time.Millisecond)
+        }
+    }()
+
     return res
-}
-
-/**
- * getNewBlockIDs
- *
- * Gets a list of new quanta blocks since last processed.
- */
-func (c *QuantaToCoin) GetNewBlockIDs() []int64 {
-    lastProcessed, valid := getLastBlock(c.db, QUANTA)
-    if !valid {
-        c.logger.Error("Failed to get last processed block ID")
-        return nil
-    }
-
-    currentTop, err := c.quantaChannel.GetTopBlockID(c.quantaTrustAddress)
-    if err != nil {
-        c.logger.Error("Failed to get top quanta block ID")
-        return nil
-    }
-
-    if lastProcessed > currentTop {
-        c.logger.Error("Quanta top block smaller than last processed")
-        return nil
-    }
-
-    if lastProcessed == currentTop {
-        c.logger.Debug("Quanta2Coin: No new block")
-        return nil
-    }
-    blocks := make([]int64, 0)
-    for i := lastProcessed+1; i <= currentTop; i++ {
-        blocks = append(blocks, i)
-    }
-    return blocks
-}
-
-/**
- * getRedundsInBlock
- *
- * Gets all the quanta refunds in a given block
- */
-func (c *QuantaToCoin) getRefundsInBlock(blockID int64) ([]quanta.Refund, int64) {
-    refunds, nextBlockId, err := c.quantaChannel.GetRefundsInBlock(blockID, c.quantaTrustAddress)
-    if err != nil {
-        c.logger.Error("Failed to get refunds in quanta block")
-        return nil, 0
-    }
-    return refunds, nextBlockId
-}
-
-/**
- * submitRefund
- *
- * Signs the withdrawal and sends it to the coin's smart contract.
- */
-func (c *QuantaToCoin) submitRefund(refund *quanta.Refund) bool {
-    w := &coin.Withdrawal{}
-    w.NodeID = c.nodeID
-    w.CoinName = refund.CoinName
-    w.DestinationAddress = refund.DestinationAddress
-    w.QuantaBlockID = refund.BlockID
-    w.Amount = refund.Amount
-
-    raw, err := json.Marshal(w)
-    if err != nil {
-        c.logger.Error("Failed to marshal withdrawal")
-        return false
-    }
-
-    s, err := c.kM.SignMessage(raw)
-    if err != nil {
-        c.logger.Error("Failed to sign withdrawal")
-        return false
-    }
-
-    err = c.coinChannel.SendWithdrawal(c.coinContractAddress, *w, s)
-    if err != nil {
-        c.logger.Error("Failed to send withdrawal")
-        return false
-    }
-    return true
 }
 
 /**
@@ -207,54 +130,56 @@ func (c *QuantaToCoin) submitRefund(refund *quanta.Refund) bool {
  *
  * Does one complete loop. Pulling all new quanta blocks and processing any refunds in them
  */
-func (c *QuantaToCoin) DoLoop(blockIDs []int64) {
-    if blockIDs == nil {
+func (c *QuantaToCoin) DoLoop(cursor int64) {
+    refunds, _ , err := c.quantaChannel.GetRefundsInBlock(cursor, c.quantaTrustAddress)
+
+    if err != nil {
+        c.logger.Error(err.Error())
         return
     }
 
-    for _, blockID := range blockIDs {
-        success := setLastBlock(c.db, QUANTA, blockID)
-        if !success {
-            c.logger.Error("Failed to mark block as signed")
-            continue // should skip
-        }
-        refunds, nextBlockID := c.getRefundsInBlock(blockID)
-        if refunds == nil {
-            continue
-        }
+    for _, refund := range refunds {
+        refKey := getKeyName(refund.CoinName, refund.DestinationAddress, refund.OperationID)
+        confirmTx(c.db, QUANTA_CONFIRMED, refKey)
 
-        // feed messages back
-        msg := c.trustPeer.GetMsg()
-        c.cosi.CosiMsgChan <- msg
-
-        for _, refund := range refunds {
-            refKey := getKeyName(refund.CoinName, refund.DestinationAddress, refund.BlockID)
-            confirmTx(c.db, QUANTA_CONFIRMED, refKey)
-
-            if c.nodeID == 0 {
-                encoded, err := c.coinChannel.EncodeRefund(coin.Withdrawal{
-                    CoinName: refund.CoinName,
-                    DestinationAddress: refund.DestinationAddress,
-                    QuantaBlockID: refund.BlockID,
-                })
-
-                if err != nil {
-                    c.logger.Error("Failed to encode refund " + err.Error())
-                    continue
-                }
-
-                c.cosi.StartNewRound(encoded)
-
-                result := <- c.cosi.FinalSigChan
-
-                if result.Msg == nil {
-                    c.logger.Error("Unable to sign for refund")
-                } else {
-                    c.logger.Infof("Great! Cosi successfully signed refund")
-                    c.submitRefund(nil)
-                }
+        // i'm the leader
+        if c.nodeID == 0 {
+            txId, err := c.coinChannel.GetTxID()
+            if err != nil {
+                c.logger.Error("Could not get txID: " + err.Error())
             }
+            w := coin.Withdrawal{
+                TxId: txId,
+                CoinName: refund.CoinName,
+                DestinationAddress: refund.DestinationAddress,
+                QuantaBlockID: refund.OperationID,
+            }
+            encoded, err := c.coinChannel.EncodeRefund(w)
+
+            if err != nil {
+                c.logger.Error("Failed to encode refund " + err.Error())
+                continue
+            }
+
+            c.cosi.StartNewRound(encoded)
+
+            result := <- c.cosi.FinalSigChan
+
+            if result.Msg == nil {
+                c.logger.Error("Unable to sign for refund")
+            } else {
+                // save this to queue for later in case ETH RPC is down.
+                w.Signatures = result.Msg
+                c.coinChannel.SendWithdrawal(common.HexToAddress(c.quantaTrustAddress), c.coinkM.GetPrivateKey() ,&w)
+                c.logger.Infof("Great! Cosi successfully signed refund")
+            }
+
+            success := setLastBlock(c.db, QUANTA, refund.PageTokenID)
+            if !success {
+                c.logger.Error("Failed to mark block as signed")
+                continue // should skip
+            }
+
         }
     }
-
 }

@@ -7,6 +7,7 @@ import (
 	"github.com/ethereum/go-ethereum/crypto/sha3"
 	"github.com/ethereum/go-ethereum/rlp"
 	"github.com/ethereum/go-ethereum/common"
+	"crypto/ecdsa"
 )
 
 type EthereumKeyManager struct{
@@ -32,6 +33,10 @@ func (e *EthereumKeyManager) LoadNodeKeys(filename string) error {
 
 func (e *EthereumKeyManager) GetPublicKey() (string, error) {
 	return e.GetPublicKey()
+}
+
+func (e *EthereumKeyManager) GetPrivateKey() (*ecdsa.PrivateKey) {
+	return e.GetPrivateKey()
 }
 
 func (e *EthereumKeyManager) SignMessage(original []byte) ([]byte, error) {

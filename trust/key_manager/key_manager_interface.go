@@ -1,5 +1,7 @@
 package key_manager
 
+import "crypto/ecdsa"
+
 /**
  * KeyManager
  *
@@ -29,6 +31,8 @@ type KeyManager interface {
      * Returns the public key stored in object.
      */
     GetPublicKey() (string, error)
+
+    GetPrivateKey() (*ecdsa.PrivateKey)
 
     /**
      * SignMessage
