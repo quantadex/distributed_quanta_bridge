@@ -1,6 +1,10 @@
 package coin
 
-import "github.com/quantadex/distributed_quanta_bridge/common"
+import (
+    "github.com/quantadex/distributed_quanta_bridge/common"
+    common2 "github.com/ethereum/go-ethereum/common"
+    "crypto/ecdsa"
+)
 
 /**
  * Deposit
@@ -21,11 +25,12 @@ type Deposit struct {
  * The data structure that needs to be filled out to do a succesful withdrawal.
  */
 type Withdrawal struct {
-    NodeID int // The Node authorizing this
+    TxId uint64 // The Node authorizing this
     CoinName string // The type of coin (e.g. ETH)
     DestinationAddress string // Where this money is going
-    QuantaBlockID int // Which block this transaction was processed in quanta
-    Amount int64 // The withdrawal size
+    QuantaBlockID int64 // Which block this transaction was processed in quanta
+    Amount uint64 // The withdrawal size
+    Signatures []string // hex signatures via ethereum
 }
 
 /**
@@ -49,6 +54,8 @@ type Coin interface {
      * Returns the ID of the newest block in the chain.
      */
     GetTopBlockID() (int64, error)
+
+    GetTxID() (uint64, error)
 
     /**
      * GetDepositsInBlock
@@ -80,7 +87,9 @@ type Coin interface {
      *
      * Return error if one was encountered
      */
-    SendWithdrawal(apiAddress string, w Withdrawal, s []byte) error
+    SendWithdrawal(trustAddress common2.Address,
+        ownerKey *ecdsa.PrivateKey,
+        w *Withdrawal) (string, error)
 
     EncodeRefund(w Withdrawal) (string, error)
     DecodeRefund(encoded string) (*Withdrawal, error)

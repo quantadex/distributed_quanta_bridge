@@ -89,12 +89,17 @@ func StartRegistry() {
 	go s.Start()
 }
 
-func DoLoop(nodes []*TrustNode, blockIds []int64) {
+func DoLoopDeposit(nodes []*TrustNode, blockIds []int64) {
 	for _, n := range nodes {
 		n.cTQ.DoLoop(blockIds)
 	}
 }
 
+func DoLoopWithdrawal(nodes []*TrustNode, blockIds []int64) {
+	for _, n := range nodes {
+		n.qTC.DoLoop(blockIds)
+	}
+}
 /**
  * This one test native token from block 4186072
  */
@@ -102,18 +107,18 @@ func TestRopstenNativeETH(t *testing.T) {
 	StartRegistry()
 	nodes := StartNodes(3)
 	time.Sleep(time.Millisecond*250)
-	DoLoop(nodes, []int64{4186072, 4186072, 4186074}) // we create the original smart contract on 74
-	DoLoop(nodes, []int64{4196673})  // we make deposit
-	DoLoop(nodes, []int64{4196674})
+	DoLoopDeposit(nodes, []int64{4186072, 4186072, 4186074}) // we create the original smart contract on 74
+	DoLoopDeposit(nodes, []int64{4196673})  // we make deposit
+	DoLoopDeposit(nodes, []int64{4196674})
 }
 
 func TestRopstenERC20Token(t *testing.T) {
 	StartRegistry()
 	nodes := StartNodes(3)
 	time.Sleep(time.Millisecond*250)
-	DoLoop(nodes, []int64{4186072, 4186072, 4186074}) // we create the original smart contract on 74
-	DoLoop(nodes, []int64{4196673})  // we make deposit
-	DoLoop(nodes, []int64{4196674})
+	DoLoopDeposit(nodes, []int64{4186072, 4186072, 4186074}) // we create the original smart contract on 74
+	DoLoopDeposit(nodes, []int64{4196673})  // we make deposit
+	DoLoopDeposit(nodes, []int64{4196674})
 }
 
 func TestDummyCoin(t *testing.T) {
@@ -128,4 +133,11 @@ func TestDummyCoin(t *testing.T) {
 	//dummy.AddDeposit(&coin.Deposit{"ETH", "",
 	//				"QDCFARPB4ZR7VGTEL2XII5OPPUPPX2PQAYZURXRVR6Z34GNWTUHGVSXT",
 	//				15*10000000, 1})
+}
+
+func TestWithdrawal(t *testing.T) {
+	StartRegistry()
+	nodes := StartNodes(3)
+	time.Sleep(time.Millisecond*250)
+	DoLoopWithdrawal(nodes, []int64{})
 }

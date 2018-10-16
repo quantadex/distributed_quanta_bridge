@@ -57,7 +57,7 @@ func InitLedger(kv kv_store.KVStore) error {
  * Converts a coinName, destination address and block ID into a single unique string
  * that will be used as a key
  */
-func getKeyName(coinName string, dstAddress string, blockID int) string {
+func getKeyName(coinName string, dstAddress string, blockID int64) string {
     return fmt.Sprintf("%s-%s-%09d", coinName, dstAddress, blockID)
 }
 
@@ -112,7 +112,7 @@ func signTx(db kv_store.KVStore, table string, k string) bool {
  * Returns the last processed block for a coin.
  * Valid is true if succeeded. False otherwise.
  */
-func getLastBlock(db kv_store.KVStore, coinName string) (int64, bool) {
+func GetLastBlock(db kv_store.KVStore, coinName string) (int64, bool) {
     v, err := db.GetValue(LAST_BLOCK, coinName)
     if err != nil {
         return 0, false
@@ -134,7 +134,7 @@ func getLastBlock(db kv_store.KVStore, coinName string) (int64, bool) {
  * Returns true if succeeded in update.
  */
 func setLastBlock(db kv_store.KVStore, coinName string, newVal int64) bool {
-    prevBlock, valid := getLastBlock(db, coinName)
+    prevBlock, valid := GetLastBlock(db, coinName)
     if !valid {
         return false
     }

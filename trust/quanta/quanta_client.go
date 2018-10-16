@@ -13,6 +13,9 @@ import (
 	"github.com/quantadex/distributed_quanta_bridge/common/logger"
 	"github.com/stellar/go/xdr"
 	"errors"
+	"time"
+	"strconv"
+	"encoding/base64"
 )
 
 type QuantaClientOptions struct {
@@ -28,6 +31,29 @@ type QuantaClient struct {
 	queue queue.Queue
 	worker SubmitWorker
 }
+
+type Operations struct {
+	Links struct {
+		Self horizon.Link `json:"self"`
+		Next horizon.Link `json:"next"`
+		Prev horizon.Link `json:"prev"`
+	} `json:"_links"`
+	Embedded struct {
+		Records []Operation `json:"records"`
+	} `json:"_embedded"`
+}
+
+type Operation struct {
+	ID          string    `json:"id"`
+	Type        string    `json:"type"`
+	PagingToken string    `json:"paging_token"`
+	CreatedAt   time.Time `json:"created_at"`
+	AssetType   string	  `json:"asset_type"`
+	From		   string	  `json:"from"`
+	To			   string	  `json:"to"`
+	TxHash         string `json:"transaction_hash"`
+}
+
 
 // remember to test coins < 10^7
 func (q *QuantaClient) CreateProposeTransaction(deposit *coin.Deposit) (string, error) {
@@ -103,12 +129,98 @@ func (q *QuantaClient) AttachQueue(queueIn queue.Queue) error {
 	return nil
 }
 
-func (q *QuantaClient) GetTopBlockID() (int64, error) {
+func (q *QuantaClient) GetTopBlockID(accountId string) (int64, error) {
+	url := fmt.Sprintf("%s/accounts/%s/operations?order=desc&limit=1", q.horizonClient.URL,accountId)
+
+	resp, err := q.horizonClient.HTTP.Get(url)
+	if err != nil {
+		return 0, err
+	}
+
+	var operations Operations
+	if err := json.NewDecoder(resp.Body).Decode(&operations); err != nil {
+		return 0, errors.New("failed to decode operations: "+ err.Error())
+	}
+
+	if len(operations.Embedded.Records) > 0 {
+		num, _ := strconv.ParseInt(operations.Embedded.Records[0].ID, 10, 64)
+		if err != nil {
+			return 0, err
+		}
+		return num, nil
+	}
+
 	return 0, nil
 }
 
-func (q *QuantaClient) GetRefundsInBlock(blockID int64, trustAddress string) ([]Refund, error) {
-	return nil, nil
+func (q *QuantaClient) GetTransactionWithHash(hash string) (*horizon.Transaction, error) {
+	url := fmt.Sprintf("%s/transactions/%s", q.horizonClient.URL,hash)
+	//println(url)
+
+	resp, err := q.horizonClient.HTTP.Get(url)
+	if err != nil {
+		return nil, err
+	}
+
+	var tx horizon.Transaction
+	if err := json.NewDecoder(resp.Body).Decode(&tx); err != nil {
+		return nil, errors.New("failed to decode operations: "+ err.Error())
+	}
+
+	return &tx, nil
+}
+
+// returns nextPageToken
+func (q *QuantaClient) GetRefundsInBlock(cursor int64, trustAddress string) ([]Refund, int64, error) {
+	url := fmt.Sprintf("%s/accounts/%s/payments?order=asc&limit=20&cursor=%d", q.horizonClient.URL,trustAddress, cursor)
+	//println(url)
+
+	resp, err := q.horizonClient.HTTP.Get(url)
+	if err != nil {
+		return nil, 0, err
+	}
+
+	var operations Operations
+	if err := json.NewDecoder(resp.Body).Decode(&operations); err != nil {
+		return nil, 0, errors.New("failed to decode operations: "+ err.Error())
+	}
+
+	refunds := []Refund{}
+
+	if len(operations.Embedded.Records) > 0 {
+		var num int64
+		var pt int64
+		for index, op := range operations.Embedded.Records {
+			num, _ = strconv.ParseInt(operations.Embedded.Records[index].ID, 10, 64)
+			pt, _ = strconv.ParseInt(operations.Embedded.Records[index].PagingToken, 10, 64)
+			if err != nil {
+				return nil, 0, err
+			}
+			if op.Type == "payment" {
+				if op.To == trustAddress {
+					// it's a refund
+					newRefund := Refund{
+						CoinName: op.AssetType,
+						DestinationAddress: op.To,
+						OperationID: num,
+					}
+
+					tx, err := q.GetTransactionWithHash(op.TxHash)
+					if err != nil {
+						return nil, cursor, nil
+					}
+					newRefund.TransactionId = tx.ID
+					memo, _ := base64.StdEncoding.DecodeString(tx.Memo)
+					newRefund.DestinationAddress = string(memo)
+					newRefund.LedgerID = tx.Ledger
+					refunds = append(refunds, newRefund)
+				}
+			}
+		}
+		return refunds, pt, nil
+	}
+
+	return refunds, cursor, nil
 }
 
 func (q *QuantaClient) ProcessDeposit(deposit peer_contact.PeerMessage) error {

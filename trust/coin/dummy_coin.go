@@ -3,6 +3,8 @@ package coin
 import (
 	"fmt"
 	"sync"
+	"crypto/ecdsa"
+	common2 "github.com/ethereum/go-ethereum/common"
 )
 
 type DummyCoin struct {
@@ -35,11 +37,18 @@ func (c *DummyCoin) GetTopBlockID() (int64, error) {
 	return c.index, nil
 }
 
+func (c *DummyCoin) GetTxID() (uint64, error) {
+	return 0, nil
+}
+
+
 func (c *DummyCoin) GetDepositsInBlock(blockID int64, trustAddress map[string]string) ([]*Deposit, error) {
 	return c.deposits[int(blockID)], nil
 }
 
-func (c *DummyCoin) SendWithdrawal(apiAddress string, w Withdrawal, s []byte) error {
+func (c *DummyCoin) SendWithdrawal(trustAddress common2.Address,
+	ownerKey *ecdsa.PrivateKey,
+	w *Withdrawal) (string, error) {
 	panic("implement me")
 }
 
