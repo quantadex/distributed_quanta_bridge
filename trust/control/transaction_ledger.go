@@ -57,7 +57,7 @@ func InitLedger(kv kv_store.KVStore) error {
  * Converts a coinName, destination address and block ID into a single unique string
  * that will be used as a key
  */
-func getKeyName(coinName string, dstAddress string, blockID int) string {
+func getKeyName(coinName string, dstAddress string, blockID int64) string {
     return fmt.Sprintf("%s-%s-%09d", coinName, dstAddress, blockID)
 }
 

@@ -11,8 +11,6 @@ import (
     "github.com/quantadex/distributed_quanta_bridge/trust/peer_contact"
     "github.com/quantadex/distributed_quanta_bridge/trust/control"
     "github.com/quantadex/distributed_quanta_bridge/trust/registrar_client"
-    "github.com/spf13/viper"
-    "fmt"
     "github.com/quantadex/distributed_quanta_bridge/common/queue"
     "strconv"
 )
@@ -236,10 +234,13 @@ func (n *TrustNode) initTrust(config Config) {
                                         n.db,
                                         n.c,
                                         n.q,
+                                        n.man,
                                         n.man.QuantaAddress,
-                                        n.man.ContractCallSite,
+                                        config.EthereumTrustAddr,
                                         n.kM,
                                         n.coinName,
+                                        n.peer,
+                                        n.queue,
                                         n.nodeID)
 
     n.cTQ = control.NewCoinToQuanta( n.log,
@@ -268,8 +269,9 @@ func (n *TrustNode) run() {
             n.reg.SendHealth("RUNNING", n.kM)
         }
         blockIDs := n.cTQ.GetNewCoinBlockIDs()
+        newBlocks := n.qTC.GetNewBlockIDs()
         n.cTQ.DoLoop(blockIDs)
-        n.qTC.DoLoop()
+        n.qTC.DoLoop(newBlocks)
         time.Sleep(time.Second * 1)
     }
 }
@@ -292,32 +294,4 @@ func bootstrapNode(config Config, targetCoin coin.Coin) *TrustNode {
     node.initTrust(config)
 
     return node
-}
-/**
- * main
- *
- * Runs the trust node
- */
-func main() {
-    viper.SetConfigName("config")
-    viper.AddConfigPath(".")
-    viper.AddConfigPath("node")
-
-    err := viper.ReadInConfig()
-    if err != nil {
-        panic(fmt.Errorf("Fatal error config file: %s \n", err))
-    }
-    config := Config {}
-    err = viper.Unmarshal(&config)
-    if err != nil {
-        panic(fmt.Errorf("Fatal error config file: %s \n", err))
-    }
-
-    coin, err := coin.NewEthereumCoin(config.EthereumNetworkId, config.EthereumRpc)
-    if err != nil {
-        panic(fmt.Errorf("cannot create ethereum listener"))
-    }
-
-    node := bootstrapNode(config, coin)
-    node.run()
 }

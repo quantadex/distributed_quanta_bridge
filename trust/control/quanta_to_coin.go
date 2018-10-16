@@ -126,14 +126,14 @@ func NewQuantaToCoin(   log logger.Logger,
  *
  * Gets a list of new quanta blocks since last processed.
  */
-func (c *QuantaToCoin) getNewBlockIDs() []int64 {
+func (c *QuantaToCoin) GetNewBlockIDs() []int64 {
     lastProcessed, valid := getLastBlock(c.db, QUANTA)
     if !valid {
         c.logger.Error("Failed to get last processed block ID")
         return nil
     }
 
-    currentTop, err := c.quantaChannel.GetTopBlockID()
+    currentTop, err := c.quantaChannel.GetTopBlockID(c.quantaTrustAddress)
     if err != nil {
         c.logger.Error("Failed to get top quanta block ID")
         return nil
@@ -160,13 +160,13 @@ func (c *QuantaToCoin) getNewBlockIDs() []int64 {
  *
  * Gets all the quanta refunds in a given block
  */
-func (c *QuantaToCoin) getRefundsInBlock(blockID int64) []quanta.Refund {
-    refunds, err := c.quantaChannel.GetRefundsInBlock(blockID, c.quantaTrustAddress)
+func (c *QuantaToCoin) getRefundsInBlock(blockID int64) ([]quanta.Refund, int64) {
+    refunds, nextBlockId, err := c.quantaChannel.GetRefundsInBlock(blockID, c.quantaTrustAddress)
     if err != nil {
         c.logger.Error("Failed to get refunds in quanta block")
-        return nil
+        return nil, 0
     }
-    return refunds
+    return refunds, nextBlockId
 }
 
 /**
@@ -207,18 +207,18 @@ func (c *QuantaToCoin) submitRefund(refund *quanta.Refund) bool {
  *
  * Does one complete loop. Pulling all new quanta blocks and processing any refunds in them
  */
-func (c *QuantaToCoin) DoLoop() {
-    newBlocks := c.getNewBlockIDs()
-    if newBlocks == nil {
+func (c *QuantaToCoin) DoLoop(blockIDs []int64) {
+    if blockIDs == nil {
         return
     }
-    for _, blockID := range newBlocks {
+
+    for _, blockID := range blockIDs {
         success := setLastBlock(c.db, QUANTA, blockID)
         if !success {
             c.logger.Error("Failed to mark block as signed")
             continue // should skip
         }
-        refunds := c.getRefundsInBlock(blockID)
+        refunds, nextBlockID := c.getRefundsInBlock(blockID)
         if refunds == nil {
             continue
         }

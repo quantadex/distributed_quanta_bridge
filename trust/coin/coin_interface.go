@@ -21,11 +21,12 @@ type Deposit struct {
  * The data structure that needs to be filled out to do a succesful withdrawal.
  */
 type Withdrawal struct {
-    NodeID int // The Node authorizing this
+    TxId uint64 // The Node authorizing this
     CoinName string // The type of coin (e.g. ETH)
     DestinationAddress string // Where this money is going
-    QuantaBlockID int // Which block this transaction was processed in quanta
-    Amount int64 // The withdrawal size
+    QuantaBlockID int64 // Which block this transaction was processed in quanta
+    Amount uint64 // The withdrawal size
+    Signatures []string // hex signatures via ethereum
 }
 
 /**

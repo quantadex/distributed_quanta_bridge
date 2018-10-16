@@ -1,0 +1,421 @@
+[
+  {
+    "constant": true,
+    "inputs": [
+      {
+        "name": "_hashedMsg",
+        "type": "bytes32"
+      },
+      {
+        "name": "_sig",
+        "type": "string"
+      }
+    ],
+    "name": "recoverSigner",
+    "outputs": [
+      {
+        "name": "",
+        "type": "address"
+      }
+    ],
+    "payable": false,
+    "stateMutability": "pure",
+    "type": "function"
+  },
+  {
+    "constant": true,
+    "inputs": [
+      {
+        "name": "_hashedMsg",
+        "type": "bytes32"
+      },
+      {
+        "name": "_sig",
+        "type": "string"
+      },
+      {
+        "name": "_addr",
+        "type": "address"
+      }
+    ],
+    "name": "isSignedBy",
+    "outputs": [
+      {
+        "name": "",
+        "type": "bool"
+      }
+    ],
+    "payable": false,
+    "stateMutability": "pure",
+    "type": "function"
+  },
+  {
+    "constant": true,
+    "inputs": [
+      {
+        "name": "_hashedMsg",
+        "type": "bytes32"
+      },
+      {
+        "name": "_v",
+        "type": "uint8"
+      },
+      {
+        "name": "_r",
+        "type": "bytes32"
+      },
+      {
+        "name": "_s",
+        "type": "bytes32"
+      }
+    ],
+    "name": "recoverSignerVRS",
+    "outputs": [
+      {
+        "name": "",
+        "type": "address"
+      }
+    ],
+    "payable": false,
+    "stateMutability": "pure",
+    "type": "function"
+  },
+  {
+    "constant": true,
+    "inputs": [
+      {
+        "name": "_hexstr",
+        "type": "string"
+      }
+    ],
+    "name": "hexstrToBytes",
+    "outputs": [
+      {
+        "name": "",
+        "type": "bytes"
+      }
+    ],
+    "payable": false,
+    "stateMutability": "pure",
+    "type": "function"
+  },
+  {
+    "constant": true,
+    "inputs": [
+      {
+        "name": "_char",
+        "type": "string"
+      }
+    ],
+    "name": "parseInt16Char",
+    "outputs": [
+      {
+        "name": "",
+        "type": "uint256"
+      }
+    ],
+    "payable": false,
+    "stateMutability": "pure",
+    "type": "function"
+  },
+  {
+    "constant": true,
+    "inputs": [
+      {
+        "name": "_uint",
+        "type": "uint256"
+      }
+    ],
+    "name": "uintToBytes32",
+    "outputs": [
+      {
+        "name": "b",
+        "type": "bytes"
+      }
+    ],
+    "payable": false,
+    "stateMutability": "pure",
+    "type": "function"
+  },
+  {
+    "constant": true,
+    "inputs": [
+      {
+        "name": "_msg",
+        "type": "string"
+      }
+    ],
+    "name": "toEthereumSignedMessage",
+    "outputs": [
+      {
+        "name": "",
+        "type": "bytes32"
+      }
+    ],
+    "payable": false,
+    "stateMutability": "pure",
+    "type": "function"
+  },
+  {
+    "constant": true,
+    "inputs": [
+      {
+        "name": "_uint",
+        "type": "uint256"
+      }
+    ],
+    "name": "uintToString",
+    "outputs": [
+      {
+        "name": "str",
+        "type": "string"
+      }
+    ],
+    "payable": false,
+    "stateMutability": "pure",
+    "type": "function"
+  },
+  {
+    "constant": true,
+    "inputs": [
+      {
+        "name": "_str",
+        "type": "string"
+      },
+      {
+        "name": "_startIndex",
+        "type": "uint256"
+      },
+      {
+        "name": "_endIndex",
+        "type": "uint256"
+      }
+    ],
+    "name": "substring",
+    "outputs": [
+      {
+        "name": "",
+        "type": "string"
+      }
+    ],
+    "payable": false,
+    "stateMutability": "pure",
+    "type": "function"
+  },
+  {
+    "constant": true,
+    "inputs": [],
+    "name": "last_completed_migration",
+    "outputs": [
+      {
+        "name": "",
+        "type": "uint256"
+      }
+    ],
+    "payable": false,
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "constant": true,
+    "inputs": [],
+    "name": "owner",
+    "outputs": [
+      {
+        "name": "",
+        "type": "address"
+      }
+    ],
+    "payable": false,
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "payable": false,
+    "stateMutability": "nonpayable",
+    "type": "constructor"
+  },
+  {
+    "constant": false,
+    "inputs": [
+      {
+        "name": "completed",
+        "type": "uint256"
+      }
+    ],
+    "name": "setCompleted",
+    "outputs": [],
+    "payable": false,
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "constant": false,
+    "inputs": [
+      {
+        "name": "new_address",
+        "type": "address"
+      }
+    ],
+    "name": "upgrade",
+    "outputs": [],
+    "payable": false,
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": false,
+        "name": "success",
+        "type": "bool"
+      },
+      {
+        "indexed": false,
+        "name": "txId",
+        "type": "uint64"
+      },
+      {
+        "indexed": false,
+        "name": "erc20Address",
+        "type": "address"
+      },
+      {
+        "indexed": false,
+        "name": "to",
+        "type": "address"
+      },
+      {
+        "indexed": false,
+        "name": "amount",
+        "type": "uint256"
+      },
+      {
+        "indexed": false,
+        "name": "verified",
+        "type": "bool[]"
+      },
+      {
+        "indexed": false,
+        "name": "v",
+        "type": "uint8[]"
+      },
+      {
+        "indexed": false,
+        "name": "r",
+        "type": "bytes32[]"
+      },
+      {
+        "indexed": false,
+        "name": "s",
+        "type": "bytes32[]"
+      },
+      {
+        "indexed": false,
+        "name": "debugSigMsgLength",
+        "type": "uint256"
+      }
+    ],
+    "name": "TransactionResult",
+    "type": "event"
+  },
+  {
+    "constant": false,
+    "inputs": [
+      {
+        "name": "txId",
+        "type": "uint64"
+      },
+      {
+        "name": "erc20Addr",
+        "type": "address"
+      },
+      {
+        "name": "toAddr",
+        "type": "address"
+      },
+      {
+        "name": "amount",
+        "type": "uint256"
+      },
+      {
+        "name": "v",
+        "type": "uint8[]"
+      },
+      {
+        "name": "r",
+        "type": "bytes32[]"
+      },
+      {
+        "name": "s",
+        "type": "bytes32[]"
+      }
+    ],
+    "name": "paymentTx",
+    "outputs": [],
+    "payable": false,
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "constant": false,
+    "inputs": [
+      {
+        "name": "signer",
+        "type": "address"
+      }
+    ],
+    "name": "voteAddSigner",
+    "outputs": [],
+    "payable": false,
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "constant": false,
+    "inputs": [
+      {
+        "name": "signer",
+        "type": "address"
+      }
+    ],
+    "name": "voteRemoveSigner",
+    "outputs": [],
+    "payable": false,
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "constant": true,
+    "inputs": [
+      {
+        "name": "txId",
+        "type": "uint64"
+      },
+      {
+        "name": "erc20Addr",
+        "type": "address"
+      },
+      {
+        "name": "toAddr",
+        "type": "address"
+      },
+      {
+        "name": "amount",
+        "type": "uint256"
+      }
+    ],
+    "name": "toQuantaPaymentSignatureMessage",
+    "outputs": [
+      {
+        "name": "",
+        "type": "bytes"
+      }
+    ],
+    "payable": false,
+    "stateMutability": "pure",
+    "type": "function"
+  }
+]

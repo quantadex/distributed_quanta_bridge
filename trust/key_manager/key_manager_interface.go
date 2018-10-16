@@ -58,16 +58,20 @@ type KeyManager interface {
      * SignTX
      * Decodes the transaction envelope, and adds our signature
      */
-     SignTransaction(base64 string) (string, error)
+     SignTransaction(encoded string) (string, error)
 
     /**
      * VerifyTX
      * Decode the transaction envelope, and check the signature
      */
-    VerifyTransaction(base64 string) (bool, error)
+    VerifyTransaction(encoded string) (bool, error)
 
 }
 
 func NewKeyManager(network string) (KeyManager, error) {
     return &QuantaKeyManager{network: network, }, nil
+}
+
+func NewEthKeyManager() (KeyManager, error) {
+    return &EthereumKeyManager{}, nil
 }

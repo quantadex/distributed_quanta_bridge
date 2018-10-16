@@ -73,7 +73,7 @@ func (t *TrustPeerNode) Stop() {
 
 func (t *TrustPeerNode) Members() []*common.Member {
 	members := []*common.Member{}
-	for k,v := range t.man.Nodes {
+	for _,v := range t.man.Nodes {
 		members = append(members, &common.Member{
 			Address: v.IP + ":" + v.Port,
 		})

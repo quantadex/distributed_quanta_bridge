@@ -4,6 +4,12 @@ import (
 	"testing"
 	"github.com/ethereum/go-ethereum/ethclient"
 	"fmt"
+	"github.com/quantadex/distributed_quanta_bridge/trust/key_manager"
+	"github.com/ethereum/go-ethereum/crypto"
+	"github.com/ethereum/go-ethereum/accounts/abi/bind"
+	"github.com/ethereum/go-ethereum/accounts/abi/bind/backends"
+	"github.com/ethereum/go-ethereum/core"
+	"math/big"
 )
 
 // https://goethereumbook.org/event-read-erc20/
@@ -65,4 +71,48 @@ func TestForwardScan(t *testing.T) {
 	}
 
 	fmt.Printf("%d %v %v\n", len(contracts), contracts[0].QuantaAddr, contracts[0].ContractAddress)
+}
+
+func TestWithdrawalTX(t *testing.T) {
+	km, _ := key_manager.NewEthKeyManager()
+	err := km.LoadNodeKeys("keystore/key--7cd737655dff6f95d55b711975d2a4ace32d256e")
+	if err != nil {
+		t.Error(err)
+		return
+	}
+
+	key, _ := crypto.GenerateKey()
+	dest := bind.NewKeyedTransactor(key)
+
+	// simulate users creating the contract
+	userKey, _ := crypto.GenerateKey()
+	userAuth := bind.NewKeyedTransactor(userKey)
+
+	sim := backends.NewSimulatedBackend(core.GenesisAlloc{
+		userAuth.From : { Balance: big.NewInt(10000000000)} }, 500000)
+
+	w := &Withdrawal{
+		TxId: 1,
+		CoinName: "ETH",
+		DestinationAddress: dest.From.Hex(),
+		QuantaBlockID: 1,
+		Amount: 10000,
+		Signatures: nil,
+	}
+
+	coin := &EthereumCoin{}
+	encoded, _ := coin.EncodeRefund(*w)
+	println(encoded)
+	signed, _ := km.SignTransaction(encoded)
+	println("signed", signed)
+
+	w.Signatures = []string{ signed, signed, signed }
+
+	client := &Listener{NetworkID: ROPSTEN_NETWORK_ID}
+	tx, err := client.SendWithdrawal(sim, userAuth.From, userKey, w)
+
+	if err != nil {
+		println("ERR: ", err.Error())
+	}
+	println(tx)
 }

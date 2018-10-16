@@ -13,10 +13,14 @@ import (
  * User's quanta return to trust in order to get a refund
  */
 type Refund struct {
+    TransactionId string
+    LedgerID int32
+    OperationID int64
+    PageTokenID int64  // use this as your blockID
     CoinName string
-    DestinationAddress string
-    Amount int
-    BlockID int
+    SourceAddress string
+    DestinationAddress string // extract from memo
+    Amount uint64
 }
 
 /**
@@ -46,7 +50,7 @@ type Quanta interface {
      *
      * Returns the id of the latest quanta block.
      */
-    GetTopBlockID() (int64, error)
+    GetTopBlockID(accountId string) (int64, error)
 
     /**
      * GetRefundsInBlock
@@ -54,7 +58,7 @@ type Quanta interface {
      * Returns a list of refunds that were made to the specified address in the given block.
      * Return nil if no matching deposits.
      */
-    GetRefundsInBlock(blockID int64, trustAddress string) ([]Refund, error)
+    GetRefundsInBlock(blockID int64, trustAddress string) ([]Refund, int64, error)
 
     /**
      * ProcessDeposit

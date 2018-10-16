@@ -13,6 +13,8 @@ import (
 	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/quantadex/distributed_quanta_bridge/registrar/Forwarder"
+	"github.com/ethereum/go-ethereum/accounts/abi/bind"
+	"crypto/ecdsa"
 )
 
 const abiCode = `[{"anonymous":false,"inputs":[{"indexed":true,"name":"from","type":"address"},{"indexed":true,"name":"to","type":"address"},{"indexed":false,"name":"tokens","type":"uint256"}],"name":"Transfer","type":"event"},{"anonymous":false,"inputs":[{"indexed":true,"name":"tokenOwner","type":"address"},{"indexed":true,"name":"spender","type":"address"},{"indexed":false,"name":"tokens","type":"uint256"}],"name":"Approval","type":"event"}]`
@@ -320,3 +322,49 @@ func (l *Listener) GetForwardContract(blockNumber int64) ([]*ForwardInput, error
 	return events, nil
 }
 
+func (l *Listener) SendWithdrawal(conn bind.ContractBackend,
+								trustAddress common.Address,
+								ownerKey *ecdsa.PrivateKey,
+								w *Withdrawal) (string, error) {
+	auth := bind.NewKeyedTransactor(ownerKey)
+	contract, err := NewTrustContract(trustAddress, conn)
+
+	if err != nil {
+		return "", err
+	}
+
+	var smartAddress common.Address
+	parts := strings.Split(w.CoinName, ",")
+	if len(parts) > 1 {
+		smartAddress = common.HexToAddress(parts[1])
+	}
+
+	toAddr := common.HexToAddress(w.DestinationAddress)
+	amount := big.NewInt(int64(w.Amount))
+
+	println(len(common.Hex2Bytes(w.Signatures[0])))
+
+	var r [][32]byte
+	var s [][32]byte
+	var v []uint8
+
+	for _, signature := range w.Signatures {
+		data := common.Hex2Bytes(signature)
+		var r1 [32]byte
+		copy(r1[0:32], data[0:32])
+		r = append(r, r1)
+
+		var s1 [32]byte
+		copy(s1[0:32], data[32:64])
+		s = append(s, s1)
+
+		v = append(v, data[64])
+	}
+
+	tx, err := contract.PaymentTx(auth, 0, smartAddress, toAddr, amount, v, r, s)
+	if err != nil {
+		return "", err
+	}
+
+	return tx.Hash().Hex(), nil
+}
