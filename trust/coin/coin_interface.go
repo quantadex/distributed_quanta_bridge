@@ -16,7 +16,7 @@ type Deposit struct {
     SenderAddr string
     QuantaAddr string // Destination quanta acount
     Amount int64 // Deposit size
-    BlockID int // The blockID in which this deposit was found
+    BlockID int64 // The blockID in which this deposit was found
 }
 
 /**
@@ -55,7 +55,7 @@ type Coin interface {
      */
     GetTopBlockID() (int64, error)
 
-    GetTxID() (uint64, error)
+    GetTxID(trustAddress common2.Address) (uint64, error)
 
     /**
      * GetDepositsInBlock

@@ -6,8 +6,8 @@ import (
 	"net/http"
 	"github.com/quantadex/distributed_quanta_bridge/trust/peer_contact"
 	"encoding/json"
-	"time"
 	"github.com/quantadex/distributed_quanta_bridge/common/logger"
+	"time"
 )
 
 type SubmitWorkerImpl struct {
@@ -24,8 +24,11 @@ func (s *SubmitWorkerImpl) Dispatch() {
 	s.logger.Infof("Submitworker started")
 
 	for {
+		//println("Wake up")
+		time.Sleep(time.Second)
+
 		data, err := s.queue.Get(queue.QUANTA_TX_QUEUE)
-		if err != nil{
+		if err != nil {
 			continue
 		}
 
@@ -43,7 +46,6 @@ func (s *SubmitWorkerImpl) Dispatch() {
 			err2 := err.(*horizon.Error)
 			s.logger.Error("could not submit transaction " + err2.Error() + err2.Problem.Detail)
 		}
-		time.Sleep(time.Second)
 	}
 }
 

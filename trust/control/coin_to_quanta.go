@@ -130,11 +130,11 @@ func (c *CoinToQuanta) getDepositsInBlock(blockID int64) []*coin.Deposit {
 func (c *CoinToQuanta) submitMessages(msgs []*peer_contact.PeerMessage) {
     for _, msg := range msgs {
         err := c.quantaChannel.ProcessDeposit(*msg)
-        c.log.Infof("Process deposit to %s %d",
-                        msg.Proposal.QuantaAdress, msg.Proposal.Amount)
         if err != nil {
             c.log.Error("Failed to submit deposit " + err.Error())
         }
+        c.log.Infof("Submit deposit to %s %d",
+            msg.Proposal.QuantaAdress, msg.Proposal.Amount)
     }
 }
 

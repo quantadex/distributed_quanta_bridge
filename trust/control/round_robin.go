@@ -151,7 +151,7 @@ func (r *RoundRobinSigner) validateIntegrity(msg *peer_contact.PeerMessage) bool
     }
     valid, err := r.kM.VerifyTransaction(msg.MSG)
     if !valid {
-        r.log.Error("validateIntegrity: failed to verify message " + err.Error())
+        r.log.Error("validateIntegrity: failed to verify message ")
         return false
     }
 
@@ -160,12 +160,14 @@ func (r *RoundRobinSigner) validateIntegrity(msg *peer_contact.PeerMessage) bool
         r.log.Error("validateIntegrity: failed to decode message")
         return false
     }
+
     //if decoded.BlockID != msg.Proposal.BlockID {
     //    return false
     //}
     //if decoded.CoinName != msg.Proposal.CoinName {
     //    return false
     //}
+
     if decoded.QuantaAddr != msg.Proposal.QuantaAdress {
         r.log.Error("validateIntegrity: address mismatch")
         return false
@@ -279,11 +281,11 @@ func (r *RoundRobinSigner) processNewDeposits(deposits []*coin.Deposit) {
 
         confirmTx(r.db, COIN_CONFIRMED, getKeyName(deposit.CoinName, deposit.QuantaAddr, deposit.BlockID))
 
-        startNode := deposit.BlockID % r.man.N
+        startNode := deposit.BlockID % int64(r.man.N)
         missedNodes := 0
         for i := 0; i < r.man.N; i++ {
            nodeID := (r.myNodeID + i) % r.man.N
-           if nodeID == startNode {
+           if int64(nodeID) == startNode {
                break
            }
            missedNodes++

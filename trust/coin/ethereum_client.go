@@ -177,7 +177,7 @@ func (l *Listener) GetNativeDeposits(blockNumber int64, toAddress map[string]str
 		return nil, err
 	}
 	if blocks == nil {
-		return nil, errors.Wrap(err, "Block not found " + err.Error())
+		return nil, errors.Wrap(err, "Block not found ")
 	}
 
 	events := []*Deposit{}

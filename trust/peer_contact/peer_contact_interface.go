@@ -11,7 +11,7 @@ import (
  * This is the struct that actually gets signed.
  */
 type PaymentReq struct {
-    BlockID  int // The coin block where payment was made
+    BlockID  int64 // The coin block where payment was made
     CoinName string // The coin type represented (e.g ETH)
     QuantaAdress string // The address where to pay
     Amount  int64 // The amount to pay

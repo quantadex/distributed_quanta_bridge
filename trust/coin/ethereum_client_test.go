@@ -75,7 +75,7 @@ func TestForwardScan(t *testing.T) {
 
 func TestWithdrawalTX(t *testing.T) {
 	km, _ := key_manager.NewEthKeyManager()
-	err := km.LoadNodeKeys("keystore/key--7cd737655dff6f95d55b711975d2a4ace32d256e")
+	err := km.LoadNodeKeys("file://keystore/key--7cd737655dff6f95d55b711975d2a4ace32d256e")
 	if err != nil {
 		t.Error(err)
 		return
@@ -115,4 +115,22 @@ func TestWithdrawalTX(t *testing.T) {
 		println("ERR: ", err.Error())
 	}
 	println(tx)
+}
+
+func TestGanacheTX(t *testing.T) {
+	coin, err := NewEthereumCoin("5777", "http://localhost:7545")
+	if err != nil {
+		t.Error(err)
+		return
+	}
+	err = coin.Attach()
+	if err != nil {
+		t.Error(err)
+		return
+	}
+	blockId, err := coin.GetTopBlockID()
+	println(blockId)
+
+	// try to get out of bound
+	coin.GetDepositsInBlock(50000, map[string]string{})
 }

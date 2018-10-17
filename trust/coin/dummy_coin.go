@@ -37,7 +37,7 @@ func (c *DummyCoin) GetTopBlockID() (int64, error) {
 	return c.index, nil
 }
 
-func (c *DummyCoin) GetTxID() (uint64, error) {
+func (c *DummyCoin) GetTxID(trustAddress common2.Address) (uint64, error) {
 	return 0, nil
 }
 

@@ -113,14 +113,18 @@ func NewQuantaToCoin(   log logger.Logger,
 
     res.cosi.Start()
 
-    go func() {
-        for {
-            // feed messages back
-            msg := res.trustPeer.GetMsg()
-            res.cosi.CosiMsgChan <- msg
-            time.Sleep(500 * time.Millisecond)
-        }
-    }()
+    //go func() {
+    //    for {
+    //        // feed messages back
+    //        msg := res.trustPeer.GetMsg()
+    //
+    //        if msg != nil {
+    //            res.cosi.CosiMsgChan <- msg
+    //        }
+    //
+    //        time.Sleep(500 * time.Millisecond)
+    //    }
+    //}()
 
     return res
 }
@@ -138,22 +142,26 @@ func (c *QuantaToCoin) DoLoop(cursor int64) {
         return
     }
 
+    // separate confirm, and sign as two different stages
     for _, refund := range refunds {
         refKey := getKeyName(refund.CoinName, refund.DestinationAddress, refund.OperationID)
         confirmTx(c.db, QUANTA_CONFIRMED, refKey)
 
         // i'm the leader
         if c.nodeID == 0 {
-            txId, err := c.coinChannel.GetTxID()
+            txId, err := c.coinChannel.GetTxID(common.HexToAddress(c.quantaTrustAddress))
             if err != nil {
                 c.logger.Error("Could not get txID: " + err.Error())
+                //TODO: How to handle this?
             }
             w := coin.Withdrawal{
                 TxId: txId,
                 CoinName: refund.CoinName,
                 DestinationAddress: refund.DestinationAddress,
                 QuantaBlockID: refund.OperationID,
+                Amount: refund.Amount,
             }
+            c.logger.Infof("Start new round %v", w)
             encoded, err := c.coinChannel.EncodeRefund(w)
 
             if err != nil {
@@ -182,4 +190,5 @@ func (c *QuantaToCoin) DoLoop(cursor int64) {
 
         }
     }
+    c.logger.Infof("Next cursor is = %d", cursor)
 }

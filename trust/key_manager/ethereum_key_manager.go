@@ -8,10 +8,11 @@ import (
 	"github.com/ethereum/go-ethereum/rlp"
 	"github.com/ethereum/go-ethereum/common"
 	"crypto/ecdsa"
+	"strings"
 )
 
 type EthereumKeyManager struct{
-	key *keystore.Key
+	key *ecdsa.PrivateKey
 }
 
 func (e *EthereumKeyManager) CreateNodeKeys() error {
@@ -19,24 +20,35 @@ func (e *EthereumKeyManager) CreateNodeKeys() error {
 }
 
 func (e *EthereumKeyManager) LoadNodeKeys(filename string) error {
-	keyjson, err := ioutil.ReadFile(filename)
-	if err != nil {
-		return err
-	}
 
-	e.key, err = keystore.DecryptKey(keyjson, "test123")
-	if err != nil {
-		return err
+	if strings.HasPrefix(filename, "file://")  {
+		keyjson, err := ioutil.ReadFile(strings.TrimPrefix(filename, "file://"))
+		if err != nil {
+			return err
+		}
+
+		key, err := keystore.DecryptKey(keyjson, "test123")
+		if err != nil {
+			return err
+		}
+		e.key = key.PrivateKey
+		return nil
+	} else {
+		key, err := crypto.HexToECDSA(filename)
+		if err != nil {
+			return err
+		}
+		e.key = key
+		return nil
 	}
-	return nil
 }
 
 func (e *EthereumKeyManager) GetPublicKey() (string, error) {
-	return e.GetPublicKey()
+	return crypto.PubkeyToAddress(e.key.PublicKey).Hex(), nil
 }
 
 func (e *EthereumKeyManager) GetPrivateKey() (*ecdsa.PrivateKey) {
-	return e.GetPrivateKey()
+	return e.key
 }
 
 func (e *EthereumKeyManager) SignMessage(original []byte) ([]byte, error) {
@@ -61,7 +73,7 @@ func (e *EthereumKeyManager) SignTransaction(hex string) (string, error) {
 	hw.Sum(h[:0])
 	println("Hash=", h.Hex())
 
-	sig, err := crypto.Sign(h.Bytes(), e.key.PrivateKey)
+	sig, err := crypto.Sign(h.Bytes(), e.key)
 	if err != nil {
 		return "", err
 	}

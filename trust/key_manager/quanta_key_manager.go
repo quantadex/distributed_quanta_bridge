@@ -43,9 +43,11 @@ func (k *QuantaKeyManager) SignTransaction(base64 string) (string, error) {
 
 
 func (k *QuantaKeyManager) VerifyTransaction(base64 string) (bool, error) {
+	println("verify ", base64)
 	txe := &xdr.TransactionEnvelope{}
 	err := xdr.SafeUnmarshalBase64(base64, txe)
 	if err != nil {
+		println("ERROR!", err)
 		return false, err
 	}
 

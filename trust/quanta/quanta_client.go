@@ -58,6 +58,7 @@ type Operation struct {
 // remember to test coins < 10^7
 func (q *QuantaClient) CreateProposeTransaction(deposit *coin.Deposit) (string, error) {
 	amount := fmt.Sprintf("%.7f",float64(deposit.Amount)/10000000)
+	println("Propose TX: ", deposit.CoinName, q.Issuer)
 
 	tx, err := b.Transaction(
 		b.Network{q.Network},
@@ -66,7 +67,7 @@ func (q *QuantaClient) CreateProposeTransaction(deposit *coin.Deposit) (string, 
 		//b.Sequence{ 0 },
 		b.Payment(
 			b.Destination{deposit.QuantaAddr},
-			b.NativeAmount{ amount},
+			b.CreditAmount{ deposit.CoinName, q.Issuer, amount },
 		),
 	)
 
@@ -172,8 +173,8 @@ func (q *QuantaClient) GetTransactionWithHash(hash string) (*horizon.Transaction
 
 // returns nextPageToken
 func (q *QuantaClient) GetRefundsInBlock(cursor int64, trustAddress string) ([]Refund, int64, error) {
-	url := fmt.Sprintf("%s/accounts/%s/payments?order=asc&limit=20&cursor=%d", q.horizonClient.URL,trustAddress, cursor)
-	//println(url)
+	url := fmt.Sprintf("%s/accounts/%s/payments?order=asc&limit=100&cursor=%d", q.horizonClient.URL,trustAddress, cursor)
+	println(url)
 
 	resp, err := q.horizonClient.HTTP.Get(url)
 	if err != nil {

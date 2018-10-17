@@ -19,12 +19,18 @@ var NODE_KEYS = []string {
 	"ZC4U5P5DWNXGRUENOCOKZFHAWFKBE7JFOB2BCEKCM7BKXXKQE3DARXIJ",
 }
 
+var ETHKEYS = []string {
+	"efff3cf1e98e8b348041c04fdc1f3019d0dae19d6f6e489bf8cfd38cb5270ddd",
+	"b28ee83828f3e96f5d9048f866fe9b59e1c9b8a201fb3a71d8b19a3db9959249",
+	"6aa210915b26e4f48f2f525ad14759e298bb98d2071fd8032149f33d5baff094",
+}
+
 //address:QCAO4HRMJDGFPUHRCLCSWARQTJXY2XTAFQUIRG2FAR3SCF26KQLAWZRN weight:1
 //address:QCNKL7QKKQZD63UW27JLY7LDLR6MME3WNLUJ47VP25EZH5THRPEZRSAK weight:1
 //address:QCN2DWLVXNAZW6ALR6KXJWGQB4J2J5TBJVPYLQMIU2TDCXIOBID5WRU5 weight:1
 //address:QAHXFPFJ33VV4C4BTXECIQCNI7CXRKA6KKG5FP3TJFNWGE7YUC4MBNFB weight:1 *** Issuer
 
-func SetConfig(key string, port int) {
+func SetConfig(key string, port int, ethPrivKey string) {
 	viper.SetConfigType("yaml") // or viper.SetConfigType("YAML")
 
 	// any approach to require this configuration into your program.
@@ -44,7 +50,8 @@ EthereumNetworkId: 3
 EthereumBlockStart: 4186070
 EthereumRpc: https://ropsten.infura.io/v3/7b880b2fb55c454985d1c1540f47cbf6
 EthereumTrustAddr: 0xe0006458963c3773B051E767C5C63FEe24Cd7Ff9
-`, port, port, key))
+EthereumKeyStore: %s
+`, port, port, key, ethPrivKey))
 
 	viper.ReadConfig(bytes.NewBuffer(config))
 }
@@ -57,7 +64,7 @@ func StartNodes(n int)[]*TrustNode {
 		wg.Add(1)
 
 		os.Remove(fmt.Sprintf("./kv_db_%d.db", 5100+i))
-		SetConfig(NODE_KEYS[i], 5100 + i)
+		SetConfig(NODE_KEYS[i], 5100 + i, ETHKEYS[i])
 		config := Config {}
 		err := viper.Unmarshal(&config)
 		if err != nil {
@@ -95,9 +102,9 @@ func DoLoopDeposit(nodes []*TrustNode, blockIds []int64) {
 	}
 }
 
-func DoLoopWithdrawal(nodes []*TrustNode, blockIds []int64) {
+func DoLoopWithdrawal(nodes []*TrustNode, cursor int64) {
 	for _, n := range nodes {
-		n.qTC.DoLoop(blockIds)
+		n.qTC.DoLoop(cursor)
 	}
 }
 /**
@@ -107,18 +114,24 @@ func TestRopstenNativeETH(t *testing.T) {
 	StartRegistry()
 	nodes := StartNodes(3)
 	time.Sleep(time.Millisecond*250)
-	DoLoopDeposit(nodes, []int64{4186072, 4186072, 4186074}) // we create the original smart contract on 74
-	DoLoopDeposit(nodes, []int64{4196673})  // we make deposit
-	DoLoopDeposit(nodes, []int64{4196674})
+	//DoLoopDeposit(nodes, []int64{4186072, 4186072, 4186074}) // we create the original smart contract on 74
+	//DoLoopDeposit(nodes, []int64{4196673})  // we make deposit
+
+	// DEPOSIT to TEST2
+	DoLoopDeposit(nodes, []int64{4248970})
+	DoLoopDeposit(nodes, []int64{4248971})  // we make deposit
+	DoLoopDeposit(nodes, []int64{4249018})
+	DoLoopDeposit(nodes, []int64{4249019})
+	time.Sleep(time.Second*4)
 }
 
 func TestRopstenERC20Token(t *testing.T) {
-	StartRegistry()
-	nodes := StartNodes(3)
-	time.Sleep(time.Millisecond*250)
-	DoLoopDeposit(nodes, []int64{4186072, 4186072, 4186074}) // we create the original smart contract on 74
-	DoLoopDeposit(nodes, []int64{4196673})  // we make deposit
-	DoLoopDeposit(nodes, []int64{4196674})
+	//StartRegistry()
+	//nodes := StartNodes(3)
+	//time.Sleep(time.Millisecond*250)
+	//DoLoopDeposit(nodes, []int64{4186072, 4186072, 4186074}) // we create the original smart contract on 74
+	//DoLoopDeposit(nodes, []int64{4196673})  // we make deposit
+	//DoLoopDeposit(nodes, []int64{4196674})
 }
 
 func TestDummyCoin(t *testing.T) {
@@ -139,5 +152,7 @@ func TestWithdrawal(t *testing.T) {
 	StartRegistry()
 	nodes := StartNodes(3)
 	time.Sleep(time.Millisecond*250)
-	DoLoopWithdrawal(nodes, []int64{})
+	DoLoopWithdrawal(nodes, 0)
+
+	time.Sleep(5 * time.Second)
 }
