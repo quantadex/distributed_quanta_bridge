@@ -1,6 +1,6 @@
-const QUANTA_CROSS_CHAIN = artifacts.require("./QuantaCrossChain.sol")
-const LIB_BYTES = artifacts.require("../libraries/libbytes.sol")
-const LIB_ECTOOLS = artifacts.require("../libraries/ECTools.sol")
+const QUANTA_CROSS_CHAIN = artifacts.require("./QuantaCrossChain.sol");
+const LIB_BYTES = artifacts.require("../libraries/libbytes.sol");
+const LIB_ECTOOLS = artifacts.require("../libraries/ECTools.sol");
 
 
 module.exports = function(deployer) {
