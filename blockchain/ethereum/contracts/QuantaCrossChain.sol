@@ -1,16 +1,24 @@
 pragma solidity ^0.4.24;
 
+import { Ownable } from "./zeppelin/ownership/Ownable.sol";
+import { ERC20 } from "./zeppelin/token/ERC20.sol";
 import { libbytes } from "../libraries/libbytes.sol";
 import { ECTools } from "../libraries/ECTools.sol";
 
 
 // TODO: make this contract ownable
 
-contract QuantaCrossChain {
+/**
+ * Quanta Cross Chain contract.
+ *
+ * Initial deployment will instantiate an unusable contract.
+ * To make the contract usable, the owner must call assignInitialSigners() once.
+ */
+contract QuantaCrossChain is Ownable {
   /** keys are the signers' address, value is a 1 if active */
   mapping(address=>uint8) private signers;
 
-  /** the number of total signers added */
+  /** the number of total signers ratified */
   uint256 private totalSigners = 0;
 
   /** the last successfully used txId */
@@ -23,12 +31,34 @@ contract QuantaCrossChain {
                           uint256 amount,
                           bool[] verified);
 
+  /**
+   * Assigns the initial list of signers.
+   * Must be called once after contract instantiation.
+   * All other methods will fail or revert until this is called.
+   * May only be called once by the owner. Further calls are ignored.
+  */
+  function assignInitialSigners(address[] initialSigners) external onlyOwner {
+    assert(totalSigners == 0);  // penalize (using assertions) if tried twice
+    require(initialSigners.length > 0);
+
+    // TODO: should we temporarily set totalSigners to MAX_UINT256?
+
+    for(uint i=0; i<initialSigners.length; i++) {
+      signers[initialSigners[i]] = 1;
+    }
+
+    totalSigners = i;
+  }
+
+  function getTotalSigners() public view onlyOwner returns (uint256) {
+    return totalSigners;
+  }
 
   function paymentTx(uint64 txId,
                      address erc20Addr,
                      address toAddr,
                      uint256 amount,
-                     uint8[] v, bytes32[] r, bytes32[] s) public {
+                     uint8[] v, bytes32[] r, bytes32[] s) public {  // FIXME: use external instead of public since it uses last gas
     uint n = v.length;
 
     require(n != 0);
@@ -61,15 +91,8 @@ contract QuantaCrossChain {
         toAddr.transfer(amount);
       } else {
         // https://theethereum.wiki/w/index.php/ERC20_Token_Standard#The_ERC20_Token_Standard_Interface
-
-        // TODO: test with FixedSupply ERC20 sample contract
-        // TODO: replace erc20 copy from zeppelin v1.12.0
-        // https://github.com/OpenZeppelin/openzeppelin-solidity/blob/v1.12.0/contracts/token/ERC20/ERC20.sol
-        // https://medium.com/taipei-ethereum-meetup/smart-contract-unit-testing-use-erc20-token-contract-as-an-example-d150c2700834
-
-        // TODO: use https://github.com/OpenZeppelin/openzeppelin-solidity/blob/v1.12.0/contracts/token/ERC20/SafeERC20.sol
-        revert("not supported, erc20 transfers");
-        // ERC20(erc20Addr).transfer(toAddr, amount);
+        ERC20 inst = ERC20(erc20Addr);
+        inst.transfer(toAddr, amount);
       }
     }
 
@@ -81,17 +104,24 @@ contract QuantaCrossChain {
      emit TransactionResult((v.length-n) == totalSigners, txIdLast, erc20Addr, toAddr, amount, verified);  // , v, r, s, sigMsg);
   }
 
-  function voteAddSigner(address signer) public {
+  function voteAddSigner(address signer) external {
     require(signer != 0x0);
 
+    // TODO: put the proposed proposed signer in a mapping, and only
+    // move them to the signers list when all current signers have
+    // ratified them
     if (signers[signer] == 0) {
       totalSigners++;
       signers[signer] = 1;
     }
   }
 
-  function voteRemoveSigner(address signer) public {
+  function voteRemoveSigner(address signer) external {
     require(signer != 0x0);
+
+    // TODO: put the proposed proposed signer in a mapping, and only
+    // move them to the signers list when all current signers have
+    // agreed to remove them
 
     if (signers[signer] == 1) {
       delete signers[signer];
