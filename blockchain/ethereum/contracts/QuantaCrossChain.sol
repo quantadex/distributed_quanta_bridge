@@ -6,8 +6,6 @@ import { libbytes } from "../libraries/libbytes.sol";
 import { ECTools } from "../libraries/ECTools.sol";
 
 
-// TODO: make this contract ownable
-
 /**
  * Quanta Cross Chain contract.
  *
@@ -58,7 +56,7 @@ contract QuantaCrossChain is Ownable {
                      address erc20Addr,
                      address toAddr,
                      uint256 amount,
-                     uint8[] v, bytes32[] r, bytes32[] s) public {  // FIXME: use external instead of public since it uses last gas
+                     uint8[] v, bytes32[] r, bytes32[] s) external {  // FIXME: use external instead of public since it uses last gas
     uint n = v.length;
 
     require(n != 0);
@@ -66,43 +64,60 @@ contract QuantaCrossChain is Ownable {
     require(n == s.length);
     require(txId == txIdLast+1);
 
-    bool[] memory verified = new bool[](n);
     bytes memory sigMsg = toQuantaPaymentSignatureMessage(txId, erc20Addr, toAddr, amount);
 
-    bytes32 signed = ECTools.toEthereumSignedMessage(string(sigMsg));
+    bool[] memory verified = new bool[](n);
+    bool success = validateSignatures(sigMsg, n, v, r, s, verified);
 
-    address addr;
-
-    // TODO: check for duplicates
-    // TODO: many to one?
-    for(uint i=0; i<n; i++) {
-      addr = ECTools.recoverSignerVRS(signed, v[i], r[i], s[i]);
-      if (signers[addr] == 1) {
-        verified[i] = true;
-        n--;
-      }
-    }
-
-    if ((v.length-n) == totalSigners) {
-      // TODO: check sufficient balances
+    if (success) {
+      // if insufficient balance, methods will just revert
 
       if (erc20Addr == 0) {
         // https://solidity.readthedocs.io/en/v0.4.24/units-and-global-variables.html#address-related
         toAddr.transfer(amount);
       } else {
         // https://theethereum.wiki/w/index.php/ERC20_Token_Standard#The_ERC20_Token_Standard_Interface
-        ERC20 inst = ERC20(erc20Addr);
-        inst.transfer(toAddr, amount);
+        ERC20(erc20Addr).transfer(toAddr, amount);
+      }
+
+      txIdLast++;
+    }
+
+    emit TransactionResult(success, txIdLast, erc20Addr, toAddr, amount, verified);
+  }
+
+
+  function validateSignatures(bytes sigMsg,
+                              uint numSigs,
+                              uint8[] v,
+                              bytes32[] r,
+                              bytes32[] s,
+                              bool[] outVerified) internal view returns (bool) {
+    bytes32 signed = ECTools.toEthereumSignedMessage(string(sigMsg));
+    address[] memory validated = new address[](numSigs);
+    uint numValidated = 0;
+
+    for(uint i=0; i<numSigs; i++) {
+      address addr = ECTools.recoverSignerVRS(signed, v[i], r[i], s[i]);
+      if (signers[addr] == 1) {
+        // wen anticipate the number of signers to be small, so just do a linear scan
+        for(uint j=0; j<numValidated; j++) {
+          if (validated[j] == addr) {
+            addr = 0x0;
+            break;
+          }
+        }
+        if (addr != 0x0) {
+          outVerified[i] = true;
+          validated[numValidated] = addr;
+          numValidated++;
+        }
       }
     }
 
-     // advance the txId
-     if ((v.length-n) == totalSigners) {
-       txIdLast++;
-     }
-
-     emit TransactionResult((v.length-n) == totalSigners, txIdLast, erc20Addr, toAddr, amount, verified);  // , v, r, s, sigMsg);
+    return numValidated == totalSigners;
   }
+
 
   function voteAddSigner(address signer) external {
     require(signer != 0x0);

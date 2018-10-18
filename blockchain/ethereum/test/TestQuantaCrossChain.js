@@ -239,10 +239,13 @@ contract('QuantaCrossChain one signer', async (accounts) => {
 
 contract('QuantaCrossChain two signers', async (accounts) => {
   var contract;
+  var erc20;
 
   it("should assign the two initial signers", async () => {
     contract = await QuantaCrossChain.deployed();
     await contract.assignInitialSigners([accounts[0], accounts[1]]);
+
+    erc20 = await SimpleToken.new();
   });
 
   it("should not allow paymentTx with only one sig [native eth]", async () => {
@@ -272,6 +275,122 @@ contract('QuantaCrossChain two signers', async (accounts) => {
         (ev.toAddr == toAddr)
       );
     });
+
+    txId = await fetchCurrentTxId(contract);
+    assert(txId == 0);
+  });
+
+  it("should allow paymentTx with both sigs", async () => {
+    var txId = await fetchCurrentTxId(contract);
+    var nextTxId = txId + 1;
+
+    var amount = 6;
+    var toAddr = accounts[2];
+
+    var vrs0 = await Helpers.makeVRS(
+      accounts[0], nextTxId,  null, toAddr, amount);
+    var vrs1 = await Helpers.makeVRS(
+      accounts[1], nextTxId,  null, toAddr, amount);
+
+    await grantEther(contract, amount);
+
+    let result = await contract.paymentTx(
+      nextTxId, 0, toAddr, amount,
+      [vrs0[0], vrs1[0]],
+      [vrs0[1], vrs1[1]],
+      [vrs0[2], vrs1[2]]);
+
+    TrufAssert.eventEmitted(result, 'TransactionResult', (ev) => {
+      return (
+        ev.success &&
+        (ev.verified.length == 2) &&
+        (ev.verified[0] == true) &&
+        (ev.verified[1] == true) &&
+        (ev.txId == nextTxId) &&
+        (ev.amount == amount) &&
+        (ev.erc20Addr == 0) &&
+        (ev.toAddr == toAddr)
+      );
+    });
+
+    txId = await fetchCurrentTxId(contract);
+    assert(txId == nextTxId);
+  });
+
+  // no need to test this scenario since sig validation is separate from currency transfer
+  // it("should allow paymentTx with both sigs [erc20]"
+
+  it("should not allow paymentTx with dupe sig [native eth]", async () => {
+    var txId = await fetchCurrentTxId(contract);
+    var nextTxId = txId + 1;
+
+    var amount = 7;
+    var toAddr = accounts[2];
+
+    var vrs0 = await Helpers.makeVRS(
+      accounts[0], nextTxId,  null, toAddr, amount);
+
+    await grantEther(contract, amount);
+
+    let result = await contract.paymentTx(
+      nextTxId, 0, toAddr, amount,
+      [vrs0[0], vrs0[0]],  // try to trick the contract by giving dupe sigs
+      [vrs0[1], vrs0[1]],
+      [vrs0[2], vrs0[2]]);
+
+    TrufAssert.eventEmitted(result, 'TransactionResult', (ev) => {
+      return (
+        !ev.success &&
+        (ev.verified.length == 2) &&
+        (ev.verified[0] == true) &&
+        (ev.verified[1] == false) &&  // second dupe sig should not pass
+        (ev.txId == txId) &&  // should not advance
+        (ev.amount == amount) &&
+        (ev.erc20Addr == 0) &&
+        (ev.toAddr == toAddr)
+      );
+    });
+
+    txId = await fetchCurrentTxId(contract);
+    assert(txId == txId);  // should be the old txId
+  });
+
+  it("should allow paymentTx with both sigs and a dupe sig", async () => {
+    var txId = await fetchCurrentTxId(contract);
+    var nextTxId = txId + 1;
+
+    var amount = 6;
+    var toAddr = accounts[2];
+
+    var vrs0 = await Helpers.makeVRS(
+      accounts[0], nextTxId,  null, toAddr, amount);
+    var vrs1 = await Helpers.makeVRS(
+      accounts[1], nextTxId,  null, toAddr, amount);
+
+    await grantEther(contract, amount);
+
+    let result = await contract.paymentTx(
+      nextTxId, 0, toAddr, amount,
+      [vrs0[0], vrs1[0], vrs0[0]],
+      [vrs0[1], vrs1[1], vrs0[1]],
+      [vrs0[2], vrs1[2], vrs0[2]]);
+
+    TrufAssert.eventEmitted(result, 'TransactionResult', (ev) => {
+      return (
+        ev.success &&
+        (ev.verified.length == 3) &&
+        (ev.verified[0] == true) &&
+        (ev.verified[1] == true) &&
+        (ev.verified[2] == false) &&
+        (ev.txId == nextTxId) &&
+        (ev.amount == amount) &&
+        (ev.erc20Addr == 0) &&
+        (ev.toAddr == toAddr)
+      );
+    });
+
+    txId = await fetchCurrentTxId(contract);
+    assert(txId == nextTxId);
   });
 });
 
