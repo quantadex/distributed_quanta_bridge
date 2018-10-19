@@ -336,7 +336,6 @@ func (l *Listener) SendWithdrawal(conn bind.ContractBackend,
 								ownerKey *ecdsa.PrivateKey,
 								w *Withdrawal) (string, error) {
 
-	println("Submit to contract=", trustAddress.Hex())
 	auth := bind.NewKeyedTransactor(ownerKey)
 	auth.GasLimit = 500000
 	contract, err := contracts.NewTrustContract(trustAddress, conn)
@@ -353,6 +352,7 @@ func (l *Listener) SendWithdrawal(conn bind.ContractBackend,
 
 	toAddr := common.HexToAddress(w.DestinationAddress)
 	amount := big.NewInt(int64(w.Amount))
+	fmt.Printf("Submit to contract=%s erc20=%s to=%s amount=%d\n", trustAddress.Hex(), smartAddress.Hex(), toAddr.Hex(), amount.Uint64())
 
 	var r [][32]byte
 	var s [][32]byte
@@ -399,7 +399,7 @@ func (l *Listener) GetTxID(conn bind.ContractBackend, trustAddress common.Addres
 		return 0, err
 	}
 
-	addr , _ := contract.GetTotalSigners(nil)
+	addr , _ := contract.TxIdLast(nil)
 	println("# of signers ", addr)
 	return 0, nil
 }

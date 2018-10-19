@@ -170,7 +170,7 @@ func (c *QuantaToCoin) DoLoop(cursor int64) {
                 //TODO: How to handle this?
             }
             w := coin.Withdrawal{
-                TxId: txId,
+                TxId: txId + 1,
                 CoinName: refund.CoinName,
                 DestinationAddress: refund.DestinationAddress,
                 QuantaBlockID: refund.OperationID,

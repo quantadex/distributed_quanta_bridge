@@ -3,8 +3,7 @@ const QuantaCrossChain = artifacts.require("QuantaCrossChain");
 module.exports = function(callback) {
     QuantaCrossChain.deployed().then(function(instance) {
         return web3.eth.getAccounts(function(err,accounts) {
-            console.log(instance, accounts)
-            return instance.assignInitialSigners([accounts[0]])
-        });
+            return web3.eth.sendTransaction({from: accounts[0], to: instance.address, value: web3.toWei(100, 'ether')})
+        })
     })
 }

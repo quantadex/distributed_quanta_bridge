@@ -23,9 +23,9 @@ var NODE_KEYS = []string {
 }
 
 var ETHKEYS = []string {
-	"efff3cf1e98e8b348041c04fdc1f3019d0dae19d6f6e489bf8cfd38cb5270ddd",
-	"b28ee83828f3e96f5d9048f866fe9b59e1c9b8a201fb3a71d8b19a3db9959249",
-	"6aa210915b26e4f48f2f525ad14759e298bb98d2071fd8032149f33d5baff094",
+	"c87509a1c067bbde78beb793e6fa76530b6382a4c0241e5e4a9ec0a0f44dc0d3",
+	"ae6ae8e5ccbfb04590405997ee2d52d2b330726137b875053c36d94e974d162f",
+	"0dbbe8e4ae425a6d2687f1a7e3ba17bc98c673636790f1b8ad91193c05875ef1",
 }
 
 //address:QCAO4HRMJDGFPUHRCLCSWARQTJXY2XTAFQUIRG2FAR3SCF26KQLAWZRN weight:1
@@ -49,7 +49,7 @@ HorizonUrl: http://testnet-02.quantachain.io:8000/
 NetworkPassphrase: QUANTA Test Network ; September 2018
 RegistrarIp: localhost
 RegistrarPort: 5001
-EthereumNetworkId: 3
+EthereumNetworkId: 1539926805437
 EthereumBlockStart: 0
 EthereumRpc: http://localhost:7545
 EthereumKeyStore: %s
@@ -188,19 +188,19 @@ func TestWithdrawal(t *testing.T) {
 	//}
 	//time.Sleep(time.Second*3)
 
-	trustAddress := common.HexToAddress("0x384c0e4b22abfc546bdb84a5b259a82b351619b6")
+	trustAddress := common.HexToAddress("0x8f0483125fcb9aaaefa9209d8e9d7b9c8b9fb90f")
 	contract, err := contracts.NewTrustContract(trustAddress, ethereumClient)
 	if err != nil {
 		t.Error(err)
 		return
 	}
 
-	num, err := contract.GetTotalSigners(nil)
+	num, err := contract.TotalSigners(nil)
 	if err != nil {
 		println(err.Error())
 	}
 
-	println("Num of signers=", num)
+	println("Num of signers=", num.Uint64())
 
 	txId, err := contract.TxIdLast(nil)
 	if err != nil {

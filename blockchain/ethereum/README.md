@@ -76,10 +76,10 @@ Run the following command to test the contracts.
 
 ```
     # Gets dev accounts
-    $ truffle exec scripts/get_accounts.js
+    $ truffle exec scripts/print_accounts.js
 
     # Gets contract address
-    $ truffle exec scripts/get_contract_address.js
+    $ truffle exec scripts/print_contract_address.js
 
     # Initialize the signers to be the first 3 addresses in wallet
     $ truffle exec scripts/init_signers.js

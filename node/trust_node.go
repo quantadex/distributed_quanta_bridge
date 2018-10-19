@@ -102,7 +102,7 @@ func initNode(config Config, targetCoin coin.Coin) (*TrustNode, bool) {
 
     err = node.coinkM.LoadNodeKeys(config.EthereumKeyStore)
     if err != nil {
-        node.log.Error("Failed to set up node keys")
+        node.log.Error("Failed to set up ethereum keys")
         return nil, false
     }
 
@@ -130,7 +130,7 @@ func initNode(config Config, targetCoin coin.Coin) (*TrustNode, bool) {
     node.coinName = config.CoinName
     err = node.c.Attach()
     if err != nil {
-        node.log.Error("Failed to attach to coin")
+        node.log.Error("Failed to attach to coin " + err.Error())
         return nil, false
     }
 
@@ -294,7 +294,7 @@ func (n *TrustNode) run() {
 func bootstrapNode(config Config, targetCoin coin.Coin) *TrustNode {
     node, success := initNode(config, targetCoin)
     if !success {
-        node.log.Error("Failed to init node")
+        panic("Failed to init node")
         return nil
     }
 
