@@ -106,7 +106,6 @@ func (c *EthereumCoin)  DecodeRefund(encoded string) (*Withdrawal, error) {
 	decoded := common2.Hex2Bytes(encoded)
 
 	w := &Withdrawal{}
-	println(len(decoded))
 
 	pl := len(sign_prefix)
 	header := decoded[0:pl]

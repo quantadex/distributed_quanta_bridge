@@ -26,7 +26,7 @@ type TrustNode struct {
 type Manifest struct {
     N int // Total number of nodes in trust
     Q int // Number nodes needed to spend trust
-    Nodes map[int]*TrustNode // The nodes in the trust. The key is the nodeID which is the order they were added.
+    Nodes []*TrustNode // The nodes in the trust. The key is the nodeID which is the order they were added.
     ContractAddress string // The address of the coin contract
     ContractCallSite string // The address where nodes post to the contract
     QuantaAddress string // The quanta-trust address
@@ -39,7 +39,7 @@ type Manifest struct {
  * trust node list
  */
 func CreateNewManifest(quorumNodes int) (*Manifest) {
-    return &Manifest{Q: quorumNodes, Nodes: map[int]*TrustNode{}}
+    return &Manifest{Q: quorumNodes, Nodes: []*TrustNode{}}
 }
 
 /**
@@ -80,7 +80,7 @@ func (m *Manifest) AddNode(ip string, port string, pubKey string) error {
 
     nodeId, err := m.FindNode(ip, port, pubKey)
     if err != nil {
-       m.Nodes[m.N] = &TrustNode{ ip, port, pubKey, "ADDED"}
+       m.Nodes = append(m.Nodes, &TrustNode{ ip, port, pubKey, "ADDED"})
        m.N++
        return nil
     }

@@ -7,6 +7,8 @@ import (
     "github.com/quantadex/distributed_quanta_bridge/common/logger"
 )
 
+const QUANTA_PRECISION = 10000000
+
 /**
  * Refund
  *

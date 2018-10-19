@@ -1,0 +1,1 @@
+cd ../../../blockchain/ethereum && truffle-export-abi
