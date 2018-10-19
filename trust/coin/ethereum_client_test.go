@@ -10,52 +10,49 @@ import (
 	"github.com/ethereum/go-ethereum/accounts/abi/bind/backends"
 	"github.com/ethereum/go-ethereum/core"
 	"math/big"
+	"strings"
 )
 
 // https://goethereumbook.org/event-read-erc20/
+const ropsten_infura = "https://ropsten.infura.io/v3/7b880b2fb55c454985d1c1540f47cbf6"
+const blockNumber = 4177625
 
-// https://rinkeby.etherscan.io/tx/0xfe33cb4894c3acacab726b563f4efd22acd3d519b0583ce537176349a8fa9fcb#eventlog
+func TestCheckDepositNode(t *testing.T) {
+	client := &Listener{NetworkID: ROPSTEN_NETWORK_ID}
+	ethereumClient, err := ethclient.Dial(ropsten_infura)
+	if err != nil {
+		t.Error(err)
+		return
+	}
 
-const server = "testnet-02.quantachain.io:8545"
-const toAddress = "0x0e742968b2804afa7b8729716fd0f695cbcd8631"
-const blockNumber = 806159
+	client.Client = ethereumClient
+	client.Start()
 
-//func TestNode(t *testing.T) {
-//	client := &Listener{NetworkID: ROPSTEN_NETWORK_ID}
-//	ethereumClient, err := ethclient.Dial("http://" + server)
-//	if err != nil {
-//		t.Error(err)
-//		return
-//	}
-//
-//	client.Client = ethereumClient
-//	client.Start()
-//
-//	events, err := client.FilterTransferEvent(blockNumber, toAddress)
-//	if err != nil {
-//		println("block not found??")
-//		return
-//	}
-//	if len(events) != 1 {
-//		t.Error("Expecting 1 token transfer")
-//		return
-//	}
-//	fmt.Printf("%v\n", events)
-//
-//	deposits, err := client.GetNativeDeposits(blockNumber, "0xc95293836769874de62d4c0f75fff0f05d39bc28")
-//	if err != nil || len(deposits) != 1 {
-//		t.Error("Expecting 1 eth transfer %d", len(deposits))
-//		return
-//	}
-//
-//	fmt.Printf("%v\n", deposits)
-//}
+	events, err := client.FilterTransferEvent(blockNumber, map[string]string{ "0x8954eaeba3970d50697bb272aa08b51ceb76e6ea" :""})
+	if err != nil {
+		println("block not found??")
+		return
+	}
+	if len(events) != 1 {
+		t.Error("Expecting 1 token transfer")
+		return
+	}
+	fmt.Printf("%v\n", events)
+
+	deposits, err := client.GetNativeDeposits(blockNumber, map[string]string{ strings.ToLower("0x555Ee11FBDDc0E49A9bAB358A8941AD95fFDB48f"): ""})
+	if err != nil || len(deposits) != 8 {
+		t.Error("Expecting 8 eth transfer %d", len(deposits))
+		return
+	}
+
+	fmt.Printf("%v\n", deposits)
+}
 
 func TestForwardScan(t *testing.T) {
 	//to := "0xe0006458963c3773b051e767c5c63fee24cd7ff9"
 
 	client := &Listener{NetworkID: ROPSTEN_NETWORK_ID}
-	ethereumClient, err := ethclient.Dial("https://ropsten.infura.io/v3/7b880b2fb55c454985d1c1540f47cbf6")
+	ethereumClient, err := ethclient.Dial(ropsten_infura)
 	if err != nil {
 		t.Error(err)
 		return
@@ -117,6 +114,9 @@ func TestWithdrawalTX(t *testing.T) {
 	println(tx)
 }
 
+/**
+ * Test that we can connect to ganache
+ */
 func TestGanacheTX(t *testing.T) {
 	coin, err := NewEthereumCoin("5777", "http://localhost:7545")
 	if err != nil {
