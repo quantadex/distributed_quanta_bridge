@@ -71,7 +71,7 @@ func (e *EthereumKeyManager) SignTransaction(hex string) (string, error) {
 	hw := sha3.NewKeccak256()
 	rlp.Encode(hw, dataBytes)
 	hw.Sum(h[:0])
-	println("Hash=", h.Hex())
+	//println("Hash=", h.Hex())
 
 	sig, err := crypto.Sign(h.Bytes(), e.key)
 	if err != nil {

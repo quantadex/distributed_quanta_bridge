@@ -16,6 +16,7 @@ import (
 	"time"
 	"strconv"
 	"encoding/base64"
+	"github.com/stellar/go/amount"
 )
 
 type QuantaClientOptions struct {
@@ -49,9 +50,11 @@ type Operation struct {
 	PagingToken string    `json:"paging_token"`
 	CreatedAt   time.Time `json:"created_at"`
 	AssetType   string	  `json:"asset_type"`
+	AssetCode   string	  `json:"asset_code"`
 	From		   string	  `json:"from"`
 	To			   string	  `json:"to"`
 	TxHash         string `json:"transaction_hash"`
+	Amount			string `json:"amount"`
 }
 
 
@@ -199,11 +202,16 @@ func (q *QuantaClient) GetRefundsInBlock(cursor int64, trustAddress string) ([]R
 			}
 			if op.Type == "payment" {
 				if op.To == trustAddress {
+					am, err := amount.ParseInt64(op.Amount)
+					if err != nil {
+						return nil, cursor, nil
+					}
 					// it's a refund
 					newRefund := Refund{
-						CoinName: op.AssetType,
+						CoinName: op.AssetCode,
 						DestinationAddress: op.To,
 						OperationID: num,
+						Amount: uint64(am),
 					}
 
 					tx, err := q.GetTransactionWithHash(op.TxHash)

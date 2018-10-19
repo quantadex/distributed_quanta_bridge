@@ -11,6 +11,9 @@ import (
 	"os"
 	"testing"
 	"time"
+	"github.com/ethereum/go-ethereum/ethclient"
+	"github.com/quantadex/distributed_quanta_bridge/trust/coin/contracts"
+	"github.com/ethereum/go-ethereum/common"
 )
 
 var NODE_KEYS = []string {
@@ -20,9 +23,9 @@ var NODE_KEYS = []string {
 }
 
 var ETHKEYS = []string {
-	"efff3cf1e98e8b348041c04fdc1f3019d0dae19d6f6e489bf8cfd38cb5270ddd",
-	"b28ee83828f3e96f5d9048f866fe9b59e1c9b8a201fb3a71d8b19a3db9959249",
-	"6aa210915b26e4f48f2f525ad14759e298bb98d2071fd8032149f33d5baff094",
+	"c87509a1c067bbde78beb793e6fa76530b6382a4c0241e5e4a9ec0a0f44dc0d3",
+	"ae6ae8e5ccbfb04590405997ee2d52d2b330726137b875053c36d94e974d162f",
+	"0dbbe8e4ae425a6d2687f1a7e3ba17bc98c673636790f1b8ad91193c05875ef1",
 }
 
 //address:QCAO4HRMJDGFPUHRCLCSWARQTJXY2XTAFQUIRG2FAR3SCF26KQLAWZRN weight:1
@@ -46,17 +49,18 @@ HorizonUrl: http://testnet-02.quantachain.io:8000/
 NetworkPassphrase: QUANTA Test Network ; September 2018
 RegistrarIp: localhost
 RegistrarPort: 5001
-EthereumNetworkId: 3
-EthereumBlockStart: 4186070
-EthereumRpc: https://ropsten.infura.io/v3/7b880b2fb55c454985d1c1540f47cbf6
-EthereumTrustAddr: 0xe0006458963c3773B051E767C5C63FEe24Cd7Ff9
+EthereumNetworkId: 1539926805437
+EthereumBlockStart: 0
+EthereumRpc: http://localhost:7545
 EthereumKeyStore: %s
 `, port, port, key, ethPrivKey))
 
 	viper.ReadConfig(bytes.NewBuffer(config))
 }
 
-func StartNodes(n int)[]*TrustNode {
+func StartNodes(n int, trustAddress common.Address)[]*TrustNode {
+	println("Starting nodes with trust ", trustAddress.Hex())
+
 	nodes := []*TrustNode{}
 	var wg sync.WaitGroup
 
@@ -67,6 +71,8 @@ func StartNodes(n int)[]*TrustNode {
 		SetConfig(NODE_KEYS[i], 5100 + i, ETHKEYS[i])
 		config := Config {}
 		err := viper.Unmarshal(&config)
+		config.EthereumTrustAddr = trustAddress.Hex()
+
 		if err != nil {
 			panic(fmt.Errorf("Fatal error config file: %s \n", err))
 		}
@@ -104,7 +110,7 @@ func DoLoopDeposit(nodes []*TrustNode, blockIds []int64) {
 
 func DoLoopWithdrawal(nodes []*TrustNode, cursor int64) {
 	for _, n := range nodes {
-		n.qTC.DoLoop(cursor)
+		go n.qTC.DoLoop(cursor)
 	}
 }
 /**
@@ -112,7 +118,7 @@ func DoLoopWithdrawal(nodes []*TrustNode, cursor int64) {
  */
 func TestRopstenNativeETH(t *testing.T) {
 	StartRegistry()
-	nodes := StartNodes(3)
+	nodes := StartNodes(3, common.HexToAddress("0xe0006458963c3773B051E767C5C63FEe24Cd7Ff9"))
 	time.Sleep(time.Millisecond*250)
 	//DoLoopDeposit(nodes, []int64{4186072, 4186072, 4186074}) // we create the original smart contract on 74
 	//DoLoopDeposit(nodes, []int64{4196673})  // we make deposit
@@ -150,9 +156,61 @@ func TestDummyCoin(t *testing.T) {
 
 func TestWithdrawal(t *testing.T) {
 	StartRegistry()
-	nodes := StartNodes(3)
+
 	time.Sleep(time.Millisecond*250)
+
+	//k1 , _ := crypto.HexToECDSA(ETHKEYS[0])
+	//k2 , _ := crypto.HexToECDSA(ETHKEYS[1])
+	//k3 , _ := crypto.HexToECDSA(ETHKEYS[2])
+
+	//u1 := bind.NewKeyedTransactor(k1)
+	//u2 := bind.NewKeyedTransactor(k2)
+	//u3 := bind.NewKeyedTransactor(k3)
+
+	ethereumClient, err := ethclient.Dial("http://localhost:7545")
+	if err != nil {
+		t.Error(err)
+		return
+	}
+
+	//trustAddress, tx, contract, _ := contracts.DeployTrustContract(u1, ethereumClient)
+	//println("trustaddr=", trustAddress.Hex(), tx.ChainId())
+	//
+	//time.Sleep(time.Second*3)
+	//
+	//tx, err  = contract.AssignInitialSigners(u1, []common.Address{
+	//	u1.From, u2.From, u3.From,
+	//})
+
+	//if err != nil {
+	//	t.Error(err)
+	//	return
+	//}
+	//time.Sleep(time.Second*3)
+
+	trustAddress := common.HexToAddress("0x8f0483125fcb9aaaefa9209d8e9d7b9c8b9fb90f")
+	contract, err := contracts.NewTrustContract(trustAddress, ethereumClient)
+	if err != nil {
+		t.Error(err)
+		return
+	}
+
+	num, err := contract.TotalSigners(nil)
+	if err != nil {
+		println(err.Error())
+	}
+
+	println("Num of signers=", num.Uint64())
+
+	txId, err := contract.TxIdLast(nil)
+	if err != nil {
+		println(err.Error())
+	}
+
+	println("txID of signers=", txId)
+
+	nodes := StartNodes(3, trustAddress)
 	DoLoopWithdrawal(nodes, 0)
 
-	time.Sleep(5 * time.Second)
+	time.Sleep(8 * time.Second)
 }

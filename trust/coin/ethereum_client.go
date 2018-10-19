@@ -15,6 +15,8 @@ import (
 	"github.com/quantadex/distributed_quanta_bridge/registrar/Forwarder"
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"crypto/ecdsa"
+	"github.com/quantadex/distributed_quanta_bridge/trust/coin/contracts"
+	"fmt"
 )
 
 const abiCode = `[{"anonymous":false,"inputs":[{"indexed":true,"name":"from","type":"address"},{"indexed":true,"name":"to","type":"address"},{"indexed":false,"name":"tokens","type":"uint256"}],"name":"Transfer","type":"event"},{"anonymous":false,"inputs":[{"indexed":true,"name":"tokenOwner","type":"address"},{"indexed":true,"name":"spender","type":"address"},{"indexed":false,"name":"tokens","type":"uint256"}],"name":"Approval","type":"event"}]`
@@ -186,7 +188,7 @@ func (l *Listener) GetNativeDeposits(blockNumber int64, toAddress map[string]str
 			continue
 		}
 
-		if quantaAddr, ok := toAddress[tx.To().Hex()]; ok {
+		if quantaAddr, ok := toAddress[strings.ToLower(tx.To().Hex())]; ok {
 			if tx.Value().Cmp(big.NewInt(0)) != 0 {
 				events = append(events, &Deposit{
 					QuantaAddr: quantaAddr,
@@ -249,10 +251,10 @@ func (l *Listener) FilterTransferEvent(blockNumber int64, toAddress map[string]s
 			transferEvent.From = common.HexToAddress(vLog.Topics[1].Hex())
 			transferEvent.To = common.HexToAddress(vLog.Topics[2].Hex())
 
-			if quantaAddr, ok := toAddress[transferEvent.To.Hex()]; ok {
-				//fmt.Printf("From: %s\n", transferEvent.From.Hex())
-				//fmt.Printf("To: %s\n", transferEvent.To.Hex())
-				//fmt.Printf("Tokens: %s\n", transferEvent.Tokens.String())
+			//fmt.Printf("From: %s\n", transferEvent.From.Hex())
+			//fmt.Printf("To: %s Tok=%s\n", transferEvent.To.Hex(), transferEvent.Tokens.String())
+
+			if quantaAddr, ok := toAddress[strings.ToLower(transferEvent.To.Hex())]; ok {
 
 				events = append(events, &Deposit{
 					QuantaAddr: quantaAddr,
@@ -333,8 +335,10 @@ func (l *Listener) SendWithdrawal(conn bind.ContractBackend,
 								trustAddress common.Address,
 								ownerKey *ecdsa.PrivateKey,
 								w *Withdrawal) (string, error) {
+
 	auth := bind.NewKeyedTransactor(ownerKey)
-	contract, err := NewTrustContract(trustAddress, conn)
+	auth.GasLimit = 500000
+	contract, err := contracts.NewTrustContract(trustAddress, conn)
 
 	if err != nil {
 		return "", err
@@ -348,15 +352,20 @@ func (l *Listener) SendWithdrawal(conn bind.ContractBackend,
 
 	toAddr := common.HexToAddress(w.DestinationAddress)
 	amount := big.NewInt(int64(w.Amount))
-
-	println(len(common.Hex2Bytes(w.Signatures[0])))
+	fmt.Printf("Submit to contract=%s erc20=%s to=%s amount=%d\n", trustAddress.Hex(), smartAddress.Hex(), toAddr.Hex(), amount.Uint64())
 
 	var r [][32]byte
 	var s [][32]byte
 	var v []uint8
 
+	fmt.Printf("signatures (%d) %v\n", len(w.Signatures), w.Signatures)
+
 	for _, signature := range w.Signatures {
 		data := common.Hex2Bytes(signature)
+		if len(data) != 65 {
+			fmt.Println("Signature is not correct length " + string(len(data)))
+			continue
+		}
 		var r1 [32]byte
 		copy(r1[0:32], data[0:32])
 		r = append(r, r1)
@@ -368,7 +377,8 @@ func (l *Listener) SendWithdrawal(conn bind.ContractBackend,
 		v = append(v, data[64])
 	}
 
-	tx, err := contract.PaymentTx(auth, 0, smartAddress, toAddr, amount, v, r, s)
+	fmt.Println("prepare to send to contract")
+	tx, err := contract.PaymentTx(auth, w.TxId, smartAddress, toAddr, amount, v, r, s)
 	if err != nil {
 		return "", err
 	}
@@ -381,11 +391,15 @@ func (l *Listener) GetTxID(conn bind.ContractBackend, trustAddress common.Addres
 	if conn == nil {
 		conn = l.Client.(bind.ContractBackend)
 	}
-	contract, err := NewTrustContract(trustAddress, conn)
+
+	println("Geting txid from trustaddr", trustAddress.Hex())
+	contract, err := contracts.NewTrustContract(trustAddress, conn)
 
 	if err != nil {
 		return 0, err
 	}
 
-	return contract.TxIdLast(nil)
+	addr , _ := contract.TxIdLast(nil)
+	println("# of signers ", addr)
+	return 0, nil
 }
