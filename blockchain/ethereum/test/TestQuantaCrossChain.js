@@ -609,7 +609,7 @@ contract('QuantaCrossChain assign initial signers', async (accounts) => {
   it("should deploy the contract", async () => {
     contract = await QuantaCrossChain.deployed();
 
-    let totalSigners = await contract.getTotalSigners();
+    let totalSigners = await contract.totalSigners();
     assert.equal(0, totalSigners);
   });
 
@@ -625,14 +625,14 @@ contract('QuantaCrossChain assign initial signers', async (accounts) => {
       contract.assignInitialSigners([]),
     );
 
-    let totalSigners = await contract.getTotalSigners();
+    let totalSigners = await contract.totalSigners();
     assert.equal(0, totalSigners);
   });
 
   it("should assign the first signer", async () => {
     await contract.assignInitialSigners([accounts[0]]);
 
-    let totalSigners = await contract.getTotalSigners();
+    let totalSigners = await contract.totalSigners();
     assert.equal(1, totalSigners);
   });
 
@@ -649,7 +649,7 @@ contract('QuantaCrossChain assign initial signers', async (accounts) => {
       contract.assignInitialSigners([]),
     )
 
-    let totalSigners = await contract.getTotalSigners();
+    let totalSigners = await contract.totalSigners();
     assert.equal(1, totalSigners);
   });
 
@@ -675,7 +675,7 @@ contract('QuantaCrossChain 7 signers', async (accounts) => {
 
     await contract.assignInitialSigners([accounts[0], accounts[1], accounts[2], accounts[3], accounts[4], accounts[5], accounts[6]]);
 
-    let totalSigners = await contract.getTotalSigners();
+    let totalSigners = await contract.totalSigners();
     assert.equal(7, totalSigners);
   });
 

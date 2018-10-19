@@ -14,10 +14,10 @@ import { ECTools } from "../libraries/ECTools.sol";
  */
 contract QuantaCrossChain is Ownable {
   /** keys are the signers' address, value is != 0 if assigned */
-  mapping(address=>uint8) private signers;
+  mapping(address=>uint8) signers;
 
   /** the number of total signers ratified */
-  uint256 private totalSigners = 0;
+  uint256 public totalSigners = 0;
 
   /** the last successfully used txId */
   uint64 public txIdLast = 0;
@@ -46,10 +46,6 @@ contract QuantaCrossChain is Ownable {
     }
 
     totalSigners = i;
-  }
-
-  function getTotalSigners() public view onlyOwner returns (uint256) {
-    return totalSigners;
   }
 
   function paymentTx(uint64 txId,
