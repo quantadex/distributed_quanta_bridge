@@ -78,9 +78,9 @@ function _toQuantaPaymentSigMsg(txId, erc20Addr, toAddr, amount, debug=false, pr
 
 
 /** signes the appropriate msg and returns the embedded v r s */
-module.exports.makeVRS = async function(account, txId, erc20Addr, toAddr, amount, debug=false) {
+module.exports.makeVRS = function(account, txId, erc20Addr, toAddr, amount, debug=false) {
   let msg = _toQuantaPaymentSigMsg(txId, erc20Addr, toAddr, amount, debug=debug);
-  let sig1 = await web3.eth.sign(account, msg);
+  let sig1 = web3.eth.sign(account, msg);
   var sig = sig1.slice(2);
   var r = `0x${sig.slice(0, 64)}`;
   var s = `0x${sig.slice(64, 128)}`;

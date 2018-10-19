@@ -37,7 +37,7 @@ async function quickPayment(contract, signer, erc20Addr, toAddr, amount) {
   var txId = await fetchCurrentTxId(contract);
   var nextTxId = txId + 1;
 
-  var vrs = await Helpers.makeVRS(
+  var vrs = Helpers.makeVRS(
     signer, nextTxId,  erc20Addr, toAddr, amount, debug=false);
   let result = await contract.paymentTx(
     nextTxId, erc20Addr, toAddr, amount,
@@ -147,7 +147,7 @@ contract('QuantaCrossChain one signer', async (accounts) => {
 
     await grantEther(contract, amount);
 
-    var vrs = await Helpers.makeVRS(
+    var vrs = Helpers.makeVRS(
       accounts[0], nextTxId,  null, toAddr, amount);
     let result = await contract.paymentTx(
       nextTxId, 0, toAddr, amount,
@@ -176,7 +176,7 @@ contract('QuantaCrossChain one signer', async (accounts) => {
 
     await grantEther(contract, amount);
 
-    var vrs = await Helpers.makeVRS(
+    var vrs = Helpers.makeVRS(
       accounts[0], nextTxId,  0, toAddr, amount);
     let result = await contract.paymentTx(
       nextTxId, null, toAddr, amount,
@@ -214,7 +214,7 @@ contract('QuantaCrossChain one signer', async (accounts) => {
 
     await erc20.transfer(contract.address, amount);  // give our contract enough tokens
 
-    var vrs = await Helpers.makeVRS(
+    var vrs = Helpers.makeVRS(
       accounts[0], nextTxId,  erc20.address, toAddr, amount, debug=false);
     let result = await contract.paymentTx(
       nextTxId, erc20.address, toAddr, amount,
@@ -245,7 +245,7 @@ contract('QuantaCrossChain two signers', async (accounts) => {
     await contract.assignInitialSigners([accounts[0], accounts[1]]);
   });
 
-  it("should not allow paymentTx with only one sig [native eth]", async () => {
+  it("should fail paymentTx fast with only one sig [native eth]", async () => {
     var txId = await fetchCurrentTxId(contract);
     assert(txId == 0);
     var nextTxId = txId + 1;
@@ -253,7 +253,7 @@ contract('QuantaCrossChain two signers', async (accounts) => {
     var amount = 1;
     var toAddr = accounts[2];
 
-    var vrs = await Helpers.makeVRS(
+    var vrs = Helpers.makeVRS(
       accounts[0], nextTxId,  null, toAddr, amount);
     let result = await contract.paymentTx(
       nextTxId, 0, toAddr, amount,
@@ -265,13 +265,167 @@ contract('QuantaCrossChain two signers', async (accounts) => {
       return (
         !ev.success &&
         (ev.verified.length == 1) &&
-        (ev.verified[0] == true) &&
+        (ev.verified[0] == false) &&  // should have skipped
         (ev.txId == txId) &&  // should not advance
         (ev.amount == amount) &&
         (ev.erc20Addr == 0) &&
         (ev.toAddr == toAddr)
       );
     });
+
+    txId = await fetchCurrentTxId(contract);
+    assert(txId == 0);
+  });
+
+  it("should allow paymentTx with both sigs", async () => {
+    var txId = await fetchCurrentTxId(contract);
+    var nextTxId = txId + 1;
+
+    var amount = 6;
+    var toAddr = accounts[2];
+
+    var vrs0 = Helpers.makeVRS(
+      accounts[0], nextTxId,  null, toAddr, amount);
+    var vrs1 = Helpers.makeVRS(
+      accounts[1], nextTxId,  null, toAddr, amount);
+
+    await grantEther(contract, amount);
+
+    let result = await contract.paymentTx(
+      nextTxId, 0, toAddr, amount,
+      [vrs0[0], vrs1[0]],
+      [vrs0[1], vrs1[1]],
+      [vrs0[2], vrs1[2]]);
+
+    TrufAssert.eventEmitted(result, 'TransactionResult', (ev) => {
+      return (
+        ev.success &&
+        (ev.verified.length == 2) &&
+        (ev.verified[0] == true) &&
+        (ev.verified[1] == true) &&
+        (ev.txId == nextTxId) &&
+        (ev.amount == amount) &&
+        (ev.erc20Addr == 0) &&
+        (ev.toAddr == toAddr)
+      );
+    });
+
+    txId = await fetchCurrentTxId(contract);
+    assert(txId == nextTxId);
+  });
+
+  // no need to test this scenario since sig validation is separate from currency transfer
+  // it("should allow paymentTx with both sigs [erc20]"
+
+  it("should not allow paymentTx with dupe sig [native eth]", async () => {
+    var txId = await fetchCurrentTxId(contract);
+    var nextTxId = txId + 1;
+
+    var amount = 7;
+    var toAddr = accounts[2];
+
+    var vrs0 = Helpers.makeVRS(
+      accounts[0], nextTxId,  null, toAddr, amount);
+
+    await grantEther(contract, amount);
+
+    let result = await contract.paymentTx(
+      nextTxId, 0, toAddr, amount,
+      [vrs0[0], vrs0[0]],  // try to trick the contract by giving dupe sigs
+      [vrs0[1], vrs0[1]],
+      [vrs0[2], vrs0[2]]);
+
+    TrufAssert.eventEmitted(result, 'TransactionResult', (ev) => {
+      return (
+        !ev.success &&
+        (ev.verified.length == 2) &&
+        (ev.verified[0] == true) &&
+        (ev.verified[1] == false) &&  // second dupe sig should not pass
+        (ev.txId == txId) &&  // should not advance
+        (ev.amount == amount) &&
+        (ev.erc20Addr == 0) &&
+        (ev.toAddr == toAddr)
+      );
+    });
+
+    txId = await fetchCurrentTxId(contract);
+    assert(txId == txId);  // should be the old txId
+  });
+
+  it("should allow paymentTx with both sigs and a dupe sig", async () => {
+    var txId = await fetchCurrentTxId(contract);
+    var nextTxId = txId + 1;
+
+    var amount = 6;
+    var toAddr = accounts[2];
+
+    var vrs0 = Helpers.makeVRS(
+      accounts[0], nextTxId,  null, toAddr, amount);
+    var vrs1 = Helpers.makeVRS(
+      accounts[1], nextTxId,  null, toAddr, amount);
+
+    await grantEther(contract, amount);
+
+    let result = await contract.paymentTx(
+      nextTxId, 0, toAddr, amount,
+      [vrs0[0], vrs1[0], vrs0[0]],
+      [vrs0[1], vrs1[1], vrs0[1]],
+      [vrs0[2], vrs1[2], vrs0[2]]);
+
+    TrufAssert.eventEmitted(result, 'TransactionResult', (ev) => {
+      return (
+        ev.success &&
+        (ev.verified.length == 3) &&
+        (ev.verified[0] == true) &&
+        (ev.verified[1] == true) &&
+        (ev.verified[2] == false) &&
+        (ev.txId == nextTxId) &&
+        (ev.amount == amount) &&
+        (ev.erc20Addr == 0) &&
+        (ev.toAddr == toAddr)
+      );
+    });
+
+    txId = await fetchCurrentTxId(contract);
+    assert(txId == nextTxId);
+  });
+
+  it("should fail paymentTx fast with bad sig [native eth]", async () => {
+    var txId = await fetchCurrentTxId(contract);
+    var nextTxId = txId + 1;
+
+    var amount = 8;
+    var toAddr = accounts[2];
+
+    var vrs0 = Helpers.makeVRS(
+      accounts[0], nextTxId,  null, toAddr, amount);
+    var vrsX = Helpers.makeVRS(
+      accounts[2], nextTxId,  null, toAddr, amount);  // accounts[2] is invalid
+
+    await grantEther(contract, amount);
+
+    let result = await contract.paymentTx(
+      nextTxId, 0, toAddr, amount,
+      [vrsX[0], vrs0[0]],
+      [vrsX[1], vrs0[1]],
+      [vrsX[2], vrs0[2]]);
+
+    // should fail AND not bother to validate the second (valid) signature
+    TrufAssert.eventEmitted(result, 'TransactionResult', (ev) => {
+      return (
+        !ev.success &&
+        (ev.verified.length == 2) &&
+        (ev.verified[0] == false) &&
+        (ev.verified[1] == false) &&
+        (ev.txId == txId) &&  // should not advance
+        (ev.amount == amount) &&
+        (ev.erc20Addr == 0) &&
+        (ev.toAddr == toAddr)
+      );
+    });
+
+    txId = await fetchCurrentTxId(contract);
+    assert(txId == txId);  // should be the old txId
   });
 });
 
@@ -455,7 +609,7 @@ contract('QuantaCrossChain assign initial signers', async (accounts) => {
   it("should deploy the contract", async () => {
     contract = await QuantaCrossChain.deployed();
 
-    let totalSigners = await contract.getTotalSigners();
+    let totalSigners = await contract.totalSigners();
     assert.equal(0, totalSigners);
   });
 
@@ -471,14 +625,14 @@ contract('QuantaCrossChain assign initial signers', async (accounts) => {
       contract.assignInitialSigners([]),
     );
 
-    let totalSigners = await contract.getTotalSigners();
+    let totalSigners = await contract.totalSigners();
     assert.equal(0, totalSigners);
   });
 
   it("should assign the first signer", async () => {
     await contract.assignInitialSigners([accounts[0]]);
 
-    let totalSigners = await contract.getTotalSigners();
+    let totalSigners = await contract.totalSigners();
     assert.equal(1, totalSigners);
   });
 
@@ -495,7 +649,7 @@ contract('QuantaCrossChain assign initial signers', async (accounts) => {
       contract.assignInitialSigners([]),
     )
 
-    let totalSigners = await contract.getTotalSigners();
+    let totalSigners = await contract.totalSigners();
     assert.equal(1, totalSigners);
   });
 
@@ -509,5 +663,72 @@ contract('QuantaCrossChain assign initial signers', async (accounts) => {
     TrufAssert.eventEmitted(result, 'TransactionResult', (ev) => {
       return ev.success;
     });
+  });
+});
+
+
+contract('QuantaCrossChain 7 signers', async (accounts) => {
+  var contract;
+
+  it("should deploy the contract", async () => {
+    contract = await QuantaCrossChain.deployed();
+
+    await contract.assignInitialSigners([accounts[0], accounts[1], accounts[2], accounts[3], accounts[4], accounts[5], accounts[6]]);
+
+    let totalSigners = await contract.totalSigners();
+    assert.equal(7, totalSigners);
+  });
+
+  it("should fail paymentTx fast with bad sig [native eth]", async () => {
+    var txId = await fetchCurrentTxId(contract);
+    var nextTxId = txId + 1;
+
+    var amount = 8;
+    var toAddr = accounts[2];
+
+    await grantEther(contract, amount);
+
+    var arrV = [];
+    var arrR = [];
+    var arrS = [];
+
+    var vrs;
+    vrs = Helpers.makeVRS(accounts[0], nextTxId,  null, toAddr, amount); arrV.push(vrs[0]); arrR.push(vrs[1]); arrS.push(vrs[2]);
+    vrs = Helpers.makeVRS(accounts[1], nextTxId,  null, toAddr, amount); arrV.push(vrs[0]); arrR.push(vrs[1]); arrS.push(vrs[2]);
+
+    // #7 is a trap
+    vrs = Helpers.makeVRS(accounts[7], nextTxId,  null, toAddr, amount); arrV.push(vrs[0]); arrR.push(vrs[1]); arrS.push(vrs[2]);
+
+    // skip accounts[2]
+    vrs = Helpers.makeVRS(accounts[3], nextTxId,  null, toAddr, amount); arrV.push(vrs[0]); arrR.push(vrs[1]); arrS.push(vrs[2]);
+    vrs = Helpers.makeVRS(accounts[4], nextTxId,  null, toAddr, amount); arrV.push(vrs[0]); arrR.push(vrs[1]); arrS.push(vrs[2]);
+    vrs = Helpers.makeVRS(accounts[5], nextTxId,  null, toAddr, amount); arrV.push(vrs[0]); arrR.push(vrs[1]); arrS.push(vrs[2]);
+    vrs = Helpers.makeVRS(accounts[6], nextTxId,  null, toAddr, amount); arrV.push(vrs[0]); arrR.push(vrs[1]); arrS.push(vrs[2]);
+
+    let result = await contract.paymentTx(
+      nextTxId, 0, toAddr, amount,
+      arrV, arrR, arrS);
+
+    // should fail AND not bother to validate the second (valid) signature
+    TrufAssert.eventEmitted(result, 'TransactionResult', (ev) => {
+      return (
+        !ev.success &&
+        (ev.verified.length == 7) &&
+        (ev.verified[0] == true) &&  // it should of made it through the first two
+        (ev.verified[1] == true) &&
+        (ev.verified[2] == false) &&  // this should have been invalid
+        (ev.verified[3] == false) &&  // the remainder should be skipped
+        (ev.verified[4] == false) &&  // the remainder should be skipped
+        (ev.verified[5] == false) &&  // the remainder should be skipped
+        (ev.verified[6] == false) &&  // the remainder should be skipped
+        (ev.txId == txId) &&  // should not advance
+        (ev.amount == amount) &&
+        (ev.erc20Addr == 0) &&
+        (ev.toAddr == toAddr)
+      );
+    });
+
+    txId = await fetchCurrentTxId(contract);
+    assert(txId == txId);  // should be the old txId
   });
 });
