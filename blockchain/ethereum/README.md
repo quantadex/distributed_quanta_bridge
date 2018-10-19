@@ -34,8 +34,8 @@ Run this command to start your own private node:
 
     # or set some options
 
-    # need at least 3 accounts for the tests
-    $ ganache-cli -m "candy maple cake sugar pudding cream honey rich smooth crumble sweet treat" --gasLimit 0x2FEFD800000 -a 3 --defaultBalanceEther 10 -p 7545
+    # need at least 8 accounts for the tests
+    $ ganache-cli -m "candy maple cake sugar pudding cream honey rich smooth crumble sweet treat" --gasLimit 0x2FEFD800000 -a 8 --defaultBalanceEther 10 -p 7545
     # or
     $ make ganache
 

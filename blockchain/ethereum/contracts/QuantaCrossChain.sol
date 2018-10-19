@@ -13,7 +13,7 @@ import { ECTools } from "../libraries/ECTools.sol";
  * To make the contract usable, the owner must call assignInitialSigners() once.
  */
 contract QuantaCrossChain is Ownable {
-  /** keys are the signers' address, value is a 1 if active */
+  /** keys are the signers' address, value is != 0 if assigned */
   mapping(address=>uint8) private signers;
 
   /** the number of total signers ratified */
@@ -93,25 +93,35 @@ contract QuantaCrossChain is Ownable {
                               bytes32[] r,
                               bytes32[] s,
                               bool[] outVerified) internal view returns (bool) {
+    // with 8 signatures, Gas = 107770
+
+    uint abortThreshold = numSigs - totalSigners + 1;
     bytes32 signed = ECTools.toEthereumSignedMessage(string(sigMsg));
     address[] memory validated = new address[](numSigs);
     uint numValidated = 0;
+    address addr;
 
-    for(uint i=0; i<numSigs; i++) {
-      address addr = ECTools.recoverSignerVRS(signed, v[i], r[i], s[i]);
+    uint j = 0;
+    for(uint i=0; ((i<numSigs) && (numValidated<totalSigners) && (abortThreshold>0)); i++) {
+      addr = ECTools.recoverSignerVRS(signed, v[i], r[i], s[i]);
       if (signers[addr] == 1) {
         // wen anticipate the number of signers to be small, so just do a linear scan
-        for(uint j=0; j<numValidated; j++) {
+        for(j=0; j<numValidated; j++) {
           if (validated[j] == addr) {
-            addr = 0x0;
+            addr = 0;
             break;
           }
         }
-        if (addr != 0x0) {
+
+        if (addr != 0) {
           outVerified[i] = true;
           validated[numValidated] = addr;
           numValidated++;
+        } else {
+          abortThreshold--;
         }
+      } else {
+        abortThreshold--;
       }
     }
 
@@ -138,7 +148,7 @@ contract QuantaCrossChain is Ownable {
     // move them to the signers list when all current signers have
     // agreed to remove them
 
-    if (signers[signer] == 1) {
+    if (signers[signer] != 0) {
       delete signers[signer];
       totalSigners--;
     }
