@@ -49,7 +49,7 @@ HorizonUrl: http://testnet-02.quantachain.io:8000/
 NetworkPassphrase: QUANTA Test Network ; September 2018
 RegistrarIp: localhost
 RegistrarPort: 5001
-EthereumNetworkId: 1539926805437
+EthereumNetworkId: 1540234608622
 EthereumBlockStart: 0
 EthereumRpc: http://localhost:7545
 EthereumKeyStore: %s
@@ -159,34 +159,11 @@ func TestWithdrawal(t *testing.T) {
 
 	time.Sleep(time.Millisecond*250)
 
-	//k1 , _ := crypto.HexToECDSA(ETHKEYS[0])
-	//k2 , _ := crypto.HexToECDSA(ETHKEYS[1])
-	//k3 , _ := crypto.HexToECDSA(ETHKEYS[2])
-
-	//u1 := bind.NewKeyedTransactor(k1)
-	//u2 := bind.NewKeyedTransactor(k2)
-	//u3 := bind.NewKeyedTransactor(k3)
-
 	ethereumClient, err := ethclient.Dial("http://localhost:7545")
 	if err != nil {
 		t.Error(err)
 		return
 	}
-
-	//trustAddress, tx, contract, _ := contracts.DeployTrustContract(u1, ethereumClient)
-	//println("trustaddr=", trustAddress.Hex(), tx.ChainId())
-	//
-	//time.Sleep(time.Second*3)
-	//
-	//tx, err  = contract.AssignInitialSigners(u1, []common.Address{
-	//	u1.From, u2.From, u3.From,
-	//})
-
-	//if err != nil {
-	//	t.Error(err)
-	//	return
-	//}
-	//time.Sleep(time.Second*3)
 
 	trustAddress := common.HexToAddress("0x8f0483125fcb9aaaefa9209d8e9d7b9c8b9fb90f")
 	contract, err := contracts.NewTrustContract(trustAddress, ethereumClient)
