@@ -212,6 +212,7 @@ func (q *QuantaClient) GetRefundsInBlock(cursor int64, trustAddress string) ([]R
 						DestinationAddress: op.To,
 						OperationID: num,
 						Amount: uint64(am),
+						PageTokenID: pt,
 					}
 
 					tx, err := q.GetTransactionWithHash(op.TxHash)

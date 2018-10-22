@@ -153,7 +153,7 @@ func (c *QuantaToCoin) DoLoop(cursor int64) {
     // separate confirm, and sign as two different stages
     for _, refund := range refunds {
         refKey := getKeyName(refund.CoinName, strings.ToLower(common.HexToAddress(refund.DestinationAddress).Hex()), 0)
-        c.logger.Infof("Confirm Refund = %s tx=%s", refKey, refund.TransactionId)
+        c.logger.Infof("Confirm Refund = %s tx=%s pt=%d", refKey, refund.TransactionId, refund.PageTokenID)
         confirmTx(c.db, QUANTA_CONFIRMED, refKey)
 
         //TODO: do checksum check, should bounce back the payment
@@ -185,7 +185,7 @@ func (c *QuantaToCoin) DoLoop(cursor int64) {
             }
 
             // wait for other node to see the tx
-            time.Sleep(time.Second * 1)
+            time.Sleep(time.Second * 3)
             c.cosi.StartNewRound(encoded)
 
             result := <- c.cosi.FinalSigChan
@@ -203,6 +203,7 @@ func (c *QuantaToCoin) DoLoop(cursor int64) {
                 c.logger.Infof("Submitted withdrawal in tx=%s", tx)
             }
 
+            cursor = refund.PageTokenID
             success := setLastBlock(c.db, QUANTA, refund.PageTokenID)
             if !success {
                 c.logger.Error("Failed to mark block as signed")

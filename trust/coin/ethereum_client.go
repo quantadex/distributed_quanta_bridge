@@ -402,7 +402,7 @@ func (l *Listener) GetTxID(conn bind.ContractBackend, trustAddress common.Addres
 		return 0, err
 	}
 
-	addr , _ := contract.TxIdLast(nil)
-	println("# of signers ", addr)
-	return 0, nil
+	txId , _ := contract.TxIdLast(nil)
+	println("Last TX ID= ", txId)
+	return txId, nil
 }
