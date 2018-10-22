@@ -206,6 +206,7 @@ func (q *QuantaClient) GetRefundsInBlock(cursor int64, trustAddress string) ([]R
 					if err != nil {
 						return nil, cursor, nil
 					}
+					//TODO: Add ledger
 					// it's a refund
 					newRefund := Refund{
 						CoinName: op.AssetCode,
@@ -213,6 +214,7 @@ func (q *QuantaClient) GetRefundsInBlock(cursor int64, trustAddress string) ([]R
 						OperationID: num,
 						Amount: uint64(am),
 						PageTokenID: pt,
+						TransactionId: op.TxHash,
 					}
 
 					tx, err := q.GetTransactionWithHash(op.TxHash)

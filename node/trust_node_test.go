@@ -53,6 +53,7 @@ EthereumNetworkId: 1540234608622
 EthereumBlockStart: 0
 EthereumRpc: http://localhost:7545
 EthereumKeyStore: %s
+HEALTH_INTERVAL: 5
 `, port, port, key, ethPrivKey))
 
 	viper.ReadConfig(bytes.NewBuffer(config))
