@@ -16,6 +16,8 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 )
 
+const ropsten_infura = "https://ropsten.infura.io/v3/7b880b2fb55c454985d1c1540f47cbf6"
+
 var NODE_KEYS = []string {
 	"ZBYEUJIWP2AXG2V6ZW4F5OTM5APW3SOTTM6YGMKO6MQSY7U3IHFJZHWQ",
 	"ZAFYSHEOQIK67O6S6SD5X7PVTLULQH3WQ3AMAGOO4NHSRM5SIKWCWFZB",
@@ -49,12 +51,12 @@ HorizonUrl: http://testnet-02.quantachain.io:8000/
 NetworkPassphrase: QUANTA Test Network ; September 2018
 RegistrarIp: localhost
 RegistrarPort: 5001
-EthereumNetworkId: 1540234608622
+EthereumNetworkId: 3
 EthereumBlockStart: 0
-EthereumRpc: http://localhost:7545
+EthereumRpc: %s
 EthereumKeyStore: %s
 HEALTH_INTERVAL: 5
-`, port, port, key, ethPrivKey))
+`, port, port, key, ropsten_infura, ethPrivKey))
 
 	viper.ReadConfig(bytes.NewBuffer(config))
 }
@@ -140,13 +142,10 @@ func TestRopstenNativeETH(t *testing.T) {
 	r := StartRegistry()
 	nodes := StartNodes(3, common.HexToAddress("0xe0006458963c3773B051E767C5C63FEe24Cd7Ff9"))
 	time.Sleep(time.Millisecond*250)
-	//DoLoopDeposit(nodes, []int64{4186072, 4186072, 4186074}) // we create the original smart contract on 74
-	//DoLoopDeposit(nodes, []int64{4196673})  // we make deposit
 
 	// DEPOSIT to TEST2
 	DoLoopDeposit(nodes, []int64{4248970})
-	DoLoopDeposit(nodes, []int64{4248971})  // we make deposit
-	DoLoopDeposit(nodes, []int64{4249018})
+	DoLoopDeposit(nodes, []int64{4249018})  // we make deposit
 	DoLoopDeposit(nodes, []int64{4249019})
 	time.Sleep(time.Second*4)
 	StopNodes(nodes)
