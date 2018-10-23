@@ -62,6 +62,8 @@ HEALTH_INTERVAL: 5
 func StartNodes(n int, trustAddress common.Address)[]*TrustNode {
 	println("Starting nodes with trust ", trustAddress.Hex())
 
+	mutex := sync.Mutex{}
+
 	nodes := []*TrustNode{}
 	var wg sync.WaitGroup
 
@@ -86,7 +88,12 @@ func StartNodes(n int, trustAddress common.Address)[]*TrustNode {
 				panic("Cannot create ethereum listener")
 			}
 
-			nodes = append(nodes, bootstrapNode(config, coin))
+			mutex.Lock()
+			node := bootstrapNode(config, coin)
+			nodes = append(nodes, node)
+			mutex.Unlock()
+
+			registerNode(config, node)
 		}(config)
 
 	}
@@ -96,11 +103,23 @@ func StartNodes(n int, trustAddress common.Address)[]*TrustNode {
 	return nodes
 }
 
-func StartRegistry() {
+func StopNodes(nodes []*TrustNode) {
+
+	for _, n := range nodes {
+		n.Stop()
+	}
+}
+
+func StartRegistry() *service.Server {
 	logger, _ := logger.NewLogger("registrar")
 	s := service.NewServer(service.NewRegistry(), "localhost:5001", logger)
 	s.DoHealthCheck(5)
 	go s.Start()
+	return s
+}
+
+func StopRegistry(s *service.Server) {
+	s.Stop()
 }
 
 func DoLoopDeposit(nodes []*TrustNode, blockIds []int64) {
@@ -118,7 +137,7 @@ func DoLoopWithdrawal(nodes []*TrustNode, cursor int64) {
  * This one test native token from block 4186072
  */
 func TestRopstenNativeETH(t *testing.T) {
-	StartRegistry()
+	r := StartRegistry()
 	nodes := StartNodes(3, common.HexToAddress("0xe0006458963c3773B051E767C5C63FEe24Cd7Ff9"))
 	time.Sleep(time.Millisecond*250)
 	//DoLoopDeposit(nodes, []int64{4186072, 4186072, 4186074}) // we create the original smart contract on 74
@@ -130,6 +149,8 @@ func TestRopstenNativeETH(t *testing.T) {
 	DoLoopDeposit(nodes, []int64{4249018})
 	DoLoopDeposit(nodes, []int64{4249019})
 	time.Sleep(time.Second*4)
+	StopNodes(nodes)
+	StopRegistry(r)
 }
 
 func TestRopstenERC20Token(t *testing.T) {
@@ -156,9 +177,7 @@ func TestDummyCoin(t *testing.T) {
 }
 
 func TestWithdrawal(t *testing.T) {
-	StartRegistry()
-
-	time.Sleep(time.Millisecond*250)
+	r := StartRegistry()
 
 	ethereumClient, err := ethclient.Dial("http://localhost:7545")
 	if err != nil {
@@ -191,4 +210,6 @@ func TestWithdrawal(t *testing.T) {
 	DoLoopWithdrawal(nodes, 0)
 
 	time.Sleep(8 * time.Second)
+	StopNodes(nodes)
+	StopRegistry(r)
 }

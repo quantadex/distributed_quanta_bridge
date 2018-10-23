@@ -11,6 +11,7 @@ import (
 	"strings"
 	"github.com/quantadex/distributed_quanta_bridge/common/msgs"
 	"bytes"
+	"context"
 )
 
 type Server struct {
@@ -18,10 +19,11 @@ type Server struct {
 	registry *Registry
 	handlers *http.ServeMux
 	logger logger.Logger
+	httpService *http.Server
 }
 
 func NewServer(registry *Registry, url string, logger logger.Logger) *Server {
-	return &Server{registry: registry, url: url, logger: logger }
+	return &Server{registry: registry, url: url, logger: logger, httpService: &http.Server{ Addr: url }}
 }
 
 func SendHealthCheck(n *manifest.TrustNode) {
@@ -29,11 +31,15 @@ func SendHealthCheck(n *manifest.TrustNode) {
 	http.Get(url)
 }
 
+func (server *Server) Stop() {
+	server.httpService.Shutdown(context.Background())
+}
+
 func (server *Server) DoHealthCheck(interval int) {
 	ticker := time.NewTicker(time.Second * time.Duration(interval))
 	go func() {
 		for range ticker.C {
-			for _, v := range server.registry.manifest.Nodes {
+			for _, v := range server.registry.Manifest().Nodes {
 				SendHealthCheck(v)
 			}
 		}
@@ -44,7 +50,7 @@ func (server *Server) Start() {
 	server.logger.Infof("Server will be started at %s...\n", server.url)
 	server.setRoute()
 
-	if err := http.ListenAndServe(server.url,  server.handlers); err != nil {
+	if err := server.httpService.ListenAndServe(); err != nil {
 		server.logger.Error("Start server failed: " + err.Error())
 		return
 	}
@@ -58,6 +64,7 @@ func (server *Server) setRoute() {
 	server.handlers.HandleFunc("/registry/api/getaddr", server.getaddress)
 	fs := http.FileServer(http.Dir("static"))
 	server.handlers.Handle("/static/", http.StripPrefix("/static/", fs))
+	server.httpService.Handler = server.handlers
 }
 
 func (server *Server) getaddress(w http.ResponseWriter, request *http.Request) {

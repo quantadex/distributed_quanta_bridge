@@ -9,6 +9,7 @@ import (
 	"github.com/spf13/viper"
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"crypto/ecdsa"
+	"sync"
 )
 
 type Registry struct {
@@ -16,9 +17,12 @@ type Registry struct {
 	listener *coin.Listener
 	ownerEthereumKey *ecdsa.PrivateKey
 	trustEthereumAddress common.Address
+	sync.RWMutex
 }
 
 func (r *Registry) AddNode(n *msgs.NodeInfo) error {
+	r.Lock()
+	defer r.Unlock()
 	return r.manifest.AddNode(n.NodeIp, n.NodePort,n.NodeKey)
 }
 
@@ -27,6 +31,8 @@ func (r *Registry) ReceiveHealth(nodeKey string, state string) error {
 }
 
 func (r *Registry) Manifest() *manifest.Manifest {
+	r.RLock()
+	defer r.RUnlock()
 	return r.manifest
 }
 

@@ -5,11 +5,13 @@ import (
 	"github.com/quantadex/distributed_quanta_bridge/common/queue"
 	"io/ioutil"
 	"fmt"
+	"context"
 )
 
 type HttpListener struct {
 	handlers *http.ServeMux
 	queue queue.Queue
+	server *http.Server
 }
 
 func (h *HttpListener) AttachQueue(queue queue.Queue) error {
@@ -38,8 +40,14 @@ func (h *HttpListener) AddEndpoint(name string, route string) error {
  */
 func (h *HttpListener) Run(host string, port int) error {
 	var err error
-	if err = http.ListenAndServe(fmt.Sprintf("%s:%d", host, port),  h.handlers); err != nil {
+	h.server = &http.Server{Addr: fmt.Sprintf("%s:%d", host, port), Handler: h.handlers}
+
+	if err = h.server.ListenAndServe(); err != nil {
 		return nil
 	}
 	return err
+}
+
+func (h *HttpListener) Stop() {
+	h.server.Shutdown(context.Background())
 }

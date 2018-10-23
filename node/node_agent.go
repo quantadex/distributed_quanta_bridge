@@ -14,49 +14,45 @@ import (
  *
  * The queue is polled by the actual node logic
  */
-func nodeAgent(q queue.Queue, listenIp string, listenPort int) {
+func createNodeListener(q queue.Queue, listenIp string, listenPort int) listener.Listener {
     log, err := logger.NewLogger(strconv.Itoa(listenPort))
     if err != nil {
-        return
+        return nil
     }
     listener, err := listener.NewListener()
     if err != nil {
         log.Error("Failed to create listener module")
-        return
+        return nil
     }
     err = listener.AttachQueue(q)
     if err != nil {
         log.Error("Failed to attach to listener queue")
-        return
+        return nil
     }
 
     // manifest update from registry
     err = listener.AddEndpoint(queue.MANIFEST_QUEUE, "/node/api/manifest")
     if err != nil {
        log.Error("Failed to create endpoint")
-       return
+       return nil
     }
 
     err = listener.AddEndpoint(queue.HEALTH_QUEUE, "/node/api/healthcheck")
     if err != nil {
         log.Error("Failed to create endpoint")
-        return
+        return nil
     }
     err = listener.AddEndpoint(queue.PEERMSG_QUEUE, "/node/api/peer")
     if err != nil {
         log.Error("Failed to create endpoint")
-        return
+        return nil
     }
 
     err = listener.AddEndpoint(queue.REFUNDMSG_QUEUE, "/node/api/refund")
     if err != nil {
         log.Error("Failed to create endpoint")
-        return
+        return nil
     }
 
-    err = listener.Run(listenIp, listenPort)
-    if err != nil {
-        log.Error("Failed to start listener")
-        return
-    }
+    return listener
 }

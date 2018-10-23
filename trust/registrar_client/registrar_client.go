@@ -1,7 +1,6 @@
 package registrar_client
 
 import (
-	"github.com/spf13/viper"
 	"github.com/quantadex/distributed_quanta_bridge/common/manifest"
 	"fmt"
 	"net/http"
@@ -24,7 +23,7 @@ type RegistrarClient struct{
 
 func (r *RegistrarClient) GetRegistrar() error {
 	r.url = fmt.Sprintf("http://%s:%d", r.address, r.port)
-	r.healthQueueName = viper.GetString("HEALTH_QUEUE")
+	r.healthQueueName = queue.HEALTH_QUEUE
 
 	return nil
 }

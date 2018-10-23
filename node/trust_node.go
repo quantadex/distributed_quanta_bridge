@@ -13,6 +13,8 @@ import (
     "github.com/quantadex/distributed_quanta_bridge/trust/registrar_client"
     "github.com/quantadex/distributed_quanta_bridge/common/queue"
     "strconv"
+    "github.com/go-errors/errors"
+    "github.com/quantadex/distributed_quanta_bridge/common/listener"
 )
 
 const (
@@ -43,6 +45,9 @@ type TrustNode struct {
     nodeID   int
     coinName string
     queue    queue.Queue
+    listener listener.Listener
+
+    doneChan chan bool
 }
 
 type Config struct {
@@ -72,6 +77,7 @@ type Config struct {
 func initNode(config Config, targetCoin coin.Coin) (*TrustNode, bool) {
     var err error
     node := &TrustNode{}
+    node.doneChan = make(chan bool,1)
     node.queue = queue.NewMemoryQueue()
     node.log, err = logger.NewLogger(strconv.Itoa(config.ListenPort))
     if err != nil {
@@ -279,15 +285,20 @@ func (n *TrustNode) initTrust(config Config) {
  */
 func (n *TrustNode) run() {
     for true {
-        if n.reg.HealthCheckRequested() {
-            n.reg.SendHealth("RUNNING", n.quantakM)
-        }
-        blockIDs := n.cTQ.GetNewCoinBlockIDs()
-        n.cTQ.DoLoop(blockIDs)
+        select {
+            case <- time.After(time.Second):
+                if n.reg.HealthCheckRequested() {
+                    n.reg.SendHealth("RUNNING", n.quantakM)
+                }
+                blockIDs := n.cTQ.GetNewCoinBlockIDs()
+                n.cTQ.DoLoop(blockIDs)
 
-        cursor, _ := control.GetLastBlock(n.db, control.QUANTA)
-        n.qTC.DoLoop(cursor)
-        time.Sleep(time.Second * 1)
+                cursor, _ := control.GetLastBlock(n.db, control.QUANTA)
+                n.qTC.DoLoop(cursor)
+            case <- n.doneChan:
+                n.log.Infof("Exiting.")
+                break
+        }
     }
 }
 
@@ -299,14 +310,30 @@ func bootstrapNode(config Config, targetCoin coin.Coin) *TrustNode {
     }
 
     // start our http listener
-    go nodeAgent(node.queue, config.ListenIp, config.ListenPort)
+    node.listener = createNodeListener(node.queue, config.ListenIp, config.ListenPort)
 
-    success = node.registerNode(config)
-    if !success {
-        node.log.Error("Failed to register node")
-        return nil
-    }
-    node.initTrust(config)
+    go func() {
+        err := node.listener.Run(config.ListenIp, config.ListenPort)
+        if err != nil {
+            node.log.Error("Failed to start listener")
+            return
+        }
+    }()
 
     return node
+}
+
+func registerNode(config Config, node *TrustNode) error {
+    success := node.registerNode(config)
+    if !success {
+        node.log.Error("Failed to register node")
+        return errors.New("Failed to register node")
+    }
+    node.initTrust(config)
+    return nil
+}
+
+func (n *TrustNode) Stop() {
+    n.doneChan <- true
+    n.listener.Stop()
 }

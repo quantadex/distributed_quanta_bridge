@@ -48,6 +48,9 @@ type Listener interface {
      * Start the infinite listening loop
      */
     Run(host string, port int) error
+
+
+    Stop()
 }
 
 func NewListener() (Listener, error) {
