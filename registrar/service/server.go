@@ -1,27 +1,29 @@
 package service
 
 import (
-	"net/http"
-	"github.com/quantadex/distributed_quanta_bridge/common/crypto"
-	"encoding/json"
-	"github.com/quantadex/distributed_quanta_bridge/common/manifest"
-	"github.com/quantadex/distributed_quanta_bridge/common/logger"
-	"fmt"
-	"time"
-	"strings"
-	"github.com/quantadex/distributed_quanta_bridge/common/msgs"
 	"bytes"
+	"context"
+	"encoding/json"
+	"fmt"
+	"github.com/quantadex/distributed_quanta_bridge/common/crypto"
+	"github.com/quantadex/distributed_quanta_bridge/common/logger"
+	"github.com/quantadex/distributed_quanta_bridge/common/manifest"
+	"github.com/quantadex/distributed_quanta_bridge/common/msgs"
+	"net/http"
+	"strings"
+	"time"
 )
 
 type Server struct {
-	url string
-	registry *Registry
-	handlers *http.ServeMux
-	logger logger.Logger
+	url         string
+	registry    *Registry
+	handlers    *http.ServeMux
+	logger      logger.Logger
+	httpService *http.Server
 }
 
 func NewServer(registry *Registry, url string, logger logger.Logger) *Server {
-	return &Server{registry: registry, url: url, logger: logger }
+	return &Server{registry: registry, url: url, logger: logger, httpService: &http.Server{Addr: url}}
 }
 
 func SendHealthCheck(n *manifest.TrustNode) {
@@ -29,11 +31,15 @@ func SendHealthCheck(n *manifest.TrustNode) {
 	http.Get(url)
 }
 
+func (server *Server) Stop() {
+	server.httpService.Shutdown(context.Background())
+}
+
 func (server *Server) DoHealthCheck(interval int) {
 	ticker := time.NewTicker(time.Second * time.Duration(interval))
 	go func() {
 		for range ticker.C {
-			for _, v := range server.registry.manifest.Nodes {
+			for _, v := range server.registry.Manifest().Nodes {
 				SendHealthCheck(v)
 			}
 		}
@@ -44,7 +50,7 @@ func (server *Server) Start() {
 	server.logger.Infof("Server will be started at %s...\n", server.url)
 	server.setRoute()
 
-	if err := http.ListenAndServe(server.url,  server.handlers); err != nil {
+	if err := server.httpService.ListenAndServe(); err != nil {
 		server.logger.Error("Start server failed: " + err.Error())
 		return
 	}
@@ -58,11 +64,12 @@ func (server *Server) setRoute() {
 	server.handlers.HandleFunc("/registry/api/getaddr", server.getaddress)
 	fs := http.FileServer(http.Dir("static"))
 	server.handlers.Handle("/static/", http.StripPrefix("/static/", fs))
+	server.httpService.Handler = server.handlers
 }
 
 func (server *Server) getaddress(w http.ResponseWriter, request *http.Request) {
 	query := request.URL.Query().Get("token")
-	auth := strings.Split(request.Header.Get("Authorization"),":")
+	auth := strings.Split(request.Header.Get("Authorization"), ":")
 
 	if query == "ETH" {
 		server.registry.GetAddress(auth[0])
@@ -99,7 +106,7 @@ func (server *Server) register(w http.ResponseWriter, request *http.Request) {
 		w.WriteHeader(http.StatusOK)
 	}
 
-	if (server.registry.Manifest().ManifestComplete()) {
+	if server.registry.Manifest().ManifestComplete() {
 		go server.Broadcast(server.registry.Manifest())
 	}
 }

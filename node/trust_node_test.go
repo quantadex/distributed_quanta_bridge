@@ -1,28 +1,29 @@
 package main
 
 import (
-	"github.com/spf13/viper"
 	"bytes"
 	"fmt"
-	"github.com/quantadex/distributed_quanta_bridge/registrar/service"
+	"github.com/ethereum/go-ethereum/common"
 	"github.com/quantadex/distributed_quanta_bridge/common/logger"
+	"github.com/quantadex/distributed_quanta_bridge/registrar/service"
 	"github.com/quantadex/distributed_quanta_bridge/trust/coin"
-	"sync"
+	"github.com/spf13/viper"
 	"os"
+	"sync"
 	"testing"
 	"time"
 )
 
-var NODE_KEYS = []string {
+var NODE_KEYS = []string{
 	"ZBYEUJIWP2AXG2V6ZW4F5OTM5APW3SOTTM6YGMKO6MQSY7U3IHFJZHWQ",
 	"ZAFYSHEOQIK67O6S6SD5X7PVTLULQH3WQ3AMAGOO4NHSRM5SIKWCWFZB",
 	"ZC4U5P5DWNXGRUENOCOKZFHAWFKBE7JFOB2BCEKCM7BKXXKQE3DARXIJ",
 }
 
-var ETHKEYS = []string {
-	"efff3cf1e98e8b348041c04fdc1f3019d0dae19d6f6e489bf8cfd38cb5270ddd",
-	"b28ee83828f3e96f5d9048f866fe9b59e1c9b8a201fb3a71d8b19a3db9959249",
-	"6aa210915b26e4f48f2f525ad14759e298bb98d2071fd8032149f33d5baff094",
+var ETHKEYS = []string{
+	"c87509a1c067bbde78beb793e6fa76530b6382a4c0241e5e4a9ec0a0f44dc0d3",
+	"ae6ae8e5ccbfb04590405997ee2d52d2b330726137b875053c36d94e974d162f",
+	"0dbbe8e4ae425a6d2687f1a7e3ba17bc98c673636790f1b8ad91193c05875ef1",
 }
 
 //address:QCAO4HRMJDGFPUHRCLCSWARQTJXY2XTAFQUIRG2FAR3SCF26KQLAWZRN weight:1
@@ -46,17 +47,21 @@ HorizonUrl: http://testnet-02.quantachain.io:8000/
 NetworkPassphrase: QUANTA Test Network ; September 2018
 RegistrarIp: localhost
 RegistrarPort: 5001
-EthereumNetworkId: 3
-EthereumBlockStart: 4186070
-EthereumRpc: https://ropsten.infura.io/v3/7b880b2fb55c454985d1c1540f47cbf6
-EthereumTrustAddr: 0xe0006458963c3773B051E767C5C63FEe24Cd7Ff9
+EthereumNetworkId: 1540234608622
+EthereumBlockStart: 0
+EthereumRpc: http://localhost:7545
 EthereumKeyStore: %s
+HEALTH_INTERVAL: 5
 `, port, port, key, ethPrivKey))
 
 	viper.ReadConfig(bytes.NewBuffer(config))
 }
 
-func StartNodes(n int)[]*TrustNode {
+func StartNodes(n int, trustAddress common.Address) []*TrustNode {
+	println("Starting nodes with trust ", trustAddress.Hex())
+
+	mutex := sync.Mutex{}
+
 	nodes := []*TrustNode{}
 	var wg sync.WaitGroup
 
@@ -64,9 +69,11 @@ func StartNodes(n int)[]*TrustNode {
 		wg.Add(1)
 
 		os.Remove(fmt.Sprintf("./kv_db_%d.db", 5100+i))
-		SetConfig(NODE_KEYS[i], 5100 + i, ETHKEYS[i])
-		config := Config {}
+		SetConfig(NODE_KEYS[i], 5100+i, ETHKEYS[i])
+		config := Config{}
 		err := viper.Unmarshal(&config)
+		config.EthereumTrustAddr = trustAddress.Hex()
+
 		if err != nil {
 			panic(fmt.Errorf("Fatal error config file: %s \n", err))
 		}
@@ -79,7 +86,12 @@ func StartNodes(n int)[]*TrustNode {
 				panic("Cannot create ethereum listener")
 			}
 
-			nodes = append(nodes, bootstrapNode(config, coin))
+			mutex.Lock()
+			node := bootstrapNode(config, coin)
+			nodes = append(nodes, node)
+			mutex.Unlock()
+
+			registerNode(config, node)
 		}(config)
 
 	}
@@ -89,11 +101,23 @@ func StartNodes(n int)[]*TrustNode {
 	return nodes
 }
 
-func StartRegistry() {
+func StopNodes(nodes []*TrustNode) {
+
+	for _, n := range nodes {
+		n.Stop()
+	}
+}
+
+func StartRegistry() *service.Server {
 	logger, _ := logger.NewLogger("registrar")
 	s := service.NewServer(service.NewRegistry(), "localhost:5001", logger)
 	s.DoHealthCheck(5)
 	go s.Start()
+	return s
+}
+
+func StopRegistry(s *service.Server) {
+	s.Stop()
 }
 
 func DoLoopDeposit(nodes []*TrustNode, blockIds []int64) {
@@ -104,33 +128,36 @@ func DoLoopDeposit(nodes []*TrustNode, blockIds []int64) {
 
 func DoLoopWithdrawal(nodes []*TrustNode, cursor int64) {
 	for _, n := range nodes {
-		n.qTC.DoLoop(cursor)
+		go n.qTC.DoLoop(cursor)
 	}
 }
+
 /**
  * This one test native token from block 4186072
  */
 func TestRopstenNativeETH(t *testing.T) {
-	StartRegistry()
-	nodes := StartNodes(3)
-	time.Sleep(time.Millisecond*250)
+	r := StartRegistry()
+	nodes := StartNodes(3, common.HexToAddress("0xe0006458963c3773B051E767C5C63FEe24Cd7Ff9"))
+	time.Sleep(time.Millisecond * 250)
 	//DoLoopDeposit(nodes, []int64{4186072, 4186072, 4186074}) // we create the original smart contract on 74
 	//DoLoopDeposit(nodes, []int64{4196673})  // we make deposit
 
 	// DEPOSIT to TEST2
 	DoLoopDeposit(nodes, []int64{4248970})
-	DoLoopDeposit(nodes, []int64{4248971})  // we make deposit
+	DoLoopDeposit(nodes, []int64{4248971}) // we make deposit
 	DoLoopDeposit(nodes, []int64{4249018})
 	DoLoopDeposit(nodes, []int64{4249019})
-	time.Sleep(time.Second*4)
+	time.Sleep(time.Second * 4)
+	StopNodes(nodes)
+	StopRegistry(r)
 }
 
 func TestRopstenERC20Token(t *testing.T) {
-	//StartRegistry()
-	//nodes := StartNodes(3)
-	//time.Sleep(time.Millisecond*250)
+	StartRegistry()
+	nodes := StartNodes(3, common.HexToAddress("0xb1E02e31c9A2403FeAFA7E483Ebb3e1b5ffa3164"))
+	time.Sleep(time.Millisecond * 250)
 	//DoLoopDeposit(nodes, []int64{4186072, 4186072, 4186074}) // we create the original smart contract on 74
-	//DoLoopDeposit(nodes, []int64{4196673})  // we make deposit
+	DoLoopDeposit(nodes, []int64{4250980}) // we make deposit
 	//DoLoopDeposit(nodes, []int64{4196674})
 }
 
@@ -146,13 +173,4 @@ func TestDummyCoin(t *testing.T) {
 	//dummy.AddDeposit(&coin.Deposit{"ETH", "",
 	//				"QDCFARPB4ZR7VGTEL2XII5OPPUPPX2PQAYZURXRVR6Z34GNWTUHGVSXT",
 	//				15*10000000, 1})
-}
-
-func TestWithdrawal(t *testing.T) {
-	StartRegistry()
-	nodes := StartNodes(3)
-	time.Sleep(time.Millisecond*250)
-	DoLoopWithdrawal(nodes, 0)
-
-	time.Sleep(5 * time.Second)
 }

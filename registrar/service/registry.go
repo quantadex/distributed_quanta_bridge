@@ -1,25 +1,29 @@
 package service
 
 import (
+	"crypto/ecdsa"
+	"github.com/ethereum/go-ethereum/accounts/abi/bind"
+	"github.com/ethereum/go-ethereum/common"
 	"github.com/quantadex/distributed_quanta_bridge/common/manifest"
 	"github.com/quantadex/distributed_quanta_bridge/common/msgs"
-	"github.com/quantadex/distributed_quanta_bridge/trust/coin"
 	"github.com/quantadex/distributed_quanta_bridge/registrar/Forwarder"
-	"github.com/ethereum/go-ethereum/common"
+	"github.com/quantadex/distributed_quanta_bridge/trust/coin"
 	"github.com/spf13/viper"
-	"github.com/ethereum/go-ethereum/accounts/abi/bind"
-	"crypto/ecdsa"
+	"sync"
 )
 
 type Registry struct {
-	manifest *manifest.Manifest
-	listener *coin.Listener
-	ownerEthereumKey *ecdsa.PrivateKey
+	manifest             *manifest.Manifest
+	listener             *coin.Listener
+	ownerEthereumKey     *ecdsa.PrivateKey
 	trustEthereumAddress common.Address
+	sync.RWMutex
 }
 
 func (r *Registry) AddNode(n *msgs.NodeInfo) error {
-	return r.manifest.AddNode(n.NodeIp, n.NodePort,n.NodeKey)
+	r.Lock()
+	defer r.Unlock()
+	return r.manifest.AddNode(n.NodeIp, n.NodePort, n.NodeKey)
 }
 
 func (r *Registry) ReceiveHealth(nodeKey string, state string) error {
@@ -27,6 +31,8 @@ func (r *Registry) ReceiveHealth(nodeKey string, state string) error {
 }
 
 func (r *Registry) Manifest() *manifest.Manifest {
+	r.RLock()
+	defer r.RUnlock()
 	return r.manifest
 }
 

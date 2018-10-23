@@ -2,23 +2,23 @@ package coin
 
 import (
 	"context"
-	"math/big"
-	"time"
+	"crypto/ecdsa"
+	"fmt"
 	"github.com/ethereum/go-ethereum"
+	"github.com/ethereum/go-ethereum/accounts/abi"
+	"github.com/ethereum/go-ethereum/accounts/abi/bind"
+	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
+	"github.com/ethereum/go-ethereum/crypto"
+	"github.com/quantadex/distributed_quanta_bridge/registrar/Forwarder"
 	"github.com/stellar/go/support/errors"
 	"github.com/stellar/go/support/log"
+	"math/big"
 	"strings"
-	"github.com/ethereum/go-ethereum/accounts/abi"
-	"github.com/ethereum/go-ethereum/crypto"
-	"github.com/ethereum/go-ethereum/common"
-	"github.com/quantadex/distributed_quanta_bridge/registrar/Forwarder"
-	"github.com/ethereum/go-ethereum/accounts/abi/bind"
-	"crypto/ecdsa"
+	"time"
 )
 
 const abiCode = `[{"anonymous":false,"inputs":[{"indexed":true,"name":"from","type":"address"},{"indexed":true,"name":"to","type":"address"},{"indexed":false,"name":"tokens","type":"uint256"}],"name":"Transfer","type":"event"},{"anonymous":false,"inputs":[{"indexed":true,"name":"tokenOwner","type":"address"},{"indexed":true,"name":"spender","type":"address"},{"indexed":false,"name":"tokens","type":"uint256"}],"name":"Approval","type":"event"}]`
-
 
 func (l *Listener) Start() error {
 	l.log = log.DefaultLogger.WithField("service", "EthereumListener")
@@ -163,7 +163,7 @@ func (l *Listener) processBlock(block *types.Block) error {
 	return nil
 }
 
-func (l *Listener) GetTopBlockNumber() (int64, error){
+func (l *Listener) GetTopBlockNumber() (int64, error) {
 	header, err := l.Client.HeaderByNumber(context.Background(), nil)
 	if err != nil {
 		return 0, err
@@ -190,9 +190,9 @@ func (l *Listener) GetNativeDeposits(blockNumber int64, toAddress map[string]str
 			if tx.Value().Cmp(big.NewInt(0)) != 0 {
 				events = append(events, &Deposit{
 					QuantaAddr: quantaAddr,
-					CoinName: "ETH",
-					SenderAddr:tx.To().Hex(),
-					Amount: WeiToStellar(tx.Value().Int64()),
+					CoinName:   "ETH",
+					SenderAddr: tx.To().Hex(),
+					Amount:     WeiToStellar(tx.Value().Int64()),
 				})
 			}
 		}
@@ -201,8 +201,7 @@ func (l *Listener) GetNativeDeposits(blockNumber int64, toAddress map[string]str
 	return events, nil
 }
 
-
-func (l *Listener) FilterTransferEvent(blockNumber int64, toAddress map[string]string) ([]*Deposit, error)  {
+func (l *Listener) FilterTransferEvent(blockNumber int64, toAddress map[string]string) ([]*Deposit, error) {
 	query := ethereum.FilterQuery{
 		FromBlock: big.NewInt(blockNumber),
 		ToBlock:   big.NewInt(blockNumber),
@@ -249,16 +248,16 @@ func (l *Listener) FilterTransferEvent(blockNumber int64, toAddress map[string]s
 			transferEvent.From = common.HexToAddress(vLog.Topics[1].Hex())
 			transferEvent.To = common.HexToAddress(vLog.Topics[2].Hex())
 
-			if quantaAddr, ok := toAddress[transferEvent.To.Hex()]; ok {
-				//fmt.Printf("From: %s\n", transferEvent.From.Hex())
-				//fmt.Printf("To: %s\n", transferEvent.To.Hex())
-				//fmt.Printf("Tokens: %s\n", transferEvent.Tokens.String())
+			fmt.Printf("From: %s\n", transferEvent.From.Hex())
+			fmt.Printf("To: %s\n", transferEvent.To.Hex())
+			fmt.Printf("Tokens: %s\n", transferEvent.Tokens.String())
 
+			if quantaAddr, ok := toAddress[transferEvent.To.Hex()]; ok {
 				events = append(events, &Deposit{
 					QuantaAddr: quantaAddr,
-					CoinName: vLog.Address.Hex(),
+					CoinName:   vLog.Address.Hex(),
 					SenderAddr: transferEvent.To.Hex(),
-					Amount: WeiToStellar(transferEvent.Tokens.Int64()),
+					Amount:     WeiToStellar(transferEvent.Tokens.Int64()),
 				})
 			}
 
@@ -267,7 +266,6 @@ func (l *Listener) FilterTransferEvent(blockNumber int64, toAddress map[string]s
 
 	return events, nil
 }
-
 
 func (l *Listener) GetForwardContract(blockNumber int64) ([]*ForwardInput, error) {
 	blocks, err := l.GetBlock(blockNumber)
@@ -330,9 +328,9 @@ func (l *Listener) SendWithDrawalToRPC(trustAddress common.Address,
 }
 
 func (l *Listener) SendWithdrawal(conn bind.ContractBackend,
-								trustAddress common.Address,
-								ownerKey *ecdsa.PrivateKey,
-								w *Withdrawal) (string, error) {
+	trustAddress common.Address,
+	ownerKey *ecdsa.PrivateKey,
+	w *Withdrawal) (string, error) {
 	auth := bind.NewKeyedTransactor(ownerKey)
 	contract, err := NewTrustContract(trustAddress, conn)
 

@@ -1,18 +1,18 @@
 package peer_contact
 
 import (
-	"github.com/quantadex/distributed_quanta_bridge/common/manifest"
-	"github.com/quantadex/distributed_quanta_bridge/common/queue"
-	"github.com/quantadex/distributed_quanta_bridge/common/crypto"
-	"encoding/json"
-	"net/http"
 	"bytes"
+	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/quantadex/distributed_quanta_bridge/common/crypto"
+	"github.com/quantadex/distributed_quanta_bridge/common/manifest"
+	"github.com/quantadex/distributed_quanta_bridge/common/queue"
+	"net/http"
 )
 
 type PeerClient struct {
-	q queue.Queue
+	q          queue.Queue
 	privateKey string
 }
 
@@ -57,7 +57,6 @@ func (p *PeerClient) GetMsg() *PeerMessage {
 	}
 
 	// verify signature here.
-
 
 	//println("parsed peer message")
 	return &msg.Body

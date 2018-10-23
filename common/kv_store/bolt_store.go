@@ -1,12 +1,11 @@
 package kv_store
 
 import (
-	"github.com/boltdb/bolt"
 	"fmt"
-	"os"
+	"github.com/boltdb/bolt"
 	"github.com/pkg/errors"
+	"os"
 )
-
 
 const dbFile = "%s.db"
 
@@ -24,7 +23,7 @@ func DbExists(nodeID string) bool {
 }
 
 type BoltStore struct {
-	db  *bolt.DB
+	db *bolt.DB
 }
 
 func (s *BoltStore) Connect(name string) error {
@@ -43,6 +42,17 @@ func (s *BoltStore) CreateTable(tableName string) error {
 	})
 }
 
+func (s *BoltStore) RemoveKey(tableName string, key string) error {
+	err := s.db.View(func(tx *bolt.Tx) error {
+		b := tx.Bucket([]byte(tableName))
+		if b == nil {
+			return errors.New("bucket not found")
+		}
+		b.Delete([]byte(key))
+		return nil
+	})
+	return err
+}
 func (s *BoltStore) GetValue(tableName string, key string) (*string, error) {
 	var value *string
 
@@ -75,6 +85,16 @@ func (s *BoltStore) SetValue(tableName string, key string, oldValue string, newV
 	})
 }
 
+func (s *BoltStore) Put(tableName string, key []byte, Value []byte) error {
+	return s.db.Update(func(tx *bolt.Tx) error {
+		b := tx.Bucket([]byte(tableName))
+		if b == nil {
+			return errors.New("bucket not found")
+		}
+		return b.Put(key, Value)
+	})
+}
+
 func (s *BoltStore) GetAllValues(tableName string) (map[string]string, error) {
 	values := map[string]string{}
 
@@ -92,4 +112,3 @@ func (s *BoltStore) GetAllValues(tableName string) (map[string]string, error) {
 
 	return values, err
 }
-

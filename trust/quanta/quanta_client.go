@@ -1,35 +1,36 @@
 package quanta
 
 import (
-	"github.com/quantadex/distributed_quanta_bridge/trust/peer_contact"
+	"encoding/base64"
+	"encoding/json"
+	"errors"
+	"fmt"
+	"github.com/quantadex/distributed_quanta_bridge/common/kv_store"
+	"github.com/quantadex/distributed_quanta_bridge/common/logger"
+	"github.com/quantadex/distributed_quanta_bridge/common/queue"
 	"github.com/quantadex/distributed_quanta_bridge/trust/coin"
+	"github.com/quantadex/distributed_quanta_bridge/trust/peer_contact"
 	b "github.com/stellar/go/build"
 	"github.com/stellar/go/clients/horizon"
-
-	"net/http"
-	"fmt"
-	"github.com/quantadex/distributed_quanta_bridge/common/queue"
-	"encoding/json"
-	"github.com/quantadex/distributed_quanta_bridge/common/logger"
 	"github.com/stellar/go/xdr"
-	"errors"
-	"time"
+	"net/http"
 	"strconv"
-	"encoding/base64"
+	"time"
 )
 
 type QuantaClientOptions struct {
-	Logger logger.Logger
-	Network string
-	Issuer string // pub key
+	Logger     logger.Logger
+	Network    string
+	Issuer     string // pub key
 	HorizonUrl string
 }
 
 type QuantaClient struct {
 	QuantaClientOptions
 	horizonClient *horizon.Client
-	queue queue.Queue
-	worker SubmitWorker
+	queue         queue.Queue
+	worker        SubmitWorker
+	kv            kv_store.KVStore
 }
 
 type Operations struct {
@@ -48,16 +49,15 @@ type Operation struct {
 	Type        string    `json:"type"`
 	PagingToken string    `json:"paging_token"`
 	CreatedAt   time.Time `json:"created_at"`
-	AssetType   string	  `json:"asset_type"`
-	From		   string	  `json:"from"`
-	To			   string	  `json:"to"`
-	TxHash         string `json:"transaction_hash"`
+	AssetType   string    `json:"asset_type"`
+	From        string    `json:"from"`
+	To          string    `json:"to"`
+	TxHash      string    `json:"transaction_hash"`
 }
-
 
 // remember to test coins < 10^7
 func (q *QuantaClient) CreateProposeTransaction(deposit *coin.Deposit) (string, error) {
-	amount := fmt.Sprintf("%.7f",float64(deposit.Amount)/10000000)
+	amount := fmt.Sprintf("%.7f", float64(deposit.Amount)/10000000)
 	println("Propose TX: ", deposit.CoinName, q.Issuer)
 
 	tx, err := b.Transaction(
@@ -67,7 +67,7 @@ func (q *QuantaClient) CreateProposeTransaction(deposit *coin.Deposit) (string, 
 		//b.Sequence{ 0 },
 		b.Payment(
 			b.Destination{deposit.QuantaAddr},
-			b.CreditAmount{ deposit.CoinName, q.Issuer, amount },
+			b.CreditAmount{"mnbvcxzlkjhgfdsapoiuytrewqmnbvcxzlkjhgfdsapoiuytrewq123456789", q.Issuer, amount},
 		),
 	)
 
@@ -83,7 +83,6 @@ func (q *QuantaClient) CreateProposeTransaction(deposit *coin.Deposit) (string, 
 
 	return txe.Base64()
 }
-
 
 func (k *QuantaClient) DecodeTransaction(base64 string) (*coin.Deposit, error) {
 	txe := &xdr.TransactionEnvelope{}
@@ -102,13 +101,12 @@ func (k *QuantaClient) DecodeTransaction(base64 string) (*coin.Deposit, error) {
 		return nil, errors.New("no payment op found")
 	}
 
-	return &coin.Deposit{ CoinName: paymentOp.Asset.String(),
+	return &coin.Deposit{CoinName: paymentOp.Asset.String(),
 		QuantaAddr: paymentOp.Destination.Address(),
-		Amount: int64(paymentOp.Amount),
-		BlockID: 0,
+		Amount:     int64(paymentOp.Amount),
+		BlockID:    0,
 	}, nil
 }
-
 
 func (q *QuantaClient) Attach() error {
 	q.horizonClient = &horizon.Client{
@@ -119,19 +117,22 @@ func (q *QuantaClient) Attach() error {
 	return nil
 }
 
-func (q *QuantaClient) AttachQueue(queueIn queue.Queue) error {
-	q.queue = queueIn
-	q.queue.CreateQueue(queue.QUANTA_TX_QUEUE)
+func (q *QuantaClient) AttachQueue(kv kv_store.KVStore) error {
 
+	//q.queue = queueIn
+	//q.queue.CreateQueue(queue.QUANTA_TX_QUEUE)
+	q.kv = kv
+	q.kv.CreateTable("Pending_Quanta_Tx")
+	q.kv.CreateTable("Completed_Quanta_Tx")
 	q.worker = NewSubmitWorker(q.HorizonUrl, q.Logger)
-	q.worker.AttachQueue(q.queue)
+	q.worker.AttachQueue(q.kv)
 	go q.worker.Dispatch()
 
 	return nil
 }
 
 func (q *QuantaClient) GetTopBlockID(accountId string) (int64, error) {
-	url := fmt.Sprintf("%s/accounts/%s/operations?order=desc&limit=1", q.horizonClient.URL,accountId)
+	url := fmt.Sprintf("%s/accounts/%s/operations?order=desc&limit=1", q.horizonClient.URL, accountId)
 
 	resp, err := q.horizonClient.HTTP.Get(url)
 	if err != nil {
@@ -140,7 +141,7 @@ func (q *QuantaClient) GetTopBlockID(accountId string) (int64, error) {
 
 	var operations Operations
 	if err := json.NewDecoder(resp.Body).Decode(&operations); err != nil {
-		return 0, errors.New("failed to decode operations: "+ err.Error())
+		return 0, errors.New("failed to decode operations: " + err.Error())
 	}
 
 	if len(operations.Embedded.Records) > 0 {
@@ -155,7 +156,7 @@ func (q *QuantaClient) GetTopBlockID(accountId string) (int64, error) {
 }
 
 func (q *QuantaClient) GetTransactionWithHash(hash string) (*horizon.Transaction, error) {
-	url := fmt.Sprintf("%s/transactions/%s", q.horizonClient.URL,hash)
+	url := fmt.Sprintf("%s/transactions/%s", q.horizonClient.URL, hash)
 	//println(url)
 
 	resp, err := q.horizonClient.HTTP.Get(url)
@@ -165,7 +166,7 @@ func (q *QuantaClient) GetTransactionWithHash(hash string) (*horizon.Transaction
 
 	var tx horizon.Transaction
 	if err := json.NewDecoder(resp.Body).Decode(&tx); err != nil {
-		return nil, errors.New("failed to decode operations: "+ err.Error())
+		return nil, errors.New("failed to decode operations: " + err.Error())
 	}
 
 	return &tx, nil
@@ -173,7 +174,7 @@ func (q *QuantaClient) GetTransactionWithHash(hash string) (*horizon.Transaction
 
 // returns nextPageToken
 func (q *QuantaClient) GetRefundsInBlock(cursor int64, trustAddress string) ([]Refund, int64, error) {
-	url := fmt.Sprintf("%s/accounts/%s/payments?order=asc&limit=100&cursor=%d", q.horizonClient.URL,trustAddress, cursor)
+	url := fmt.Sprintf("%s/accounts/%s/payments?order=asc&limit=100&cursor=%d", q.horizonClient.URL, trustAddress, cursor)
 	println(url)
 
 	resp, err := q.horizonClient.HTTP.Get(url)
@@ -183,7 +184,7 @@ func (q *QuantaClient) GetRefundsInBlock(cursor int64, trustAddress string) ([]R
 
 	var operations Operations
 	if err := json.NewDecoder(resp.Body).Decode(&operations); err != nil {
-		return nil, 0, errors.New("failed to decode operations: "+ err.Error())
+		return nil, 0, errors.New("failed to decode operations: " + err.Error())
 	}
 
 	refunds := []Refund{}
@@ -201,9 +202,9 @@ func (q *QuantaClient) GetRefundsInBlock(cursor int64, trustAddress string) ([]R
 				if op.To == trustAddress {
 					// it's a refund
 					newRefund := Refund{
-						CoinName: op.AssetType,
+						CoinName:           op.AssetType,
 						DestinationAddress: op.To,
-						OperationID: num,
+						OperationID:        num,
 					}
 
 					tx, err := q.GetTransactionWithHash(op.TxHash)
@@ -224,14 +225,14 @@ func (q *QuantaClient) GetRefundsInBlock(cursor int64, trustAddress string) ([]R
 	return refunds, cursor, nil
 }
 
+//TODO: write into pending_quanta_tx  with unique key -> jsonBytes of PeerMessage
+// submission worker will scan pending_quanta_tx and submit to the QUANTA blockchain
 func (q *QuantaClient) ProcessDeposit(deposit peer_contact.PeerMessage) error {
-	data,err := json.Marshal(deposit)
+	data, err := json.Marshal(deposit)
 	if err != nil {
 		return err
 	}
-	return q.queue.Put(queue.QUANTA_TX_QUEUE, data)
+	key := peer_contact.CreateUniqueKey(data, deposit)
+
+	return q.kv.Put("Pending_Quanta_Tx", []byte(key), data)
 }
-
-
-
-
