@@ -1,24 +1,20 @@
 package quanta
 
 import (
-	"encoding/json"
-	"fmt"
-	"github.com/quantadex/distributed_quanta_bridge/common/kv_store"
-	"github.com/quantadex/distributed_quanta_bridge/common/logger"
 	"github.com/quantadex/distributed_quanta_bridge/common/queue"
-	"github.com/quantadex/distributed_quanta_bridge/trust/peer_contact"
 	"github.com/stellar/go/clients/horizon"
 	"net/http"
+	"github.com/quantadex/distributed_quanta_bridge/trust/peer_contact"
+	"encoding/json"
+	"github.com/quantadex/distributed_quanta_bridge/common/logger"
 	"time"
 )
 
-//TODO: add kvstore, keep 2 buckets 1) pending_quanta_tx  2) completed_quanta_tx
 type SubmitWorkerImpl struct {
 	horizonClient *horizon.Client
-	logger        logger.Logger
-	queue         queue.Queue
-	horizonUrl    string
-	kv            kv_store.KVStore
+	logger logger.Logger
+	queue queue.Queue
+	horizonUrl string
 }
 
 func (s *SubmitWorkerImpl) Dispatch() {
@@ -30,43 +26,37 @@ func (s *SubmitWorkerImpl) Dispatch() {
 	for {
 		//println("Wake up")
 		time.Sleep(time.Second)
-		data, err := s.kv.GetAllValues(kv_store.PENDING_QUANTA_TX)
+
+		data, err := s.queue.Get(queue.QUANTA_TX_QUEUE)
 		if err != nil {
 			continue
 		}
 
 		var deposit peer_contact.PeerMessage
-		for k, v := range data {
-
-			err = json.Unmarshal([]byte(v), &deposit)
-			if err != nil {
-				s.logger.Error("could not unmarshall")
-				continue
-			}
-			s.logger.Infof("Submit TX: %s signed=%v %s", deposit.Proposal.CoinName, deposit.SignedBy, deposit.MSG)
-
-			res, err := s.horizonClient.SubmitTransaction(deposit.MSG)
-			if err != nil {
-				err2 := err.(*horizon.Error)
-
-				s.logger.Error("could not submit transaction " + res.Hash + " " + err2.Error() + err2.Problem.Detail)
-				fmt.Printf("%v", err2.Problem.Extras)
-
-				//xdr.TransactionResult{}
-
-			} else {
-				s.logger.Infof("Successful tx submission %s", res.Hash)
-				s.kv.RemoveKey(kv_store.PENDING_QUANTA_TX, k)
-				s.kv.SetValue(kv_store.COMPLETED_QUANTA_TX, k, "", v)
-			}
+		err = json.Unmarshal(data, &deposit)
+		if err != nil {
+			s.logger.Error("could not unmarshall")
+			continue
 		}
 
+		s.logger.Infof("Submit TX: %s", deposit.MSG)
+
+		res, err := s.horizonClient.SubmitTransaction(deposit.MSG)
+		if err != nil {
+			err2 := err.(*horizon.Error)
+			s.logger.Error("could not submit transaction " + err2.Error() + err2.Problem.Detail)
+
+			txError := FailedTransactionError{res.Result}
+			opCodes, _ := txError.OperationResultCodes()
+			txCodes, _ := txError.TransactionResultCode()
+			s.logger.Errorf("Op codes %v Tx codes %v", opCodes, txCodes)
+		}
 	}
 }
 
-func (s *SubmitWorkerImpl) AttachQueue(kv kv_store.KVStore) error {
-	s.kv = kv
-	//s.queue.CreateQueue(queue.QUANTA_TX_QUEUE)
+func (s *SubmitWorkerImpl) AttachQueue(q queue.Queue) error {
+	s.queue = q
+	s.queue.CreateQueue(queue.QUANTA_TX_QUEUE)
 
 	s.horizonClient = &horizon.Client{
 		URL:  s.horizonUrl,
@@ -75,3 +65,5 @@ func (s *SubmitWorkerImpl) AttachQueue(kv kv_store.KVStore) error {
 
 	return nil
 }
+
+
