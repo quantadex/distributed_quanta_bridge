@@ -7,6 +7,8 @@ import (
 	"github.com/quantadex/distributed_quanta_bridge/trust/peer_contact"
 )
 
+const QUANTA_PRECISION = 10000000
+
 /**
  * Refund
  *

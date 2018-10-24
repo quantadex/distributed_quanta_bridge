@@ -6,8 +6,6 @@ import { libbytes } from "../libraries/libbytes.sol";
 import { ECTools } from "../libraries/ECTools.sol";
 
 
-// TODO: make this contract ownable
-
 /**
  * Quanta Cross Chain contract.
  *
@@ -15,11 +13,11 @@ import { ECTools } from "../libraries/ECTools.sol";
  * To make the contract usable, the owner must call assignInitialSigners() once.
  */
 contract QuantaCrossChain is Ownable {
-  /** keys are the signers' address, value is a 1 if active */
-  mapping(address=>uint8) private signers;
+  /** keys are the signers' address, value is != 0 if assigned */
+  mapping(address=>uint8) signers;
 
   /** the number of total signers ratified */
-  uint256 private totalSigners = 0;
+  uint256 public totalSigners = 0;
 
   /** the last successfully used txId */
   uint64 public txIdLast = 0;
@@ -50,15 +48,11 @@ contract QuantaCrossChain is Ownable {
     totalSigners = i;
   }
 
-  function getTotalSigners() public view onlyOwner returns (uint256) {
-    return totalSigners;
-  }
-
   function paymentTx(uint64 txId,
                      address erc20Addr,
                      address toAddr,
                      uint256 amount,
-                     uint8[] v, bytes32[] r, bytes32[] s) public {  // FIXME: use external instead of public since it uses last gas
+                     uint8[] v, bytes32[] r, bytes32[] s) external {  // FIXME: use external instead of public since it uses last gas
     uint n = v.length;
 
     require(n != 0);
@@ -66,43 +60,70 @@ contract QuantaCrossChain is Ownable {
     require(n == s.length);
     require(txId == txIdLast+1);
 
-    bool[] memory verified = new bool[](n);
     bytes memory sigMsg = toQuantaPaymentSignatureMessage(txId, erc20Addr, toAddr, amount);
 
-    bytes32 signed = ECTools.toEthereumSignedMessage(string(sigMsg));
+    bool[] memory verified = new bool[](n);
+    bool success = validateSignatures(sigMsg, n, v, r, s, verified);
 
-    address addr;
-
-    // TODO: check for duplicates
-    // TODO: many to one?
-    for(uint i=0; i<n; i++) {
-      addr = ECTools.recoverSignerVRS(signed, v[i], r[i], s[i]);
-      if (signers[addr] == 1) {
-        verified[i] = true;
-        n--;
-      }
-    }
-
-    if ((v.length-n) == totalSigners) {
-      // TODO: check sufficient balances
+    if (success) {
+      // if insufficient balance, methods will just revert
 
       if (erc20Addr == 0) {
         // https://solidity.readthedocs.io/en/v0.4.24/units-and-global-variables.html#address-related
         toAddr.transfer(amount);
       } else {
         // https://theethereum.wiki/w/index.php/ERC20_Token_Standard#The_ERC20_Token_Standard_Interface
-        ERC20 inst = ERC20(erc20Addr);
-        inst.transfer(toAddr, amount);
+        ERC20(erc20Addr).transfer(toAddr, amount);
+      }
+
+      txIdLast++;
+    }
+
+    emit TransactionResult(success, txIdLast, erc20Addr, toAddr, amount, verified);
+  }
+
+
+  function validateSignatures(bytes sigMsg,
+                              uint numSigs,
+                              uint8[] v,
+                              bytes32[] r,
+                              bytes32[] s,
+                              bool[] outVerified) internal view returns (bool) {
+    // with 8 signatures, Gas = 107770
+
+    uint abortThreshold = numSigs - totalSigners + 1;
+    bytes32 signed = ECTools.toEthereumSignedMessage(string(sigMsg));
+    address[] memory validated = new address[](numSigs);
+    uint numValidated = 0;
+    address addr;
+
+    uint j = 0;
+    for(uint i=0; ((i<numSigs) && (numValidated<totalSigners) && (abortThreshold>0)); i++) {
+      addr = ECTools.recoverSignerVRS(signed, v[i], r[i], s[i]);
+      if (signers[addr] == 1) {
+        // wen anticipate the number of signers to be small, so just do a linear scan
+        for(j=0; j<numValidated; j++) {
+          if (validated[j] == addr) {
+            addr = 0;
+            break;
+          }
+        }
+
+        if (addr != 0) {
+          outVerified[i] = true;
+          validated[numValidated] = addr;
+          numValidated++;
+        } else {
+          abortThreshold--;
+        }
+      } else {
+        abortThreshold--;
       }
     }
 
-     // advance the txId
-     if ((v.length-n) == totalSigners) {
-       txIdLast++;
-     }
-
-     emit TransactionResult((v.length-n) == totalSigners, txIdLast, erc20Addr, toAddr, amount, verified);  // , v, r, s, sigMsg);
+    return numValidated == totalSigners;
   }
+
 
   function voteAddSigner(address signer) external {
     require(signer != 0x0);
@@ -123,7 +144,7 @@ contract QuantaCrossChain is Ownable {
     // move them to the signers list when all current signers have
     // agreed to remove them
 
-    if (signers[signer] == 1) {
+    if (signers[signer] != 0) {
       delete signers[signer];
       totalSigners--;
     }

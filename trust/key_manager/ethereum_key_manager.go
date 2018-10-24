@@ -4,11 +4,10 @@ import (
 	"io/ioutil"
 	"github.com/ethereum/go-ethereum/accounts/keystore"
 	"github.com/ethereum/go-ethereum/crypto"
-	"github.com/ethereum/go-ethereum/crypto/sha3"
-	"github.com/ethereum/go-ethereum/rlp"
 	"github.com/ethereum/go-ethereum/common"
 	"crypto/ecdsa"
 	"strings"
+	"fmt"
 )
 
 type EthereumKeyManager struct{
@@ -67,13 +66,10 @@ func (e *EthereumKeyManager) VerifySignatureObj(original interface{}, key string
 func (e *EthereumKeyManager) SignTransaction(hex string) (string, error) {
 	dataBytes := common.Hex2Bytes(hex)
 
-	var h common.Hash
-	hw := sha3.NewKeccak256()
-	rlp.Encode(hw, dataBytes)
-	hw.Sum(h[:0])
-	println("Hash=", h.Hex())
+	msg := fmt.Sprintf("\x19Ethereum Signed Message:\n%d%s", len(dataBytes), dataBytes)
+	h := crypto.Keccak256([]byte(msg))
 
-	sig, err := crypto.Sign(h.Bytes(), e.key)
+	sig, err := crypto.Sign(h, e.key)
 	if err != nil {
 		return "", err
 	}

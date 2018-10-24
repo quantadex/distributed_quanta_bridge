@@ -8,7 +8,6 @@ import (
 	"bytes"
 	"github.com/ethereum/go-ethereum/accounts/abi"
 	"math/big"
-	"github.com/go-errors/errors"
 	"encoding/binary"
 	"crypto/ecdsa"
 )
@@ -92,7 +91,7 @@ func (c *EthereumCoin) EncodeRefund(w Withdrawal) (string, error) {
 
 	var number = common2.Big256
 	number.SetUint64(w.Amount)
-	encoded.WriteString(sign_prefix + "80")
+	//encoded.WriteString(sign_prefix + "80")
 	binary.Write(&encoded, binary.BigEndian, uint64(w.TxId))
 	encoded.Write(common2.HexToAddress(strings.ToLower(smartAddress)).Bytes())
 	encoded.Write(common2.HexToAddress(strings.ToLower(w.DestinationAddress)).Bytes())
@@ -106,16 +105,15 @@ func (c *EthereumCoin)  DecodeRefund(encoded string) (*Withdrawal, error) {
 	decoded := common2.Hex2Bytes(encoded)
 
 	w := &Withdrawal{}
-	println(len(decoded))
 
-	pl := len(sign_prefix)
-	header := decoded[0:pl]
-	if string(header) != sign_prefix {
-		return nil, errors.New("Unexpected prefix")
-	}
+	//pl := len(sign_prefix)
+	//header := decoded[0:pl]
+	//if string(header) != sign_prefix {
+	//	return nil, errors.New("Unexpected prefix")
+	//}
 
 	// skip 4 bytes to length
-	pl += 2
+	pl := 0
 	txIdBytes := decoded[pl:pl+8]
 	txId := new(big.Int).SetBytes(txIdBytes).Uint64()
 	w.TxId = txId

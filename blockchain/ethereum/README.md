@@ -30,13 +30,12 @@
 
 Run this command to start your own private node:
 
-    $ ganache-cli -p 8545
+    $ ganache-cli -p 7545
 
     # or set some options
 
-    # need at least 3 accounts for the tests
-    $ ganache-cli -m "candy maple cake sugar pudding cream honey rich smooth crumble sweet treat" --gasLimit 0x2FEFD800000 -a 3 --defaultBalanceEther 10 --debug
-
+    # need at least 8 accounts for the tests
+    $ ganache-cli -m "candy maple cake sugar pudding cream honey rich smooth crumble sweet treat" --gasLimit 0x2FEFD800000 -a 8 --defaultBalanceEther 10 -p 7545
     # or
     $ make ganache
 
@@ -72,6 +71,19 @@ Run the following command to test the contracts.
     $ truffle migrate --network development
 
     Using network 'development'.
+
+# Execute External scripts
+
+```
+    # Gets dev accounts
+    $ truffle exec scripts/print_accounts.js
+
+    # Gets contract address
+    $ truffle exec scripts/print_contract_address.js
+
+    # Initialize the signers to be the first 3 addresses in wallet
+    $ truffle exec scripts/init_signers.js
+```
 
 # Debugger
 
