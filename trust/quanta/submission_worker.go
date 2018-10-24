@@ -2,6 +2,7 @@ package quanta
 
 import (
 	"encoding/json"
+	"fmt"
 	"github.com/quantadex/distributed_quanta_bridge/common/kv_store"
 	"github.com/quantadex/distributed_quanta_bridge/common/logger"
 	"github.com/quantadex/distributed_quanta_bridge/common/queue"
@@ -29,7 +30,7 @@ func (s *SubmitWorkerImpl) Dispatch() {
 	for {
 		//println("Wake up")
 		time.Sleep(time.Second)
-		data, err := s.kv.GetAllValues("Pending_Quanta_Tx")
+		data, err := s.kv.GetAllValues(kv_store.PENDING_QUANTA_TX)
 		if err != nil {
 			continue
 		}
@@ -42,15 +43,21 @@ func (s *SubmitWorkerImpl) Dispatch() {
 				s.logger.Error("could not unmarshall")
 				continue
 			}
-			s.logger.Infof("Submit TX: %s", deposit.MSG)
+			s.logger.Infof("Submit TX: %s signed=%v %s", deposit.Proposal.CoinName, deposit.SignedBy, deposit.MSG)
 
-			_, err = s.horizonClient.SubmitTransaction(deposit.MSG)
+			res, err := s.horizonClient.SubmitTransaction(deposit.MSG)
 			if err != nil {
 				err2 := err.(*horizon.Error)
-				s.logger.Error("could not submit transaction " + err2.Error() + err2.Problem.Detail)
+
+				s.logger.Error("could not submit transaction " + res.Hash + " " + err2.Error() + err2.Problem.Detail)
+				fmt.Printf("%v", err2.Problem.Extras)
+
+				//xdr.TransactionResult{}
+
 			} else {
-				s.kv.RemoveKey("Pending_Quanta_Tx", k)
-				s.kv.Put("Completed_Quanta_Tx", []byte(k), []byte(v))
+				s.logger.Infof("Successful tx submission %s", res.Hash)
+				s.kv.RemoveKey(kv_store.PENDING_QUANTA_TX, k)
+				s.kv.SetValue(kv_store.COMPLETED_QUANTA_TX, k, "", v)
 			}
 		}
 

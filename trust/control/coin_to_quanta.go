@@ -11,6 +11,7 @@ import (
 	"github.com/quantadex/distributed_quanta_bridge/trust/key_manager"
 	"github.com/quantadex/distributed_quanta_bridge/trust/peer_contact"
 	"github.com/quantadex/distributed_quanta_bridge/trust/quanta"
+	"strings"
 )
 
 /**
@@ -110,7 +111,7 @@ func (c *CoinToQuanta) GetNewCoinBlockIDs() []int64 {
 func (c *CoinToQuanta) getDepositsInBlock(blockID int64) []*coin.Deposit {
 	var m map[string]string
 	m = make(map[string]string)
-	m["0xb1E02e31c9A2403FeAFA7E483Ebb3e1b5ffa3164"] = "QCAO4HRMJDGFPUHRCLCSWARQTJXY2XTAFQUIRG2FAR3SCF26KQLAWZRN"
+	m[strings.ToLower("0xb1E02e31c9A2403FeAFA7E483Ebb3e1b5ffa3164")] = "QCAO4HRMJDGFPUHRCLCSWARQTJXY2XTAFQUIRG2FAR3SCF26KQLAWZRN"
 
 	deposits, err := c.coinChannel.GetDepositsInBlock(blockID, m)
 	if err != nil {
@@ -166,7 +167,7 @@ func (c *CoinToQuanta) DoLoop(blockIDs []int64) {
 			for _, addr := range addresses {
 				if addr.Trust.Hex() == c.trustAddress.Hex() {
 					c.log.Infof("New Forwarder Address ETH->QUANTA address, %s -> %s", addr.ContractAddress.Hex(), addr.QuantaAddr)
-					c.db.SetValue(ETHADDR_QUANTAADDR, addr.ContractAddress.Hex(), "", addr.QuantaAddr)
+					c.db.SetValue(ETHADDR_QUANTAADDR, strings.ToLower(addr.ContractAddress.Hex()), "", addr.QuantaAddr)
 				} else {
 					c.log.Error("Forward does not point to our trust address " + addr.Trust.Hex())
 				}

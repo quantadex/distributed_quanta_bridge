@@ -1,17 +1,17 @@
 package coin
 
 import (
-	"testing"
-	"github.com/ethereum/go-ethereum/ethclient"
 	"fmt"
-	"github.com/quantadex/distributed_quanta_bridge/trust/key_manager"
-	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/ethereum/go-ethereum/accounts/abi/bind/backends"
+	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core"
+	"github.com/ethereum/go-ethereum/crypto"
+	"github.com/ethereum/go-ethereum/ethclient"
+	"github.com/quantadex/distributed_quanta_bridge/trust/key_manager"
 	"math/big"
 	"strings"
-	"github.com/ethereum/go-ethereum/common"
+	"testing"
 )
 
 // https://goethereumbook.org/event-read-erc20/
@@ -29,7 +29,7 @@ func TestCheckDepositNode(t *testing.T) {
 	client.Client = ethereumClient
 	client.Start()
 
-	events, err := client.FilterTransferEvent(blockNumber, map[string]string{ "0x8954eaeba3970d50697bb272aa08b51ceb76e6ea" :""})
+	events, err := client.FilterTransferEvent(blockNumber, map[string]string{"0x8954eaeba3970d50697bb272aa08b51ceb76e6ea": ""})
 	if err != nil {
 		println("block not found??")
 		return
@@ -40,7 +40,7 @@ func TestCheckDepositNode(t *testing.T) {
 	}
 	fmt.Printf("%v\n", events)
 
-	deposits, err := client.GetNativeDeposits(blockNumber, map[string]string{ strings.ToLower("0x555Ee11FBDDc0E49A9bAB358A8941AD95fFDB48f"): ""})
+	deposits, err := client.GetNativeDeposits(blockNumber, map[string]string{strings.ToLower("0x555Ee11FBDDc0E49A9bAB358A8941AD95fFDB48f"): ""})
 	if err != nil || len(deposits) != 8 {
 		t.Error("Expecting 8 eth transfer %d", len(deposits))
 		return
@@ -87,15 +87,15 @@ func TestWithdrawalTX(t *testing.T) {
 	userAuth := bind.NewKeyedTransactor(userKey)
 
 	sim := backends.NewSimulatedBackend(core.GenesisAlloc{
-		userAuth.From : { Balance: big.NewInt(10000000000)} }, 500000)
+		userAuth.From: {Balance: big.NewInt(10000000000)}}, 500000)
 
 	w := &Withdrawal{
-		TxId: 1,
-		CoinName: "ETH",
+		TxId:               1,
+		CoinName:           "ETH",
 		DestinationAddress: dest.From.Hex(),
-		QuantaBlockID: 1,
-		Amount: 10000,
-		Signatures: nil,
+		QuantaBlockID:      1,
+		Amount:             10000,
+		Signatures:         nil,
 	}
 
 	coin := &EthereumCoin{}
@@ -104,7 +104,7 @@ func TestWithdrawalTX(t *testing.T) {
 	signed, _ := km.SignTransaction(encoded)
 	println("signed", signed)
 
-	w.Signatures = []string{ signed, signed, signed }
+	w.Signatures = []string{signed, signed, signed}
 
 	client := &Listener{NetworkID: ROPSTEN_NETWORK_ID}
 	tx, err := client.SendWithdrawal(sim, userAuth.From, userKey, w)
@@ -134,19 +134,19 @@ s[hex] = 0x190f0f012abf3d8f222576a95622a0a9904a460a551b6b3e3671aecd1832f2b9
 0x497483d100000000000000000000000000000000000000000000000000000000000000010000000000000000000000000000000000000000000000000000000000000000000000000000000000000000c5fdf4076b8f3a5357c5e395ab970b5b54098fef000000000000000000000000000000000000000000000000000000000000303900000000000000000000000000000000000000000000000000000000000000e0000000000000000000000000000000000000000000000000000000000000012000000000000000000000000000000000000000000000000000000000000001600000000000000000000000000000000000000000000000000000000000000001000000000000000000000000000000000000000000000000000000000000000100000000000000000000000000000000000000000000000000000000000000016e5c5c2890328e7cf9c744fa8e6d90478a1fd7144fbe0fec6992cd5f8c26864e0000000000000000000000000000000000000000000000000000000000000001190f0f012abf3d8f222576a95622a0a9904a460a551b6b3e3671aecd1832f2b9
 0x497483d100000000000000000000000000000000000000000000000000000000000000010000000000000000000000000000000000000000000000000000000000000000000000000000000000000000f17f52151ebef6c7334fad080c5704d77216b732000000000000000000000000000000000000000000000000000000000000303900000000000000000000000000000000000000000000000000000000000000e0000000000000000000000000000000000000000000000000000000000000012000000000000000000000000000000000000000000000000000000000000001600000000000000000000000000000000000000000000000000000000000000001000000000000000000000000000000000000000000000000000000000000001c000000000000000000000000000000000000000000000000000000000000000168be485def688da668ed01391bc9185a15f74cbf3ea94c15b4ee27576dd8a71c00000000000000000000000000000000000000000000000000000000000000015d84e165130eb90f98f4ddd247107fc96ecab25fd85882fde086958a7e0b03b9
 0x497483d100000000000000000000000000000000000000000000000000000000000000010000000000000000000000000000000000000000000000000000000000000000000000000000000000000000c5fdf4076b8f3a5357c5e395ab970b5b54098fef000000000000000000000000000000000000000000000000000000000000303900000000000000000000000000000000000000000000000000000000000000e0000000000000000000000000000000000000000000000000000000000000012000000000000000000000000000000000000000000000000000000000000001600000000000000000000000000000000000000000000000000000000000000001000000000000000000000000000000000000000000000000000000000000001c00000000000000000000000000000000000000000000000000000000000000016e5c5c2890328e7cf9c744fa8e6d90478a1fd7144fbe0fec6992cd5f8c26864e0000000000000000000000000000000000000000000000000000000000000001190f0f012abf3d8f222576a95622a0a9904a460a551b6b3e3671aecd1832f2b9
- */
+*/
 
 func TestWithdrawalGanacheTX(t *testing.T) {
 	w := &Withdrawal{
-		TxId: 1,
-		CoinName: "ETH",
+		TxId:               1,
+		CoinName:           "ETH",
 		DestinationAddress: "0xC5fdf4076b8F3A5357c5E395ab970B5B54098Fef",
-		QuantaBlockID: 1,
-		Amount: 12345,
-		Signatures: nil,
+		QuantaBlockID:      1,
+		Amount:             12345,
+		Signatures:         nil,
 	}
 
-	coin,_ := NewEthereumCoin("1539926805437", "http://localhost:7545")
+	coin, _ := NewEthereumCoin("1539926805437", "http://localhost:7545")
 	coin.Attach()
 	encoded, _ := coin.EncodeRefund(*w)
 	println(encoded)
@@ -162,7 +162,7 @@ func TestWithdrawalGanacheTX(t *testing.T) {
 	signed, _ := km.SignTransaction(encoded)
 	println("signed", signed)
 
-	w.Signatures = []string{ signed }
+	w.Signatures = []string{signed}
 
 	tx, err := coin.SendWithdrawal(common.HexToAddress("0xdda6327139485221633a1fcd65f4ac932e60a2e1"), km.GetPrivateKey(), w)
 	if err != nil {

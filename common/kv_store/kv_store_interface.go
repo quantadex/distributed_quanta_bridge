@@ -61,8 +61,6 @@ type KVStore interface {
 
 	RemoveKey(tableName string, key string) error
 
-	Put(tableName string, key []byte, value []byte) error
-
 	/*
 	 * GetAllValues
 	 *

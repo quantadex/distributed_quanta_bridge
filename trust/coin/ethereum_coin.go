@@ -1,23 +1,23 @@
 package coin
 
 import (
+	"bytes"
+	"crypto/ecdsa"
+	"encoding/binary"
+	"github.com/ethereum/go-ethereum/accounts/abi"
+	common2 "github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/ethclient"
 	"github.com/quantadex/distributed_quanta_bridge/common"
-	"strings"
-	common2 "github.com/ethereum/go-ethereum/common"
-	"bytes"
-	"github.com/ethereum/go-ethereum/accounts/abi"
 	"math/big"
-	"encoding/binary"
-	"crypto/ecdsa"
+	"strings"
 )
 
 const sign_prefix = "\x19Ethereum Signed Message:\n"
 
 type EthereumCoin struct {
-	client *Listener
-	maxRange int64
-	networkId string
+	client      *Listener
+	maxRange    int64
+	networkId   string
 	ethereumRpc string
 }
 
@@ -81,7 +81,7 @@ func (c *EthereumCoin) SendWithdrawal(trustAddress common2.Address,
 func (c *EthereumCoin) EncodeRefund(w Withdrawal) (string, error) {
 	var encoded bytes.Buffer
 	var smartAddress string
-	parts := strings.Split(w.CoinName,",")
+	parts := strings.Split(w.CoinName, ",")
 
 	if len(parts) == 2 {
 		smartAddress = parts[1]
@@ -101,7 +101,7 @@ func (c *EthereumCoin) EncodeRefund(w Withdrawal) (string, error) {
 	return common2.Bytes2Hex(encoded.Bytes()), nil
 }
 
-func (c *EthereumCoin)  DecodeRefund(encoded string) (*Withdrawal, error) {
+func (c *EthereumCoin) DecodeRefund(encoded string) (*Withdrawal, error) {
 	decoded := common2.Hex2Bytes(encoded)
 
 	w := &Withdrawal{}
@@ -114,18 +114,18 @@ func (c *EthereumCoin)  DecodeRefund(encoded string) (*Withdrawal, error) {
 
 	// skip 4 bytes to length
 	pl := 0
-	txIdBytes := decoded[pl:pl+8]
+	txIdBytes := decoded[pl : pl+8]
 	txId := new(big.Int).SetBytes(txIdBytes).Uint64()
 	w.TxId = txId
 
 	pl += 8
-	smartAddress := decoded[pl:pl+20]
+	smartAddress := decoded[pl : pl+20]
 
 	pl += 20
-	destAddress := decoded[pl:pl+20]
+	destAddress := decoded[pl : pl+20]
 
 	pl += 20
-	amount := decoded[pl: pl + 32]
+	amount := decoded[pl : pl+32]
 	smartNumber := new(big.Int).SetBytes(smartAddress)
 
 	if smartNumber.Cmp(big.NewInt(0)) == 0 {

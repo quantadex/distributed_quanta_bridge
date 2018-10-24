@@ -1,16 +1,16 @@
 package key_manager
 
 import (
-	"io/ioutil"
-	"github.com/ethereum/go-ethereum/accounts/keystore"
-	"github.com/ethereum/go-ethereum/crypto"
-	"github.com/ethereum/go-ethereum/common"
 	"crypto/ecdsa"
-	"strings"
 	"fmt"
+	"github.com/ethereum/go-ethereum/accounts/keystore"
+	"github.com/ethereum/go-ethereum/common"
+	"github.com/ethereum/go-ethereum/crypto"
+	"io/ioutil"
+	"strings"
 )
 
-type EthereumKeyManager struct{
+type EthereumKeyManager struct {
 	key *ecdsa.PrivateKey
 }
 
@@ -20,7 +20,7 @@ func (e *EthereumKeyManager) CreateNodeKeys() error {
 
 func (e *EthereumKeyManager) LoadNodeKeys(filename string) error {
 
-	if strings.HasPrefix(filename, "file://")  {
+	if strings.HasPrefix(filename, "file://") {
 		keyjson, err := ioutil.ReadFile(strings.TrimPrefix(filename, "file://"))
 		if err != nil {
 			return err
@@ -46,7 +46,7 @@ func (e *EthereumKeyManager) GetPublicKey() (string, error) {
 	return crypto.PubkeyToAddress(e.key.PublicKey).Hex(), nil
 }
 
-func (e *EthereumKeyManager) GetPrivateKey() (*ecdsa.PrivateKey) {
+func (e *EthereumKeyManager) GetPrivateKey() *ecdsa.PrivateKey {
 	return e.key
 }
 
@@ -54,7 +54,7 @@ func (e *EthereumKeyManager) SignMessage(original []byte) ([]byte, error) {
 	panic("implement me")
 }
 
-func (e *EthereumKeyManager) SignMessageObj(original interface{}) (*string) {
+func (e *EthereumKeyManager) SignMessageObj(original interface{}) *string {
 	panic("implement me")
 }
 

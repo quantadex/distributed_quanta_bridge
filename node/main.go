@@ -1,12 +1,12 @@
 package main
 
 import (
-	"github.com/spf13/viper"
-	"fmt"
-	"github.com/quantadex/distributed_quanta_bridge/trust/coin"
-	"github.com/quantadex/distributed_quanta_bridge/registrar/service"
-	"github.com/quantadex/distributed_quanta_bridge/common/logger"
 	"flag"
+	"fmt"
+	"github.com/quantadex/distributed_quanta_bridge/common/logger"
+	"github.com/quantadex/distributed_quanta_bridge/registrar/service"
+	"github.com/quantadex/distributed_quanta_bridge/trust/coin"
+	"github.com/spf13/viper"
 )
 
 /**
@@ -23,7 +23,7 @@ func main() {
 	if err != nil {
 		panic(fmt.Errorf("Fatal error config file: %s \n", err))
 	}
-	config := Config {}
+	config := Config{}
 	err = viper.Unmarshal(&config)
 	if err != nil {
 		panic(fmt.Errorf("Fatal error config file: %s \n", err))
@@ -32,7 +32,7 @@ func main() {
 	enableRegistry := flag.Bool("registry", false, "enables registry")
 	flag.Parse()
 
-	if (*enableRegistry) {
+	if *enableRegistry {
 		// start registrar if we need to
 		logger, _ := logger.NewLogger("registrar")
 		registrarUrl := fmt.Sprintf("%s:%d", config.RegistrarIp, config.RegistrarPort)
