@@ -41,10 +41,15 @@ func (s *SubmitWorkerImpl) Dispatch() {
 
 		s.logger.Infof("Submit TX: %s", deposit.MSG)
 
-		_, err = s.horizonClient.SubmitTransaction(deposit.MSG)
+		res, err := s.horizonClient.SubmitTransaction(deposit.MSG)
 		if err != nil {
 			err2 := err.(*horizon.Error)
 			s.logger.Error("could not submit transaction " + err2.Error() + err2.Problem.Detail)
+
+			txError := FailedTransactionError{res.Result}
+			opCodes, _ := txError.OperationResultCodes()
+			txCodes, _ := txError.TransactionResultCode()
+			s.logger.Errorf("Op codes %v Tx codes %v", opCodes, txCodes)
 		}
 	}
 }
