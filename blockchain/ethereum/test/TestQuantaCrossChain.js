@@ -20,6 +20,11 @@ const Web3Utils = require('web3-utils');
 
 const catchAssert = require("./exceptions.js").catchInvalidOpcode;  // asserts throw invalid op code?
 const catchRevert = require("./exceptions.js").catchRevert;
+const assertjs = require('assert');
+
+
+var totalGasUsed = 0;
+
 
 async function grantEther(contract, wei) {
   await contract.sendTransaction({from:web3.eth.coinbase,value:wei});
@@ -49,8 +54,31 @@ async function quickPayment(contract, signer, erc20Addr, toAddr, amount) {
 }
 
 
+async function getGasBalances(accounts) {
+  var arr = [];
+
+  for (var i=0; i<accounts.length; i++) {
+      const gas = await web3.eth.getBalance(accounts[i]);
+      arr[i] = gas;
+  }
+
+  return arr;
+}
+
+
+async function printGasUsed(accounts, initialGas) {
+  var total = 0;
+  for (var i=0; i<accounts.length; i++) {
+    const gas = await web3.eth.getBalance(accounts[i]);
+    total += initialGas[i] - gas;
+  }
+  totalGasUsed += total;
+  console.log(`\tGas Used In Test Block: ${total}`);
+}
+
+
 contract('test signer', async (accounts) => {
-  it("it should generate the correct signature message", async () => {
+  it("should generate the correct signature message", async () => {
     let unsignedMsg = Helpers.toQuantaPaymentSigMsg(
       1,
       "0xf17f52151ebef6c7334fad080c5704d77216b732",
@@ -72,13 +100,13 @@ contract('test signer', async (accounts) => {
       "0x19457468657265756d205369676e6564204d6573736167653a0a38300000000000000001f17f52151ebef6c7334fad080c5704d77216b732c5fdf4076b8f3a5357c5e395ab970b5b54098fef0000000000000000000000000000000000000000000000000000000000000001");
   });
 
-  it("it should generate the correct preamble message", async () => {
+  it("should generate the correct preamble message", async () => {
     let msg = Helpers.toQuantaPaymentSigMsg(1, "0xf17f52151ebef6c7334fad080c5704d77216b732", "0xc5fdf4076b8f3a5357c5e395ab970b5b54098fef", 1, debug=false, preamble=true);
     assert.equal(
       msg,
       "0x19457468657265756d205369676e6564204d6573736167653a0a38300000000000000001f17f52151ebef6c7334fad080c5704d77216b732c5fdf4076b8f3a5357c5e395ab970b5b54098fef0000000000000000000000000000000000000000000000000000000000000001");
   });
-})
+});
 
 
 contract('QuantaCrossChain no signers', async (accounts) => {
@@ -106,12 +134,16 @@ contract('QuantaCrossChain no signers', async (accounts) => {
   });
 })
 
+
 contract('QuantaCrossChain one signer', async (accounts) => {
   var contract;
 
   it("should assign the one and only signer", async () => {
     contract = await QuantaCrossChain.deployed();
     await contract.assignInitialSigners([accounts[0]]);
+
+    let n = Number(await contract.requiredVotes());
+    assert.equal(1, n);
   });
 
   it("should revert paymentTx with no sigs", async () => {
@@ -243,6 +275,9 @@ contract('QuantaCrossChain two signers', async (accounts) => {
   it("should assign the two initial signers", async () => {
     contract = await QuantaCrossChain.deployed();
     await contract.assignInitialSigners([accounts[0], accounts[1]]);
+
+    let n = Number(await contract.requiredVotes());
+    assert.equal(n, 2);
   });
 
   it("should fail paymentTx fast with only one sig [native eth]", async () => {
@@ -609,8 +644,8 @@ contract('QuantaCrossChain assign initial signers', async (accounts) => {
   it("should deploy the contract", async () => {
     contract = await QuantaCrossChain.deployed();
 
-    let totalSigners = await contract.totalSigners();
-    assert.equal(0, totalSigners);
+    let numSigners = await contract.numSigners();
+    assert.equal(0, numSigners);
   });
 
   it("should revert paymentTx with no sigs", async () => {
@@ -620,20 +655,49 @@ contract('QuantaCrossChain assign initial signers', async (accounts) => {
   });
 
   it("should revert with an empty assign signers list", async () => {
-    contract = await QuantaCrossChain.deployed();
     await catchRevert(
       contract.assignInitialSigners([]),
     );
+  });
 
-    let totalSigners = await contract.totalSigners();
-    assert.equal(0, totalSigners);
+  it("should assert on initial signer list assigned before voting add", async () => {
+    await catchAssert(
+      contract.voteAddSigner(accounts[7]),
+    )
+
+    let n = Number(await contract.getAddCandidateVotes(accounts[7]));
+    assert.equal(0, n);
+
+    n = Number(await contract.numAddCandidates());
+    assert.equal(0, n);
+
+    let numSigners = Number(await contract.numSigners());
+    assert.equal(0, numSigners);  // hasn't changed
+  });
+
+  it("should assert on initial signer list assigned before voting remove", async () => {
+    await catchAssert(
+      contract.voteRemoveSigner(accounts[7]),
+    )
+
+    let n = Number(await contract.getAddCandidateVotes(accounts[7]));
+    assert.equal(0, n);
+
+    n = Number(await contract.numAddCandidates());
+    assert.equal(0, n);
+
+    let numSigners = Number(await contract.numSigners());
+    assert.equal(0, numSigners);  // hasn't changed
   });
 
   it("should assign the first signer", async () => {
     await contract.assignInitialSigners([accounts[0]]);
 
-    let totalSigners = await contract.totalSigners();
-    assert.equal(1, totalSigners);
+    let numSigners = await contract.numSigners();
+    assert.equal(1, numSigners);
+
+    let n = Number(await contract.requiredVotes());
+    assert.equal(1, n);
   });
 
   it("should assert failure on a second assign initial signers call", async () => {
@@ -649,8 +713,11 @@ contract('QuantaCrossChain assign initial signers', async (accounts) => {
       contract.assignInitialSigners([]),
     )
 
-    let totalSigners = await contract.totalSigners();
-    assert.equal(1, totalSigners);
+    let numSigners = await contract.numSigners();
+    assert.equal(1, numSigners);
+
+    let n = Number(await contract.requiredVotes());
+    assert.equal(1, n);
   });
 
   it("should allow payment", async () => {
@@ -675,8 +742,11 @@ contract('QuantaCrossChain 7 signers', async (accounts) => {
 
     await contract.assignInitialSigners([accounts[0], accounts[1], accounts[2], accounts[3], accounts[4], accounts[5], accounts[6]]);
 
-    let totalSigners = await contract.totalSigners();
-    assert.equal(7, totalSigners);
+    let numSigners = await contract.numSigners();
+    assert.equal(numSigners, 7);
+
+    let n = Number(await contract.requiredVotes());
+    assert.equal(4, n);
   });
 
   it("should fail paymentTx fast with bad sig [native eth]", async () => {
@@ -730,5 +800,545 @@ contract('QuantaCrossChain 7 signers', async (accounts) => {
 
     txId = await fetchCurrentTxId(contract);
     assert(txId == txId);  // should be the old txId
+  });
+});
+
+contract('QuantaCrossChain voting 1 signer', async (accounts) => {
+  var contract;
+  let candidate = accounts[5];
+
+  it("should deploy the contract", async () => {
+    contract = await QuantaCrossChain.deployed();
+
+    await contract.assignInitialSigners([accounts[0]]);
+  });
+
+  it("should have no candidates on a new contract", async () => {
+    let count = Number(await contract.getAddCandidateVotes(candidate));
+    assert.equal(count, 0);
+
+    count = Number(await contract.getRemoveCandidateVotes(candidate));
+    assert.equal(count, 0);
+  });
+
+  it("should return 0 votes for non-added candidate", async () => {
+    let isSigner = await contract.isSigner(accounts[0]);
+    assert.equal(isSigner, true);
+
+    let count = Number(await contract.getAddCandidateVotes(accounts[0]));
+    assert.equal(count, 0);
+
+    isSigner = await contract.isSigner(accounts[0]);
+    assert.equal(isSigner, true);
+  });
+
+  it("should not allow root candidate", async () => {
+    let isSigner = await contract.isSigner(0);
+    assert.equal(isSigner, false);
+
+    catchRevert(
+      contract.voteAddSigner(0),
+    );
+  });
+
+  it("should not allow self candidate", async () => {
+    catchRevert(
+      contract.voteAddSigner(accounts[0]),
+    );
+  });
+});
+
+contract('QuantaCrossChain voting 5 signers', async (accounts) => {
+  var initialGasBalances;
+  var contract;
+  let candidate = accounts[5];
+
+  it("should deploy the contract", async () => {
+    contract = await QuantaCrossChain.deployed();
+
+    initialGasBalances = await getGasBalances(accounts);
+    await contract.assignInitialSigners([accounts[0], accounts[1], accounts[2], accounts[3], accounts[4]]);
+
+    let numSigners = await contract.numSigners();
+    assert.equal(numSigners, 5);
+
+    let numAddCandidates = await contract.numAddCandidates();
+    assert.equal(numAddCandidates, 0);
+  });
+
+  it("should have required majority number", async () => {
+    let n = Number(await contract.requiredVotes());
+    assert.equal(n, n);
+  });
+
+  it("should not yet ratify from one vote", async () => {
+    await contract.voteAddSigner(candidate);
+
+    let numAddCandidates = await contract.numAddCandidates();
+    assert.equal(numAddCandidates, 1);
+
+    let count = Number(await contract.getAddCandidateVotes(candidate));
+    assert.equal(count, 1);
+  });
+
+  it("should not increment a second vote from the same signer", async () => {
+    await contract.voteAddSigner(candidate);
+    let count = Number(await contract.getAddCandidateVotes(candidate));
+    assert.equal(count, 1);
+  });
+
+  it("should increment vote", async () => {
+    await contract.voteAddSigner(candidate, {from: accounts[1]});
+    let count = Number(await contract.getAddCandidateVotes(candidate));
+    assert.equal(count, 2);
+  });
+
+  it("should ratify after 3rd vote", async () => {
+    await contract.voteAddSigner(candidate, {from: accounts[2]});
+    let count = Number(await contract.getAddCandidateVotes(candidate));
+    assert.equal(count, 0);  // reset to 0
+
+    let numSigners = Number(await contract.numSigners());
+    assert.equal(numSigners, 6);
+
+    // and make sure required votes is correct
+    let requiredVotes = Number(await contract.requiredVotes());
+    assert.equal(requiredVotes, 4);
+
+    let numAddCandidates = Number(await contract.numAddCandidates());
+    assert.equal(numAddCandidates, 0);
+
+    let isSigner = await contract.isSigner(candidate);
+    assert.equal(isSigner, true);
+  });
+
+  it("should print gas balances", async () => { await printGasUsed(accounts, initialGasBalances); });
+});
+
+contract('QuantaCrossChain voting 5 signers dual candidates', async (accounts) => {
+  var initialGasBalances;
+  var contract;
+  let candidate1 = accounts[5];
+  let candidate2 = accounts[6];
+
+  it("should deploy the contract", async () => {
+    contract = await QuantaCrossChain.deployed();
+
+    initialGasBalances = await getGasBalances(accounts);
+    await contract.assignInitialSigners([accounts[0], accounts[1], accounts[2], accounts[3], accounts[4]]);
+  });
+
+  it("should allow vote for candidate1", async () => {
+    let count = Number(await contract.numAddCandidates());
+    assert.equal(count, 0);
+
+    await contract.voteAddSigner(candidate1);
+    count = Number(await contract.getAddCandidateVotes(candidate1));
+    assert.equal(count, 1);
+
+    count = Number(await contract.numAddCandidates());
+    assert.equal(count, 1);
+  });
+
+  it("should allow vote for candidate2", async () => {
+    await contract.voteAddSigner(candidate2);
+    let count = Number(await contract.getAddCandidateVotes(candidate2));
+    assert.equal(count, 1);
+
+    let numAddCandidates = Number(await contract.numAddCandidates());
+    assert.equal(numAddCandidates, 2);
+
+    let isSigner = await contract.isSigner(candidate2);
+    assert.equal(isSigner, false);
+
+  });
+
+  it("should ratify candidate1 after three total votes", async () => {
+    let numSigners = Number(await contract.numSigners());
+    assert.equal(numSigners, 5);
+
+    await contract.voteAddSigner(candidate1, {from: accounts[1]});  // vote #2
+    numSigners = Number(await contract.numSigners());
+    assert.equal(numSigners, 5);  // hasn't changed
+
+    await contract.voteAddSigner(candidate1, {from: accounts[2]});  // vote #3!
+    let count = Number(await contract.getAddCandidateVotes(candidate1));
+    assert.equal(count, 0);  // reset to 0
+
+    count = Number(await contract.getAddCandidateVotes(candidate2));
+    assert.equal(count, 1);  // shouldn't affect candidate2's count
+
+    numSigners = Number(await contract.numSigners());
+    assert.equal(numSigners, 6);
+
+    let numAddCandidates = await contract.numAddCandidates();
+    assert.equal(numAddCandidates, 1);  // candidate2 should still be in there
+  });
+
+  it("should ratify candidate2 after three total votes", async () => {
+    let numSigners = Number(await contract.numSigners());
+    assert.equal(numSigners, 6);
+
+    let count = Number(await contract.getAddCandidateVotes(candidate2));
+    assert.equal(count, 1);
+
+    await contract.voteAddSigner(candidate2, {from: accounts[1]});  // vote #2
+    count = Number(await contract.getAddCandidateVotes(candidate2));
+    assert.equal(count, 2);
+    numSigners = Number(await contract.numSigners());
+    assert.equal(numSigners, 6);  // hasn't changed
+
+    await contract.voteAddSigner(candidate2, {from: accounts[2]});  // vote #3
+    count = Number(await contract.getAddCandidateVotes(candidate2));
+    assert.equal(3, count);
+    numSigners = Number(await contract.numSigners());
+    assert.equal(numSigners, 6);  // hasn't changed
+    // let candidate1 cast the deciding vote :)
+    assertjs(candidate1==accounts[5]);
+    await contract.voteAddSigner(candidate2, {from: accounts[5]});  // vote #4
+    count = Number(await contract.getAddCandidateVotes(candidate2));
+    assert.equal(count, 0);  // reset to 0
+
+    numSigners = Number(await contract.numSigners());
+    assert.equal(numSigners, 7);
+
+    let numAddCandidates = await contract.numAddCandidates();
+    assert.equal(numAddCandidates, 0);
+
+    count = Number(await contract.getAddCandidateVotes(candidate1));
+    assert.equal(count, 0);  // reset to 0
+
+    let isSigner = await contract.isSigner(candidate2);
+    assert.equal(isSigner, true);
+  });
+
+  it("should print gas balances", async () => { await printGasUsed(accounts, initialGasBalances); });
+});
+
+
+contract('QuantaCrossChain remove voting 1 signer', async (accounts) => {
+  var contract;
+
+  it("should deploy the contract", async () => {
+    contract = await QuantaCrossChain.deployed();
+
+    let isSigner = await contract.isSigner(accounts[0]);
+    assert.equal(isSigner, false);
+
+    await contract.assignInitialSigners([accounts[0]]);
+
+    isSigner = await contract.isSigner(accounts[0]);
+    assert.equal(isSigner, true);
+  });
+
+  it("should return 0 votes for non-added candidate", async () => {
+    let count = Number(await contract.getRemoveCandidateVotes(accounts[0]));
+    assert.equal(count, 0);
+  });
+
+  it("should not allow self removal", async () => {
+    catchRevert(
+      contract.voteRemoveSigner(accounts[0]),
+    );
+  });
+
+  it("should not allow non existing signer removal", async () => {
+    let isSigner = await contract.isSigner(accounts[7]);
+    assert.equal(isSigner, false);
+
+    catchAssert(
+      contract.voteRemoveSigner(accounts[7]),
+    );
+
+    isSigner = await contract.isSigner(accounts[7]);
+    assert.equal(isSigner, false);
+  });
+});
+
+
+contract('QuantaCrossChain remove voting 5 signers', async (accounts) => {
+  var initialGasBalances;
+  var contract;
+  let candidate = accounts[4];
+
+  it("should deploy the contract", async () => {
+    contract = await QuantaCrossChain.deployed();
+
+    initialGasBalances = await getGasBalances(accounts);
+    await contract.assignInitialSigners([accounts[0], accounts[1], accounts[2], accounts[3], accounts[4]]);
+  });
+
+  it("should not allow self removal", async () => {
+    catchRevert(
+      contract.voteRemoveSigner(accounts[0]),
+    );
+  });
+
+  it("should not yet ratify from one vote", async () => {
+    await contract.voteRemoveSigner(candidate);
+    let count = await contract.getRemoveCandidateVotes(candidate);
+    assert.equal(count, 1);
+
+    let numRemoveCandidates = await contract.numRemoveCandidates();
+    assert.equal(numRemoveCandidates, 1);
+  });
+
+  it("should not increment a second vote from the same signer", async () => {
+    await contract.voteRemoveSigner(candidate);
+    let count = await contract.getRemoveCandidateVotes(candidate);
+    assert.equal(count, 1);
+  });
+
+  it("should increment vote", async () => {
+    await contract.voteRemoveSigner(candidate, {from: accounts[1]});
+    let count = Number(await contract.getRemoveCandidateVotes(candidate));
+    assert.equal(count, 2);
+  });
+
+  it("should not increment vote from same signer", async () => {
+    await contract.voteRemoveSigner(candidate, {from: accounts[1]});
+    let count = Number(await contract.getRemoveCandidateVotes(candidate));
+    assert.equal(count, 2);
+  });
+
+  it("should ratify removal after 3rd vote", async () => {
+    await contract.voteRemoveSigner(candidate, {from: accounts[2]});
+    let count = Number(await contract.getRemoveCandidateVotes(candidate));
+    assert.equal(count, 0);  // reset to 0
+
+    let numSigners = Number(await contract.numSigners());
+    assert.equal(numSigners, 4);
+
+    // and make sure required votes is correct
+    let requiredVotes = Number(await contract.requiredVotes());
+    assert.equal(requiredVotes, 3);
+
+    let numRemoveCandidates = await contract.numRemoveCandidates();
+    assert.equal(numRemoveCandidates, 0);
+
+    let isSigner = await contract.isSigner(candidate);
+    assert.equal(isSigner, false);
+  });
+
+  it("should print gas balances", async () => { await printGasUsed(accounts, initialGasBalances); });
+});
+
+contract('QuantaCrossChain remove voting 5 signers dual candidates', async (accounts) => {
+  var initialGasBalances;
+  var contract;
+  let candidate1 = accounts[3];
+  let candidate2 = accounts[4];
+
+  it("should deploy the contract", async () => {
+    contract = await QuantaCrossChain.deployed();
+    initialGasBalances = await getGasBalances(accounts);
+
+    await contract.assignInitialSigners([accounts[0], accounts[1], accounts[2], accounts[3], accounts[4]]);
+
+    let isSigner = await contract.isSigner(candidate1);
+    assert.equal(isSigner, true);
+    isSigner = await contract.isSigner(candidate2);
+    assert.equal(isSigner, true);
+  });
+
+  it("should allow vote removal for candidate1", async () => {
+    await contract.voteRemoveSigner(candidate1);
+    let count = await contract.getRemoveCandidateVotes(candidate1);
+    assert.equal(count, 1);
+
+    let numRemoveCandidates = await contract.numRemoveCandidates();
+    assert.equal(numRemoveCandidates, 1);
+
+    let isSigner = await contract.isSigner(candidate1);
+    assert.equal(isSigner, true);
+  });
+
+  it("should allow vote removal for candidate2", async () => {
+    await contract.voteRemoveSigner(candidate2);
+    let count = await contract.getRemoveCandidateVotes(candidate2);
+    assert.equal(count, 1);
+
+    let numRemoveCandidates = Number(await contract.numRemoveCandidates());
+    assert.equal(numRemoveCandidates, 2);
+
+    let isSigner = await contract.isSigner(candidate2);
+    assert.equal(isSigner, true);
+  });
+
+  it("should ratify candidate1 removal after three total votes", async () => {
+    let numSigners = Number(await contract.numSigners());
+    assert.equal(numSigners, 5);
+
+    await contract.voteRemoveSigner(candidate1, {from: accounts[1]});  // vote #2
+    await contract.voteRemoveSigner(candidate1, {from: accounts[2]});  // vote #3!
+    let count = Number(await contract.getRemoveCandidateVotes(candidate1));
+    assert.equal(count, 0);  // reset to 0
+
+    numSigners = Number(await contract.numSigners());
+    assert.equal(numSigners, 4);
+
+    let numRemoveCandidates = await contract.numRemoveCandidates();
+    assert.equal(numRemoveCandidates, 1);  // candidate2 should still be in there
+
+    let n = await contract.requiredVotes();
+    assert.equal(n, 3);
+
+    let isSigner = await contract.isSigner(candidate1);
+    assert.equal(isSigner, false);
+  });
+
+  it("should ratify candidate2 removal after three total votes", async () => {
+    let count = Number(await contract.getRemoveCandidateVotes(candidate2));
+    assert.equal(count, 1);
+
+    await contract.voteRemoveSigner(candidate2, {from: accounts[1]});  // vote #2
+    count = Number(await contract.getRemoveCandidateVotes(candidate2));
+    assert.equal(count, 2);
+    numSigners = Number(await contract.numSigners());
+    assert.equal(numSigners, 4);  // hasn't changed
+
+    await contract.voteRemoveSigner(candidate2, {from: accounts[2]});  // vote #3
+
+    numSigners = Number(await contract.numSigners());
+    assert.equal(numSigners, 3);
+    let n = await contract.requiredVotes();
+    assert.equal(n, 2);
+
+    count = Number(await contract.getRemoveCandidateVotes(candidate2));
+    assert.equal(count, 0);
+
+    let numRemoveCandidates = await contract.numRemoveCandidates();
+    assert.equal(numRemoveCandidates, 0);
+
+    let isSigner = await contract.isSigner(candidate2);
+    assert.equal(isSigner, false);
+  });
+
+  it("should print gas balances", async () => { await printGasUsed(accounts, initialGasBalances); });
+});
+
+
+contract('QuantaCrossChain voting 5 signers dupe vote', async (accounts) => {
+  var initialGasBalances;
+  var candidate = accounts[5];
+
+  it("should deploy the contract", async () => {
+    contract = await QuantaCrossChain.deployed();
+    await contract.assignInitialSigners([accounts[0], accounts[1], accounts[2], accounts[3], accounts[4]]);
+  });
+
+  it("should be 2 votes", async () => {
+    var count = 0;
+
+    await contract.voteAddSigner(candidate);
+    count = Number(await contract.getAddCandidateVotes(candidate));
+    assert.equal(count, 1);
+    count = Number(await contract.numAddCandidates());
+    assert.equal(count, 1);
+
+    await contract.voteAddSigner(candidate, {from: accounts[1]});
+    count = Number(await contract.getAddCandidateVotes(candidate));
+    assert.equal(count, 2);
+    count = Number(await contract.numAddCandidates());
+    assert.equal(count, 1);
+  });
+
+  it("should be ignore duplicate vote", async () => {
+    var count = 0;
+    await contract.voteAddSigner(candidate, {from: accounts[0]});
+    await contract.voteAddSigner(candidate, {from: accounts[1]});
+    count = Number(await contract.getAddCandidateVotes(candidate));
+    assert.equal(count, 2);
+    count = Number(await contract.numAddCandidates());
+    assert.equal(count, 1);
+  });
+});
+
+
+contract('QuantaCrossChain voting 5 signers 11 candidates', async (accounts) => {
+  var initialGasBalances;
+  const maxCandidates = 10;  // must match QuantaCrossChain.MAX_CANDIDATES
+  var contract;
+  var candidate;
+  var added = 0;
+
+  it("should deploy the contract", async () => {
+    contract = await QuantaCrossChain.deployed();
+
+//    initialGasBalances = await getGasBalances(accounts);
+    await contract.assignInitialSigners([accounts[0], accounts[1], accounts[2], accounts[3], accounts[4]]);
+  });
+
+  it("should allow votes up to max", async () => {
+    for(var i=0; i < maxCandidates; i++) {
+      candidate = accounts[7] + added;
+      added++;
+
+      await contract.voteAddSigner(candidate);
+      let count = Number(await contract.getAddCandidateVotes(candidate));
+      assert.equal(count, 1);
+
+      await contract.voteAddSigner(candidate, {from: accounts[1]});
+      count = Number(await contract.getAddCandidateVotes(candidate));
+      assert.equal(count, 2);
+
+      let numAddCandidates = Number(await contract.numAddCandidates());
+      assert.equal(numAddCandidates, i+1);
+    }
+  });
+
+  it("should overwrite first candidate", async () => {
+    candidate = accounts[7] + added;
+    added++;
+    await contract.voteAddSigner(candidate);
+    await contract.voteAddSigner(candidate, {from: accounts[1]});
+
+    let numAddCandidates = Number(await contract.numAddCandidates());
+    assert.equal(numAddCandidates, maxCandidates);
+
+    let count = Number(await contract.getAddCandidateVotes(candidate));
+    assert.equal(count, 2);
+
+    // edge condition, should be there
+    candidate = accounts[7] + (added - maxCandidates);
+    count = Number(await contract.getAddCandidateVotes(candidate));
+    assert.equal(count, 2);
+
+    // edge condition - 1, should be gone
+    candidate = accounts[7] + (added - maxCandidates - 1);
+    count = Number(await contract.getAddCandidateVotes(candidate));
+    assert.equal(count, 0);
+  });
+
+  it("should overwrite remainder candidate", async () => {
+    for (var i=0; i < maxCandidates; i++) {
+      candidate = accounts[7] + added;
+      added++;
+      await contract.voteAddSigner(candidate);
+      await contract.voteAddSigner(candidate, {from: accounts[1]});
+
+      let numAddCandidates = Number(await contract.numAddCandidates());
+      assert.equal(numAddCandidates, maxCandidates);
+
+      let count = Number(await contract.getAddCandidateVotes(candidate));
+      assert.equal(count, 2);
+    }
+
+    var candidate2 = accounts[7] + (added - maxCandidates);
+    count = Number(await contract.getAddCandidateVotes(candidate2));
+    assert.equal(count, 2);  // should still be there
+
+    candidate2 = accounts[7] + (added - maxCandidates - 1);
+    count = Number(await contract.getAddCandidateVotes(candidate2));
+    assert.equal(count, 0);  // should zero out
+  });
+
+//  it("should print gas balances", async () => { await printGasUsed(accounts, initialGasBalances); });
+});
+
+
+contract('gas report', async (accounts) => {
+  it("should print total gas usage", async () => {
+    console.log(`\tTotal Gas Used in selected test blocks: ${totalGasUsed}`);
   });
 });
