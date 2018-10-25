@@ -1,29 +1,29 @@
 package service
 
 import (
-	"net/http"
-	"github.com/quantadex/distributed_quanta_bridge/common/crypto"
-	"encoding/json"
-	"github.com/quantadex/distributed_quanta_bridge/common/manifest"
-	"github.com/quantadex/distributed_quanta_bridge/common/logger"
-	"fmt"
-	"time"
-	"strings"
-	"github.com/quantadex/distributed_quanta_bridge/common/msgs"
 	"bytes"
 	"context"
+	"encoding/json"
+	"fmt"
+	"github.com/quantadex/distributed_quanta_bridge/common/crypto"
+	"github.com/quantadex/distributed_quanta_bridge/common/logger"
+	"github.com/quantadex/distributed_quanta_bridge/common/manifest"
+	"github.com/quantadex/distributed_quanta_bridge/common/msgs"
+	"net/http"
+	"strings"
+	"time"
 )
 
 type Server struct {
-	url string
-	registry *Registry
-	handlers *http.ServeMux
-	logger logger.Logger
+	url         string
+	registry    *Registry
+	handlers    *http.ServeMux
+	logger      logger.Logger
 	httpService *http.Server
 }
 
 func NewServer(registry *Registry, url string, logger logger.Logger) *Server {
-	return &Server{registry: registry, url: url, logger: logger, httpService: &http.Server{ Addr: url }}
+	return &Server{registry: registry, url: url, logger: logger, httpService: &http.Server{Addr: url}}
 }
 
 func SendHealthCheck(n *manifest.TrustNode) {
@@ -69,7 +69,7 @@ func (server *Server) setRoute() {
 
 func (server *Server) getaddress(w http.ResponseWriter, request *http.Request) {
 	query := request.URL.Query().Get("token")
-	auth := strings.Split(request.Header.Get("Authorization"),":")
+	auth := strings.Split(request.Header.Get("Authorization"), ":")
 
 	if query == "ETH" {
 		server.registry.GetAddress(auth[0])
@@ -106,7 +106,7 @@ func (server *Server) register(w http.ResponseWriter, request *http.Request) {
 		w.WriteHeader(http.StatusOK)
 	}
 
-	if (server.registry.Manifest().ManifestComplete()) {
+	if server.registry.Manifest().ManifestComplete() {
 		go server.Broadcast(server.registry.Manifest())
 	}
 }

@@ -30,11 +30,11 @@
 
 [[projects]]
   branch = "master"
-  digest = "1:e599801f29de116faca9d3c1937c0f03c7629de72dab7365684179068d2cd315"
+  digest = "1:0bd9f11575e82b723837f50e170d010ec29a50aa8ca02a962c439146f03aea55"
   name = "github.com/btcsuite/btcd"
   packages = ["btcec"]
   pruneopts = "T"
-  revision = "2a560b2036bee5e3679ec2133eb6520b2f195213"
+  revision = "67e573d211ace594f1366b4ce9d39726c4b19bd0"
 
 [[projects]]
   digest = "1:fed1f537c2f1269fe475a8556c393fe466641682d73ef8fd0491cd3aa1e47bad"
@@ -75,10 +75,6 @@
     "containers",
     "lists",
     "lists/doublylinkedlist",
-    "maps",
-    "maps/treemap",
-    "trees",
-    "trees/redblacktree",
     "utils",
   ]
   pruneopts = "T"
@@ -303,17 +299,16 @@
 
 [[projects]]
   branch = "develop"
-  digest = "1:0950f4d7d0c4655f341c6d479142ff8e35fcbe4dee6f05f31695606d3d050b45"
+  digest = "1:a959936c6ad89e6320c8a8bef28a63e99565733ae028e58f0184de875618f2c8"
   name = "github.com/quantadex/quanta_book"
   packages = [
     "common",
     "consensus",
     "consensus/cosi",
-    "orderbook",
     "storage/pb",
   ]
   pruneopts = "T"
-  revision = "a476fdb0f27b8115901c60c13bc7ba0b34ad1eba"
+  revision = "3cee11e0c2758ef303e3ba7ea2ddac38ed675c1d"
 
 [[projects]]
   digest = "1:9787d2d3220cbfd444596afd03ab0abcf391df169b789fbe3eae27fa2e426cf6"
@@ -330,14 +325,6 @@
   pruneopts = "T"
   revision = "9a47f48565a795472d43519dd49aac781f3034fb"
   version = "v1.6.0"
-
-[[projects]]
-  branch = "master"
-  digest = "1:4a1ffd13b6538dbc2241054a103255c0c3f966a73e324c8cf174e9e76576fb81"
-  name = "github.com/ryszard/goskiplist"
-  packages = ["skiplist"]
-  pruneopts = "T"
-  revision = "2dfbae5fcf46374f166f8969cb07e167f1be6273"
 
 [[projects]]
   digest = "1:54bd573538ca13ccf85d18c99249d934f17957f17263256b42565a11c854c1de"
@@ -402,7 +389,7 @@
 
 [[projects]]
   branch = "quanta"
-  digest = "1:cb018ae1a52ef8b2d317454b5f33f10ac75c8d4a285994e610d42a1be80565c5"
+  digest = "1:d5cb1b135252f4a0da4a068e902fa68feef1cc728c5118be4974628bb041e596"
   name = "github.com/stellar/go"
   packages = [
     "amount",
@@ -421,7 +408,7 @@
     "xdr",
   ]
   pruneopts = "T"
-  revision = "4212372976a014528ee16b8820a97a72ec35ed50"
+  revision = "2faea14590f3d69ad8f96b2d5567edfa574c6c82"
   source = "https://github.com/quantadex/stellar_go.git"
 
 [[projects]]
@@ -466,7 +453,7 @@
 
 [[projects]]
   branch = "master"
-  digest = "1:cfbf846273927a03eb358d91877891aebbe9b5289512512db0d82d8acf8cab1a"
+  digest = "1:56a43b9f51e5c5ea734e866b82d57c842b022c795a0611ff5f57f3d7c47de45d"
   name = "golang.org/x/crypto"
   packages = [
     "pbkdf2",
@@ -474,18 +461,18 @@
     "scrypt",
   ]
   pruneopts = "T"
-  revision = "a92615f3c49003920a58dedcf32cf55022cefb8d"
+  revision = "0c41d7ab0a0ee717d4590a44bcb987dfd9e183eb"
 
 [[projects]]
   branch = "master"
-  digest = "1:7af83e18e72aae0cc57d28c8c441654695491af7c58df20ac3af43b500f651a8"
+  digest = "1:1244f7fbc53a2b9c4174e7e1e62ed5cad5f2f42c67abeac2400a7a72c6c76643"
   name = "golang.org/x/net"
   packages = [
     "context",
     "websocket",
   ]
   pruneopts = "T"
-  revision = "49bb7cea24b1df9410e1712aa6433dae904ff66a"
+  revision = "04a2e542c03f1d053ab3e4d6e5abcd4b66e2be8e"
 
 [[projects]]
   branch = "master"
@@ -546,6 +533,7 @@
     "github.com/ethereum/go-ethereum/crypto",
     "github.com/ethereum/go-ethereum/crypto/sha3",
     "github.com/ethereum/go-ethereum/ethclient",
+    "github.com/ethereum/go-ethereum/event",
     "github.com/ethereum/go-ethereum/rlp",
     "github.com/go-errors/errors",
     "github.com/op/go-logging",

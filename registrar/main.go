@@ -2,9 +2,9 @@ package main
 
 import (
 	"fmt"
-	"github.com/spf13/viper"
 	"github.com/quantadex/distributed_quanta_bridge/common/logger"
 	"github.com/quantadex/distributed_quanta_bridge/registrar/service"
+	"github.com/spf13/viper"
 )
 
 func main() {

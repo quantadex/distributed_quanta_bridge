@@ -1,19 +1,19 @@
 package main
 
 import (
-	"github.com/spf13/viper"
 	"bytes"
 	"fmt"
-	"github.com/quantadex/distributed_quanta_bridge/registrar/service"
+	"github.com/ethereum/go-ethereum/common"
+	"github.com/ethereum/go-ethereum/ethclient"
 	"github.com/quantadex/distributed_quanta_bridge/common/logger"
+	"github.com/quantadex/distributed_quanta_bridge/registrar/service"
 	"github.com/quantadex/distributed_quanta_bridge/trust/coin"
-	"sync"
+	"github.com/quantadex/distributed_quanta_bridge/trust/coin/contracts"
+	"github.com/spf13/viper"
 	"os"
+	"sync"
 	"testing"
 	"time"
-	"github.com/ethereum/go-ethereum/ethclient"
-	"github.com/quantadex/distributed_quanta_bridge/trust/coin/contracts"
-	"github.com/ethereum/go-ethereum/common"
 )
 
 const ropsten_infura = "https://ropsten.infura.io/v3/7b880b2fb55c454985d1c1540f47cbf6"
@@ -24,20 +24,21 @@ var NODE_KEYS = []string {
 	"ZCKSY3ZJ4KW4M5QZ4B5BUG2JCCA7JUUBCCFOIODEOYVPDHRPMP6AQ73V",
 }
 
-//var ETHKEYS = []string {
-//	"c87509a1c067bbde78beb793e6fa76530b6382a4c0241e5e4a9ec0a0f44dc0d3",
-//	"ae6ae8e5ccbfb04590405997ee2d52d2b330726137b875053c36d94e974d162f",
-//	"0dbbe8e4ae425a6d2687f1a7e3ba17bc98c673636790f1b8ad91193c05875ef1",
-//}
-
-//var ETH_TRUST_ADDRESS = "0xe0006458963c3773B051E767C5C63FEe24Cd7Ff9"
-var ETH_TRUST_ADDRESS = "0xBD770336fF47A3B61D4f54cc0Fb541Ea7baAE92d"
-
 var ETHKEYS = []string {
-	"A7D7C6A92361590650AD0965970E186179F24F36B2B51CFE83F3AE8886BB6773",
-	"4C7F96D0CB8F2C48FD22CCB974513E6E9B0DC89475286BB24D2010E8D82AA461",
-	"2E563A40747FA56419FB168ADF507C596E1A604D073D0F9E646B803DFA5BE94C",
+	"c87509a1c067bbde78beb793e6fa76530b6382a4c0241e5e4a9ec0a0f44dc0d3",
+	"ae6ae8e5ccbfb04590405997ee2d52d2b330726137b875053c36d94e974d162f",
+	"0dbbe8e4ae425a6d2687f1a7e3ba17bc98c673636790f1b8ad91193c05875ef1",
 }
+
+var ETH_TRUST_ADDRESS = "0xe0006458963c3773B051E767C5C63FEe24Cd7Ff9"
+
+// var ETH_TRUST_ADDRESS = "0xBD770336fF47A3B61D4f54cc0Fb541Ea7baAE92d"
+
+// var ETHKEYS = []string {
+// 	"A7D7C6A92361590650AD0965970E186179F24F36B2B51CFE83F3AE8886BB6773",
+// 	"4C7F96D0CB8F2C48FD22CCB974513E6E9B0DC89475286BB24D2010E8D82AA461",
+// 	"2E563A40747FA56419FB168ADF507C596E1A604D073D0F9E646B803DFA5BE94C",
+// }
 
 
 //address:QCAO4HRMJDGFPUHRCLCSWARQTJXY2XTAFQUIRG2FAR3SCF26KQLAWZRN weight:1
@@ -71,7 +72,7 @@ HEALTH_INTERVAL: 5
 	viper.ReadConfig(bytes.NewBuffer(config))
 }
 
-func StartNodes(n int, trustAddress common.Address)[]*TrustNode {
+func StartNodes(n int, trustAddress common.Address) []*TrustNode {
 	println("Starting nodes with trust ", trustAddress.Hex())
 
 	mutex := sync.Mutex{}
@@ -83,8 +84,8 @@ func StartNodes(n int, trustAddress common.Address)[]*TrustNode {
 		wg.Add(1)
 
 		os.Remove(fmt.Sprintf("./kv_db_%d.db", 5100+i))
-		SetConfig(NODE_KEYS[i], 5100 + i, ETHKEYS[i])
-		config := Config {}
+		SetConfig(NODE_KEYS[i], 5100+i, ETHKEYS[i])
+		config := Config{}
 		err := viper.Unmarshal(&config)
 		config.EthereumTrustAddr = trustAddress.Hex()
 
@@ -145,6 +146,7 @@ func DoLoopWithdrawal(nodes []*TrustNode, cursor int64) {
 		go n.qTC.DoLoop(cursor)
 	}
 }
+
 /**
  * This one test native token from block 4186072
  */
@@ -155,9 +157,9 @@ func TestRopstenNativeETH(t *testing.T) {
 
 	// DEPOSIT to TEST2
 	DoLoopDeposit(nodes, []int64{4248970})
-	DoLoopDeposit(nodes, []int64{4249018})  // we make deposit
+	DoLoopDeposit(nodes, []int64{4249018}) // we make deposit
 	DoLoopDeposit(nodes, []int64{4249019})
-	time.Sleep(time.Second*4)
+	time.Sleep(time.Second * 4)
 	StopNodes(nodes)
 	StopRegistry(r)
 }
@@ -169,6 +171,14 @@ func TestRopstenERC20Token(t *testing.T) {
 	//DoLoopDeposit(nodes, []int64{4186072, 4186072, 4186074}) // we create the original smart contract on 74
 	//DoLoopDeposit(nodes, []int64{4196673})  // we make deposit
 	//DoLoopDeposit(nodes, []int64{4196674})
+	StartRegistry()
+	nodes := StartNodes(3, common.HexToAddress("0xb1E02e31c9A2403FeAFA7E483Ebb3e1b5ffa3164"))
+	time.Sleep(time.Millisecond * 250)
+	//DoLoopDeposit(nodes, []int64{4186072, 4186072, 4186074}) // we create the original smart contract on 74
+	DoLoopDeposit(nodes, []int64{4250980}) // we make deposit
+	DoLoopDeposit(nodes, []int64{4196674})
+
+	time.Sleep(time.Second * 6)
 }
 
 func TestDummyCoin(t *testing.T) {

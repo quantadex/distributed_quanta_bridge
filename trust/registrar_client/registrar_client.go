@@ -1,24 +1,24 @@
 package registrar_client
 
 import (
-	"github.com/quantadex/distributed_quanta_bridge/common/manifest"
-	"fmt"
-	"net/http"
-	"errors"
-	"encoding/json"
 	"bytes"
-	"io/ioutil"
-	"github.com/quantadex/distributed_quanta_bridge/common/queue"
+	"encoding/json"
+	"errors"
+	"fmt"
+	"github.com/quantadex/distributed_quanta_bridge/common/manifest"
 	"github.com/quantadex/distributed_quanta_bridge/common/msgs"
+	"github.com/quantadex/distributed_quanta_bridge/common/queue"
 	"github.com/quantadex/distributed_quanta_bridge/trust/key_manager"
+	"io/ioutil"
+	"net/http"
 )
 
-type RegistrarClient struct{
-	address string
-	port int
-	url string
+type RegistrarClient struct {
+	address         string
+	port            int
+	url             string
 	healthQueueName string
-	q queue.Queue
+	q               queue.Queue
 }
 
 func (r *RegistrarClient) GetRegistrar() error {
@@ -31,17 +31,16 @@ func (r *RegistrarClient) GetRegistrar() error {
 /**
  * Listen to the node's calls
  */
-func (r *RegistrarClient) AttachQueue(queue queue.Queue) error{
+func (r *RegistrarClient) AttachQueue(queue queue.Queue) error {
 	// memory queue, not necessary
 	r.q = queue
 	return nil
 }
 
-
 func (r *RegistrarClient) RegisterNode(nodeIP string, nodePort string, km key_manager.KeyManager) error {
 	msg := msgs.RegisterReq{}
 	nodeKey, _ := km.GetPublicKey()
-	msg.Body = msgs.NodeInfo{ nodeIP, nodePort, nodeKey }
+	msg.Body = msgs.NodeInfo{nodeIP, nodePort, nodeKey}
 
 	if signature := km.SignMessageObj(msg.Body); signature != nil {
 		msg.Signature = *signature
@@ -50,7 +49,7 @@ func (r *RegistrarClient) RegisterNode(nodeIP string, nodePort string, km key_ma
 		if err != nil {
 			return errors.New("unable to marshall")
 		}
-		http.Post(r.url + "/registry/api/register", "application/json", bytes.NewReader(data))
+		http.Post(r.url+"/registry/api/register", "application/json", bytes.NewReader(data))
 		return nil
 	}
 	return errors.New("unable to sign message")
@@ -59,7 +58,7 @@ func (r *RegistrarClient) RegisterNode(nodeIP string, nodePort string, km key_ma
 func (r *RegistrarClient) SendHealth(nodeState string, km key_manager.KeyManager) error {
 	msg := msgs.PingReq{}
 	nodeKey, _ := km.GetPublicKey()
-	msg.Body = msgs.PingBody{ nodeState, nodeKey }
+	msg.Body = msgs.PingBody{nodeState, nodeKey}
 
 	if signature := km.SignMessageObj(msg.Body); signature != nil {
 		msg.Signature = *signature
@@ -68,7 +67,7 @@ func (r *RegistrarClient) SendHealth(nodeState string, km key_manager.KeyManager
 		if err != nil {
 			return errors.New("unable to marshall")
 		}
-		http.Post(r.url + "/registry/api/health", "application/json", bytes.NewReader(data))
+		http.Post(r.url+"/registry/api/health", "application/json", bytes.NewReader(data))
 		return nil
 	}
 
