@@ -318,6 +318,8 @@ func (r *RoundRobinSigner) processNewPeerMsgs(msgs []*peer_contact.PeerMessage) 
     for _, msg := range msgs {
         success := r.validateTransaction(msg)
         if !success {
+            // we haven't seen it yet.
+            r.addToDeferQ(msg)
             r.log.Infof("Msg failed validate transaction proposer=%d", msg.Proposer)
             continue
         }

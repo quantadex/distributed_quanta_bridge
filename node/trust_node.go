@@ -108,7 +108,7 @@ func initNode(config Config, targetCoin coin.Coin) (*TrustNode, bool) {
 
     err = node.coinkM.LoadNodeKeys(config.EthereumKeyStore)
     if err != nil {
-        node.log.Error("Failed to set up ethereum keys")
+        node.log.Error("Failed to set up ethereum keys " + err.Error())
         return nil, false
     }
 
@@ -286,7 +286,7 @@ func (n *TrustNode) initTrust(config Config) {
 func (n *TrustNode) run() {
     for true {
         select {
-            case <- time.After(time.Second):
+            case <- time.After(5*time.Second):
                 if n.reg.HealthCheckRequested() {
                     n.reg.SendHealth("RUNNING", n.quantakM)
                 }
