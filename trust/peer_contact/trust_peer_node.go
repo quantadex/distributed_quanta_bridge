@@ -53,7 +53,7 @@ func (t *TrustPeerNode) GetRefundMsg() *cosi.CosiMessage {
 func (t *TrustPeerNode) SendMsg(destinationNodeID int, msg interface{}) error {
 	peer := t.man.Nodes[destinationNodeID]
 	url := fmt.Sprintf("http://%s:%s/node/api/refund", peer.IP, peer.Port)
-	//fmt.Println("Send to peer " + url)
+	fmt.Println("Send to peer " + url)
 
 	//if signature := crypto.SignMessage(msg, t.peer.privateKey); signature != nil {
 	//msg.Signature = *signature
@@ -63,8 +63,12 @@ func (t *TrustPeerNode) SendMsg(destinationNodeID int, msg interface{}) error {
 	if err != nil {
 		return errors.New("unable to marshall")
 	}
-	http.Post(url, "application/json", bytes.NewReader(data))
-	return nil
+	_, err = http.Post(url, "application/json", bytes.NewReader(data))
+	if err != nil {
+		println("Error! " + err.Error())
+	}
+	return err
+
 	//}
 	//return errors.New("unable to sign message")
 }

@@ -218,7 +218,7 @@ func (n *TrustNode) registerNode(config Config) bool {
 
 	// Now we sit and wait to be added to quorum
 	for {
-		n.log.Info("Wait to be added to quorum")
+		//n.log.Info("Wait to be added to quorum")
 		time.Sleep(time.Second)
 		if n.reg.HealthCheckRequested() {
 			err = n.reg.SendHealth("READY", n.quantakM)
@@ -284,9 +284,10 @@ func (n *TrustNode) initTrust(config Config) {
  * An infinite loop where we sleep 1 second. Then process trusts.
  */
 func (n *TrustNode) run() {
+	delayTime := time.Second
 	for true {
 		select {
-		case <-time.After(time.Second):
+		case <-time.After(delayTime):
 			if n.reg.HealthCheckRequested() {
 				n.reg.SendHealth("RUNNING", n.quantakM)
 			}
@@ -295,6 +296,14 @@ func (n *TrustNode) run() {
 
 			cursor, _ := control.GetLastBlock(n.db, control.QUANTA)
 			n.qTC.DoLoop(cursor)
+
+			// scale up time
+			if len(blockIDs) == control.MAX_PROCESS_BLOCKS {
+				delayTime = time.Second
+			} else {
+				delayTime = time.Second * 3
+			}
+
 		case <-n.doneChan:
 			n.log.Infof("Exiting.")
 			break

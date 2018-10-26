@@ -3,7 +3,7 @@ FROM golang:1.10.4
 EXPOSE 5000
 EXPOSE 5100
 
-ADD https://s3.amazonaws.com/quantadex-deploy/jobs/distributed_quanta_bridge/6/node /usr/bin/quanta-bridge
+ADD node/node /usr/bin/quanta-bridge
 RUN ["chmod", "+x", "/usr/bin/quanta-bridge"]
 
 ENTRYPOINT ["/usr/bin/quanta-bridge", "-config", "/data/crosschain.yml"]
