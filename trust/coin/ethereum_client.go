@@ -334,7 +334,7 @@ func (l *Listener) SendWithdrawal(conn bind.ContractBackend,
 	w *Withdrawal) (string, error) {
 
 	auth := bind.NewKeyedTransactor(ownerKey)
-	auth.GasLimit = 500000
+	auth.GasLimit = 900000
 	contract, err := contracts.NewTrustContract(trustAddress, conn)
 
 	if err != nil {
@@ -349,6 +349,7 @@ func (l *Listener) SendWithdrawal(conn bind.ContractBackend,
 
 	toAddr := common.HexToAddress(w.DestinationAddress)
 	amount := big.NewInt(int64(w.Amount))
+	fmt.Printf("Sending from %s\n", auth.From.Hex())
 	fmt.Printf("Submit to contract=%s erc20=%s to=%s amount=%d\n", trustAddress.Hex(), smartAddress.Hex(), toAddr.Hex(), amount.Uint64())
 
 	var r [][32]byte

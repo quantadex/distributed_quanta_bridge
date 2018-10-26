@@ -17,6 +17,7 @@ import (
 )
 
 const QUANTA = "QUANTA"
+const DQ_QUANTA2COIN = "DQ_QUANTA2COIN"
 
 /**
  * QuantaToCoin
@@ -37,6 +38,7 @@ type QuantaToCoin struct {
 	rr                  *RoundRobinSigner
 	cosi                *cosi.Cosi
 	trustPeer           *peer_contact.TrustPeerNode
+	deferQ 				*queue.DeferQ
 }
 
 /**
@@ -69,6 +71,9 @@ func NewQuantaToCoin(log logger.Logger,
 	res.nodeID = nodeID
 	res.trustPeer = peer_contact.NewTrustPeerNode(man, peer, nodeID, queue_)
 	res.cosi = cosi.NewProtocol(res.trustPeer, nodeID == 0, time.Second*3)
+
+	res.deferQ = queue.NewDeferQ(DELAY_PENALTY)
+	res.deferQ.CreateQueue(DQ_QUANTA2COIN)
 
 	res.cosi.Verify = func(msg string) error {
 		withdrawal, err := res.coinChannel.DecodeRefund(msg)
@@ -148,7 +153,7 @@ func (c *QuantaToCoin) DoLoop(cursor int64) {
 		return
 	}
 
-	c.logger.Infof("Got refunds %v", refunds)
+	c.logger.Infof("QuantaToCoin Epoch=%d refunds %v", c.deferQ.Epoch(), refunds)
 
 	// separate confirm, and sign as two different stages
 	for _, refund := range refunds {
@@ -161,6 +166,14 @@ func (c *QuantaToCoin) DoLoop(cursor int64) {
 			c.logger.Error("Refund is missing destination address, skipping.")
 			continue
 		}
+
+		c.deferQ.Put(DQ_QUANTA2COIN, &refund)
+	}
+
+	// TODO: make this process multiple refunds in one pass
+	refundI, _ := c.deferQ.Get(DQ_QUANTA2COIN)
+	if refundI != nil {
+		refund := refundI.(*quanta.Refund)
 
 		// i'm the leader
 		if c.nodeID == 0 {
@@ -181,7 +194,7 @@ func (c *QuantaToCoin) DoLoop(cursor int64) {
 
 			if err != nil {
 				c.logger.Error("Failed to encode refund " + err.Error())
-				continue
+				return
 			}
 
 			// wait for other node to see the tx
@@ -207,10 +220,10 @@ func (c *QuantaToCoin) DoLoop(cursor int64) {
 			success := setLastBlock(c.db, QUANTA, refund.PageTokenID)
 			if !success {
 				c.logger.Error("Failed to mark block as signed")
-				continue // should skip
+				return
 			}
-
 		}
 	}
+	c.deferQ.AddTick()
 	c.logger.Infof("Next cursor is = %d", cursor)
 }

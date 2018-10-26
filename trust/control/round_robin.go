@@ -7,13 +7,13 @@ import (
     "github.com/quantadex/distributed_quanta_bridge/trust/key_manager"
     "github.com/quantadex/distributed_quanta_bridge/trust/peer_contact"
     "github.com/quantadex/distributed_quanta_bridge/trust/coin"
-    dll "github.com/emirpasic/gods/lists/doublylinkedlist"
-    "fmt"
     "github.com/quantadex/distributed_quanta_bridge/common"
     "github.com/quantadex/distributed_quanta_bridge/trust/quanta"
+    "github.com/quantadex/distributed_quanta_bridge/common/queue"
 )
 
-const DELAY_PENALTY = 5
+const DELAY_PENALTY = 1
+const DQ_NAME = "RR"
 
 /**
  * RoundRobinSigner
@@ -27,9 +27,8 @@ type RoundRobinSigner struct {
     kM key_manager.KeyManager
     db kv_store.KVStore
     peer peer_contact.PeerContact
-    deferQ map[int]*dll.List
+    deferQ *queue.DeferQ
     quanta quanta.Quanta
-    curEpoch int
 }
 
 /**
@@ -56,70 +55,10 @@ func NewRoundRobinSigner(   log logger.Logger,
     res.db = db
     res.peer = peer
     res.quanta = quanta
-    res.deferQ = make(map[int]*dll.List, 0)
-    res.curEpoch = 0
+    res.deferQ = queue.NewDeferQ(DELAY_PENALTY)
+    res.deferQ.CreateQueue(DQ_NAME)
+
     return res
-}
-
-/**
- * addToDeferQ
- *
- * Adds a message to a defer queue with a given time penalty
- * When the time penalty has expired this message will be made available
- */
-func (r *RoundRobinSigner) addToDeferQ(msg *peer_contact.PeerMessage) {
-    expires := r.curEpoch + (msg.NodesMissed*DELAY_PENALTY)
-    r.log.Info(fmt.Sprintf("Added msg to DeferQ at expiration=%d epoch=%d", expires, r.curEpoch))
-
-    var deferList *dll.List
-    var found bool
-
-    deferList, found = r.deferQ[expires]
-    if !found {
-        deferList = dll.New()
-        r.deferQ[expires] = deferList
-    }
-    deferList.Append(msg)
-}
-
-/**
- * addTick
- *
- * Increment the internal clock.
- * This is used for knowing when to dequeue from deferred queue.
- *
- */
-func (r *RoundRobinSigner) addTick() {
-    r.curEpoch +=1
-}
-
-/**
- * getExpiredMsgs
- *
- * Returns all deferred messages that have not been previously consumed by which have
- * had their time penalty expire
- */
-func (r *RoundRobinSigner) getExpiredMsgs() []*peer_contact.PeerMessage {
-    results := make([]*peer_contact.PeerMessage, 0)
-    hits := make([]int, 0)
-    for k, v := range r.deferQ {
-        if k <= r.curEpoch {
-            hits = append(hits, k)
-            it := v.Iterator()
-            for it.Next() {
-                results = append(results, it.Value().(*peer_contact.PeerMessage))
-            }
-        }
-    }
-    if len(hits) == 0 {
-        return nil
-    }
-    for _, k := range hits {
-        delete(r.deferQ, k)
-    }
-    r.log.Info(fmt.Sprintf("Expired? %v %v\n", hits, results))
-
-    return results
 }
 
 /**
@@ -300,7 +239,7 @@ func (r *RoundRobinSigner) processNewDeposits(deposits []*coin.Deposit) {
         }
         msg := r.createNewPeerMsg(deposit, 0)
         msg.Proposer = r.myNodeID
-        r.addToDeferQ(msg)
+        r.deferQ.Put(DQ_NAME, msg)
     }
 }
 
@@ -319,13 +258,13 @@ func (r *RoundRobinSigner) processNewPeerMsgs(msgs []*peer_contact.PeerMessage) 
         success := r.validateTransaction(msg)
         if !success {
             // we haven't seen it yet.
-            r.addToDeferQ(msg)
+            r.deferQ.Put(DQ_NAME, msg)
             r.log.Infof("Msg failed validate transaction proposer=%d", msg.Proposer)
             continue
         }
         success = r.validateIntegrity(msg)
         if !success {
-            r.log.Infof("Msg failed validate integrity")
+            r.log.Error("Msg failed validate integrity")
             continue
         }
         success = r.signPeerMsg(msg)
@@ -340,7 +279,7 @@ func (r *RoundRobinSigner) processNewPeerMsgs(msgs []*peer_contact.PeerMessage) 
         r.log.Infof("processNewPeerMsgs, so far signed by n=%d q=%d", len(msg.SignedBy), r.man.Q)
         if len(msg.SignedBy) == r.man.Q {
             toSend = append(toSend, msg)
-            continue
+            continue // no need to send2peer, we process it.
         }
         success = r.sendMessage(msg)
         if !success {
