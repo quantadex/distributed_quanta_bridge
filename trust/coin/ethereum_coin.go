@@ -4,12 +4,12 @@ import (
 	"bytes"
 	"crypto/ecdsa"
 	"encoding/binary"
-	"github.com/ethereum/go-ethereum/accounts/abi"
 	common2 "github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/ethclient"
 	"github.com/quantadex/distributed_quanta_bridge/common"
 	"math/big"
 	"strings"
+	"github.com/ethereum/go-ethereum/accounts/abi"
 )
 
 const sign_prefix = "\x19Ethereum Signed Message:\n"
@@ -95,7 +95,9 @@ func (c *EthereumCoin) EncodeRefund(w Withdrawal) (string, error) {
 	binary.Write(&encoded, binary.BigEndian, uint64(w.TxId))
 	encoded.Write(common2.HexToAddress(strings.ToLower(smartAddress)).Bytes())
 	encoded.Write(common2.HexToAddress(strings.ToLower(w.DestinationAddress)).Bytes())
-	encoded.Write(abi.U256(new(big.Int).SetUint64(uint64(w.Amount))))
+	//encoded.Write(abi.U256(new(big.Int).SetUint64(uint64(w.Amount))))
+	binary.Write(&encoded, binary.BigEndian, abi.U256(new(big.Int).SetUint64(uint64(w.Amount))))
+
 	//println("# of bytes " , encoded.Len(), common2.Bytes2Hex(encoded.Bytes()))
 
 	return common2.Bytes2Hex(encoded.Bytes()), nil
