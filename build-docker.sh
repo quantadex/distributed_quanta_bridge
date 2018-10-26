@@ -14,8 +14,8 @@ image="$name:$VER"
 dockerfile="Dockerfile"
 
 echo "Build: $name"
-if [[ $(aws ecr describe-repositories | grep $name | wc -l) = "0" ]]; then
-   aws ecr create-repository --repository-name $name
+if [[ $(aws ecr describe-repositories --region us-east-1 | grep $name | wc -l) = "0" ]]; then
+   aws ecr create-repository --repository-name $name --region us-east-1
 fi
 
 cd node && go build && cd ..
