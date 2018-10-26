@@ -40,7 +40,7 @@ func (h *HttpListener) AddEndpoint(name string, route string) error {
  */
 func (h *HttpListener) Run(host string, port int) error {
 	var err error
-	h.server = &http.Server{Addr: fmt.Sprintf("%s:%d", host, port), Handler: h.handlers}
+	h.server = &http.Server{Addr: fmt.Sprintf(":%d", port), Handler: h.handlers}
 
 	if err = h.server.ListenAndServe(); err != nil {
 		return nil
