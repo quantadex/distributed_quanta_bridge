@@ -55,8 +55,11 @@ func (s *SubmitWorkerImpl) Dispatch() {
 				txCodes, _ := txError.TransactionResultCode()
 				s.logger.Errorf("Op codes %v Tx codes %v", opCodes, txCodes)
 			} else {
-				s.logger.Infof("Successful tx submission %s", res.Hash)
-				s.kv.RemoveKey(kv_store.PENDING_QUANTA_TX, k)
+				s.logger.Infof("Successful tx submission %s,remove %s", res.Hash, k)
+				err = s.kv.RemoveKey(kv_store.PENDING_QUANTA_TX, k)
+				if err != nil {
+					s.logger.Error("Error removing key=" + k)
+				}
 				s.kv.SetValue(kv_store.COMPLETED_QUANTA_TX, k, "", v)
 			}
 

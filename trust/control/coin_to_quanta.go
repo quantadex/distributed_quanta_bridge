@@ -38,6 +38,8 @@ type C2QOptions struct {
 	BlockStartID    int64
 }
 
+const MAX_PROCESS_BLOCKS = 100
+
 /**
  * NewCoinToQuanta
  *
@@ -97,6 +99,9 @@ func (c *CoinToQuanta) GetNewCoinBlockIDs() []int64 {
 	blocks := make([]int64, 0)
 	for i := common2.MaxInt64(c.BlockStartID, lastProcessed+1); i <= currentTop; i++ {
 		blocks = append(blocks, i)
+		if len(blocks) == MAX_PROCESS_BLOCKS {
+			break
+		}
 	}
 	c.log.Info(fmt.Sprintf("Got blocks %v", blocks))
 

@@ -168,10 +168,17 @@ func (c *QuantaToCoin) DoLoop(cursor int64) {
 		}
 
 		c.deferQ.Put(DQ_QUANTA2COIN, &refund)
+		cursor = refund.PageTokenID
+		success := setLastBlock(c.db, QUANTA, refund.PageTokenID)
+		if !success {
+			c.logger.Error("Failed to mark block as signed")
+			return
+		}
 	}
 
 	// TODO: make this process multiple refunds in one pass
 	refundI, _ := c.deferQ.Get(DQ_QUANTA2COIN)
+
 	if refundI != nil {
 		refund := refundI.(*quanta.Refund)
 
@@ -214,13 +221,6 @@ func (c *QuantaToCoin) DoLoop(cursor int64) {
 					c.logger.Error(err.Error())
 				}
 				c.logger.Infof("Submitted withdrawal in tx=%s", tx)
-			}
-
-			cursor = refund.PageTokenID
-			success := setLastBlock(c.db, QUANTA, refund.PageTokenID)
-			if !success {
-				c.logger.Error("Failed to mark block as signed")
-				return
 			}
 		}
 	}

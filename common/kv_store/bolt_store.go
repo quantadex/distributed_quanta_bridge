@@ -43,7 +43,7 @@ func (s *BoltStore) CreateTable(tableName string) error {
 }
 
 func (s *BoltStore) RemoveKey(tableName string, key string) error {
-	err := s.db.View(func(tx *bolt.Tx) error {
+	err := s.db.Update(func(tx *bolt.Tx) error {
 		b := tx.Bucket([]byte(tableName))
 		if b == nil {
 			return errors.New("bucket not found")
