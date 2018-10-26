@@ -34,6 +34,7 @@ TX: https://ropsten.etherscan.io/tx/0x8784265b4f2aa6c6460cc8bf3be46fb4d269a4d00c
 
 lumen pay 0.10 TETH --from test2 --to issuer --memohash MHhiYTc1NzNDMGU4MDVlZjcxQUNCN2YxYzRhNTVFN2IwYWY0MTZFOTZB
 
+Sends back to : 0xba7573C0e805ef71ACB7f1c4a55E7b0af416E96A
 
 ## Open questions
 

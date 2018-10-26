@@ -161,12 +161,6 @@ func (c *QuantaToCoin) DoLoop(cursor int64) {
 		c.logger.Infof("Confirm Refund = %s tx=%s pt=%d", refKey, refund.TransactionId, refund.PageTokenID)
 		confirmTx(c.db, QUANTA_CONFIRMED, refKey)
 
-		//TODO: do checksum check, should bounce back the payment
-		if refund.DestinationAddress == "" {
-			c.logger.Error("Refund is missing destination address, skipping.")
-			continue
-		}
-
 		c.deferQ.Put(DQ_QUANTA2COIN, &refund)
 		cursor = refund.PageTokenID
 		success := setLastBlock(c.db, QUANTA, refund.PageTokenID)
@@ -182,8 +176,13 @@ func (c *QuantaToCoin) DoLoop(cursor int64) {
 	if refundI != nil {
 		refund := refundI.(*quanta.Refund)
 
+		//TODO: do checksum check, should bounce back the payment
+		if refund.DestinationAddress == "" {
+			c.logger.Error("Refund is missing destination address, skipping.")
+		}
+
 		// i'm the leader
-		if c.nodeID == 0 {
+		if c.nodeID == 0 && refund.DestinationAddress != "" {
 			txId, err := c.coinChannel.GetTxID(common.HexToAddress(c.coinContractAddress))
 			if err != nil {
 				c.logger.Error("Could not get txID: " + err.Error() + " " + c.coinContractAddress)
@@ -194,9 +193,9 @@ func (c *QuantaToCoin) DoLoop(cursor int64) {
 				CoinName:           refund.CoinName,
 				DestinationAddress: refund.DestinationAddress,
 				QuantaBlockID:      refund.OperationID,
-				Amount:             refund.Amount,
+				Amount:             coin.StellarToWei(refund.Amount),
 			}
-			c.logger.Infof("Start new round %v", w)
+			c.logger.Infof("Start new round %s to=%s amount=%d", w.CoinName, w.DestinationAddress, w.Amount)
 			encoded, err := c.coinChannel.EncodeRefund(w)
 
 			if err != nil {

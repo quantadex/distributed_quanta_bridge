@@ -90,13 +90,13 @@ func (c *EthereumCoin) EncodeRefund(w Withdrawal) (string, error) {
 	}
 
 	var number = common2.Big256
-	number.SetUint64(StellarToWei(w.Amount))
+	number.SetUint64(w.Amount)
 	//encoded.WriteString(sign_prefix + "80")
 	binary.Write(&encoded, binary.BigEndian, uint64(w.TxId))
 	encoded.Write(common2.HexToAddress(strings.ToLower(smartAddress)).Bytes())
 	encoded.Write(common2.HexToAddress(strings.ToLower(w.DestinationAddress)).Bytes())
-	//encoded.Write(abi.U256(new(big.Int).SetUint64(uint64(w.Amount))))
-	binary.Write(&encoded, binary.BigEndian, abi.U256(new(big.Int).SetUint64(uint64(w.Amount))))
+	encoded.Write(abi.U256(new(big.Int).SetUint64(uint64(w.Amount))))
+	//binary.Write(&encoded, binary.BigEndian, abi.U256(new(big.Int).SetUint64(uint64(w.Amount))))
 
 	//println("# of bytes " , encoded.Len(), common2.Bytes2Hex(encoded.Bytes()))
 
