@@ -38,6 +38,8 @@ type C2QOptions struct {
 	BlockStartID    int64
 }
 
+const MAX_PROCESS_BLOCKS = 100
+
 /**
  * NewCoinToQuanta
  *
@@ -97,6 +99,9 @@ func (c *CoinToQuanta) GetNewCoinBlockIDs() []int64 {
 	blocks := make([]int64, 0)
 	for i := common2.MaxInt64(c.BlockStartID, lastProcessed+1); i <= currentTop; i++ {
 		blocks = append(blocks, i)
+		if len(blocks) == MAX_PROCESS_BLOCKS {
+			break
+		}
 	}
 	c.log.Info(fmt.Sprintf("Got blocks %v", blocks))
 
@@ -154,9 +159,9 @@ func (c *CoinToQuanta) submitMessages(msgs []*peer_contact.PeerMessage) {
  * Get all ready messages from RR and send these to quanta.
  */
 func (c *CoinToQuanta) DoLoop(blockIDs []int64) {
-	c.rr.addTick()
+	c.rr.deferQ.AddTick()
 	c.log.Info(fmt.Sprintf("***** Start of Epoch %d # of blocks=%d man.N=%d,man.Q=%d *** ",
-		c.rr.curEpoch, len(blockIDs), c.man.N, c.man.Q))
+		c.rr.deferQ.Epoch(), len(blockIDs), c.man.N, c.man.Q))
 
 	if blockIDs != nil {
 		for _, blockID := range blockIDs {
@@ -183,7 +188,13 @@ func (c *CoinToQuanta) DoLoop(blockIDs []int64) {
 		}
 	}
 
-	allMsgs := c.rr.getExpiredMsgs()
+	allMsgs := make([]*peer_contact.PeerMessage, 0)
+	expiredMsgs, _ := c.rr.deferQ.Get(DQ_NAME)
+
+	if expiredMsgs != nil {
+		allMsgs = append(allMsgs, expiredMsgs.(*peer_contact.PeerMessage))
+	}
+
 	for true {
 		msg := c.peer.GetMsg()
 		if msg == nil {

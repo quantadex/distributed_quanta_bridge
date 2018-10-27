@@ -72,6 +72,14 @@ func WeiToStellar(valueInWei int64) int64 {
 	return result.Mul(valueEth, StellarAmountPrecision).Num().Int64()
 }
 
+func StellarToWei(valueInStellar uint64) uint64 {
+	valueWei := new(big.Rat)
+	stellar := new(big.Rat).SetInt(big.NewInt(int64(valueInStellar)))
+	powerDelta := new(big.Rat).SetInt(new(big.Int).Exp(ten, big.NewInt(11), nil))
+
+	return valueWei.Mul(stellar, powerDelta).Num().Uint64()
+}
+
 type ForwardInput struct {
 	ContractAddress common.Address
 	Trust common.Address

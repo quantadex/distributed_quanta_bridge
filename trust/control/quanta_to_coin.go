@@ -17,6 +17,7 @@ import (
 )
 
 const QUANTA = "QUANTA"
+const DQ_QUANTA2COIN = "DQ_QUANTA2COIN"
 
 /**
  * QuantaToCoin
@@ -37,6 +38,7 @@ type QuantaToCoin struct {
 	rr                  *RoundRobinSigner
 	cosi                *cosi.Cosi
 	trustPeer           *peer_contact.TrustPeerNode
+	deferQ 				*queue.DeferQ
 }
 
 /**
@@ -69,6 +71,9 @@ func NewQuantaToCoin(log logger.Logger,
 	res.nodeID = nodeID
 	res.trustPeer = peer_contact.NewTrustPeerNode(man, peer, nodeID, queue_)
 	res.cosi = cosi.NewProtocol(res.trustPeer, nodeID == 0, time.Second*3)
+
+	res.deferQ = queue.NewDeferQ(DELAY_PENALTY)
+	res.deferQ.CreateQueue(DQ_QUANTA2COIN)
 
 	res.cosi.Verify = func(msg string) error {
 		withdrawal, err := res.coinChannel.DecodeRefund(msg)
@@ -148,7 +153,7 @@ func (c *QuantaToCoin) DoLoop(cursor int64) {
 		return
 	}
 
-	c.logger.Infof("Got refunds %v", refunds)
+	c.logger.Infof("QuantaToCoin Epoch=%d refunds %v", c.deferQ.Epoch(), refunds)
 
 	// separate confirm, and sign as two different stages
 	for _, refund := range refunds {
@@ -156,14 +161,28 @@ func (c *QuantaToCoin) DoLoop(cursor int64) {
 		c.logger.Infof("Confirm Refund = %s tx=%s pt=%d", refKey, refund.TransactionId, refund.PageTokenID)
 		confirmTx(c.db, QUANTA_CONFIRMED, refKey)
 
+		c.deferQ.Put(DQ_QUANTA2COIN, &refund)
+		cursor = refund.PageTokenID
+		success := setLastBlock(c.db, QUANTA, refund.PageTokenID)
+		if !success {
+			c.logger.Error("Failed to mark block as signed")
+			return
+		}
+	}
+
+	// TODO: make this process multiple refunds in one pass
+	refundI, _ := c.deferQ.Get(DQ_QUANTA2COIN)
+
+	if refundI != nil {
+		refund := refundI.(*quanta.Refund)
+
 		//TODO: do checksum check, should bounce back the payment
 		if refund.DestinationAddress == "" {
 			c.logger.Error("Refund is missing destination address, skipping.")
-			continue
 		}
 
 		// i'm the leader
-		if c.nodeID == 0 {
+		if c.nodeID == 0 && refund.DestinationAddress != "" {
 			txId, err := c.coinChannel.GetTxID(common.HexToAddress(c.coinContractAddress))
 			if err != nil {
 				c.logger.Error("Could not get txID: " + err.Error() + " " + c.coinContractAddress)
@@ -174,14 +193,14 @@ func (c *QuantaToCoin) DoLoop(cursor int64) {
 				CoinName:           refund.CoinName,
 				DestinationAddress: refund.DestinationAddress,
 				QuantaBlockID:      refund.OperationID,
-				Amount:             refund.Amount,
+				Amount:             coin.StellarToWei(refund.Amount),
 			}
-			c.logger.Infof("Start new round %v", w)
+			c.logger.Infof("Start new round %s to=%s amount=%d", w.CoinName, w.DestinationAddress, w.Amount)
 			encoded, err := c.coinChannel.EncodeRefund(w)
 
 			if err != nil {
 				c.logger.Error("Failed to encode refund " + err.Error())
-				continue
+				return
 			}
 
 			// wait for other node to see the tx
@@ -202,15 +221,8 @@ func (c *QuantaToCoin) DoLoop(cursor int64) {
 				}
 				c.logger.Infof("Submitted withdrawal in tx=%s", tx)
 			}
-
-			cursor = refund.PageTokenID
-			success := setLastBlock(c.db, QUANTA, refund.PageTokenID)
-			if !success {
-				c.logger.Error("Failed to mark block as signed")
-				continue // should skip
-			}
-
 		}
 	}
+	c.deferQ.AddTick()
 	c.logger.Infof("Next cursor is = %d", cursor)
 }
