@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/ethclient"
+	"github.com/magiconair/properties/assert"
 	"github.com/quantadex/distributed_quanta_bridge/common/logger"
 	"github.com/quantadex/distributed_quanta_bridge/registrar/service"
 	"github.com/quantadex/distributed_quanta_bridge/trust/coin"
@@ -173,12 +174,16 @@ func TestRopstenERC20Token(t *testing.T) {
 	//DoLoopDeposit(nodes, []int64{4196674})
 	StartRegistry()
 	nodes := StartNodes(3, common.HexToAddress("0xb1E02e31c9A2403FeAFA7E483Ebb3e1b5ffa3164"))
+	initialBalance, _ := nodes[0].q.GetBalance("0xAc2AFb5463F5Ba00a1161025C2ca0311748BfD2c", "QCAO4HRMJDGFPUHRCLCSWARQTJXY2XTAFQUIRG2FAR3SCF26KQLAWZRN")
+	fmt.Println("initial balance is: ", initialBalance)
 	time.Sleep(time.Millisecond * 250)
 	//DoLoopDeposit(nodes, []int64{4186072, 4186072, 4186074}) // we create the original smart contract on 74
 	DoLoopDeposit(nodes, []int64{4250980}) // we make deposit
-	DoLoopDeposit(nodes, []int64{4196674})
-
 	time.Sleep(time.Second * 6)
+	newBalance, _ := nodes[0].q.GetBalance("0xAc2AFb5463F5Ba00a1161025C2ca0311748BfD2c", "QCAO4HRMJDGFPUHRCLCSWARQTJXY2XTAFQUIRG2FAR3SCF26KQLAWZRN")
+	assert.Equal(t, newBalance, initialBalance+0.0000001)
+	//DoLoopDeposit(nodes, []int64{4196674})
+	time.Sleep(time.Second * 15)
 }
 
 func TestDummyCoin(t *testing.T) {

@@ -70,6 +70,8 @@ type Quanta interface {
 	 */
 	ProcessDeposit(deposit peer_contact.PeerMessage) error
 
+	GetBalance(assetName string, quantaAddress string) (float64, error)
+	GetAllBalances(quantaAddress string) (map[string]float64, error)
 	CreateProposeTransaction(*coin.Deposit) (string, error) // base64 tx envelope
 	DecodeTransaction(base64 string) (*coin.Deposit, error)
 }

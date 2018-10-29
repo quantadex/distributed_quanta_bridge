@@ -60,6 +60,23 @@ type Operation struct {
 	Amount      string    `json:"amount"`
 }
 
+type Balances struct {
+	Links struct {
+		Self horizon.Link `json:"self"`
+		Next horizon.Link `json:"next"`
+		Prev horizon.Link `json:"prev"`
+	} `json:"_links"`
+	Records []Balance `json:"balances"`
+}
+
+type Balance struct {
+	Balance     string `json:"balance"`
+	Limit       string `json:"limit"`
+	AssetType   string `json:"asset_type"`
+	AssetCode   string `json:"asset_code"`
+	AssetIssuer string `json:"asset_issuer"`
+}
+
 // remember to test coins < 10^7
 func (q *QuantaClient) CreateProposeTransaction(deposit *coin.Deposit) (string, error) {
 	amount := fmt.Sprintf("%.7f", float64(deposit.Amount)/10000000)
@@ -156,6 +173,39 @@ func (q *QuantaClient) GetTopBlockID(accountId string) (int64, error) {
 	return 0, nil
 }
 
+func (q *QuantaClient) GetBalance(assetName string, quantaAddress string) (float64, error) {
+	m, err := q.GetAllBalances(quantaAddress)
+	for k, v := range m {
+		if k == assetName {
+			return v, nil
+		}
+	}
+	return 0, err
+}
+
+func (q *QuantaClient) GetAllBalances(quantaAddress string) (map[string]float64, error) {
+	var m map[string]float64
+	m = make(map[string]float64)
+	url := fmt.Sprintf("%s/accounts/%s", q.horizonClient.URL, quantaAddress)
+	resp, err := q.horizonClient.HTTP.Get(url)
+	if err != nil {
+		return m, err
+	}
+
+	var balances Balances
+	if err := json.NewDecoder(resp.Body).Decode(&balances); err != nil {
+		return m, errors.New("failed to decode operations: " + err.Error())
+	}
+	for i := 0; i < len(balances.Records); i++ {
+		if balances.Records[i].AssetCode == "" {
+			m["native"], _ = strconv.ParseFloat(balances.Records[i].Balance, 64)
+		} else {
+			m[balances.Records[i].AssetCode], _ = strconv.ParseFloat(balances.Records[i].Balance, 64)
+		}
+	}
+	return m, err
+}
+
 func (q *QuantaClient) GetTransactionWithHash(hash string) (*horizon.Transaction, error) {
 	url := fmt.Sprintf("%s/transactions/%s", q.horizonClient.URL, hash)
 	//println(url)
@@ -235,6 +285,9 @@ func (q *QuantaClient) GetRefundsInBlock(cursor int64, trustAddress string) ([]R
 }
 
 func (q *QuantaClient) ProcessDeposit(deposit peer_contact.PeerMessage) error {
+	//x, _ := q.GetBalance("poojakishoreshah", "QCAO4HRMJDGFPUHRCLCSWARQTJXY2XTAFQUIRG2FAR3SCF26KQLAWZRN")
+	//x, _ := q.GetTopBlockID("QCAO4HRMJDGFPUHRCLCSWARQTJXY2XTAFQUIRG2FAR3SCF26KQLAWZRN")
+	//fmt.Println(x)
 	data, err := json.Marshal(deposit)
 	if err != nil {
 		return err
