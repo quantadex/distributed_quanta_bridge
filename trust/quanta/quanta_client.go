@@ -259,7 +259,7 @@ func (q *QuantaClient) GetRefundsInBlock(cursor int64, trustAddress string) ([]R
 					// it's a refund
 					newRefund := Refund{
 						CoinName:           op.AssetCode,
-						DestinationAddress: op.To,
+						DestinationAddress: op.To, // TODO: handle bad address properly
 						OperationID:        num,
 						Amount:             uint64(am),
 						PageTokenID:        pt,

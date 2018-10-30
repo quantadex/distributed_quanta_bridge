@@ -15,6 +15,7 @@ import (
 	"sync"
 	"testing"
 	"time"
+	"encoding/base64"
 )
 
 const ropsten_infura = "https://ropsten.infura.io/v3/7b880b2fb55c454985d1c1540f47cbf6"
@@ -22,7 +23,7 @@ const ropsten_infura = "https://ropsten.infura.io/v3/7b880b2fb55c454985d1c1540f4
 var NODE_KEYS = []string {
 	"ZBHK5VE5ZM5MJI3FM7JOW7MMUF3FIRUMV3BTLUTJWQHDFEN7MG3J4VAV",
 	"ZDX6DGXBYAR3Z2BS4T4ITRTWPNJOSR5TPTVYN65UKEGP4ILOZ5GXU2KE",
-	"ZCKSY3ZJ4KW4M5QZ4B5BUG2JCCA7JUUBCCFOIODEOYVPDHRPMP6AQ73V",
+	"ZC4U5P5DWNXGRUENOCOKZFHAWFKBE7JFOB2BCEKCM7BKXXKQE3DARXIJ",
 }
 
 var ETHKEYS = []string {
@@ -57,7 +58,7 @@ ListenPort: %d
 UsePrevKeys: true
 KvDbName: kv_db_%d
 CoinName: ETH
-IssuerAddress: QAHXFPFJ33VV4C4BTXECIQCNI7CXRKA6KKG5FP3TJFNWGE7YUC4MBNFB
+IssuerAddress: QCISRUJ73RQBHB3C4LA6X537LPGSFZF3YUZ6MOPUOUJR5A63I5TLJML4
 NodeKey: %s
 HorizonUrl: http://testnet-02.quantachain.io:8000/
 NetworkPassphrase: QUANTA Test Network ; September 2018
@@ -201,6 +202,12 @@ func TestDummyCoin(t *testing.T) {
 }
 
 func TestWithdrawal(t *testing.T) {
+
+	memo, _ := base64.StdEncoding.DecodeString("unVzwOgF73Gst/HEpV57CvQW6WoAAAAAAAAAAAAAAAA=")
+	destinationAddress := common.BytesToAddress(memo).Hex()
+	println(destinationAddress)
+	return
+
 	r := StartRegistry()
 
 	ethereumClient, err := ethclient.Dial(ropsten_infura)
