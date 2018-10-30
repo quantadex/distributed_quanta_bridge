@@ -10,6 +10,7 @@ import (
 	"math/big"
 	"strings"
 	"github.com/ethereum/go-ethereum/accounts/abi"
+	"encoding/json"
 )
 
 const sign_prefix = "\x19Ethereum Signed Message:\n"
@@ -19,6 +20,11 @@ type EthereumCoin struct {
 	maxRange    int64
 	networkId   string
 	ethereumRpc string
+}
+
+type EncodedMsg struct {
+	Message string
+	BlockNumber int64
 }
 
 func (c *EthereumCoin) Attach() error {
@@ -99,14 +105,21 @@ func (c *EthereumCoin) EncodeRefund(w Withdrawal) (string, error) {
 	//binary.Write(&encoded, binary.BigEndian, abi.U256(new(big.Int).SetUint64(uint64(w.Amount))))
 
 	//println("# of bytes " , encoded.Len(), common2.Bytes2Hex(encoded.Bytes()))
-
-	return common2.Bytes2Hex(encoded.Bytes()), nil
+	data, err := json.Marshal(&EncodedMsg{ common2.Bytes2Hex(encoded.Bytes()), w.QuantaBlockID})
+	return common2.Bytes2Hex(data), err
 }
 
 func (c *EthereumCoin) DecodeRefund(encoded string) (*Withdrawal, error) {
 	decoded := common2.Hex2Bytes(encoded)
+	msg := &EncodedMsg{}
+	err := json.Unmarshal(decoded, msg)
+	if err != nil {
+		return nil, err
+	}
 
 	w := &Withdrawal{}
+	w.QuantaBlockID = msg.BlockNumber
+	decoded = common2.Hex2Bytes(msg.Message)
 
 	//pl := len(sign_prefix)
 	//header := decoded[0:pl]

@@ -82,7 +82,7 @@ func NewQuantaToCoin(log logger.Logger,
 			return err
 		}
 
-		refKey := getKeyName(withdrawal.CoinName, withdrawal.DestinationAddress, 0)
+		refKey := getKeyName(withdrawal.CoinName, withdrawal.DestinationAddress, withdrawal.QuantaBlockID)
 		state := getState(db, QUANTA_CONFIRMED, refKey)
 		if state == CONFIRMED {
 			return nil
@@ -157,7 +157,7 @@ func (c *QuantaToCoin) DoLoop(cursor int64) {
 
 	// separate confirm, and sign as two different stages
 	for _, refund := range refunds {
-		refKey := getKeyName(refund.CoinName, strings.ToLower(common.HexToAddress(refund.DestinationAddress).Hex()), 0)
+		refKey := getKeyName(refund.CoinName, strings.ToLower(common.HexToAddress(refund.DestinationAddress).Hex()), int64(refund.OperationID))
 		c.logger.Infof("Confirm Refund = %s tx=%s pt=%d", refKey, refund.TransactionId, refund.PageTokenID)
 		confirmTx(c.db, QUANTA_CONFIRMED, refKey)
 
