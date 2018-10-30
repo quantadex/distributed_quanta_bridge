@@ -14,6 +14,7 @@ import (
 	"github.com/quantadex/quanta_book/consensus/cosi"
 	"strings"
 	"time"
+	"encoding/json"
 )
 
 const QUANTA = "QUANTA"
@@ -108,8 +109,15 @@ func NewQuantaToCoin(log logger.Logger,
 		return nil
 	}
 
-	res.cosi.SignMsg = func(msg string) (string, error) {
-		encodedSig, err := res.coinkM.SignTransaction(msg)
+	res.cosi.SignMsg = func(encoded string) (string, error) {
+		decoded := common.Hex2Bytes(encoded)
+		msg := &coin.EncodedMsg{}
+		err := json.Unmarshal(decoded, msg)
+		if err != nil {
+			return "", err
+		}
+
+		encodedSig, err := res.coinkM.SignTransaction(msg.Message)
 		log.Infof("Sign msg %s", encodedSig)
 
 		if err != nil {
