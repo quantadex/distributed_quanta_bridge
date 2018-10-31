@@ -179,10 +179,10 @@ func TestRopstenERC20Token(t *testing.T) {
 	//StartRegistry()
 	//nodes := StartNodes(3)
 	//time.Sleep(time.Millisecond*250)
-	//DoLoopDeposit(nodes, []int64{4186072, 4186072, 4186074}) // we create the original smart contract on 74
 	//DoLoopDeposit(nodes, []int64{4196673})  // we make deposit
+	//DoLoopDeposit(nodes, []int64{4186072, 4186072, 4186074}) // we create the original smart contract on 74
 	//DoLoopDeposit(nodes, []int64{4196674})
-	StartRegistry()
+	r := StartRegistry()
 	nodes := StartNodes(3, common.HexToAddress("0xb1E02e31c9A2403FeAFA7E483Ebb3e1b5ffa3164"))
 	initialBalance, err := nodes[0].q.GetBalance(QUANTA_ASSET, QUANTA_ACCOUNT)
 	assert.Nil(t, err)
@@ -198,6 +198,8 @@ func TestRopstenERC20Token(t *testing.T) {
 	assert.Equal(t, newBalance, initialBalance+0.0000001)
 	//DoLoopDeposit(nodes, []int64{4196674})
 	time.Sleep(time.Second * 15)
+	StopNodes(nodes)
+	StopRegistry(r)
 }
 
 func TestDummyCoin(t *testing.T) {
