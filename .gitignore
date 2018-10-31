@@ -1,0 +1,6 @@
+tmp
+vendor
+report*.xml
+gotest*.out
+node/kv_db*.db
+node/node
