@@ -42,7 +42,7 @@ func TestCheckDepositNode(t *testing.T) {
 
 	deposits, err := client.GetNativeDeposits(blockNumber, map[string]string{strings.ToLower("0x555Ee11FBDDc0E49A9bAB358A8941AD95fFDB48f"): ""})
 	if err != nil || len(deposits) != 8 {
-		t.Error("Expecting 8 eth transfer %d", len(deposits))
+		t.Error("Expecting 8 eth transfer", len(deposits))
 		return
 	}
 
