@@ -1,17 +1,16 @@
 package key_manager
 
 import (
-	"io/ioutil"
-	"github.com/ethereum/go-ethereum/accounts/keystore"
-	"github.com/ethereum/go-ethereum/crypto"
-	"github.com/ethereum/go-ethereum/crypto/sha3"
-	"github.com/ethereum/go-ethereum/rlp"
-	"github.com/ethereum/go-ethereum/common"
 	"crypto/ecdsa"
+	"fmt"
+	"github.com/ethereum/go-ethereum/accounts/keystore"
+	"github.com/ethereum/go-ethereum/common"
+	"github.com/ethereum/go-ethereum/crypto"
+	"io/ioutil"
 	"strings"
 )
 
-type EthereumKeyManager struct{
+type EthereumKeyManager struct {
 	key *ecdsa.PrivateKey
 }
 
@@ -21,7 +20,7 @@ func (e *EthereumKeyManager) CreateNodeKeys() error {
 
 func (e *EthereumKeyManager) LoadNodeKeys(filename string) error {
 
-	if strings.HasPrefix(filename, "file://")  {
+	if strings.HasPrefix(filename, "file://") {
 		keyjson, err := ioutil.ReadFile(strings.TrimPrefix(filename, "file://"))
 		if err != nil {
 			return err
@@ -47,7 +46,7 @@ func (e *EthereumKeyManager) GetPublicKey() (string, error) {
 	return crypto.PubkeyToAddress(e.key.PublicKey).Hex(), nil
 }
 
-func (e *EthereumKeyManager) GetPrivateKey() (*ecdsa.PrivateKey) {
+func (e *EthereumKeyManager) GetPrivateKey() *ecdsa.PrivateKey {
 	return e.key
 }
 
@@ -55,7 +54,7 @@ func (e *EthereumKeyManager) SignMessage(original []byte) ([]byte, error) {
 	panic("implement me")
 }
 
-func (e *EthereumKeyManager) SignMessageObj(original interface{}) (*string) {
+func (e *EthereumKeyManager) SignMessageObj(original interface{}) *string {
 	panic("implement me")
 }
 
@@ -67,13 +66,10 @@ func (e *EthereumKeyManager) VerifySignatureObj(original interface{}, key string
 func (e *EthereumKeyManager) SignTransaction(hex string) (string, error) {
 	dataBytes := common.Hex2Bytes(hex)
 
-	var h common.Hash
-	hw := sha3.NewKeccak256()
-	rlp.Encode(hw, dataBytes)
-	hw.Sum(h[:0])
-	//println("Hash=", h.Hex())
+	msg := fmt.Sprintf("\x19Ethereum Signed Message:\n%d%s", len(dataBytes), dataBytes)
+	h := crypto.Keccak256([]byte(msg))
 
-	sig, err := crypto.Sign(h.Bytes(), e.key)
+	sig, err := crypto.Sign(h, e.key)
 	if err != nil {
 		return "", err
 	}

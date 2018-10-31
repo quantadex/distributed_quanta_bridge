@@ -1,25 +1,30 @@
 package coin
 
 import (
+	"bytes"
+	"crypto/ecdsa"
+	"encoding/binary"
+	common2 "github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/ethclient"
 	"github.com/quantadex/distributed_quanta_bridge/common"
-	"strings"
-	common2 "github.com/ethereum/go-ethereum/common"
-	"bytes"
-	"github.com/ethereum/go-ethereum/accounts/abi"
 	"math/big"
-	"github.com/go-errors/errors"
-	"encoding/binary"
-	"crypto/ecdsa"
+	"strings"
+	"github.com/ethereum/go-ethereum/accounts/abi"
+	"encoding/json"
 )
 
 const sign_prefix = "\x19Ethereum Signed Message:\n"
 
 type EthereumCoin struct {
-	client *Listener
-	maxRange int64
-	networkId string
+	client      *Listener
+	maxRange    int64
+	networkId   string
 	ethereumRpc string
+}
+
+type EncodedMsg struct {
+	Message string
+	BlockNumber int64
 }
 
 func (c *EthereumCoin) Attach() error {
@@ -82,7 +87,7 @@ func (c *EthereumCoin) SendWithdrawal(trustAddress common2.Address,
 func (c *EthereumCoin) EncodeRefund(w Withdrawal) (string, error) {
 	var encoded bytes.Buffer
 	var smartAddress string
-	parts := strings.Split(w.CoinName,",")
+	parts := strings.Split(w.CoinName, ",")
 
 	if len(parts) == 2 {
 		smartAddress = parts[1]
@@ -92,41 +97,50 @@ func (c *EthereumCoin) EncodeRefund(w Withdrawal) (string, error) {
 
 	var number = common2.Big256
 	number.SetUint64(w.Amount)
-	encoded.WriteString(sign_prefix + "80")
+	//encoded.WriteString(sign_prefix + "80")
 	binary.Write(&encoded, binary.BigEndian, uint64(w.TxId))
 	encoded.Write(common2.HexToAddress(strings.ToLower(smartAddress)).Bytes())
 	encoded.Write(common2.HexToAddress(strings.ToLower(w.DestinationAddress)).Bytes())
 	encoded.Write(abi.U256(new(big.Int).SetUint64(uint64(w.Amount))))
-	//println("# of bytes " , encoded.Len(), common2.Bytes2Hex(encoded.Bytes()))
+	//binary.Write(&encoded, binary.BigEndian, abi.U256(new(big.Int).SetUint64(uint64(w.Amount))))
 
-	return common2.Bytes2Hex(encoded.Bytes()), nil
+	//println("# of bytes " , encoded.Len(), common2.Bytes2Hex(encoded.Bytes()))
+	data, err := json.Marshal(&EncodedMsg{ common2.Bytes2Hex(encoded.Bytes()), w.QuantaBlockID})
+	return common2.Bytes2Hex(data), err
 }
 
-func (c *EthereumCoin)  DecodeRefund(encoded string) (*Withdrawal, error) {
+func (c *EthereumCoin) DecodeRefund(encoded string) (*Withdrawal, error) {
 	decoded := common2.Hex2Bytes(encoded)
-
-	w := &Withdrawal{}
-
-	pl := len(sign_prefix)
-	header := decoded[0:pl]
-	if string(header) != sign_prefix {
-		return nil, errors.New("Unexpected prefix")
+	msg := &EncodedMsg{}
+	err := json.Unmarshal(decoded, msg)
+	if err != nil {
+		return nil, err
 	}
 
+	w := &Withdrawal{}
+	w.QuantaBlockID = msg.BlockNumber
+	decoded = common2.Hex2Bytes(msg.Message)
+
+	//pl := len(sign_prefix)
+	//header := decoded[0:pl]
+	//if string(header) != sign_prefix {
+	//	return nil, errors.New("Unexpected prefix")
+	//}
+
 	// skip 4 bytes to length
-	pl += 2
-	txIdBytes := decoded[pl:pl+8]
+	pl := 0
+	txIdBytes := decoded[pl : pl+8]
 	txId := new(big.Int).SetBytes(txIdBytes).Uint64()
 	w.TxId = txId
 
 	pl += 8
-	smartAddress := decoded[pl:pl+20]
+	smartAddress := decoded[pl : pl+20]
 
 	pl += 20
-	destAddress := decoded[pl:pl+20]
+	destAddress := decoded[pl : pl+20]
 
 	pl += 20
-	amount := decoded[pl: pl + 32]
+	amount := decoded[pl : pl+32]
 	smartNumber := new(big.Int).SetBytes(smartAddress)
 
 	if smartNumber.Cmp(big.NewInt(0)) == 0 {

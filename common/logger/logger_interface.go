@@ -10,6 +10,7 @@ type Logger interface {
     Error(msg string)
     Info(msg string)
     Debug(msg string)
+    Errorf(format string, args ...interface{})
     Infof(format string, args ...interface{})
 }
 

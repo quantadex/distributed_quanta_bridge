@@ -2,25 +2,24 @@ package coin
 
 import (
 	"context"
-	"math/big"
-	"time"
+	"crypto/ecdsa"
+	"fmt"
 	"github.com/ethereum/go-ethereum"
+	"github.com/ethereum/go-ethereum/accounts/abi"
+	"github.com/ethereum/go-ethereum/accounts/abi/bind"
+	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
+	"github.com/ethereum/go-ethereum/crypto"
+	"github.com/quantadex/distributed_quanta_bridge/registrar/Forwarder"
+	"github.com/quantadex/distributed_quanta_bridge/trust/coin/contracts"
 	"github.com/stellar/go/support/errors"
 	"github.com/stellar/go/support/log"
+	"math/big"
 	"strings"
-	"github.com/ethereum/go-ethereum/accounts/abi"
-	"github.com/ethereum/go-ethereum/crypto"
-	"github.com/ethereum/go-ethereum/common"
-	"github.com/quantadex/distributed_quanta_bridge/registrar/Forwarder"
-	"github.com/ethereum/go-ethereum/accounts/abi/bind"
-	"crypto/ecdsa"
-	"github.com/quantadex/distributed_quanta_bridge/trust/coin/contracts"
-	"fmt"
+	"time"
 )
 
 const abiCode = `[{"anonymous":false,"inputs":[{"indexed":true,"name":"from","type":"address"},{"indexed":true,"name":"to","type":"address"},{"indexed":false,"name":"tokens","type":"uint256"}],"name":"Transfer","type":"event"},{"anonymous":false,"inputs":[{"indexed":true,"name":"tokenOwner","type":"address"},{"indexed":true,"name":"spender","type":"address"},{"indexed":false,"name":"tokens","type":"uint256"}],"name":"Approval","type":"event"}]`
-
 
 func (l *Listener) Start() error {
 	l.log = log.DefaultLogger.WithField("service", "EthereumListener")
@@ -165,7 +164,7 @@ func (l *Listener) processBlock(block *types.Block) error {
 	return nil
 }
 
-func (l *Listener) GetTopBlockNumber() (int64, error){
+func (l *Listener) GetTopBlockNumber() (int64, error) {
 	header, err := l.Client.HeaderByNumber(context.Background(), nil)
 	if err != nil {
 		return 0, err
@@ -192,9 +191,10 @@ func (l *Listener) GetNativeDeposits(blockNumber int64, toAddress map[string]str
 			if tx.Value().Cmp(big.NewInt(0)) != 0 {
 				events = append(events, &Deposit{
 					QuantaAddr: quantaAddr,
-					CoinName: "ETH",
-					SenderAddr:tx.To().Hex(),
-					Amount: WeiToStellar(tx.Value().Int64()),
+					CoinName:   "ETH",
+					SenderAddr: tx.To().Hex(),
+					Amount:     WeiToStellar(tx.Value().Int64()),
+					BlockID: blockNumber,
 				})
 			}
 		}
@@ -203,8 +203,7 @@ func (l *Listener) GetNativeDeposits(blockNumber int64, toAddress map[string]str
 	return events, nil
 }
 
-
-func (l *Listener) FilterTransferEvent(blockNumber int64, toAddress map[string]string) ([]*Deposit, error)  {
+func (l *Listener) FilterTransferEvent(blockNumber int64, toAddress map[string]string) ([]*Deposit, error) {
 	query := ethereum.FilterQuery{
 		FromBlock: big.NewInt(blockNumber),
 		ToBlock:   big.NewInt(blockNumber),
@@ -258,9 +257,9 @@ func (l *Listener) FilterTransferEvent(blockNumber int64, toAddress map[string]s
 
 				events = append(events, &Deposit{
 					QuantaAddr: quantaAddr,
-					CoinName: vLog.Address.Hex(),
+					CoinName:   vLog.Address.Hex(),
 					SenderAddr: transferEvent.To.Hex(),
-					Amount: WeiToStellar(transferEvent.Tokens.Int64()),
+					Amount:     WeiToStellar(transferEvent.Tokens.Int64()),
 				})
 			}
 
@@ -269,7 +268,6 @@ func (l *Listener) FilterTransferEvent(blockNumber int64, toAddress map[string]s
 
 	return events, nil
 }
-
 
 func (l *Listener) GetForwardContract(blockNumber int64) ([]*ForwardInput, error) {
 	blocks, err := l.GetBlock(blockNumber)
@@ -332,12 +330,12 @@ func (l *Listener) SendWithDrawalToRPC(trustAddress common.Address,
 }
 
 func (l *Listener) SendWithdrawal(conn bind.ContractBackend,
-								trustAddress common.Address,
-								ownerKey *ecdsa.PrivateKey,
-								w *Withdrawal) (string, error) {
+	trustAddress common.Address,
+	ownerKey *ecdsa.PrivateKey,
+	w *Withdrawal) (string, error) {
 
 	auth := bind.NewKeyedTransactor(ownerKey)
-	auth.GasLimit = 500000
+	auth.GasLimit = 900000
 	contract, err := contracts.NewTrustContract(trustAddress, conn)
 
 	if err != nil {
@@ -352,6 +350,7 @@ func (l *Listener) SendWithdrawal(conn bind.ContractBackend,
 
 	toAddr := common.HexToAddress(w.DestinationAddress)
 	amount := big.NewInt(int64(w.Amount))
+	fmt.Printf("Sending from %s\n", auth.From.Hex())
 	fmt.Printf("Submit to contract=%s erc20=%s to=%s amount=%d\n", trustAddress.Hex(), smartAddress.Hex(), toAddr.Hex(), amount.Uint64())
 
 	var r [][32]byte
@@ -369,12 +368,15 @@ func (l *Listener) SendWithdrawal(conn bind.ContractBackend,
 		var r1 [32]byte
 		copy(r1[0:32], data[0:32])
 		r = append(r, r1)
+		println(common.Bytes2Hex(data[0:32]))
 
 		var s1 [32]byte
 		copy(s1[0:32], data[32:64])
 		s = append(s, s1)
+		println(common.Bytes2Hex(data[32:64]))
 
-		v = append(v, data[64])
+		v = append(v, data[64]+27)
+		println(data[64] + 27)
 	}
 
 	fmt.Println("prepare to send to contract")
@@ -399,7 +401,7 @@ func (l *Listener) GetTxID(conn bind.ContractBackend, trustAddress common.Addres
 		return 0, err
 	}
 
-	addr , _ := contract.TxIdLast(nil)
-	println("# of signers ", addr)
-	return 0, nil
+	txId, _ := contract.TxIdLast(nil)
+	println("Last TX ID= ", txId)
+	return txId, nil
 }

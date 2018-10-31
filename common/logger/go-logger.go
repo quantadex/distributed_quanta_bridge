@@ -27,6 +27,11 @@ func (l *GoLogger) Infof(format string, args ...interface{}) {
 	l.log.Infof(format, args...)
 }
 
+func (l *GoLogger) Errorf(format string, args ...interface{}) {
+	l.log.Errorf(format, args...)
+}
+
+
 func (l *GoLogger) Debug(msg string) {
 	l.log.Debug(msg)
 }

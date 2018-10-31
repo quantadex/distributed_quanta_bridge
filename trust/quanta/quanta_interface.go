@@ -1,10 +1,10 @@
 package quanta
 
 import (
-    "github.com/quantadex/distributed_quanta_bridge/trust/peer_contact"
-    "github.com/quantadex/distributed_quanta_bridge/trust/coin"
-    "github.com/quantadex/distributed_quanta_bridge/common/queue"
-    "github.com/quantadex/distributed_quanta_bridge/common/logger"
+	"github.com/quantadex/distributed_quanta_bridge/common/kv_store"
+	"github.com/quantadex/distributed_quanta_bridge/common/logger"
+	"github.com/quantadex/distributed_quanta_bridge/trust/coin"
+	"github.com/quantadex/distributed_quanta_bridge/trust/peer_contact"
 )
 
 const QUANTA_PRECISION = 10000000
@@ -15,14 +15,14 @@ const QUANTA_PRECISION = 10000000
  * User's quanta return to trust in order to get a refund
  */
 type Refund struct {
-    TransactionId string
-    LedgerID int32
-    OperationID int64
-    PageTokenID int64  // use this as your blockID
-    CoinName string
-    SourceAddress string
-    DestinationAddress string // extract from memo
-    Amount uint64
+	TransactionId      string
+	LedgerID           int32
+	OperationID        int64
+	PageTokenID        int64 // use this as your blockID
+	CoinName           string
+	SourceAddress      string
+	DestinationAddress string // extract from memo
+	Amount             uint64
 }
 
 /**
@@ -33,49 +33,51 @@ type Refund struct {
  * quanta trust.
  */
 type Quanta interface {
-    /**
-     * Attach
-     *
-     * Connects to the quanta-core node. Returns error if this fails.
-     */
-    Attach() error
+	/**
+	 * Attach
+	 *
+	 * Connects to the quanta-core node. Returns error if this fails.
+	 */
+	Attach() error
 
-    /**
-     * AttachQueue
-     *
-     * Connects to the quanta-core node. Returns error if this fails.
-     */
-    AttachQueue(queue queue.Queue) error
+	/**
+	 * AttachQueue
+	 *
+	 * Connects to the quanta-core node. Returns error if this fails.
+	 */
+	AttachQueue(kv kv_store.KVStore) error
 
-    /**
-     * GetTopBlockID
-     *
-     * Returns the id of the latest quanta block.
-     */
-    GetTopBlockID(accountId string) (int64, error)
+	/**
+	 * GetTopBlockID
+	 *
+	 * Returns the id of the latest quanta block.
+	 */
+	GetTopBlockID(accountId string) (int64, error)
 
-    /**
-     * GetRefundsInBlock
-     *
-     * Returns a list of refunds that were made to the specified address in the given block.
-     * Return nil if no matching deposits.
-     */
-    GetRefundsInBlock(blockID int64, trustAddress string) ([]Refund, int64, error)
+	/**
+	 * GetRefundsInBlock
+	 *
+	 * Returns a list of refunds that were made to the specified address in the given block.
+	 * Return nil if no matching deposits.
+	 */
+	GetRefundsInBlock(blockID int64, trustAddress string) ([]Refund, int64, error)
 
-    /**
-     * ProcessDeposit
-     *
-     * Once enough nodes have signed the deposit the last node sends it to quanta to
-     * transfer the funds into the user's quanta account
-     */
-    ProcessDeposit(deposit peer_contact.PeerMessage) error
+	/**
+	 * ProcessDeposit
+	 *
+	 * Once enough nodes have signed the deposit the last node sends it to quanta to
+	 * transfer the funds into the user's quanta account
+	 */
+	ProcessDeposit(deposit peer_contact.PeerMessage) error
 
-    CreateProposeTransaction(*coin.Deposit) (string, error) // base64 tx envelope
-    DecodeTransaction(base64 string) (*coin.Deposit, error)
+	GetBalance(assetName string, quantaAddress string) (float64, error)
+	GetAllBalances(quantaAddress string) (map[string]float64, error)
+	CreateProposeTransaction(*coin.Deposit) (string, error) // base64 tx envelope
+	DecodeTransaction(base64 string) (*coin.Deposit, error)
 }
 
 func NewQuanta(options QuantaClientOptions) (Quanta, error) {
-    return &QuantaClient{QuantaClientOptions: options}, nil
+	return &QuantaClient{QuantaClientOptions: options}, nil
 }
 
 /**
@@ -84,10 +86,11 @@ func NewQuanta(options QuantaClientOptions) (Quanta, error) {
  * Decouples whether horizon is online or not
  */
 type SubmitWorker interface {
-    Dispatch()
-    AttachQueue(queue queue.Queue) error
+	Dispatch()
+	//AttachQueue(kv queue.Queue) error
+	AttachQueue(kv kv_store.KVStore) error
 }
 
-func NewSubmitWorker(horizonUrl string, logger logger.Logger) (SubmitWorker) {
-    return &SubmitWorkerImpl{logger: logger, horizonUrl: horizonUrl}
+func NewSubmitWorker(horizonUrl string, logger logger.Logger) SubmitWorker {
+	return &SubmitWorkerImpl{logger: logger, horizonUrl: horizonUrl}
 }
