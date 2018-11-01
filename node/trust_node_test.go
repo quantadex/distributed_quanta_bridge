@@ -170,7 +170,8 @@ func TestRopstenNativeETH(t *testing.T) {
 	DoLoopDeposit(nodes, []int64{4248970})
 	DoLoopDeposit(nodes, []int64{4249018}) // we make deposit
 	DoLoopDeposit(nodes, []int64{4249019})
-	time.Sleep(time.Second * 4)
+	DoLoopDeposit(nodes, []int64{4249020})
+	time.Sleep(time.Second * 6)
 	StopNodes(nodes)
 	StopRegistry(r)
 }
