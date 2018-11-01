@@ -1,16 +1,19 @@
 package service
 
+// https://medium.com/coinmonks/unit-testing-solidity-contracts-on-ethereum-with-go-3cc924091281
+
 import (
-	"testing"
 	"math/big"
+	"testing"
+
+	"io/ioutil"
 
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/ethereum/go-ethereum/accounts/abi/bind/backends"
+	"github.com/ethereum/go-ethereum/accounts/keystore"
 	"github.com/ethereum/go-ethereum/core"
 	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/quantadex/distributed_quanta_bridge/registrar/Forwarder"
-	"io/ioutil"
-	"github.com/ethereum/go-ethereum/accounts/keystore"
 )
 
 func TestNode(t *testing.T) {
@@ -22,8 +25,7 @@ func TestNode(t *testing.T) {
 	userAuth := bind.NewKeyedTransactor(userKey)
 
 	sim := backends.NewSimulatedBackend(core.GenesisAlloc{
-		userAuth.From : { Balance: big.NewInt(10000000000)} }, 500000)
-
+		userAuth.From: {Balance: big.NewInt(10000000000)}}, 500000)
 
 	address, err := Forwarder.SubmitContract(sim, userKey, auth.From, "QDDD")
 	if err != nil {
@@ -34,7 +36,7 @@ func TestNode(t *testing.T) {
 }
 
 func TestKeystore(t *testing.T) {
-	keyjson, err := ioutil.ReadFile("keystore/key--7cd737655dff6f95d55b711975d2a4ace32d256e")
+	keyjson, err := ioutil.ReadFile("../../keystore/key--7cd737655dff6f95d55b711975d2a4ace32d256e")
 	if err != nil {
 		t.Fatal(err)
 	}
