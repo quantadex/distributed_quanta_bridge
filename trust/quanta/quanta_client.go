@@ -18,6 +18,7 @@ import (
 	"net/http"
 	"strconv"
 	"time"
+	"github.com/ethereum/go-ethereum/common"
 )
 
 type QuantaClientOptions struct {
@@ -258,7 +259,7 @@ func (q *QuantaClient) GetRefundsInBlock(cursor int64, trustAddress string) ([]R
 					// it's a refund
 					newRefund := Refund{
 						CoinName:           op.AssetCode,
-						DestinationAddress: op.To,
+						DestinationAddress: op.To, // TODO: handle bad address properly
 						OperationID:        num,
 						Amount:             uint64(am),
 						PageTokenID:        pt,
@@ -271,7 +272,7 @@ func (q *QuantaClient) GetRefundsInBlock(cursor int64, trustAddress string) ([]R
 					}
 					newRefund.TransactionId = tx.ID
 					memo, _ := base64.StdEncoding.DecodeString(tx.Memo)
-					newRefund.DestinationAddress = string(memo)
+					newRefund.DestinationAddress = common.BytesToAddress(memo).Hex()
 					newRefund.LedgerID = tx.Ledger
 					refunds = append(refunds, newRefund)
 				}

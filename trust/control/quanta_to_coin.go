@@ -14,6 +14,7 @@ import (
 	"github.com/quantadex/quanta_book/consensus/cosi"
 	"strings"
 	"time"
+	"encoding/json"
 )
 
 const QUANTA = "QUANTA"
@@ -82,7 +83,7 @@ func NewQuantaToCoin(log logger.Logger,
 			return err
 		}
 
-		refKey := getKeyName(withdrawal.CoinName, withdrawal.DestinationAddress, 0)
+		refKey := getKeyName(withdrawal.CoinName, withdrawal.DestinationAddress, withdrawal.QuantaBlockID)
 		state := getState(db, QUANTA_CONFIRMED, refKey)
 		if state == CONFIRMED {
 			return nil
@@ -108,8 +109,15 @@ func NewQuantaToCoin(log logger.Logger,
 		return nil
 	}
 
-	res.cosi.SignMsg = func(msg string) (string, error) {
-		encodedSig, err := res.coinkM.SignTransaction(msg)
+	res.cosi.SignMsg = func(encoded string) (string, error) {
+		decoded := common.Hex2Bytes(encoded)
+		msg := &coin.EncodedMsg{}
+		err := json.Unmarshal(decoded, msg)
+		if err != nil {
+			return "", err
+		}
+
+		encodedSig, err := res.coinkM.SignTransaction(msg.Message)
 		log.Infof("Sign msg %s", encodedSig)
 
 		if err != nil {
@@ -157,7 +165,7 @@ func (c *QuantaToCoin) DoLoop(cursor int64) {
 
 	// separate confirm, and sign as two different stages
 	for _, refund := range refunds {
-		refKey := getKeyName(refund.CoinName, strings.ToLower(common.HexToAddress(refund.DestinationAddress).Hex()), 0)
+		refKey := getKeyName(refund.CoinName, strings.ToLower(common.HexToAddress(refund.DestinationAddress).Hex()), int64(refund.OperationID))
 		c.logger.Infof("Confirm Refund = %s tx=%s pt=%d", refKey, refund.TransactionId, refund.PageTokenID)
 		confirmTx(c.db, QUANTA_CONFIRMED, refKey)
 

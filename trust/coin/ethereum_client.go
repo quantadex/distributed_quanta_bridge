@@ -194,6 +194,7 @@ func (l *Listener) GetNativeDeposits(blockNumber int64, toAddress map[string]str
 					CoinName:   "ETH",
 					SenderAddr: tx.To().Hex(),
 					Amount:     WeiToStellar(tx.Value().Int64()),
+					BlockID: blockNumber,
 				})
 			}
 		}

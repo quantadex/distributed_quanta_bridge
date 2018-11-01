@@ -5,6 +5,10 @@ import (
 	"fmt"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/ethclient"
+<<<<<<< HEAD
+=======
+	"github.com/stretchr/testify/assert"
+>>>>>>> master
 	"github.com/quantadex/distributed_quanta_bridge/common/logger"
 	"github.com/quantadex/distributed_quanta_bridge/registrar/service"
 	"github.com/quantadex/distributed_quanta_bridge/trust/coin"
@@ -14,6 +18,7 @@ import (
 	"sync"
 	"testing"
 	"time"
+	"encoding/base64"
 )
 
 const ropsten_infura = "https://ropsten.infura.io/v3/7b880b2fb55c454985d1c1540f47cbf6"
@@ -21,7 +26,7 @@ const ropsten_infura = "https://ropsten.infura.io/v3/7b880b2fb55c454985d1c1540f4
 var NODE_KEYS = []string{
 	"ZBHK5VE5ZM5MJI3FM7JOW7MMUF3FIRUMV3BTLUTJWQHDFEN7MG3J4VAV",
 	"ZDX6DGXBYAR3Z2BS4T4ITRTWPNJOSR5TPTVYN65UKEGP4ILOZ5GXU2KE",
-	"ZCKSY3ZJ4KW4M5QZ4B5BUG2JCCA7JUUBCCFOIODEOYVPDHRPMP6AQ73V",
+	"ZC4U5P5DWNXGRUENOCOKZFHAWFKBE7JFOB2BCEKCM7BKXXKQE3DARXIJ",
 }
 
 var ETHKEYS = []string{
@@ -30,20 +35,24 @@ var ETHKEYS = []string{
 	"0dbbe8e4ae425a6d2687f1a7e3ba17bc98c673636790f1b8ad91193c05875ef1",
 }
 
+// ROPSTEN
+// var ETH_TRUST_ADDRESS = "0xbd770336ff47a3b61d4f54cc0fb541ea7baae92d"
+
 var ETH_TRUST_ADDRESS = "0xe0006458963c3773B051E767C5C63FEe24Cd7Ff9"
 
 // var ETH_TRUST_ADDRESS = "0xBD770336fF47A3B61D4f54cc0Fb541Ea7baAE92d"
 
 // var ETHKEYS = []string {
-// 	"A7D7C6A92361590650AD0965970E186179F24F36B2B51CFE83F3AE8886BB6773",
-// 	"4C7F96D0CB8F2C48FD22CCB974513E6E9B0DC89475286BB24D2010E8D82AA461",
-// 	"2E563A40747FA56419FB168ADF507C596E1A604D073D0F9E646B803DFA5BE94C",
+//     "A7D7C6A92361590650AD0965970E186179F24F36B2B51CFE83F3AE8886BB6773",
+//     "4C7F96D0CB8F2C48FD22CCB974513E6E9B0DC89475286BB24D2010E8D82AA461",
+//     "2E563A40747FA56419FB168ADF507C596E1A604D073D0F9E646B803DFA5BE94C",
 // }
 
 //address:QCAO4HRMJDGFPUHRCLCSWARQTJXY2XTAFQUIRG2FAR3SCF26KQLAWZRN weight:1
 //address:QCNKL7QKKQZD63UW27JLY7LDLR6MME3WNLUJ47VP25EZH5THRPEZRSAK weight:1
 //address:QCN2DWLVXNAZW6ALR6KXJWGQB4J2J5TBJVPYLQMIU2TDCXIOBID5WRU5 weight:1
 //address:QAHXFPFJ33VV4C4BTXECIQCNI7CXRKA6KKG5FP3TJFNWGE7YUC4MBNFB weight:1 *** Issuer
+
 
 func SetConfig(key string, port int, ethPrivKey string) {
 	viper.SetConfigType("yaml") // or viper.SetConfigType("YAML")
@@ -55,7 +64,7 @@ ListenPort: %d
 UsePrevKeys: true
 KvDbName: kv_db_%d
 CoinName: ETH
-IssuerAddress: QAHXFPFJ33VV4C4BTXECIQCNI7CXRKA6KKG5FP3TJFNWGE7YUC4MBNFB
+IssuerAddress: QCISRUJ73RQBHB3C4LA6X537LPGSFZF3YUZ6MOPUOUJR5A63I5TLJML4
 NodeKey: %s
 HorizonUrl: http://testnet-02.quantachain.io:8000/
 NetworkPassphrase: QUANTA Test Network ; September 2018
@@ -70,6 +79,11 @@ HEALTH_INTERVAL: 5
 
 	viper.ReadConfig(bytes.NewBuffer(config))
 }
+
+// must match up with the HorizonUrl
+var QUANTA_ASSET = "0xAc2AFb5463F5Ba00a1161025C2ca0311748BfD2c"
+var QUANTA_ACCOUNT = "QCAO4HRMJDGFPUHRCLCSWARQTJXY2XTAFQUIRG2FAR3SCF26KQLAWZRN"
+
 
 func StartNodes(n int, trustAddress common.Address) []*TrustNode {
 	println("Starting nodes with trust ", trustAddress.Hex())
@@ -167,25 +181,36 @@ func TestRopstenERC20Token(t *testing.T) {
 	//StartRegistry()
 	//nodes := StartNodes(3)
 	//time.Sleep(time.Millisecond*250)
-	//DoLoopDeposit(nodes, []int64{4186072, 4186072, 4186074}) // we create the original smart contract on 74
 	//DoLoopDeposit(nodes, []int64{4196673})  // we make deposit
+	//DoLoopDeposit(nodes, []int64{4186072, 4186072, 4186074}) // we create the original smart contract on 74
 	//DoLoopDeposit(nodes, []int64{4196674})
-	StartRegistry()
+	r := StartRegistry()
 	nodes := StartNodes(3, common.HexToAddress("0xb1E02e31c9A2403FeAFA7E483Ebb3e1b5ffa3164"))
-	initialBalance, _ := nodes[0].q.GetBalance("0xAc2AFb5463F5Ba00a1161025C2ca0311748BfD2c", "QCAO4HRMJDGFPUHRCLCSWARQTJXY2XTAFQUIRG2FAR3SCF26KQLAWZRN")
-	fmt.Println("initial balance is: ", initialBalance)
+	initialBalance, err := nodes[0].q.GetBalance(QUANTA_ASSET, QUANTA_ACCOUNT)
+	assert.Nil(t, err)
+
+	fmt.Printf("[ASSET %s] [ACCOUNT %s] initial_balance = %.9f\n", QUANTA_ASSET, QUANTA_ACCOUNT, initialBalance)
+
 	time.Sleep(time.Millisecond * 250)
 	//DoLoopDeposit(nodes, []int64{4186072, 4186072, 4186074}) // we create the original smart contract on 74
 	DoLoopDeposit(nodes, []int64{4250980}) // we make deposit
 	DoLoopDeposit(nodes, []int64{4250981}) // we make deposit
 
 	time.Sleep(time.Second * 6)
+<<<<<<< HEAD
 	newBalance, _ := nodes[0].q.GetBalance("0xAc2AFb5463F5Ba00a1161025C2ca0311748BfD2c", "QCAO4HRMJDGFPUHRCLCSWARQTJXY2XTAFQUIRG2FAR3SCF26KQLAWZRN")
 	nowBalance := initialBalance + 0.0000001
 	//assert.Equal(t, newBalance, nowBalance)
 	fmt.Println(newBalance, nowBalance, initialBalance)
+=======
+	newBalance, err := nodes[0].q.GetBalance(QUANTA_ASSET, QUANTA_ACCOUNT)
+	assert.Nil(t, err)
+	assert.Equal(t, newBalance, initialBalance+0.0000001)
+>>>>>>> master
 	//DoLoopDeposit(nodes, []int64{4196674})
 	time.Sleep(time.Second * 15)
+	StopNodes(nodes)
+	StopRegistry(r)
 }
 
 func TestDummyCoin(t *testing.T) {
@@ -203,20 +228,19 @@ func TestDummyCoin(t *testing.T) {
 }
 
 func TestWithdrawal(t *testing.T) {
-	r := StartRegistry()
+
+	memo, _ := base64.StdEncoding.DecodeString("unVzwOgF73Gst/HEpV57CvQW6WoAAAAAAAAAAAAAAAA=")
+	destinationAddress := common.BytesToAddress(memo).Hex()
+	println(destinationAddress)
 
 	ethereumClient, err := ethclient.Dial(ropsten_infura)
-	if err != nil {
-		t.Error(err)
-		return
-	}
+	assert.Nil(t, err)
 
 	trustAddress := common.HexToAddress(ETH_TRUST_ADDRESS)
 	contract, err := contracts.NewTrustContract(trustAddress, ethereumClient)
-	if err != nil {
-		t.Error(err)
-		return
-	}
+	assert.Nil(t, err)
+
+	r := StartRegistry()
 
 	//num, err := contract.TotalSigners(nil)
 	//if err != nil {
@@ -226,9 +250,7 @@ func TestWithdrawal(t *testing.T) {
 	//println("Num of signers=", num.Uint64())
 
 	txId, err := contract.TxIdLast(nil)
-	if err != nil {
-		println(err.Error())
-	}
+	assert.Nil(t, err)
 
 	println("txID of signers=", txId)
 
