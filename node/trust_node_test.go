@@ -2,23 +2,20 @@ package main
 
 import (
 	"bytes"
+	"encoding/base64"
 	"fmt"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/ethclient"
-<<<<<<< HEAD
-=======
-	"github.com/stretchr/testify/assert"
->>>>>>> master
 	"github.com/quantadex/distributed_quanta_bridge/common/logger"
 	"github.com/quantadex/distributed_quanta_bridge/registrar/service"
 	"github.com/quantadex/distributed_quanta_bridge/trust/coin"
 	"github.com/quantadex/distributed_quanta_bridge/trust/coin/contracts"
 	"github.com/spf13/viper"
+	"github.com/stretchr/testify/assert"
 	"os"
 	"sync"
 	"testing"
 	"time"
-	"encoding/base64"
 )
 
 const ropsten_infura = "https://ropsten.infura.io/v3/7b880b2fb55c454985d1c1540f47cbf6"
@@ -53,7 +50,6 @@ var ETH_TRUST_ADDRESS = "0xe0006458963c3773B051E767C5C63FEe24Cd7Ff9"
 //address:QCN2DWLVXNAZW6ALR6KXJWGQB4J2J5TBJVPYLQMIU2TDCXIOBID5WRU5 weight:1
 //address:QAHXFPFJ33VV4C4BTXECIQCNI7CXRKA6KKG5FP3TJFNWGE7YUC4MBNFB weight:1 *** Issuer
 
-
 func SetConfig(key string, port int, ethPrivKey string) {
 	viper.SetConfigType("yaml") // or viper.SetConfigType("YAML")
 
@@ -83,7 +79,6 @@ HEALTH_INTERVAL: 5
 // must match up with the HorizonUrl
 var QUANTA_ASSET = "0xAc2AFb5463F5Ba00a1161025C2ca0311748BfD2c"
 var QUANTA_ACCOUNT = "QCAO4HRMJDGFPUHRCLCSWARQTJXY2XTAFQUIRG2FAR3SCF26KQLAWZRN"
-
 
 func StartNodes(n int, trustAddress common.Address) []*TrustNode {
 	println("Starting nodes with trust ", trustAddress.Hex())
@@ -185,7 +180,7 @@ func TestRopstenERC20Token(t *testing.T) {
 	//DoLoopDeposit(nodes, []int64{4186072, 4186072, 4186074}) // we create the original smart contract on 74
 	//DoLoopDeposit(nodes, []int64{4196674})
 	r := StartRegistry()
-	nodes := StartNodes(3, common.HexToAddress("0xb1E02e31c9A2403FeAFA7E483Ebb3e1b5ffa3164"))
+	nodes := StartNodes(3, common.HexToAddress("0x8f0483125fcb9aaaefa9209d8e9d7b9c8b9fb90f"))
 	initialBalance, err := nodes[0].q.GetBalance(QUANTA_ASSET, QUANTA_ACCOUNT)
 	assert.Nil(t, err)
 
@@ -193,20 +188,18 @@ func TestRopstenERC20Token(t *testing.T) {
 
 	time.Sleep(time.Millisecond * 250)
 	//DoLoopDeposit(nodes, []int64{4186072, 4186072, 4186074}) // we create the original smart contract on 74
-	DoLoopDeposit(nodes, []int64{4250980}) // we make deposit
-	DoLoopDeposit(nodes, []int64{4250981}) // we make deposit
+	DoLoopDeposit(nodes, []int64{2}) // we make deposit
 
 	time.Sleep(time.Second * 6)
-<<<<<<< HEAD
-	newBalance, _ := nodes[0].q.GetBalance("0xAc2AFb5463F5Ba00a1161025C2ca0311748BfD2c", "QCAO4HRMJDGFPUHRCLCSWARQTJXY2XTAFQUIRG2FAR3SCF26KQLAWZRN")
+
+	newBalance, err := nodes[0].q.GetBalance(QUANTA_ASSET, QUANTA_ACCOUNT)
 	nowBalance := initialBalance + 0.0000001
 	//assert.Equal(t, newBalance, nowBalance)
 	fmt.Println(newBalance, nowBalance, initialBalance)
-=======
-	newBalance, err := nodes[0].q.GetBalance(QUANTA_ASSET, QUANTA_ACCOUNT)
+
 	assert.Nil(t, err)
 	assert.Equal(t, newBalance, initialBalance+0.0000001)
->>>>>>> master
+
 	//DoLoopDeposit(nodes, []int64{4196674})
 	time.Sleep(time.Second * 15)
 	StopNodes(nodes)
