@@ -148,6 +148,18 @@ func NewQuantaToCoin(log logger.Logger,
 	return res
 }
 
+func (c *QuantaToCoin) WithdrawalSubmitter() {
+	for {
+		time.Sleep(time.Second)
+	}
+}
+
+// Receives withdrawal with all of the signatures - queue it properly
+// for submission, and retry as neccessary
+func (c *QuantaToCoin) SubmitWithdrawal(w *coin.Withdrawal) {
+
+}
+
 /**
  * DoLoop
  *
@@ -222,6 +234,7 @@ func (c *QuantaToCoin) DoLoop(cursor int64) {
 			} else {
 				// save this to queue for later in case ETH RPC is down.
 				w.Signatures = result.Msg
+				// save in eth_tx_log_signed (kvstore) [S=signed,X=submitted,F=failed(uncoverable), R=retry(connection failed)] ; recoverable=RPC not available
 				c.logger.Infof("Great! Cosi successfully signed refund")
 				tx, err := c.coinChannel.SendWithdrawal(common.HexToAddress(c.coinContractAddress), c.coinkM.GetPrivateKey(), &w)
 				if err != nil {
