@@ -276,7 +276,7 @@ func (r *RoundRobinSigner) processNewPeerMsgs(msgs []*peer_contact.PeerMessage) 
             continue
         }
 
-        r.log.Infof("processNewPeerMsgs, so far signed by n=%d q=%d", len(msg.SignedBy), r.man.Q)
+        r.log.Infof("processNewPeerMsgs, so far signed by n=%d, need at least q=%d", len(msg.SignedBy), r.man.Q)
         if len(msg.SignedBy) == r.man.Q {
             toSend = append(toSend, msg)
             continue // no need to send2peer, we process it.

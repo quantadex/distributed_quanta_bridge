@@ -40,4 +40,35 @@ Sends back to : 0xba7573C0e805ef71ACB7f1c4a55E7b0af416E96A
 
 It's possible that eth timestamp is a head of QUANTA timestamp, vice versa. So we should throttle based on universal time.
 
+# Truffle Contract Interaction Tips
+
+* Start the truffle console
+
+    $ cd blockchain/ethereum
+    $ npm install truffle-hdwallet-provider
+    $ npm install dotenv
+    $ export MNENOMIC='empower furnace...'
+    $ export INFURA_API_KEY='0e17d......'
+    $ truffle console --network ropsten
+
+* get the contract by address  
+
+    truffle(ropsten)> const contract = QuantaCrossChain.at("0xbd770336ff47a3b61d4f54cc0fb541ea7baae92d")
+    truffle(ropsten)> const util = require('ethereumjs-util')
+
+* convert a private ethereum key to the public ethereum address    
+
+    truffle(ropsten)> util.bufferToHex(util.publicToAddress(util.privateToPublic("0xc87509a1c067bbde78beb793e6fa76530b6382a4c0241e5e4a9ec0a0f44dc0d3")))
+    '0x627306090abab3a6e1400e9345bc60c78a8bef57'
+
+* check to see if the public ethereum address is a signer for the contract
+
+    truffle(ropsten)> contract.isSigner("0x0xba7573c0e805ef71acb7f1c4a55e7b0af416e96a")
+    true
+
+* get the current ethereum block number    
+
+    web3.eth.getBlockNumber((err, res) => {console.log(res)})
+    4345932
+
 ## Links
