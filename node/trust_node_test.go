@@ -1,7 +1,6 @@
 package main
 
 import (
-	"bytes"
 	"fmt"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/ethclient"
@@ -10,99 +9,93 @@ import (
 	"github.com/quantadex/distributed_quanta_bridge/registrar/service"
 	"github.com/quantadex/distributed_quanta_bridge/trust/coin"
 	"github.com/quantadex/distributed_quanta_bridge/trust/coin/contracts"
-	"github.com/spf13/viper"
 	"os"
 	"sync"
 	"testing"
 	"time"
-	"encoding/base64"
 )
 
-const ropsten_infura = "https://ropsten.infura.io/v3/7b880b2fb55c454985d1c1540f47cbf6"
-
-var NODE_KEYS = []string {
-	"ZBHK5VE5ZM5MJI3FM7JOW7MMUF3FIRUMV3BTLUTJWQHDFEN7MG3J4VAV",
-	"ZDX6DGXBYAR3Z2BS4T4ITRTWPNJOSR5TPTVYN65UKEGP4ILOZ5GXU2KE",
-	"ZC4U5P5DWNXGRUENOCOKZFHAWFKBE7JFOB2BCEKCM7BKXXKQE3DARXIJ",
+type QuantaNodeSecrets struct {
+	NodeSecrets []string
+	SourceAccount string
 }
 
-var ETHKEYS = []string {
-	"c87509a1c067bbde78beb793e6fa76530b6382a4c0241e5e4a9ec0a0f44dc0d3",
-	"ae6ae8e5ccbfb04590405997ee2d52d2b330726137b875053c36d94e974d162f",
-	"0dbbe8e4ae425a6d2687f1a7e3ba17bc98c673636790f1b8ad91193c05875ef1",
+type EthereumTrustSecrets struct {
+	NodeSecrets []string
+	TrustContract string
 }
 
-// ROPSTEN
-// var ETH_TRUST_ADDRESS = "0xbd770336ff47a3b61d4f54cc0fb541ea7baae92d"
+type EthereumEnv struct {
+	rpc string
+	networkId string
+}
 
-var ETH_TRUST_ADDRESS = "0xe0006458963c3773B051E767C5C63FEe24Cd7Ff9"
+var QUANTA_ISSUER = &QuantaNodeSecrets{
+	NodeSecrets:[]string{
+		"ZBHK5VE5ZM5MJI3FM7JOW7MMUF3FIRUMV3BTLUTJWQHDFEN7MG3J4VAV",
+		"ZDX6DGXBYAR3Z2BS4T4ITRTWPNJOSR5TPTVYN65UKEGP4ILOZ5GXU2KE",
+		"ZC4U5P5DWNXGRUENOCOKZFHAWFKBE7JFOB2BCEKCM7BKXXKQE3DARXIJ",
+	},
+	SourceAccount: "QCISRUJ73RQBHB3C4LA6X537LPGSFZF3YUZ6MOPUOUJR5A63I5TLJML4",
+}
 
-// var ETH_TRUST_ADDRESS = "0xBD770336fF47A3B61D4f54cc0Fb541Ea7baAE92d"
+var ROPSTEN_TRUST = &EthereumTrustSecrets {
+	NodeSecrets: []string {
+		"A7D7C6A92361590650AD0965970E186179F24F36B2B51CFE83F3AE8886BB6773",
+		"4C7F96D0CB8F2C48FD22CCB974513E6E9B0DC89475286BB24D2010E8D82AA461",
+		"2E563A40747FA56419FB168ADF507C596E1A604D073D0F9E646B803DFA5BE94C",
+	},
+	TrustContract: "0xBD770336fF47A3B61D4f54cc0Fb541Ea7baAE92d",
+}
 
-// var ETHKEYS = []string {
-//     "A7D7C6A92361590650AD0965970E186179F24F36B2B51CFE83F3AE8886BB6773",
-//     "4C7F96D0CB8F2C48FD22CCB974513E6E9B0DC89475286BB24D2010E8D82AA461",
-//     "2E563A40747FA56419FB168ADF507C596E1A604D073D0F9E646B803DFA5BE94C",
-// }
+const ROPSTEN = "ROPSTEN"
+const LOCAL = "LOCAL"
 
+var ETHER_NETWORKS = map[string]EthereumEnv {
+	ROPSTEN : EthereumEnv{ "https://ropsten.infura.io/v3/7b880b2fb55c454985d1c1540f47cbf6", "3" } ,
+	LOCAL: EthereumEnv{ "http://localhost:7545", "10" },
+}
 
-//address:QCAO4HRMJDGFPUHRCLCSWARQTJXY2XTAFQUIRG2FAR3SCF26KQLAWZRN weight:1
-//address:QCNKL7QKKQZD63UW27JLY7LDLR6MME3WNLUJ47VP25EZH5THRPEZRSAK weight:1
-//address:QCN2DWLVXNAZW6ALR6KXJWGQB4J2J5TBJVPYLQMIU2TDCXIOBID5WRU5 weight:1
-//address:QAHXFPFJ33VV4C4BTXECIQCNI7CXRKA6KKG5FP3TJFNWGE7YUC4MBNFB weight:1 *** Issuer
-
-
-func SetConfig(key string, port int, ethPrivKey string) {
-	viper.SetConfigType("yaml") // or viper.SetConfigType("YAML")
-
-	// any approach to require this configuration into your program.
-	var config = []byte(fmt.Sprintf(`
-ListenIp: 0.0.0.0
-ListenPort: %d
-UsePrevKeys: true
-KvDbName: kv_db_%d
-CoinName: ETH
-IssuerAddress: QCISRUJ73RQBHB3C4LA6X537LPGSFZF3YUZ6MOPUOUJR5A63I5TLJML4
-NodeKey: %s
-HorizonUrl: http://testnet-02.quantachain.io:8000/
-NetworkPassphrase: QUANTA Test Network ; September 2018
-RegistrarIp: localhost
-RegistrarPort: 5001
-EthereumNetworkId: 3
-EthereumBlockStart: 0
-EthereumRpc: %s
-EthereumKeyStore: %s
-HEALTH_INTERVAL: 5
-`, port, port, key, ropsten_infura, ethPrivKey))
-
-	viper.ReadConfig(bytes.NewBuffer(config))
+func generateConfig(quanta *QuantaNodeSecrets, ethereum *EthereumTrustSecrets,
+						etherNet EthereumEnv, index int) *Config {
+	return &Config {
+		ListenIp: "0.0.0.0",
+		ListenPort: 5100+index,
+		UsePrevKeys: true,
+		KvDbName: fmt.Sprintf("kv_db_%d", 5100+index),
+		CoinName: "ETH",
+		IssuerAddress: quanta.SourceAccount,
+		NodeKey: quanta.NodeSecrets[index],
+		HorizonUrl: "http://testnet-02.quantachain.io:8000/",
+		NetworkPassphrase: "QUANTA Test Network ; September 2018",
+		RegistrarIp: "localhost",
+		RegistrarPort: 5001,
+		EthereumNetworkId: etherNet.networkId,
+		EthereumBlockStart: 0,
+		EthereumRpc: etherNet.rpc,
+		EthereumKeyStore: ethereum.NodeSecrets[index],
+	}
 }
 
 // must match up with the HorizonUrl
 var QUANTA_ASSET = "0xAc2AFb5463F5Ba00a1161025C2ca0311748BfD2c"
 var QUANTA_ACCOUNT = "QCAO4HRMJDGFPUHRCLCSWARQTJXY2XTAFQUIRG2FAR3SCF26KQLAWZRN"
 
-
-func StartNodes(n int, trustAddress common.Address) []*TrustNode {
-	println("Starting nodes with trust ", trustAddress.Hex())
+func StartNodes(quanta *QuantaNodeSecrets, ethereum *EthereumTrustSecrets,
+	etherEnv EthereumEnv) []*TrustNode {
+	println("Starting nodes")
 
 	mutex := sync.Mutex{}
 
 	nodes := []*TrustNode{}
 	var wg sync.WaitGroup
 
-	for i := 0; i < n; i++ {
+	for i := 0; i < len(quanta.NodeSecrets); i++ {
 		wg.Add(1)
 
 		os.Remove(fmt.Sprintf("./kv_db_%d.db", 5100+i))
-		SetConfig(NODE_KEYS[i], 5100+i, ETHKEYS[i])
-		config := Config{}
-		err := viper.Unmarshal(&config)
-		config.EthereumTrustAddr = trustAddress.Hex()
 
-		if err != nil {
-			panic(fmt.Errorf("Fatal error config file: %s \n", err))
-		}
+		config := generateConfig(quanta, ethereum, etherEnv, i)
 
 		go func(config Config) {
 			defer wg.Done()
@@ -118,7 +111,7 @@ func StartNodes(n int, trustAddress common.Address) []*TrustNode {
 			mutex.Unlock()
 
 			registerNode(config, node)
-		}(config)
+		}(*config)
 
 	}
 
@@ -163,7 +156,7 @@ func DoLoopWithdrawal(nodes []*TrustNode, cursor int64) {
  */
 func TestRopstenNativeETH(t *testing.T) {
 	r := StartRegistry()
-	nodes := StartNodes(3, common.HexToAddress(ETH_TRUST_ADDRESS))
+	nodes := StartNodes(QUANTA_ISSUER, ROPSTEN_TRUST, ETHER_NETWORKS[ROPSTEN])
 	time.Sleep(time.Millisecond*250)
 
 	// DEPOSIT to TEST2
@@ -184,7 +177,7 @@ func TestRopstenERC20Token(t *testing.T) {
 	//DoLoopDeposit(nodes, []int64{4186072, 4186072, 4186074}) // we create the original smart contract on 74
 	//DoLoopDeposit(nodes, []int64{4196674})
 	r := StartRegistry()
-	nodes := StartNodes(3, common.HexToAddress("0xb1E02e31c9A2403FeAFA7E483Ebb3e1b5ffa3164"))
+	nodes := StartNodes(QUANTA_ISSUER, ROPSTEN_TRUST, ETHER_NETWORKS[LOCAL])
 	initialBalance, err := nodes[0].q.GetBalance(QUANTA_ASSET, QUANTA_ACCOUNT)
 	assert.Nil(t, err)
 
@@ -192,7 +185,7 @@ func TestRopstenERC20Token(t *testing.T) {
 
 	time.Sleep(time.Millisecond * 250)
 	//DoLoopDeposit(nodes, []int64{4186072, 4186072, 4186074}) // we create the original smart contract on 74
-	DoLoopDeposit(nodes, []int64{4250980}) // we make deposit
+	DoLoopDeposit(nodes, []int64{6,7}) // we make deposit
 	time.Sleep(time.Second * 6)
 	newBalance, err := nodes[0].q.GetBalance(QUANTA_ASSET, QUANTA_ACCOUNT)
 	assert.Nil(t, err)
@@ -218,36 +211,26 @@ func TestDummyCoin(t *testing.T) {
 }
 
 func TestWithdrawal(t *testing.T) {
-
-	memo, _ := base64.StdEncoding.DecodeString("unVzwOgF73Gst/HEpV57CvQW6WoAAAAAAAAAAAAAAAA=")
-	destinationAddress := common.BytesToAddress(memo).Hex()
-	println(destinationAddress)
-
-	ethereumClient, err := ethclient.Dial(ropsten_infura)
+	ethereumClient, err := ethclient.Dial(ETHER_NETWORKS[ROPSTEN].rpc)
 	assert.Nil(t, err)
 
-	trustAddress := common.HexToAddress(ETH_TRUST_ADDRESS)
+	trustAddress := common.HexToAddress(ROPSTEN_TRUST.TrustContract)
 	contract, err := contracts.NewTrustContract(trustAddress, ethereumClient)
 	assert.Nil(t, err)
 
 	r := StartRegistry()
 
-	//num, err := contract.TotalSigners(nil)
-	//if err != nil {
-	//	println(err.Error())
-	//}
-	//
-	//println("Num of signers=", num.Uint64())
-
 	txId, err := contract.TxIdLast(nil)
 	assert.Nil(t, err)
 
-	println("txID of signers=", txId)
+	println("latest TXID=", txId)
 
-	nodes := StartNodes(3, trustAddress)
+	nodes := StartNodes(QUANTA_ISSUER, ROPSTEN_TRUST, ETHER_NETWORKS[ROPSTEN])
 	DoLoopWithdrawal(nodes, 0)
+	DoLoopWithdrawal(nodes, 1912892534296577)
+	DoLoopWithdrawal(nodes, 1912892534296100)
 
-	time.Sleep(8 * time.Second)
+	time.Sleep(15 * time.Second)
 	StopNodes(nodes)
 	StopRegistry(r)
 }
