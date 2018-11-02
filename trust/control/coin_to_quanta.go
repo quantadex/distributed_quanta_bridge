@@ -2,6 +2,8 @@ package control
 
 import (
 	"fmt"
+	"strings"
+
 	"github.com/ethereum/go-ethereum/common"
 	common2 "github.com/quantadex/distributed_quanta_bridge/common"
 	"github.com/quantadex/distributed_quanta_bridge/common/kv_store"
@@ -11,7 +13,6 @@ import (
 	"github.com/quantadex/distributed_quanta_bridge/trust/key_manager"
 	"github.com/quantadex/distributed_quanta_bridge/trust/peer_contact"
 	"github.com/quantadex/distributed_quanta_bridge/trust/quanta"
-	"strings"
 )
 
 /**
@@ -157,11 +158,17 @@ func (c *CoinToQuanta) submitMessages(msgs []*peer_contact.PeerMessage) {
  * Do one iteration of the loop. Get all new coin blocks and theie deposits.
  * Shoot those into round robin
  * Get all ready messages from RR and send these to quanta.
+ *
+ * returns allDeposits []*coin.Deposit,
+ *         allPeerMsgs []*peer_contact.PeerMessage,
+ *         allSentMsgs []*peer_contact.PeerMessage
  */
-func (c *CoinToQuanta) DoLoop(blockIDs []int64) {
+func (c *CoinToQuanta) DoLoop(blockIDs []int64) ([]*coin.Deposit, []*peer_contact.PeerMessage, []*peer_contact.PeerMessage) {
 	c.rr.deferQ.AddTick()
 	c.log.Info(fmt.Sprintf("***** Start of Epoch %d # of blocks=%d man.N=%d,man.Q=%d *** ",
 		c.rr.deferQ.Epoch(), len(blockIDs), c.man.N, c.man.Q))
+
+	allDeposits := make([]*coin.Deposit, 0)
 
 	if blockIDs != nil {
 		for _, blockID := range blockIDs {
@@ -169,6 +176,10 @@ func (c *CoinToQuanta) DoLoop(blockIDs []int64) {
 			if deposits != nil {
 				c.log.Info(fmt.Sprintf("Block %d Got deposits %d %v", blockID, len(deposits), deposits))
 				c.rr.processNewDeposits(deposits)
+
+				for i := 0; i < len(deposits); i++ {
+					allDeposits = append(allDeposits, deposits[i])
+				}
 			}
 
 			addresses, err := c.coinChannel.GetForwardersInBlock(blockID)
@@ -182,7 +193,8 @@ func (c *CoinToQuanta) DoLoop(blockIDs []int64) {
 					c.log.Infof("New Forwarder Address ETH->QUANTA address, %s -> %s", addr.ContractAddress.Hex(), addr.QuantaAddr)
 					c.db.SetValue(ETHADDR_QUANTAADDR, strings.ToLower(addr.ContractAddress.Hex()), "", addr.QuantaAddr)
 				} else {
-					c.log.Error("Forward does not point to our trust address " + addr.Trust.Hex())
+					c.log.Error(fmt.Sprintf("MISMATCH: Forwarder address[%s] in blockID=%d does not match our trustAddress[%s]",
+						addr.Trust.Hex(), blockID, c.trustAddress.Hex()))
 				}
 			}
 		}
@@ -203,8 +215,10 @@ func (c *CoinToQuanta) DoLoop(blockIDs []int64) {
 		c.log.Infof("Got peer message %v", msg)
 		allMsgs = append(allMsgs, msg)
 	}
+
 	toSend := c.rr.processNewPeerMsgs(allMsgs)
 	if len(toSend) > 0 {
+		c.log.Infof("Submitting %d messages", len(toSend))
 		c.submitMessages(toSend)
 	}
 
@@ -213,4 +227,6 @@ func (c *CoinToQuanta) DoLoop(blockIDs []int64) {
 		c.log.Infof("set last block coin=%s height=%d", c.coinName, lastBlockId)
 		setLastBlock(c.db, c.coinName, lastBlockId)
 	}
+
+	return allDeposits, allMsgs, toSend
 }
