@@ -204,10 +204,9 @@ func (c *QuantaToCoin) DoLoop(cursor int64) ([]quanta.Refund, string, error) {
 		//TODO: do checksum check, should bounce back the payment
 		if refund.DestinationAddress == "" {
 			c.logger.Error("Refund is missing destination address, skipping.")
-		}
-
-		// i'm the leader
-		if c.nodeID == 0 && refund.DestinationAddress != "" {
+		} else if refund.Amount == uint64(0) {
+			c.logger.Error("Amount is too small")
+		} else if c.nodeID == 0 {
 			txId, err := c.coinChannel.GetTxID(common.HexToAddress(c.coinContractAddress))
 			if err != nil {
 				c.logger.Error("Could not get txID: " + err.Error() + " " + c.coinContractAddress)

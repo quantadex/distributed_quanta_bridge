@@ -8,5 +8,6 @@ module.exports = function(callback) {
 
     return QuantaForwarder.new(dest, quanta).then((forwarder) => {
         console.log(forwarder.address)
+        callback()
     })
 }

@@ -16,7 +16,7 @@ import (
 )
 
 // TrustContractABI is the input ABI used to generate the binding from.
-const TrustContractABI = "[{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"name\":\"from\",\"type\":\"address\"},{\"indexed\":true,\"name\":\"to\",\"type\":\"address\"},{\"indexed\":false,\"name\":\"value\",\"type\":\"uint256\"}],\"name\":\"Transfer\",\"type\":\"event\"},{\"constant\":true,\"inputs\":[],\"name\":\"totalSupply\",\"outputs\":[{\"name\":\"\",\"type\":\"uint256\"}],\"payable\":false,\"stateMutability\":\"view\",\"type\":\"function\"},{\"constant\":false,\"inputs\":[{\"name\":\"_to\",\"type\":\"address\"},{\"name\":\"_value\",\"type\":\"uint256\"}],\"name\":\"transfer\",\"outputs\":[{\"name\":\"\",\"type\":\"bool\"}],\"payable\":false,\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"constant\":true,\"inputs\":[{\"name\":\"_owner\",\"type\":\"address\"}],\"name\":\"balanceOf\",\"outputs\":[{\"name\":\"\",\"type\":\"uint256\"}],\"payable\":false,\"stateMutability\":\"view\",\"type\":\"function\"},{\"constant\":true,\"inputs\":[{\"name\":\"_hashedMsg\",\"type\":\"bytes32\"},{\"name\":\"_sig\",\"type\":\"string\"}],\"name\":\"recoverSigner\",\"outputs\":[{\"name\":\"\",\"type\":\"address\"}],\"payable\":false,\"stateMutability\":\"pure\",\"type\":\"function\"},{\"constant\":true,\"inputs\":[{\"name\":\"_hashedMsg\",\"type\":\"bytes32\"},{\"name\":\"_sig\",\"type\":\"string\"},{\"name\":\"_addr\",\"type\":\"address\"}],\"name\":\"isSignedBy\",\"outputs\":[{\"name\":\"\",\"type\":\"bool\"}],\"payable\":false,\"stateMutability\":\"pure\",\"type\":\"function\"},{\"constant\":true,\"inputs\":[{\"name\":\"_hashedMsg\",\"type\":\"bytes32\"},{\"name\":\"_v\",\"type\":\"uint8\"},{\"name\":\"_r\",\"type\":\"bytes32\"},{\"name\":\"_s\",\"type\":\"bytes32\"}],\"name\":\"recoverSignerVRS\",\"outputs\":[{\"name\":\"\",\"type\":\"address\"}],\"payable\":false,\"stateMutability\":\"pure\",\"type\":\"function\"},{\"constant\":true,\"inputs\":[{\"name\":\"_hexstr\",\"type\":\"string\"}],\"name\":\"hexstrToBytes\",\"outputs\":[{\"name\":\"\",\"type\":\"bytes\"}],\"payable\":false,\"stateMutability\":\"pure\",\"type\":\"function\"},{\"constant\":true,\"inputs\":[{\"name\":\"_char\",\"type\":\"string\"}],\"name\":\"parseInt16Char\",\"outputs\":[{\"name\":\"\",\"type\":\"uint256\"}],\"payable\":false,\"stateMutability\":\"pure\",\"type\":\"function\"},{\"constant\":true,\"inputs\":[{\"name\":\"_uint\",\"type\":\"uint256\"}],\"name\":\"uintToBytes32\",\"outputs\":[{\"name\":\"b\",\"type\":\"bytes\"}],\"payable\":false,\"stateMutability\":\"pure\",\"type\":\"function\"},{\"constant\":true,\"inputs\":[{\"name\":\"_msg\",\"type\":\"string\"}],\"name\":\"toEthereumSignedMessage\",\"outputs\":[{\"name\":\"\",\"type\":\"bytes32\"}],\"payable\":false,\"stateMutability\":\"pure\",\"type\":\"function\"},{\"constant\":true,\"inputs\":[{\"name\":\"_uint\",\"type\":\"uint256\"}],\"name\":\"uintToString\",\"outputs\":[{\"name\":\"str\",\"type\":\"string\"}],\"payable\":false,\"stateMutability\":\"pure\",\"type\":\"function\"},{\"constant\":true,\"inputs\":[{\"name\":\"_str\",\"type\":\"string\"},{\"name\":\"_startIndex\",\"type\":\"uint256\"},{\"name\":\"_endIndex\",\"type\":\"uint256\"}],\"name\":\"substring\",\"outputs\":[{\"name\":\"\",\"type\":\"string\"}],\"payable\":false,\"stateMutability\":\"pure\",\"type\":\"function\"},{\"constant\":true,\"inputs\":[],\"name\":\"totalSupply\",\"outputs\":[{\"name\":\"\",\"type\":\"uint256\"}],\"payable\":false,\"stateMutability\":\"view\",\"type\":\"function\"},{\"constant\":true,\"inputs\":[{\"name\":\"_who\",\"type\":\"address\"}],\"name\":\"balanceOf\",\"outputs\":[{\"name\":\"\",\"type\":\"uint256\"}],\"payable\":false,\"stateMutability\":\"view\",\"type\":\"function\"},{\"constant\":false,\"inputs\":[{\"name\":\"_to\",\"type\":\"address\"},{\"name\":\"_value\",\"type\":\"uint256\"}],\"name\":\"transfer\",\"outputs\":[{\"name\":\"\",\"type\":\"bool\"}],\"payable\":false,\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"name\":\"owner\",\"type\":\"address\"},{\"indexed\":true,\"name\":\"spender\",\"type\":\"address\"},{\"indexed\":false,\"name\":\"value\",\"type\":\"uint256\"}],\"name\":\"Approval\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"name\":\"from\",\"type\":\"address\"},{\"indexed\":true,\"name\":\"to\",\"type\":\"address\"},{\"indexed\":false,\"name\":\"value\",\"type\":\"uint256\"}],\"name\":\"Transfer\",\"type\":\"event\"},{\"constant\":true,\"inputs\":[{\"name\":\"_owner\",\"type\":\"address\"},{\"name\":\"_spender\",\"type\":\"address\"}],\"name\":\"allowance\",\"outputs\":[{\"name\":\"\",\"type\":\"uint256\"}],\"payable\":false,\"stateMutability\":\"view\",\"type\":\"function\"},{\"constant\":false,\"inputs\":[{\"name\":\"_from\",\"type\":\"address\"},{\"name\":\"_to\",\"type\":\"address\"},{\"name\":\"_value\",\"type\":\"uint256\"}],\"name\":\"transferFrom\",\"outputs\":[{\"name\":\"\",\"type\":\"bool\"}],\"payable\":false,\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"constant\":false,\"inputs\":[{\"name\":\"_spender\",\"type\":\"address\"},{\"name\":\"_value\",\"type\":\"uint256\"}],\"name\":\"approve\",\"outputs\":[{\"name\":\"\",\"type\":\"bool\"}],\"payable\":false,\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"name\":\"from\",\"type\":\"address\"},{\"indexed\":true,\"name\":\"to\",\"type\":\"address\"},{\"indexed\":false,\"name\":\"value\",\"type\":\"uint256\"}],\"name\":\"Transfer\",\"type\":\"event\"},{\"constant\":true,\"inputs\":[],\"name\":\"totalSupply\",\"outputs\":[{\"name\":\"\",\"type\":\"uint256\"}],\"payable\":false,\"stateMutability\":\"view\",\"type\":\"function\"},{\"constant\":true,\"inputs\":[{\"name\":\"_who\",\"type\":\"address\"}],\"name\":\"balanceOf\",\"outputs\":[{\"name\":\"\",\"type\":\"uint256\"}],\"payable\":false,\"stateMutability\":\"view\",\"type\":\"function\"},{\"constant\":false,\"inputs\":[{\"name\":\"_to\",\"type\":\"address\"},{\"name\":\"_value\",\"type\":\"uint256\"}],\"name\":\"transfer\",\"outputs\":[{\"name\":\"\",\"type\":\"bool\"}],\"payable\":false,\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"constant\":true,\"inputs\":[],\"name\":\"last_completed_migration\",\"outputs\":[{\"name\":\"\",\"type\":\"uint256\"}],\"payable\":false,\"stateMutability\":\"view\",\"type\":\"function\"},{\"constant\":true,\"inputs\":[],\"name\":\"owner\",\"outputs\":[{\"name\":\"\",\"type\":\"address\"}],\"payable\":false,\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"payable\":false,\"stateMutability\":\"nonpayable\",\"type\":\"constructor\"},{\"constant\":false,\"inputs\":[{\"name\":\"completed\",\"type\":\"uint256\"}],\"name\":\"setCompleted\",\"outputs\":[],\"payable\":false,\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"constant\":false,\"inputs\":[{\"name\":\"new_address\",\"type\":\"address\"}],\"name\":\"upgrade\",\"outputs\":[],\"payable\":false,\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"constant\":true,\"inputs\":[],\"name\":\"owner\",\"outputs\":[{\"name\":\"\",\"type\":\"address\"}],\"payable\":false,\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"payable\":false,\"stateMutability\":\"nonpayable\",\"type\":\"constructor\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"name\":\"previousOwner\",\"type\":\"address\"}],\"name\":\"OwnershipRenounced\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"name\":\"previousOwner\",\"type\":\"address\"},{\"indexed\":true,\"name\":\"newOwner\",\"type\":\"address\"}],\"name\":\"OwnershipTransferred\",\"type\":\"event\"},{\"constant\":false,\"inputs\":[],\"name\":\"renounceOwnership\",\"outputs\":[],\"payable\":false,\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"constant\":false,\"inputs\":[{\"name\":\"_newOwner\",\"type\":\"address\"}],\"name\":\"transferOwnership\",\"outputs\":[],\"payable\":false,\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"constant\":false,\"inputs\":[],\"name\":\"renounceOwnership\",\"outputs\":[],\"payable\":false,\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"constant\":true,\"inputs\":[],\"name\":\"owner\",\"outputs\":[{\"name\":\"\",\"type\":\"address\"}],\"payable\":false,\"stateMutability\":\"view\",\"type\":\"function\"},{\"constant\":true,\"inputs\":[],\"name\":\"totalSigners\",\"outputs\":[{\"name\":\"\",\"type\":\"uint256\"}],\"payable\":false,\"stateMutability\":\"view\",\"type\":\"function\"},{\"constant\":true,\"inputs\":[],\"name\":\"txIdLast\",\"outputs\":[{\"name\":\"\",\"type\":\"uint64\"}],\"payable\":false,\"stateMutability\":\"view\",\"type\":\"function\"},{\"constant\":false,\"inputs\":[{\"name\":\"_newOwner\",\"type\":\"address\"}],\"name\":\"transferOwnership\",\"outputs\":[],\"payable\":false,\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"payable\":true,\"stateMutability\":\"payable\",\"type\":\"fallback\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":false,\"name\":\"success\",\"type\":\"bool\"},{\"indexed\":false,\"name\":\"txId\",\"type\":\"uint64\"},{\"indexed\":false,\"name\":\"erc20Addr\",\"type\":\"address\"},{\"indexed\":false,\"name\":\"toAddr\",\"type\":\"address\"},{\"indexed\":false,\"name\":\"amount\",\"type\":\"uint256\"},{\"indexed\":false,\"name\":\"verified\",\"type\":\"bool[]\"}],\"name\":\"TransactionResult\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"name\":\"_from\",\"type\":\"address\"},{\"indexed\":false,\"name\":\"_value\",\"type\":\"uint256\"}],\"name\":\"Fund\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"name\":\"previousOwner\",\"type\":\"address\"}],\"name\":\"OwnershipRenounced\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"name\":\"previousOwner\",\"type\":\"address\"},{\"indexed\":true,\"name\":\"newOwner\",\"type\":\"address\"}],\"name\":\"OwnershipTransferred\",\"type\":\"event\"},{\"constant\":false,\"inputs\":[{\"name\":\"initialSigners\",\"type\":\"address[]\"}],\"name\":\"assignInitialSigners\",\"outputs\":[],\"payable\":false,\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"constant\":false,\"inputs\":[{\"name\":\"txId\",\"type\":\"uint64\"},{\"name\":\"erc20Addr\",\"type\":\"address\"},{\"name\":\"toAddr\",\"type\":\"address\"},{\"name\":\"amount\",\"type\":\"uint256\"},{\"name\":\"v\",\"type\":\"uint8[]\"},{\"name\":\"r\",\"type\":\"bytes32[]\"},{\"name\":\"s\",\"type\":\"bytes32[]\"}],\"name\":\"paymentTx\",\"outputs\":[],\"payable\":false,\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"constant\":false,\"inputs\":[{\"name\":\"signer\",\"type\":\"address\"}],\"name\":\"voteAddSigner\",\"outputs\":[],\"payable\":false,\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"constant\":false,\"inputs\":[{\"name\":\"signer\",\"type\":\"address\"}],\"name\":\"voteRemoveSigner\",\"outputs\":[],\"payable\":false,\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"constant\":true,\"inputs\":[],\"name\":\"name\",\"outputs\":[{\"name\":\"\",\"type\":\"string\"}],\"payable\":false,\"stateMutability\":\"view\",\"type\":\"function\"},{\"constant\":false,\"inputs\":[{\"name\":\"_spender\",\"type\":\"address\"},{\"name\":\"_value\",\"type\":\"uint256\"}],\"name\":\"approve\",\"outputs\":[{\"name\":\"\",\"type\":\"bool\"}],\"payable\":false,\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"constant\":true,\"inputs\":[],\"name\":\"totalSupply\",\"outputs\":[{\"name\":\"\",\"type\":\"uint256\"}],\"payable\":false,\"stateMutability\":\"view\",\"type\":\"function\"},{\"constant\":false,\"inputs\":[{\"name\":\"_from\",\"type\":\"address\"},{\"name\":\"_to\",\"type\":\"address\"},{\"name\":\"_value\",\"type\":\"uint256\"}],\"name\":\"transferFrom\",\"outputs\":[{\"name\":\"\",\"type\":\"bool\"}],\"payable\":false,\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"constant\":true,\"inputs\":[],\"name\":\"INITIAL_SUPPLY\",\"outputs\":[{\"name\":\"\",\"type\":\"uint256\"}],\"payable\":false,\"stateMutability\":\"view\",\"type\":\"function\"},{\"constant\":false,\"inputs\":[{\"name\":\"_spender\",\"type\":\"address\"},{\"name\":\"_subtractedValue\",\"type\":\"uint256\"}],\"name\":\"decreaseApproval\",\"outputs\":[{\"name\":\"\",\"type\":\"bool\"}],\"payable\":false,\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"constant\":true,\"inputs\":[{\"name\":\"_owner\",\"type\":\"address\"}],\"name\":\"balanceOf\",\"outputs\":[{\"name\":\"\",\"type\":\"uint256\"}],\"payable\":false,\"stateMutability\":\"view\",\"type\":\"function\"},{\"constant\":true,\"inputs\":[],\"name\":\"symbol\",\"outputs\":[{\"name\":\"\",\"type\":\"string\"}],\"payable\":false,\"stateMutability\":\"view\",\"type\":\"function\"},{\"constant\":false,\"inputs\":[{\"name\":\"_to\",\"type\":\"address\"},{\"name\":\"_value\",\"type\":\"uint256\"}],\"name\":\"transfer\",\"outputs\":[{\"name\":\"\",\"type\":\"bool\"}],\"payable\":false,\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"constant\":false,\"inputs\":[{\"name\":\"_spender\",\"type\":\"address\"},{\"name\":\"_addedValue\",\"type\":\"uint256\"}],\"name\":\"increaseApproval\",\"outputs\":[{\"name\":\"\",\"type\":\"bool\"}],\"payable\":false,\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"constant\":true,\"inputs\":[{\"name\":\"_owner\",\"type\":\"address\"},{\"name\":\"_spender\",\"type\":\"address\"}],\"name\":\"allowance\",\"outputs\":[{\"name\":\"\",\"type\":\"uint256\"}],\"payable\":false,\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"payable\":false,\"stateMutability\":\"nonpayable\",\"type\":\"constructor\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"name\":\"owner\",\"type\":\"address\"},{\"indexed\":true,\"name\":\"spender\",\"type\":\"address\"},{\"indexed\":false,\"name\":\"value\",\"type\":\"uint256\"}],\"name\":\"Approval\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"name\":\"from\",\"type\":\"address\"},{\"indexed\":true,\"name\":\"to\",\"type\":\"address\"},{\"indexed\":false,\"name\":\"value\",\"type\":\"uint256\"}],\"name\":\"Transfer\",\"type\":\"event\"},{\"constant\":true,\"inputs\":[],\"name\":\"totalSupply\",\"outputs\":[{\"name\":\"\",\"type\":\"uint256\"}],\"payable\":false,\"stateMutability\":\"view\",\"type\":\"function\"},{\"constant\":true,\"inputs\":[{\"name\":\"_owner\",\"type\":\"address\"}],\"name\":\"balanceOf\",\"outputs\":[{\"name\":\"\",\"type\":\"uint256\"}],\"payable\":false,\"stateMutability\":\"view\",\"type\":\"function\"},{\"constant\":false,\"inputs\":[{\"name\":\"_to\",\"type\":\"address\"},{\"name\":\"_value\",\"type\":\"uint256\"}],\"name\":\"transfer\",\"outputs\":[{\"name\":\"\",\"type\":\"bool\"}],\"payable\":false,\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"name\":\"owner\",\"type\":\"address\"},{\"indexed\":true,\"name\":\"spender\",\"type\":\"address\"},{\"indexed\":false,\"name\":\"value\",\"type\":\"uint256\"}],\"name\":\"Approval\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"name\":\"from\",\"type\":\"address\"},{\"indexed\":true,\"name\":\"to\",\"type\":\"address\"},{\"indexed\":false,\"name\":\"value\",\"type\":\"uint256\"}],\"name\":\"Transfer\",\"type\":\"event\"},{\"constant\":false,\"inputs\":[{\"name\":\"_from\",\"type\":\"address\"},{\"name\":\"_to\",\"type\":\"address\"},{\"name\":\"_value\",\"type\":\"uint256\"}],\"name\":\"transferFrom\",\"outputs\":[{\"name\":\"\",\"type\":\"bool\"}],\"payable\":false,\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"constant\":false,\"inputs\":[{\"name\":\"_spender\",\"type\":\"address\"},{\"name\":\"_value\",\"type\":\"uint256\"}],\"name\":\"approve\",\"outputs\":[{\"name\":\"\",\"type\":\"bool\"}],\"payable\":false,\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"constant\":true,\"inputs\":[{\"name\":\"_owner\",\"type\":\"address\"},{\"name\":\"_spender\",\"type\":\"address\"}],\"name\":\"allowance\",\"outputs\":[{\"name\":\"\",\"type\":\"uint256\"}],\"payable\":false,\"stateMutability\":\"view\",\"type\":\"function\"},{\"constant\":false,\"inputs\":[{\"name\":\"_spender\",\"type\":\"address\"},{\"name\":\"_addedValue\",\"type\":\"uint256\"}],\"name\":\"increaseApproval\",\"outputs\":[{\"name\":\"\",\"type\":\"bool\"}],\"payable\":false,\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"constant\":false,\"inputs\":[{\"name\":\"_spender\",\"type\":\"address\"},{\"name\":\"_subtractedValue\",\"type\":\"uint256\"}],\"name\":\"decreaseApproval\",\"outputs\":[{\"name\":\"\",\"type\":\"bool\"}],\"payable\":false,\"stateMutability\":\"nonpayable\",\"type\":\"function\"}]"
+const TrustContractABI = "[{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"name\":\"from\",\"type\":\"address\"},{\"indexed\":true,\"name\":\"to\",\"type\":\"address\"},{\"indexed\":false,\"name\":\"value\",\"type\":\"uint256\"}],\"name\":\"Transfer\",\"type\":\"event\"},{\"constant\":true,\"inputs\":[],\"name\":\"totalSupply\",\"outputs\":[{\"name\":\"\",\"type\":\"uint256\"}],\"payable\":false,\"stateMutability\":\"view\",\"type\":\"function\"},{\"constant\":false,\"inputs\":[{\"name\":\"_to\",\"type\":\"address\"},{\"name\":\"_value\",\"type\":\"uint256\"}],\"name\":\"transfer\",\"outputs\":[{\"name\":\"\",\"type\":\"bool\"}],\"payable\":false,\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"constant\":true,\"inputs\":[{\"name\":\"_owner\",\"type\":\"address\"}],\"name\":\"balanceOf\",\"outputs\":[{\"name\":\"\",\"type\":\"uint256\"}],\"payable\":false,\"stateMutability\":\"view\",\"type\":\"function\"},{\"constant\":true,\"inputs\":[{\"name\":\"_hashedMsg\",\"type\":\"bytes32\"},{\"name\":\"_sig\",\"type\":\"string\"}],\"name\":\"recoverSigner\",\"outputs\":[{\"name\":\"\",\"type\":\"address\"}],\"payable\":false,\"stateMutability\":\"pure\",\"type\":\"function\"},{\"constant\":true,\"inputs\":[{\"name\":\"_hashedMsg\",\"type\":\"bytes32\"},{\"name\":\"_sig\",\"type\":\"string\"},{\"name\":\"_addr\",\"type\":\"address\"}],\"name\":\"isSignedBy\",\"outputs\":[{\"name\":\"\",\"type\":\"bool\"}],\"payable\":false,\"stateMutability\":\"pure\",\"type\":\"function\"},{\"constant\":true,\"inputs\":[{\"name\":\"_hashedMsg\",\"type\":\"bytes32\"},{\"name\":\"_v\",\"type\":\"uint8\"},{\"name\":\"_r\",\"type\":\"bytes32\"},{\"name\":\"_s\",\"type\":\"bytes32\"}],\"name\":\"recoverSignerVRS\",\"outputs\":[{\"name\":\"\",\"type\":\"address\"}],\"payable\":false,\"stateMutability\":\"pure\",\"type\":\"function\"},{\"constant\":true,\"inputs\":[{\"name\":\"_hexstr\",\"type\":\"string\"}],\"name\":\"hexstrToBytes\",\"outputs\":[{\"name\":\"\",\"type\":\"bytes\"}],\"payable\":false,\"stateMutability\":\"pure\",\"type\":\"function\"},{\"constant\":true,\"inputs\":[{\"name\":\"_char\",\"type\":\"string\"}],\"name\":\"parseInt16Char\",\"outputs\":[{\"name\":\"\",\"type\":\"uint256\"}],\"payable\":false,\"stateMutability\":\"pure\",\"type\":\"function\"},{\"constant\":true,\"inputs\":[{\"name\":\"_uint\",\"type\":\"uint256\"}],\"name\":\"uintToBytes32\",\"outputs\":[{\"name\":\"b\",\"type\":\"bytes\"}],\"payable\":false,\"stateMutability\":\"pure\",\"type\":\"function\"},{\"constant\":true,\"inputs\":[{\"name\":\"_msg\",\"type\":\"string\"}],\"name\":\"toEthereumSignedMessage\",\"outputs\":[{\"name\":\"\",\"type\":\"bytes32\"}],\"payable\":false,\"stateMutability\":\"pure\",\"type\":\"function\"},{\"constant\":true,\"inputs\":[{\"name\":\"_uint\",\"type\":\"uint256\"}],\"name\":\"uintToString\",\"outputs\":[{\"name\":\"str\",\"type\":\"string\"}],\"payable\":false,\"stateMutability\":\"pure\",\"type\":\"function\"},{\"constant\":true,\"inputs\":[{\"name\":\"_str\",\"type\":\"string\"},{\"name\":\"_startIndex\",\"type\":\"uint256\"},{\"name\":\"_endIndex\",\"type\":\"uint256\"}],\"name\":\"substring\",\"outputs\":[{\"name\":\"\",\"type\":\"string\"}],\"payable\":false,\"stateMutability\":\"pure\",\"type\":\"function\"},{\"constant\":true,\"inputs\":[],\"name\":\"totalSupply\",\"outputs\":[{\"name\":\"\",\"type\":\"uint256\"}],\"payable\":false,\"stateMutability\":\"view\",\"type\":\"function\"},{\"constant\":true,\"inputs\":[{\"name\":\"_who\",\"type\":\"address\"}],\"name\":\"balanceOf\",\"outputs\":[{\"name\":\"\",\"type\":\"uint256\"}],\"payable\":false,\"stateMutability\":\"view\",\"type\":\"function\"},{\"constant\":false,\"inputs\":[{\"name\":\"_to\",\"type\":\"address\"},{\"name\":\"_value\",\"type\":\"uint256\"}],\"name\":\"transfer\",\"outputs\":[{\"name\":\"\",\"type\":\"bool\"}],\"payable\":false,\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"name\":\"owner\",\"type\":\"address\"},{\"indexed\":true,\"name\":\"spender\",\"type\":\"address\"},{\"indexed\":false,\"name\":\"value\",\"type\":\"uint256\"}],\"name\":\"Approval\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"name\":\"from\",\"type\":\"address\"},{\"indexed\":true,\"name\":\"to\",\"type\":\"address\"},{\"indexed\":false,\"name\":\"value\",\"type\":\"uint256\"}],\"name\":\"Transfer\",\"type\":\"event\"},{\"constant\":true,\"inputs\":[{\"name\":\"_owner\",\"type\":\"address\"},{\"name\":\"_spender\",\"type\":\"address\"}],\"name\":\"allowance\",\"outputs\":[{\"name\":\"\",\"type\":\"uint256\"}],\"payable\":false,\"stateMutability\":\"view\",\"type\":\"function\"},{\"constant\":false,\"inputs\":[{\"name\":\"_from\",\"type\":\"address\"},{\"name\":\"_to\",\"type\":\"address\"},{\"name\":\"_value\",\"type\":\"uint256\"}],\"name\":\"transferFrom\",\"outputs\":[{\"name\":\"\",\"type\":\"bool\"}],\"payable\":false,\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"constant\":false,\"inputs\":[{\"name\":\"_spender\",\"type\":\"address\"},{\"name\":\"_value\",\"type\":\"uint256\"}],\"name\":\"approve\",\"outputs\":[{\"name\":\"\",\"type\":\"bool\"}],\"payable\":false,\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"name\":\"from\",\"type\":\"address\"},{\"indexed\":true,\"name\":\"to\",\"type\":\"address\"},{\"indexed\":false,\"name\":\"value\",\"type\":\"uint256\"}],\"name\":\"Transfer\",\"type\":\"event\"},{\"constant\":true,\"inputs\":[],\"name\":\"totalSupply\",\"outputs\":[{\"name\":\"\",\"type\":\"uint256\"}],\"payable\":false,\"stateMutability\":\"view\",\"type\":\"function\"},{\"constant\":true,\"inputs\":[{\"name\":\"_who\",\"type\":\"address\"}],\"name\":\"balanceOf\",\"outputs\":[{\"name\":\"\",\"type\":\"uint256\"}],\"payable\":false,\"stateMutability\":\"view\",\"type\":\"function\"},{\"constant\":false,\"inputs\":[{\"name\":\"_to\",\"type\":\"address\"},{\"name\":\"_value\",\"type\":\"uint256\"}],\"name\":\"transfer\",\"outputs\":[{\"name\":\"\",\"type\":\"bool\"}],\"payable\":false,\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"constant\":true,\"inputs\":[],\"name\":\"last_completed_migration\",\"outputs\":[{\"name\":\"\",\"type\":\"uint256\"}],\"payable\":false,\"stateMutability\":\"view\",\"type\":\"function\"},{\"constant\":true,\"inputs\":[],\"name\":\"owner\",\"outputs\":[{\"name\":\"\",\"type\":\"address\"}],\"payable\":false,\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"payable\":false,\"stateMutability\":\"nonpayable\",\"type\":\"constructor\"},{\"constant\":false,\"inputs\":[{\"name\":\"completed\",\"type\":\"uint256\"}],\"name\":\"setCompleted\",\"outputs\":[],\"payable\":false,\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"constant\":false,\"inputs\":[{\"name\":\"new_address\",\"type\":\"address\"}],\"name\":\"upgrade\",\"outputs\":[],\"payable\":false,\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"constant\":true,\"inputs\":[],\"name\":\"owner\",\"outputs\":[{\"name\":\"\",\"type\":\"address\"}],\"payable\":false,\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"payable\":false,\"stateMutability\":\"nonpayable\",\"type\":\"constructor\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"name\":\"previousOwner\",\"type\":\"address\"}],\"name\":\"OwnershipRenounced\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"name\":\"previousOwner\",\"type\":\"address\"},{\"indexed\":true,\"name\":\"newOwner\",\"type\":\"address\"}],\"name\":\"OwnershipTransferred\",\"type\":\"event\"},{\"constant\":false,\"inputs\":[],\"name\":\"renounceOwnership\",\"outputs\":[],\"payable\":false,\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"constant\":false,\"inputs\":[{\"name\":\"_newOwner\",\"type\":\"address\"}],\"name\":\"transferOwnership\",\"outputs\":[],\"payable\":false,\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"constant\":true,\"inputs\":[{\"name\":\"\",\"type\":\"uint256\"}],\"name\":\"signers\",\"outputs\":[{\"name\":\"\",\"type\":\"address\"}],\"payable\":false,\"stateMutability\":\"view\",\"type\":\"function\"},{\"constant\":false,\"inputs\":[],\"name\":\"renounceOwnership\",\"outputs\":[],\"payable\":false,\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"constant\":true,\"inputs\":[],\"name\":\"owner\",\"outputs\":[{\"name\":\"\",\"type\":\"address\"}],\"payable\":false,\"stateMutability\":\"view\",\"type\":\"function\"},{\"constant\":true,\"inputs\":[],\"name\":\"requiredVotes\",\"outputs\":[{\"name\":\"\",\"type\":\"uint256\"}],\"payable\":false,\"stateMutability\":\"view\",\"type\":\"function\"},{\"constant\":true,\"inputs\":[],\"name\":\"txIdLast\",\"outputs\":[{\"name\":\"\",\"type\":\"uint64\"}],\"payable\":false,\"stateMutability\":\"view\",\"type\":\"function\"},{\"constant\":true,\"inputs\":[],\"name\":\"MAX_CANDIDATES\",\"outputs\":[{\"name\":\"\",\"type\":\"uint8\"}],\"payable\":false,\"stateMutability\":\"view\",\"type\":\"function\"},{\"constant\":false,\"inputs\":[{\"name\":\"_newOwner\",\"type\":\"address\"}],\"name\":\"transferOwnership\",\"outputs\":[],\"payable\":false,\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"payable\":true,\"stateMutability\":\"payable\",\"type\":\"fallback\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":false,\"name\":\"success\",\"type\":\"bool\"},{\"indexed\":false,\"name\":\"txId\",\"type\":\"uint64\"},{\"indexed\":false,\"name\":\"erc20Addr\",\"type\":\"address\"},{\"indexed\":false,\"name\":\"toAddr\",\"type\":\"address\"},{\"indexed\":false,\"name\":\"amount\",\"type\":\"uint256\"},{\"indexed\":false,\"name\":\"verified\",\"type\":\"bool[]\"}],\"name\":\"TransactionResult\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"name\":\"_from\",\"type\":\"address\"},{\"indexed\":false,\"name\":\"_value\",\"type\":\"uint256\"}],\"name\":\"Fund\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"name\":\"previousOwner\",\"type\":\"address\"}],\"name\":\"OwnershipRenounced\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"name\":\"previousOwner\",\"type\":\"address\"},{\"indexed\":true,\"name\":\"newOwner\",\"type\":\"address\"}],\"name\":\"OwnershipTransferred\",\"type\":\"event\"},{\"constant\":false,\"inputs\":[{\"name\":\"initialSigners\",\"type\":\"address[]\"}],\"name\":\"assignInitialSigners\",\"outputs\":[],\"payable\":false,\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"constant\":true,\"inputs\":[{\"name\":\"signer\",\"type\":\"address\"}],\"name\":\"isSigner\",\"outputs\":[{\"name\":\"\",\"type\":\"bool\"}],\"payable\":false,\"stateMutability\":\"view\",\"type\":\"function\"},{\"constant\":true,\"inputs\":[],\"name\":\"numSigners\",\"outputs\":[{\"name\":\"\",\"type\":\"uint256\"}],\"payable\":false,\"stateMutability\":\"view\",\"type\":\"function\"},{\"constant\":true,\"inputs\":[{\"name\":\"candidate\",\"type\":\"address\"}],\"name\":\"getAddCandidateVotes\",\"outputs\":[{\"name\":\"count\",\"type\":\"uint256\"}],\"payable\":false,\"stateMutability\":\"view\",\"type\":\"function\"},{\"constant\":true,\"inputs\":[],\"name\":\"numAddCandidates\",\"outputs\":[{\"name\":\"count\",\"type\":\"uint256\"}],\"payable\":false,\"stateMutability\":\"view\",\"type\":\"function\"},{\"constant\":true,\"inputs\":[{\"name\":\"candidate\",\"type\":\"address\"}],\"name\":\"getRemoveCandidateVotes\",\"outputs\":[{\"name\":\"count\",\"type\":\"uint256\"}],\"payable\":false,\"stateMutability\":\"view\",\"type\":\"function\"},{\"constant\":true,\"inputs\":[],\"name\":\"numRemoveCandidates\",\"outputs\":[{\"name\":\"\",\"type\":\"uint256\"}],\"payable\":false,\"stateMutability\":\"view\",\"type\":\"function\"},{\"constant\":false,\"inputs\":[{\"name\":\"txId\",\"type\":\"uint64\"},{\"name\":\"erc20Addr\",\"type\":\"address\"},{\"name\":\"toAddr\",\"type\":\"address\"},{\"name\":\"amount\",\"type\":\"uint256\"},{\"name\":\"v\",\"type\":\"uint8[]\"},{\"name\":\"r\",\"type\":\"bytes32[]\"},{\"name\":\"s\",\"type\":\"bytes32[]\"}],\"name\":\"paymentTx\",\"outputs\":[],\"payable\":false,\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"constant\":false,\"inputs\":[{\"name\":\"candidate\",\"type\":\"address\"}],\"name\":\"voteAddSigner\",\"outputs\":[{\"name\":\"votesNeeded\",\"type\":\"uint256\"}],\"payable\":false,\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"constant\":false,\"inputs\":[{\"name\":\"candidate\",\"type\":\"address\"}],\"name\":\"voteRemoveSigner\",\"outputs\":[{\"name\":\"votesNeeded\",\"type\":\"uint256\"}],\"payable\":false,\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"constant\":true,\"inputs\":[],\"name\":\"quantaAddress\",\"outputs\":[{\"name\":\"\",\"type\":\"string\"}],\"payable\":false,\"stateMutability\":\"view\",\"type\":\"function\"},{\"constant\":true,\"inputs\":[],\"name\":\"destinationAddress\",\"outputs\":[{\"name\":\"\",\"type\":\"address\"}],\"payable\":false,\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"name\":\"trust\",\"type\":\"address\"},{\"name\":\"quantaAddr\",\"type\":\"string\"}],\"payable\":false,\"stateMutability\":\"nonpayable\",\"type\":\"constructor\"},{\"payable\":true,\"stateMutability\":\"payable\",\"type\":\"fallback\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"name\":\"sender\",\"type\":\"address\"},{\"indexed\":false,\"name\":\"amount\",\"type\":\"uint256\"}],\"name\":\"LogForwarded\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"name\":\"sender\",\"type\":\"address\"},{\"indexed\":false,\"name\":\"amount\",\"type\":\"uint256\"}],\"name\":\"LogFlushed\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":false,\"name\":\"trust\",\"type\":\"address\"},{\"indexed\":false,\"name\":\"quanta\",\"type\":\"string\"}],\"name\":\"LogCreated\",\"type\":\"event\"},{\"constant\":false,\"inputs\":[],\"name\":\"flush\",\"outputs\":[],\"payable\":false,\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"constant\":true,\"inputs\":[],\"name\":\"name\",\"outputs\":[{\"name\":\"\",\"type\":\"string\"}],\"payable\":false,\"stateMutability\":\"view\",\"type\":\"function\"},{\"constant\":false,\"inputs\":[{\"name\":\"_spender\",\"type\":\"address\"},{\"name\":\"_value\",\"type\":\"uint256\"}],\"name\":\"approve\",\"outputs\":[{\"name\":\"\",\"type\":\"bool\"}],\"payable\":false,\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"constant\":true,\"inputs\":[],\"name\":\"totalSupply\",\"outputs\":[{\"name\":\"\",\"type\":\"uint256\"}],\"payable\":false,\"stateMutability\":\"view\",\"type\":\"function\"},{\"constant\":false,\"inputs\":[{\"name\":\"_from\",\"type\":\"address\"},{\"name\":\"_to\",\"type\":\"address\"},{\"name\":\"_value\",\"type\":\"uint256\"}],\"name\":\"transferFrom\",\"outputs\":[{\"name\":\"\",\"type\":\"bool\"}],\"payable\":false,\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"constant\":true,\"inputs\":[],\"name\":\"INITIAL_SUPPLY\",\"outputs\":[{\"name\":\"\",\"type\":\"uint256\"}],\"payable\":false,\"stateMutability\":\"view\",\"type\":\"function\"},{\"constant\":true,\"inputs\":[],\"name\":\"decimals\",\"outputs\":[{\"name\":\"\",\"type\":\"uint8\"}],\"payable\":false,\"stateMutability\":\"view\",\"type\":\"function\"},{\"constant\":false,\"inputs\":[{\"name\":\"_spender\",\"type\":\"address\"},{\"name\":\"_subtractedValue\",\"type\":\"uint256\"}],\"name\":\"decreaseApproval\",\"outputs\":[{\"name\":\"\",\"type\":\"bool\"}],\"payable\":false,\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"constant\":true,\"inputs\":[{\"name\":\"_owner\",\"type\":\"address\"}],\"name\":\"balanceOf\",\"outputs\":[{\"name\":\"\",\"type\":\"uint256\"}],\"payable\":false,\"stateMutability\":\"view\",\"type\":\"function\"},{\"constant\":true,\"inputs\":[],\"name\":\"symbol\",\"outputs\":[{\"name\":\"\",\"type\":\"string\"}],\"payable\":false,\"stateMutability\":\"view\",\"type\":\"function\"},{\"constant\":false,\"inputs\":[{\"name\":\"_to\",\"type\":\"address\"},{\"name\":\"_value\",\"type\":\"uint256\"}],\"name\":\"transfer\",\"outputs\":[{\"name\":\"\",\"type\":\"bool\"}],\"payable\":false,\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"constant\":false,\"inputs\":[{\"name\":\"_spender\",\"type\":\"address\"},{\"name\":\"_addedValue\",\"type\":\"uint256\"}],\"name\":\"increaseApproval\",\"outputs\":[{\"name\":\"\",\"type\":\"bool\"}],\"payable\":false,\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"constant\":true,\"inputs\":[{\"name\":\"_owner\",\"type\":\"address\"},{\"name\":\"_spender\",\"type\":\"address\"}],\"name\":\"allowance\",\"outputs\":[{\"name\":\"\",\"type\":\"uint256\"}],\"payable\":false,\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"payable\":false,\"stateMutability\":\"nonpayable\",\"type\":\"constructor\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"name\":\"owner\",\"type\":\"address\"},{\"indexed\":true,\"name\":\"spender\",\"type\":\"address\"},{\"indexed\":false,\"name\":\"value\",\"type\":\"uint256\"}],\"name\":\"Approval\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"name\":\"from\",\"type\":\"address\"},{\"indexed\":true,\"name\":\"to\",\"type\":\"address\"},{\"indexed\":false,\"name\":\"value\",\"type\":\"uint256\"}],\"name\":\"Transfer\",\"type\":\"event\"},{\"constant\":true,\"inputs\":[],\"name\":\"totalSupply\",\"outputs\":[{\"name\":\"\",\"type\":\"uint256\"}],\"payable\":false,\"stateMutability\":\"view\",\"type\":\"function\"},{\"constant\":true,\"inputs\":[{\"name\":\"_owner\",\"type\":\"address\"}],\"name\":\"balanceOf\",\"outputs\":[{\"name\":\"\",\"type\":\"uint256\"}],\"payable\":false,\"stateMutability\":\"view\",\"type\":\"function\"},{\"constant\":false,\"inputs\":[{\"name\":\"_to\",\"type\":\"address\"},{\"name\":\"_value\",\"type\":\"uint256\"}],\"name\":\"transfer\",\"outputs\":[{\"name\":\"\",\"type\":\"bool\"}],\"payable\":false,\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"name\":\"owner\",\"type\":\"address\"},{\"indexed\":true,\"name\":\"spender\",\"type\":\"address\"},{\"indexed\":false,\"name\":\"value\",\"type\":\"uint256\"}],\"name\":\"Approval\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"name\":\"from\",\"type\":\"address\"},{\"indexed\":true,\"name\":\"to\",\"type\":\"address\"},{\"indexed\":false,\"name\":\"value\",\"type\":\"uint256\"}],\"name\":\"Transfer\",\"type\":\"event\"},{\"constant\":false,\"inputs\":[{\"name\":\"_from\",\"type\":\"address\"},{\"name\":\"_to\",\"type\":\"address\"},{\"name\":\"_value\",\"type\":\"uint256\"}],\"name\":\"transferFrom\",\"outputs\":[{\"name\":\"\",\"type\":\"bool\"}],\"payable\":false,\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"constant\":false,\"inputs\":[{\"name\":\"_spender\",\"type\":\"address\"},{\"name\":\"_value\",\"type\":\"uint256\"}],\"name\":\"approve\",\"outputs\":[{\"name\":\"\",\"type\":\"bool\"}],\"payable\":false,\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"constant\":true,\"inputs\":[{\"name\":\"_owner\",\"type\":\"address\"},{\"name\":\"_spender\",\"type\":\"address\"}],\"name\":\"allowance\",\"outputs\":[{\"name\":\"\",\"type\":\"uint256\"}],\"payable\":false,\"stateMutability\":\"view\",\"type\":\"function\"},{\"constant\":false,\"inputs\":[{\"name\":\"_spender\",\"type\":\"address\"},{\"name\":\"_addedValue\",\"type\":\"uint256\"}],\"name\":\"increaseApproval\",\"outputs\":[{\"name\":\"\",\"type\":\"bool\"}],\"payable\":false,\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"constant\":false,\"inputs\":[{\"name\":\"_spender\",\"type\":\"address\"},{\"name\":\"_subtractedValue\",\"type\":\"uint256\"}],\"name\":\"decreaseApproval\",\"outputs\":[{\"name\":\"\",\"type\":\"bool\"}],\"payable\":false,\"stateMutability\":\"nonpayable\",\"type\":\"function\"}]"
 
 // TrustContract is an auto generated Go binding around an Ethereum contract.
 type TrustContract struct {
@@ -186,6 +186,32 @@ func (_TrustContract *TrustContractCallerSession) INITIALSUPPLY() (*big.Int, err
 	return _TrustContract.Contract.INITIALSUPPLY(&_TrustContract.CallOpts)
 }
 
+// MAXCANDIDATES is a free data retrieval call binding the contract method 0xf0786096.
+//
+// Solidity: function MAX_CANDIDATES() constant returns(uint8)
+func (_TrustContract *TrustContractCaller) MAXCANDIDATES(opts *bind.CallOpts) (uint8, error) {
+	var (
+		ret0 = new(uint8)
+	)
+	out := ret0
+	err := _TrustContract.contract.Call(opts, out, "MAX_CANDIDATES")
+	return *ret0, err
+}
+
+// MAXCANDIDATES is a free data retrieval call binding the contract method 0xf0786096.
+//
+// Solidity: function MAX_CANDIDATES() constant returns(uint8)
+func (_TrustContract *TrustContractSession) MAXCANDIDATES() (uint8, error) {
+	return _TrustContract.Contract.MAXCANDIDATES(&_TrustContract.CallOpts)
+}
+
+// MAXCANDIDATES is a free data retrieval call binding the contract method 0xf0786096.
+//
+// Solidity: function MAX_CANDIDATES() constant returns(uint8)
+func (_TrustContract *TrustContractCallerSession) MAXCANDIDATES() (uint8, error) {
+	return _TrustContract.Contract.MAXCANDIDATES(&_TrustContract.CallOpts)
+}
+
 // Allowance is a free data retrieval call binding the contract method 0xdd62ed3e.
 //
 // Solidity: function allowance(_owner address, _spender address) constant returns(uint256)
@@ -236,6 +262,110 @@ func (_TrustContract *TrustContractSession) BalanceOf(_owner common.Address) (*b
 // Solidity: function balanceOf(_owner address) constant returns(uint256)
 func (_TrustContract *TrustContractCallerSession) BalanceOf(_owner common.Address) (*big.Int, error) {
 	return _TrustContract.Contract.BalanceOf(&_TrustContract.CallOpts, _owner)
+}
+
+// Decimals is a free data retrieval call binding the contract method 0x313ce567.
+//
+// Solidity: function decimals() constant returns(uint8)
+func (_TrustContract *TrustContractCaller) Decimals(opts *bind.CallOpts) (uint8, error) {
+	var (
+		ret0 = new(uint8)
+	)
+	out := ret0
+	err := _TrustContract.contract.Call(opts, out, "decimals")
+	return *ret0, err
+}
+
+// Decimals is a free data retrieval call binding the contract method 0x313ce567.
+//
+// Solidity: function decimals() constant returns(uint8)
+func (_TrustContract *TrustContractSession) Decimals() (uint8, error) {
+	return _TrustContract.Contract.Decimals(&_TrustContract.CallOpts)
+}
+
+// Decimals is a free data retrieval call binding the contract method 0x313ce567.
+//
+// Solidity: function decimals() constant returns(uint8)
+func (_TrustContract *TrustContractCallerSession) Decimals() (uint8, error) {
+	return _TrustContract.Contract.Decimals(&_TrustContract.CallOpts)
+}
+
+// DestinationAddress is a free data retrieval call binding the contract method 0xca325469.
+//
+// Solidity: function destinationAddress() constant returns(address)
+func (_TrustContract *TrustContractCaller) DestinationAddress(opts *bind.CallOpts) (common.Address, error) {
+	var (
+		ret0 = new(common.Address)
+	)
+	out := ret0
+	err := _TrustContract.contract.Call(opts, out, "destinationAddress")
+	return *ret0, err
+}
+
+// DestinationAddress is a free data retrieval call binding the contract method 0xca325469.
+//
+// Solidity: function destinationAddress() constant returns(address)
+func (_TrustContract *TrustContractSession) DestinationAddress() (common.Address, error) {
+	return _TrustContract.Contract.DestinationAddress(&_TrustContract.CallOpts)
+}
+
+// DestinationAddress is a free data retrieval call binding the contract method 0xca325469.
+//
+// Solidity: function destinationAddress() constant returns(address)
+func (_TrustContract *TrustContractCallerSession) DestinationAddress() (common.Address, error) {
+	return _TrustContract.Contract.DestinationAddress(&_TrustContract.CallOpts)
+}
+
+// GetAddCandidateVotes is a free data retrieval call binding the contract method 0x4fee1821.
+//
+// Solidity: function getAddCandidateVotes(candidate address) constant returns(count uint256)
+func (_TrustContract *TrustContractCaller) GetAddCandidateVotes(opts *bind.CallOpts, candidate common.Address) (*big.Int, error) {
+	var (
+		ret0 = new(*big.Int)
+	)
+	out := ret0
+	err := _TrustContract.contract.Call(opts, out, "getAddCandidateVotes", candidate)
+	return *ret0, err
+}
+
+// GetAddCandidateVotes is a free data retrieval call binding the contract method 0x4fee1821.
+//
+// Solidity: function getAddCandidateVotes(candidate address) constant returns(count uint256)
+func (_TrustContract *TrustContractSession) GetAddCandidateVotes(candidate common.Address) (*big.Int, error) {
+	return _TrustContract.Contract.GetAddCandidateVotes(&_TrustContract.CallOpts, candidate)
+}
+
+// GetAddCandidateVotes is a free data retrieval call binding the contract method 0x4fee1821.
+//
+// Solidity: function getAddCandidateVotes(candidate address) constant returns(count uint256)
+func (_TrustContract *TrustContractCallerSession) GetAddCandidateVotes(candidate common.Address) (*big.Int, error) {
+	return _TrustContract.Contract.GetAddCandidateVotes(&_TrustContract.CallOpts, candidate)
+}
+
+// GetRemoveCandidateVotes is a free data retrieval call binding the contract method 0xf2e108d7.
+//
+// Solidity: function getRemoveCandidateVotes(candidate address) constant returns(count uint256)
+func (_TrustContract *TrustContractCaller) GetRemoveCandidateVotes(opts *bind.CallOpts, candidate common.Address) (*big.Int, error) {
+	var (
+		ret0 = new(*big.Int)
+	)
+	out := ret0
+	err := _TrustContract.contract.Call(opts, out, "getRemoveCandidateVotes", candidate)
+	return *ret0, err
+}
+
+// GetRemoveCandidateVotes is a free data retrieval call binding the contract method 0xf2e108d7.
+//
+// Solidity: function getRemoveCandidateVotes(candidate address) constant returns(count uint256)
+func (_TrustContract *TrustContractSession) GetRemoveCandidateVotes(candidate common.Address) (*big.Int, error) {
+	return _TrustContract.Contract.GetRemoveCandidateVotes(&_TrustContract.CallOpts, candidate)
+}
+
+// GetRemoveCandidateVotes is a free data retrieval call binding the contract method 0xf2e108d7.
+//
+// Solidity: function getRemoveCandidateVotes(candidate address) constant returns(count uint256)
+func (_TrustContract *TrustContractCallerSession) GetRemoveCandidateVotes(candidate common.Address) (*big.Int, error) {
+	return _TrustContract.Contract.GetRemoveCandidateVotes(&_TrustContract.CallOpts, candidate)
 }
 
 // HexstrToBytes is a free data retrieval call binding the contract method 0x1445f713.
@@ -290,6 +420,32 @@ func (_TrustContract *TrustContractCallerSession) IsSignedBy(_hashedMsg [32]byte
 	return _TrustContract.Contract.IsSignedBy(&_TrustContract.CallOpts, _hashedMsg, _sig, _addr)
 }
 
+// IsSigner is a free data retrieval call binding the contract method 0x7df73e27.
+//
+// Solidity: function isSigner(signer address) constant returns(bool)
+func (_TrustContract *TrustContractCaller) IsSigner(opts *bind.CallOpts, signer common.Address) (bool, error) {
+	var (
+		ret0 = new(bool)
+	)
+	out := ret0
+	err := _TrustContract.contract.Call(opts, out, "isSigner", signer)
+	return *ret0, err
+}
+
+// IsSigner is a free data retrieval call binding the contract method 0x7df73e27.
+//
+// Solidity: function isSigner(signer address) constant returns(bool)
+func (_TrustContract *TrustContractSession) IsSigner(signer common.Address) (bool, error) {
+	return _TrustContract.Contract.IsSigner(&_TrustContract.CallOpts, signer)
+}
+
+// IsSigner is a free data retrieval call binding the contract method 0x7df73e27.
+//
+// Solidity: function isSigner(signer address) constant returns(bool)
+func (_TrustContract *TrustContractCallerSession) IsSigner(signer common.Address) (bool, error) {
+	return _TrustContract.Contract.IsSigner(&_TrustContract.CallOpts, signer)
+}
+
 // LastCompletedMigration is a free data retrieval call binding the contract method 0x445df0ac.
 //
 // Solidity: function last_completed_migration() constant returns(uint256)
@@ -340,6 +496,84 @@ func (_TrustContract *TrustContractSession) Name() (string, error) {
 // Solidity: function name() constant returns(string)
 func (_TrustContract *TrustContractCallerSession) Name() (string, error) {
 	return _TrustContract.Contract.Name(&_TrustContract.CallOpts)
+}
+
+// NumAddCandidates is a free data retrieval call binding the contract method 0x4e63af51.
+//
+// Solidity: function numAddCandidates() constant returns(count uint256)
+func (_TrustContract *TrustContractCaller) NumAddCandidates(opts *bind.CallOpts) (*big.Int, error) {
+	var (
+		ret0 = new(*big.Int)
+	)
+	out := ret0
+	err := _TrustContract.contract.Call(opts, out, "numAddCandidates")
+	return *ret0, err
+}
+
+// NumAddCandidates is a free data retrieval call binding the contract method 0x4e63af51.
+//
+// Solidity: function numAddCandidates() constant returns(count uint256)
+func (_TrustContract *TrustContractSession) NumAddCandidates() (*big.Int, error) {
+	return _TrustContract.Contract.NumAddCandidates(&_TrustContract.CallOpts)
+}
+
+// NumAddCandidates is a free data retrieval call binding the contract method 0x4e63af51.
+//
+// Solidity: function numAddCandidates() constant returns(count uint256)
+func (_TrustContract *TrustContractCallerSession) NumAddCandidates() (*big.Int, error) {
+	return _TrustContract.Contract.NumAddCandidates(&_TrustContract.CallOpts)
+}
+
+// NumRemoveCandidates is a free data retrieval call binding the contract method 0x5023d141.
+//
+// Solidity: function numRemoveCandidates() constant returns(uint256)
+func (_TrustContract *TrustContractCaller) NumRemoveCandidates(opts *bind.CallOpts) (*big.Int, error) {
+	var (
+		ret0 = new(*big.Int)
+	)
+	out := ret0
+	err := _TrustContract.contract.Call(opts, out, "numRemoveCandidates")
+	return *ret0, err
+}
+
+// NumRemoveCandidates is a free data retrieval call binding the contract method 0x5023d141.
+//
+// Solidity: function numRemoveCandidates() constant returns(uint256)
+func (_TrustContract *TrustContractSession) NumRemoveCandidates() (*big.Int, error) {
+	return _TrustContract.Contract.NumRemoveCandidates(&_TrustContract.CallOpts)
+}
+
+// NumRemoveCandidates is a free data retrieval call binding the contract method 0x5023d141.
+//
+// Solidity: function numRemoveCandidates() constant returns(uint256)
+func (_TrustContract *TrustContractCallerSession) NumRemoveCandidates() (*big.Int, error) {
+	return _TrustContract.Contract.NumRemoveCandidates(&_TrustContract.CallOpts)
+}
+
+// NumSigners is a free data retrieval call binding the contract method 0x12679fed.
+//
+// Solidity: function numSigners() constant returns(uint256)
+func (_TrustContract *TrustContractCaller) NumSigners(opts *bind.CallOpts) (*big.Int, error) {
+	var (
+		ret0 = new(*big.Int)
+	)
+	out := ret0
+	err := _TrustContract.contract.Call(opts, out, "numSigners")
+	return *ret0, err
+}
+
+// NumSigners is a free data retrieval call binding the contract method 0x12679fed.
+//
+// Solidity: function numSigners() constant returns(uint256)
+func (_TrustContract *TrustContractSession) NumSigners() (*big.Int, error) {
+	return _TrustContract.Contract.NumSigners(&_TrustContract.CallOpts)
+}
+
+// NumSigners is a free data retrieval call binding the contract method 0x12679fed.
+//
+// Solidity: function numSigners() constant returns(uint256)
+func (_TrustContract *TrustContractCallerSession) NumSigners() (*big.Int, error) {
+	return _TrustContract.Contract.NumSigners(&_TrustContract.CallOpts)
 }
 
 // Owner is a free data retrieval call binding the contract method 0x8da5cb5b.
@@ -394,6 +628,32 @@ func (_TrustContract *TrustContractCallerSession) ParseInt16Char(_char string) (
 	return _TrustContract.Contract.ParseInt16Char(&_TrustContract.CallOpts, _char)
 }
 
+// QuantaAddress is a free data retrieval call binding the contract method 0x3c8410a2.
+//
+// Solidity: function quantaAddress() constant returns(string)
+func (_TrustContract *TrustContractCaller) QuantaAddress(opts *bind.CallOpts) (string, error) {
+	var (
+		ret0 = new(string)
+	)
+	out := ret0
+	err := _TrustContract.contract.Call(opts, out, "quantaAddress")
+	return *ret0, err
+}
+
+// QuantaAddress is a free data retrieval call binding the contract method 0x3c8410a2.
+//
+// Solidity: function quantaAddress() constant returns(string)
+func (_TrustContract *TrustContractSession) QuantaAddress() (string, error) {
+	return _TrustContract.Contract.QuantaAddress(&_TrustContract.CallOpts)
+}
+
+// QuantaAddress is a free data retrieval call binding the contract method 0x3c8410a2.
+//
+// Solidity: function quantaAddress() constant returns(string)
+func (_TrustContract *TrustContractCallerSession) QuantaAddress() (string, error) {
+	return _TrustContract.Contract.QuantaAddress(&_TrustContract.CallOpts)
+}
+
 // RecoverSigner is a free data retrieval call binding the contract method 0xdca95419.
 //
 // Solidity: function recoverSigner(_hashedMsg bytes32, _sig string) constant returns(address)
@@ -444,6 +704,58 @@ func (_TrustContract *TrustContractSession) RecoverSignerVRS(_hashedMsg [32]byte
 // Solidity: function recoverSignerVRS(_hashedMsg bytes32, _v uint8, _r bytes32, _s bytes32) constant returns(address)
 func (_TrustContract *TrustContractCallerSession) RecoverSignerVRS(_hashedMsg [32]byte, _v uint8, _r [32]byte, _s [32]byte) (common.Address, error) {
 	return _TrustContract.Contract.RecoverSignerVRS(&_TrustContract.CallOpts, _hashedMsg, _v, _r, _s)
+}
+
+// RequiredVotes is a free data retrieval call binding the contract method 0xbd31a4d8.
+//
+// Solidity: function requiredVotes() constant returns(uint256)
+func (_TrustContract *TrustContractCaller) RequiredVotes(opts *bind.CallOpts) (*big.Int, error) {
+	var (
+		ret0 = new(*big.Int)
+	)
+	out := ret0
+	err := _TrustContract.contract.Call(opts, out, "requiredVotes")
+	return *ret0, err
+}
+
+// RequiredVotes is a free data retrieval call binding the contract method 0xbd31a4d8.
+//
+// Solidity: function requiredVotes() constant returns(uint256)
+func (_TrustContract *TrustContractSession) RequiredVotes() (*big.Int, error) {
+	return _TrustContract.Contract.RequiredVotes(&_TrustContract.CallOpts)
+}
+
+// RequiredVotes is a free data retrieval call binding the contract method 0xbd31a4d8.
+//
+// Solidity: function requiredVotes() constant returns(uint256)
+func (_TrustContract *TrustContractCallerSession) RequiredVotes() (*big.Int, error) {
+	return _TrustContract.Contract.RequiredVotes(&_TrustContract.CallOpts)
+}
+
+// Signers is a free data retrieval call binding the contract method 0x2079fb9a.
+//
+// Solidity: function signers( uint256) constant returns(address)
+func (_TrustContract *TrustContractCaller) Signers(opts *bind.CallOpts, arg0 *big.Int) (common.Address, error) {
+	var (
+		ret0 = new(common.Address)
+	)
+	out := ret0
+	err := _TrustContract.contract.Call(opts, out, "signers", arg0)
+	return *ret0, err
+}
+
+// Signers is a free data retrieval call binding the contract method 0x2079fb9a.
+//
+// Solidity: function signers( uint256) constant returns(address)
+func (_TrustContract *TrustContractSession) Signers(arg0 *big.Int) (common.Address, error) {
+	return _TrustContract.Contract.Signers(&_TrustContract.CallOpts, arg0)
+}
+
+// Signers is a free data retrieval call binding the contract method 0x2079fb9a.
+//
+// Solidity: function signers( uint256) constant returns(address)
+func (_TrustContract *TrustContractCallerSession) Signers(arg0 *big.Int) (common.Address, error) {
+	return _TrustContract.Contract.Signers(&_TrustContract.CallOpts, arg0)
 }
 
 // Substring is a free data retrieval call binding the contract method 0x1dcd9b55.
@@ -522,32 +834,6 @@ func (_TrustContract *TrustContractSession) ToEthereumSignedMessage(_msg string)
 // Solidity: function toEthereumSignedMessage(_msg string) constant returns(bytes32)
 func (_TrustContract *TrustContractCallerSession) ToEthereumSignedMessage(_msg string) ([32]byte, error) {
 	return _TrustContract.Contract.ToEthereumSignedMessage(&_TrustContract.CallOpts, _msg)
-}
-
-// TotalSigners is a free data retrieval call binding the contract method 0xd1a62648.
-//
-// Solidity: function totalSigners() constant returns(uint256)
-func (_TrustContract *TrustContractCaller) TotalSigners(opts *bind.CallOpts) (*big.Int, error) {
-	var (
-		ret0 = new(*big.Int)
-	)
-	out := ret0
-	err := _TrustContract.contract.Call(opts, out, "totalSigners")
-	return *ret0, err
-}
-
-// TotalSigners is a free data retrieval call binding the contract method 0xd1a62648.
-//
-// Solidity: function totalSigners() constant returns(uint256)
-func (_TrustContract *TrustContractSession) TotalSigners() (*big.Int, error) {
-	return _TrustContract.Contract.TotalSigners(&_TrustContract.CallOpts)
-}
-
-// TotalSigners is a free data retrieval call binding the contract method 0xd1a62648.
-//
-// Solidity: function totalSigners() constant returns(uint256)
-func (_TrustContract *TrustContractCallerSession) TotalSigners() (*big.Int, error) {
-	return _TrustContract.Contract.TotalSigners(&_TrustContract.CallOpts)
 }
 
 // TotalSupply is a free data retrieval call binding the contract method 0x18160ddd.
@@ -715,6 +1001,27 @@ func (_TrustContract *TrustContractSession) DecreaseApproval(_spender common.Add
 // Solidity: function decreaseApproval(_spender address, _subtractedValue uint256) returns(bool)
 func (_TrustContract *TrustContractTransactorSession) DecreaseApproval(_spender common.Address, _subtractedValue *big.Int) (*types.Transaction, error) {
 	return _TrustContract.Contract.DecreaseApproval(&_TrustContract.TransactOpts, _spender, _subtractedValue)
+}
+
+// Flush is a paid mutator transaction binding the contract method 0x6b9f96ea.
+//
+// Solidity: function flush() returns()
+func (_TrustContract *TrustContractTransactor) Flush(opts *bind.TransactOpts) (*types.Transaction, error) {
+	return _TrustContract.contract.Transact(opts, "flush")
+}
+
+// Flush is a paid mutator transaction binding the contract method 0x6b9f96ea.
+//
+// Solidity: function flush() returns()
+func (_TrustContract *TrustContractSession) Flush() (*types.Transaction, error) {
+	return _TrustContract.Contract.Flush(&_TrustContract.TransactOpts)
+}
+
+// Flush is a paid mutator transaction binding the contract method 0x6b9f96ea.
+//
+// Solidity: function flush() returns()
+func (_TrustContract *TrustContractTransactorSession) Flush() (*types.Transaction, error) {
+	return _TrustContract.Contract.Flush(&_TrustContract.TransactOpts)
 }
 
 // IncreaseApproval is a paid mutator transaction binding the contract method 0xd73dd623.
@@ -887,44 +1194,44 @@ func (_TrustContract *TrustContractTransactorSession) Upgrade(new_address common
 
 // VoteAddSigner is a paid mutator transaction binding the contract method 0x6a5b3347.
 //
-// Solidity: function voteAddSigner(signer address) returns()
-func (_TrustContract *TrustContractTransactor) VoteAddSigner(opts *bind.TransactOpts, signer common.Address) (*types.Transaction, error) {
-	return _TrustContract.contract.Transact(opts, "voteAddSigner", signer)
+// Solidity: function voteAddSigner(candidate address) returns(votesNeeded uint256)
+func (_TrustContract *TrustContractTransactor) VoteAddSigner(opts *bind.TransactOpts, candidate common.Address) (*types.Transaction, error) {
+	return _TrustContract.contract.Transact(opts, "voteAddSigner", candidate)
 }
 
 // VoteAddSigner is a paid mutator transaction binding the contract method 0x6a5b3347.
 //
-// Solidity: function voteAddSigner(signer address) returns()
-func (_TrustContract *TrustContractSession) VoteAddSigner(signer common.Address) (*types.Transaction, error) {
-	return _TrustContract.Contract.VoteAddSigner(&_TrustContract.TransactOpts, signer)
+// Solidity: function voteAddSigner(candidate address) returns(votesNeeded uint256)
+func (_TrustContract *TrustContractSession) VoteAddSigner(candidate common.Address) (*types.Transaction, error) {
+	return _TrustContract.Contract.VoteAddSigner(&_TrustContract.TransactOpts, candidate)
 }
 
 // VoteAddSigner is a paid mutator transaction binding the contract method 0x6a5b3347.
 //
-// Solidity: function voteAddSigner(signer address) returns()
-func (_TrustContract *TrustContractTransactorSession) VoteAddSigner(signer common.Address) (*types.Transaction, error) {
-	return _TrustContract.Contract.VoteAddSigner(&_TrustContract.TransactOpts, signer)
+// Solidity: function voteAddSigner(candidate address) returns(votesNeeded uint256)
+func (_TrustContract *TrustContractTransactorSession) VoteAddSigner(candidate common.Address) (*types.Transaction, error) {
+	return _TrustContract.Contract.VoteAddSigner(&_TrustContract.TransactOpts, candidate)
 }
 
 // VoteRemoveSigner is a paid mutator transaction binding the contract method 0x3296fedc.
 //
-// Solidity: function voteRemoveSigner(signer address) returns()
-func (_TrustContract *TrustContractTransactor) VoteRemoveSigner(opts *bind.TransactOpts, signer common.Address) (*types.Transaction, error) {
-	return _TrustContract.contract.Transact(opts, "voteRemoveSigner", signer)
+// Solidity: function voteRemoveSigner(candidate address) returns(votesNeeded uint256)
+func (_TrustContract *TrustContractTransactor) VoteRemoveSigner(opts *bind.TransactOpts, candidate common.Address) (*types.Transaction, error) {
+	return _TrustContract.contract.Transact(opts, "voteRemoveSigner", candidate)
 }
 
 // VoteRemoveSigner is a paid mutator transaction binding the contract method 0x3296fedc.
 //
-// Solidity: function voteRemoveSigner(signer address) returns()
-func (_TrustContract *TrustContractSession) VoteRemoveSigner(signer common.Address) (*types.Transaction, error) {
-	return _TrustContract.Contract.VoteRemoveSigner(&_TrustContract.TransactOpts, signer)
+// Solidity: function voteRemoveSigner(candidate address) returns(votesNeeded uint256)
+func (_TrustContract *TrustContractSession) VoteRemoveSigner(candidate common.Address) (*types.Transaction, error) {
+	return _TrustContract.Contract.VoteRemoveSigner(&_TrustContract.TransactOpts, candidate)
 }
 
 // VoteRemoveSigner is a paid mutator transaction binding the contract method 0x3296fedc.
 //
-// Solidity: function voteRemoveSigner(signer address) returns()
-func (_TrustContract *TrustContractTransactorSession) VoteRemoveSigner(signer common.Address) (*types.Transaction, error) {
-	return _TrustContract.Contract.VoteRemoveSigner(&_TrustContract.TransactOpts, signer)
+// Solidity: function voteRemoveSigner(candidate address) returns(votesNeeded uint256)
+func (_TrustContract *TrustContractTransactorSession) VoteRemoveSigner(candidate common.Address) (*types.Transaction, error) {
+	return _TrustContract.Contract.VoteRemoveSigner(&_TrustContract.TransactOpts, candidate)
 }
 
 // TrustContractApprovalIterator is returned from FilterApproval and is used to iterate over the raw logs and unpacked data for Approval events raised by the TrustContract contract.
@@ -1182,6 +1489,395 @@ func (_TrustContract *TrustContractFilterer) WatchFund(opts *bind.WatchOpts, sin
 				// New log arrived, parse the event and forward to the user
 				event := new(TrustContractFund)
 				if err := _TrustContract.contract.UnpackLog(event, "Fund", log); err != nil {
+					return err
+				}
+				event.Raw = log
+
+				select {
+				case sink <- event:
+				case err := <-sub.Err():
+					return err
+				case <-quit:
+					return nil
+				}
+			case err := <-sub.Err():
+				return err
+			case <-quit:
+				return nil
+			}
+		}
+	}), nil
+}
+
+// TrustContractLogCreatedIterator is returned from FilterLogCreated and is used to iterate over the raw logs and unpacked data for LogCreated events raised by the TrustContract contract.
+type TrustContractLogCreatedIterator struct {
+	Event *TrustContractLogCreated // Event containing the contract specifics and raw log
+
+	contract *bind.BoundContract // Generic contract to use for unpacking event data
+	event    string              // Event name to use for unpacking event data
+
+	logs chan types.Log        // Log channel receiving the found contract events
+	sub  ethereum.Subscription // Subscription for errors, completion and termination
+	done bool                  // Whether the subscription completed delivering logs
+	fail error                 // Occurred error to stop iteration
+}
+
+// Next advances the iterator to the subsequent event, returning whether there
+// are any more events found. In case of a retrieval or parsing error, false is
+// returned and Error() can be queried for the exact failure.
+func (it *TrustContractLogCreatedIterator) Next() bool {
+	// If the iterator failed, stop iterating
+	if it.fail != nil {
+		return false
+	}
+	// If the iterator completed, deliver directly whatever's available
+	if it.done {
+		select {
+		case log := <-it.logs:
+			it.Event = new(TrustContractLogCreated)
+			if err := it.contract.UnpackLog(it.Event, it.event, log); err != nil {
+				it.fail = err
+				return false
+			}
+			it.Event.Raw = log
+			return true
+
+		default:
+			return false
+		}
+	}
+	// Iterator still in progress, wait for either a data or an error event
+	select {
+	case log := <-it.logs:
+		it.Event = new(TrustContractLogCreated)
+		if err := it.contract.UnpackLog(it.Event, it.event, log); err != nil {
+			it.fail = err
+			return false
+		}
+		it.Event.Raw = log
+		return true
+
+	case err := <-it.sub.Err():
+		it.done = true
+		it.fail = err
+		return it.Next()
+	}
+}
+
+// Error returns any retrieval or parsing error occurred during filtering.
+func (it *TrustContractLogCreatedIterator) Error() error {
+	return it.fail
+}
+
+// Close terminates the iteration process, releasing any pending underlying
+// resources.
+func (it *TrustContractLogCreatedIterator) Close() error {
+	it.sub.Unsubscribe()
+	return nil
+}
+
+// TrustContractLogCreated represents a LogCreated event raised by the TrustContract contract.
+type TrustContractLogCreated struct {
+	Trust  common.Address
+	Quanta string
+	Raw    types.Log // Blockchain specific contextual infos
+}
+
+// FilterLogCreated is a free log retrieval operation binding the contract event 0xa49a9b1337d8427ee784aeaded38ac25b248da00282d53353ef0e2dfb664504a.
+//
+// Solidity: e LogCreated(trust address, quanta string)
+func (_TrustContract *TrustContractFilterer) FilterLogCreated(opts *bind.FilterOpts) (*TrustContractLogCreatedIterator, error) {
+
+	logs, sub, err := _TrustContract.contract.FilterLogs(opts, "LogCreated")
+	if err != nil {
+		return nil, err
+	}
+	return &TrustContractLogCreatedIterator{contract: _TrustContract.contract, event: "LogCreated", logs: logs, sub: sub}, nil
+}
+
+// WatchLogCreated is a free log subscription operation binding the contract event 0xa49a9b1337d8427ee784aeaded38ac25b248da00282d53353ef0e2dfb664504a.
+//
+// Solidity: e LogCreated(trust address, quanta string)
+func (_TrustContract *TrustContractFilterer) WatchLogCreated(opts *bind.WatchOpts, sink chan<- *TrustContractLogCreated) (event.Subscription, error) {
+
+	logs, sub, err := _TrustContract.contract.WatchLogs(opts, "LogCreated")
+	if err != nil {
+		return nil, err
+	}
+	return event.NewSubscription(func(quit <-chan struct{}) error {
+		defer sub.Unsubscribe()
+		for {
+			select {
+			case log := <-logs:
+				// New log arrived, parse the event and forward to the user
+				event := new(TrustContractLogCreated)
+				if err := _TrustContract.contract.UnpackLog(event, "LogCreated", log); err != nil {
+					return err
+				}
+				event.Raw = log
+
+				select {
+				case sink <- event:
+				case err := <-sub.Err():
+					return err
+				case <-quit:
+					return nil
+				}
+			case err := <-sub.Err():
+				return err
+			case <-quit:
+				return nil
+			}
+		}
+	}), nil
+}
+
+// TrustContractLogFlushedIterator is returned from FilterLogFlushed and is used to iterate over the raw logs and unpacked data for LogFlushed events raised by the TrustContract contract.
+type TrustContractLogFlushedIterator struct {
+	Event *TrustContractLogFlushed // Event containing the contract specifics and raw log
+
+	contract *bind.BoundContract // Generic contract to use for unpacking event data
+	event    string              // Event name to use for unpacking event data
+
+	logs chan types.Log        // Log channel receiving the found contract events
+	sub  ethereum.Subscription // Subscription for errors, completion and termination
+	done bool                  // Whether the subscription completed delivering logs
+	fail error                 // Occurred error to stop iteration
+}
+
+// Next advances the iterator to the subsequent event, returning whether there
+// are any more events found. In case of a retrieval or parsing error, false is
+// returned and Error() can be queried for the exact failure.
+func (it *TrustContractLogFlushedIterator) Next() bool {
+	// If the iterator failed, stop iterating
+	if it.fail != nil {
+		return false
+	}
+	// If the iterator completed, deliver directly whatever's available
+	if it.done {
+		select {
+		case log := <-it.logs:
+			it.Event = new(TrustContractLogFlushed)
+			if err := it.contract.UnpackLog(it.Event, it.event, log); err != nil {
+				it.fail = err
+				return false
+			}
+			it.Event.Raw = log
+			return true
+
+		default:
+			return false
+		}
+	}
+	// Iterator still in progress, wait for either a data or an error event
+	select {
+	case log := <-it.logs:
+		it.Event = new(TrustContractLogFlushed)
+		if err := it.contract.UnpackLog(it.Event, it.event, log); err != nil {
+			it.fail = err
+			return false
+		}
+		it.Event.Raw = log
+		return true
+
+	case err := <-it.sub.Err():
+		it.done = true
+		it.fail = err
+		return it.Next()
+	}
+}
+
+// Error returns any retrieval or parsing error occurred during filtering.
+func (it *TrustContractLogFlushedIterator) Error() error {
+	return it.fail
+}
+
+// Close terminates the iteration process, releasing any pending underlying
+// resources.
+func (it *TrustContractLogFlushedIterator) Close() error {
+	it.sub.Unsubscribe()
+	return nil
+}
+
+// TrustContractLogFlushed represents a LogFlushed event raised by the TrustContract contract.
+type TrustContractLogFlushed struct {
+	Sender common.Address
+	Amount *big.Int
+	Raw    types.Log // Blockchain specific contextual infos
+}
+
+// FilterLogFlushed is a free log retrieval operation binding the contract event 0xa98efcd54f1f2ae5457ba3c68d7cf8974003a2bfce00f526f5624264a87bc0ea.
+//
+// Solidity: e LogFlushed(sender indexed address, amount uint256)
+func (_TrustContract *TrustContractFilterer) FilterLogFlushed(opts *bind.FilterOpts, sender []common.Address) (*TrustContractLogFlushedIterator, error) {
+
+	var senderRule []interface{}
+	for _, senderItem := range sender {
+		senderRule = append(senderRule, senderItem)
+	}
+
+	logs, sub, err := _TrustContract.contract.FilterLogs(opts, "LogFlushed", senderRule)
+	if err != nil {
+		return nil, err
+	}
+	return &TrustContractLogFlushedIterator{contract: _TrustContract.contract, event: "LogFlushed", logs: logs, sub: sub}, nil
+}
+
+// WatchLogFlushed is a free log subscription operation binding the contract event 0xa98efcd54f1f2ae5457ba3c68d7cf8974003a2bfce00f526f5624264a87bc0ea.
+//
+// Solidity: e LogFlushed(sender indexed address, amount uint256)
+func (_TrustContract *TrustContractFilterer) WatchLogFlushed(opts *bind.WatchOpts, sink chan<- *TrustContractLogFlushed, sender []common.Address) (event.Subscription, error) {
+
+	var senderRule []interface{}
+	for _, senderItem := range sender {
+		senderRule = append(senderRule, senderItem)
+	}
+
+	logs, sub, err := _TrustContract.contract.WatchLogs(opts, "LogFlushed", senderRule)
+	if err != nil {
+		return nil, err
+	}
+	return event.NewSubscription(func(quit <-chan struct{}) error {
+		defer sub.Unsubscribe()
+		for {
+			select {
+			case log := <-logs:
+				// New log arrived, parse the event and forward to the user
+				event := new(TrustContractLogFlushed)
+				if err := _TrustContract.contract.UnpackLog(event, "LogFlushed", log); err != nil {
+					return err
+				}
+				event.Raw = log
+
+				select {
+				case sink <- event:
+				case err := <-sub.Err():
+					return err
+				case <-quit:
+					return nil
+				}
+			case err := <-sub.Err():
+				return err
+			case <-quit:
+				return nil
+			}
+		}
+	}), nil
+}
+
+// TrustContractLogForwardedIterator is returned from FilterLogForwarded and is used to iterate over the raw logs and unpacked data for LogForwarded events raised by the TrustContract contract.
+type TrustContractLogForwardedIterator struct {
+	Event *TrustContractLogForwarded // Event containing the contract specifics and raw log
+
+	contract *bind.BoundContract // Generic contract to use for unpacking event data
+	event    string              // Event name to use for unpacking event data
+
+	logs chan types.Log        // Log channel receiving the found contract events
+	sub  ethereum.Subscription // Subscription for errors, completion and termination
+	done bool                  // Whether the subscription completed delivering logs
+	fail error                 // Occurred error to stop iteration
+}
+
+// Next advances the iterator to the subsequent event, returning whether there
+// are any more events found. In case of a retrieval or parsing error, false is
+// returned and Error() can be queried for the exact failure.
+func (it *TrustContractLogForwardedIterator) Next() bool {
+	// If the iterator failed, stop iterating
+	if it.fail != nil {
+		return false
+	}
+	// If the iterator completed, deliver directly whatever's available
+	if it.done {
+		select {
+		case log := <-it.logs:
+			it.Event = new(TrustContractLogForwarded)
+			if err := it.contract.UnpackLog(it.Event, it.event, log); err != nil {
+				it.fail = err
+				return false
+			}
+			it.Event.Raw = log
+			return true
+
+		default:
+			return false
+		}
+	}
+	// Iterator still in progress, wait for either a data or an error event
+	select {
+	case log := <-it.logs:
+		it.Event = new(TrustContractLogForwarded)
+		if err := it.contract.UnpackLog(it.Event, it.event, log); err != nil {
+			it.fail = err
+			return false
+		}
+		it.Event.Raw = log
+		return true
+
+	case err := <-it.sub.Err():
+		it.done = true
+		it.fail = err
+		return it.Next()
+	}
+}
+
+// Error returns any retrieval or parsing error occurred during filtering.
+func (it *TrustContractLogForwardedIterator) Error() error {
+	return it.fail
+}
+
+// Close terminates the iteration process, releasing any pending underlying
+// resources.
+func (it *TrustContractLogForwardedIterator) Close() error {
+	it.sub.Unsubscribe()
+	return nil
+}
+
+// TrustContractLogForwarded represents a LogForwarded event raised by the TrustContract contract.
+type TrustContractLogForwarded struct {
+	Sender common.Address
+	Amount *big.Int
+	Raw    types.Log // Blockchain specific contextual infos
+}
+
+// FilterLogForwarded is a free log retrieval operation binding the contract event 0x5bac0d4f99f71df67fa7cebba0369126a7cb2b183bcb02b8393dbf5185ba77b6.
+//
+// Solidity: e LogForwarded(sender indexed address, amount uint256)
+func (_TrustContract *TrustContractFilterer) FilterLogForwarded(opts *bind.FilterOpts, sender []common.Address) (*TrustContractLogForwardedIterator, error) {
+
+	var senderRule []interface{}
+	for _, senderItem := range sender {
+		senderRule = append(senderRule, senderItem)
+	}
+
+	logs, sub, err := _TrustContract.contract.FilterLogs(opts, "LogForwarded", senderRule)
+	if err != nil {
+		return nil, err
+	}
+	return &TrustContractLogForwardedIterator{contract: _TrustContract.contract, event: "LogForwarded", logs: logs, sub: sub}, nil
+}
+
+// WatchLogForwarded is a free log subscription operation binding the contract event 0x5bac0d4f99f71df67fa7cebba0369126a7cb2b183bcb02b8393dbf5185ba77b6.
+//
+// Solidity: e LogForwarded(sender indexed address, amount uint256)
+func (_TrustContract *TrustContractFilterer) WatchLogForwarded(opts *bind.WatchOpts, sink chan<- *TrustContractLogForwarded, sender []common.Address) (event.Subscription, error) {
+
+	var senderRule []interface{}
+	for _, senderItem := range sender {
+		senderRule = append(senderRule, senderItem)
+	}
+
+	logs, sub, err := _TrustContract.contract.WatchLogs(opts, "LogForwarded", senderRule)
+	if err != nil {
+		return nil, err
+	}
+	return event.NewSubscription(func(quit <-chan struct{}) error {
+		defer sub.Unsubscribe()
+		for {
+			select {
+			case log := <-logs:
+				// New log arrived, parse the event and forward to the user
+				event := new(TrustContractLogForwarded)
+				if err := _TrustContract.contract.UnpackLog(event, "LogForwarded", log); err != nil {
 					return err
 				}
 				event.Raw = log
