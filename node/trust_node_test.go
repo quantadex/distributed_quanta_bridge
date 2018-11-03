@@ -81,6 +81,7 @@ func generateConfig(quanta *QuantaNodeSecrets, ethereum *EthereumTrustSecrets,
 		EthereumBlockStart: 0,
 		EthereumRpc: etherNet.rpc,
 		EthereumKeyStore: ethereum.NodeSecrets[index],
+		EthereumTrustAddr: ethereum.TrustContract,
 	}
 }
 
@@ -167,7 +168,9 @@ func TestRopstenNativeETH(t *testing.T) {
 	time.Sleep(time.Millisecond*250)
 
 	// DEPOSIT to TEST2
-	block := int64(4248970)
+	// 0xba7573C0e805ef71ACB7f1c4a55E7b0af416E96A transfers 0.01 ETH to forward address: 0xb59e4b94e4ed7331ee0520e9377967614ca2dc98 on block 4327101
+	// Foward contract 0xb59e4b94e4ed7331ee0520e9377967614ca2dc98 created on 4327057
+	block := int64(4327057)
 	fmt.Printf("=======================\n[BLOCK %d] BEGIN\n\n", block)
 	for i, node := range nodes {
 		fmt.Printf("[BLOCK %d] Node[#%d/%d id=%d] calling doLoop...\n", block, i+1, len(nodes), node.nodeID)
@@ -181,7 +184,7 @@ func TestRopstenNativeETH(t *testing.T) {
 	fmt.Printf("[BLOCK %d] END\n=======================\n\n", block)
 
 	// Check for the deposit
-	block = 4249018
+	block = 4327101
 	fmt.Printf("=======================\n[BLOCK %d] BEGIN\n\n", block)
 	for i, node := range nodes {
 		fmt.Printf("[BLOCK %d] Node[#%d/%d id=%d] calling doLoop...\n", block, i+1, len(nodes), node.nodeID)
@@ -195,7 +198,7 @@ func TestRopstenNativeETH(t *testing.T) {
 	}
 	fmt.Printf("[BLOCK %d] END\n=======================\n\n", block)
 
-	block = 4249019
+	block = 4327102
 	fmt.Printf("=======================\n[BLOCK %d] BEGIN\n\n", block)
 	for i, node := range nodes {
 		fmt.Printf("[BLOCK %d] Node[#%d/%d id=%d] calling doLoop...\n", block, i+1, len(nodes), node.nodeID)
@@ -203,41 +206,17 @@ func TestRopstenNativeETH(t *testing.T) {
 		fmt.Printf("...[BLOCK %d] Node[#%d/%d] counts %d/%d/%d [deposit/peer/sent]\n\n", block, i+1, len(nodes), len(allDeposits), len(allPeerMsgs), len(allSentMsgs))
 
 		// TODO: inspect the messages for the right content
-
-		if i == 0 {
+		// index 0 does not always send the message.
+		// last node relative from node it was sent from - see round_robin
+		if int(4327101-1) % 3 == i {
 			// the first node doesn't receive any peer messages (yet), we will check for it in block #4249020
 			assertMsgCountEqualDoLoop(t, "deposit", 0, len(allDeposits), block, i+1, len(nodes), node)
-			assertMsgCountEqualDoLoop(t, "peer", 0, len(allPeerMsgs), block, i+1, len(nodes), node)
-			assertMsgCountEqualDoLoop(t, "sent", 0, len(allSentMsgs), block, i+1, len(nodes), node)
+			assertMsgCountEqualDoLoop(t, "peer", 1, len(allPeerMsgs), block, i+1, len(nodes), node)
+			assertMsgCountEqualDoLoop(t, "sent", 1, len(allSentMsgs), block, i+1, len(nodes), node)
 		} else {
 			// the rest of the nodes each receive a peer message
 			assertMsgCountEqualDoLoop(t, "deposit", 0, len(allDeposits), block, i+1, len(nodes), node)
 			assertMsgCountEqualDoLoop(t, "peer", 1, len(allPeerMsgs), block, i+1, len(nodes), node)
-			assertMsgCountEqualDoLoop(t, "sent", 0, len(allSentMsgs), block, i+1, len(nodes), node)
-		}
-	}
-	fmt.Printf("[BLOCK %d] END\n=======================\n\n", block)
-
-	// check for the signed peer messages
-	block = 4249020
-	fmt.Printf("=======================\n[BLOCK %d] BEGIN\n\n", block)
-	for i, node := range nodes {
-		fmt.Printf("[BLOCK %d] Node[#%d/%d id=%d] calling doLoop...\n", block, i+1, len(nodes), node.nodeID)
-		allDeposits, allPeerMsgs, allSentMsgs := node.cTQ.DoLoop([]int64{block})
-		fmt.Printf("...[BLOCK %d] Node[#%d/%d] counts %d/%d/%d [deposit/peer/sent]\n\n", block, i+1, len(nodes), len(allDeposits), len(allPeerMsgs), len(allSentMsgs))
-
-		// TODO: inspect the messages for the right content
-		if i == 0 {
-			// the first node is the last to receive the peer message, and will go ahead and goes ahead and sends the submission message
-			assertMsgCountEqualDoLoop(t, "deposit", 0, len(allDeposits), block, i+1, len(nodes), node)
-			assertMsgCountEqualDoLoop(t, "peer", 1, len(allPeerMsgs), block, i+1, len(nodes), node)
-			assertMsgCountEqualDoLoop(t, "sent", 1, len(allSentMsgs), block, i+1, len(nodes), node)
-
-			// TODO: verify the content of that sent message
-		} else {
-			// the rest of the nodes have nothing to do
-			assertMsgCountEqualDoLoop(t, "deposit", 0, len(allDeposits), block, i+1, len(nodes), node)
-			assertMsgCountEqualDoLoop(t, "peer", 0, len(allPeerMsgs), block, i+1, len(nodes), node)
 			assertMsgCountEqualDoLoop(t, "sent", 0, len(allSentMsgs), block, i+1, len(nodes), node)
 		}
 	}
