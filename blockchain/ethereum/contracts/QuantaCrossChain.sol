@@ -13,11 +13,21 @@ import { ECTools } from "../libraries/ECTools.sol";
  * To make the contract usable, the owner must call assignInitialSigners() once.
  */
 contract QuantaCrossChain is Ownable {
-  /** keys are the signers' address, value is != 0 if assigned */
-  mapping(address=>uint8) signers;
+  // all the ratified signers in an unsorted array
+  address[] public signers;
+  uint public requiredVotes = 0;
 
-  /** the number of total signers ratified */
-  uint256 public totalSigners = 0;
+  struct Poll {
+    address addr;
+    bool[] votes;
+  }
+  uint8 public MAX_CANDIDATES = 10;
+
+  Poll[] additions;
+  uint8 additionsHead;
+
+  Poll[] removals;
+  uint8 removalsHead;
 
   /** the last successfully used txId */
   uint64 public txIdLast = 0;
@@ -29,6 +39,10 @@ contract QuantaCrossChain is Ownable {
                           uint256 amount,
                           bool[] verified);
 
+  // https://ethereum.stackexchange.com/questions/42995/how-to-send-ether-to-a-contract-in-truffle-test/43011
+  // @notice Logs the address of the sender and amounts paid to the contract
+  event Fund(address indexed _from, uint _value);
+
   /**
    * Assigns the initial list of signers.
    * Must be called once after contract instantiation.
@@ -36,23 +50,79 @@ contract QuantaCrossChain is Ownable {
    * May only be called once by the owner. Further calls are ignored.
   */
   function assignInitialSigners(address[] initialSigners) external onlyOwner {
-    assert(totalSigners == 0);  // penalize (using assertions) if tried twice
+    assert(signers.length == 0);  // penalize (using assertions) if tried twice
     require(initialSigners.length > 0);
 
     // TODO: should we temporarily set totalSigners to MAX_UINT256?
-
+    // TODO: dupe check?
     for(uint i=0; i<initialSigners.length; i++) {
-      signers[initialSigners[i]] = 1;
+      signers.push(initialSigners[i]);
     }
 
-    totalSigners = i;
+    updateRequiredVotes();
   }
+
+
+  function isSigner(address signer) external view returns(bool) {
+    for (uint i=0; i < signers.length; i++) {
+      if (signers[i] == signer) {
+        return true;
+      }
+    }
+    return false;
+  }
+
+
+  function numSigners() external view returns (uint) {
+    return signers.length;
+  }
+
+
+  function getAddCandidateVotes(address candidate) external view returns(uint count) {
+    for(uint8 i=0; i<additions.length; i++) {
+      if (additions[i].addr == candidate) {
+        bool[] storage votes = additions[i].votes;
+        for(i=0; i<signers.length; i++) {
+          if (votes[i]) {
+            count++;
+          }
+        }
+        break;
+      }
+    }
+  }
+
+
+  function numAddCandidates() external view returns (uint count) {
+    return additions.length;
+  }
+
+
+  function getRemoveCandidateVotes(address candidate) external view returns(uint count) {
+    for(uint8 i=0; i<removals.length; i++) {
+      if (removals[i].addr == candidate) {
+        bool[] storage votes = removals[i].votes;
+        for(i=0; i<signers.length; i++) {
+          if (votes[i]==true) {
+            count++;
+          }
+        }
+        break;
+      }
+    }
+  }
+
+
+  function numRemoveCandidates() external view returns(uint) {
+    return removals.length;
+  }
+
 
   function paymentTx(uint64 txId,
                      address erc20Addr,
                      address toAddr,
                      uint256 amount,
-                     uint8[] v, bytes32[] r, bytes32[] s) external {  // FIXME: use external instead of public since it uses last gas
+                     uint8[] v, bytes32[] r, bytes32[] s) external {
     uint n = v.length;
 
     require(n != 0);
@@ -83,72 +153,137 @@ contract QuantaCrossChain is Ownable {
   }
 
 
-  function validateSignatures(bytes sigMsg,
-                              uint numSigs,
-                              uint8[] v,
-                              bytes32[] r,
-                              bytes32[] s,
-                              bool[] outVerified) internal view returns (bool) {
-    // with 8 signatures, Gas = 107770
+  function voteAddSigner(address candidate) external returns(uint votesNeeded) {
+    require(candidate != 0x0);
+    assert(signers.length > 0);
+    require(candidate != msg.sender);
 
-    uint abortThreshold = numSigs - totalSigners + 1;
-    bytes32 signed = ECTools.toEthereumSignedMessage(string(sigMsg));
-    address[] memory validated = new address[](numSigs);
-    uint numValidated = 0;
-    address addr;
+    // find existing candidate, if any
+    uint8 idx = 0;
 
-    uint j = 0;
-    for(uint i=0; ((i<numSigs) && (numValidated<totalSigners) && (abortThreshold>0)); i++) {
-      addr = ECTools.recoverSignerVRS(signed, v[i], r[i], s[i]);
-      if (signers[addr] == 1) {
-        // wen anticipate the number of signers to be small, so just do a linear scan
-        for(j=0; j<numValidated; j++) {
-          if (validated[j] == addr) {
-            addr = 0;
-            break;
-          }
-        }
-
-        if (addr != 0) {
-          outVerified[i] = true;
-          validated[numValidated] = addr;
-          numValidated++;
-        } else {
-          abortThreshold--;
-        }
-      } else {
-        abortThreshold--;
+    for(uint8 i=0; i<additions.length; i++) {
+      if (additions[i].addr == candidate) {
+        idx = i;
+        break;
       }
     }
 
-    return numValidated == totalSigners;
-  }
+    if (i == additions.length) {  // did not find it
+      // need to add it
+      if (additions.length == MAX_CANDIDATES) {
+        // replace at the head
 
+        // initialize
+        Poll storage spoll = additions[additionsHead];
+        spoll.addr = candidate;
+        bool[] storage cvotes = spoll.votes;
+        for (uint j=0; j < signers.length; j++) {
+          cvotes[j] = false;
+        }
 
-  function voteAddSigner(address signer) external {
-    require(signer != 0x0);
+        idx = additionsHead;
 
-    // TODO: put the proposed proposed signer in a mapping, and only
-    // move them to the signers list when all current signers have
-    // ratified them
-    if (signers[signer] == 0) {
-      totalSigners++;
-      signers[signer] = 1;
+        // increment the head
+        additionsHead++;
+        if (additionsHead == MAX_CANDIDATES) {
+          additionsHead = 0;
+        }
+      } else {
+        // not filled yet, simple case
+        Poll memory mpoll = Poll(candidate, new bool[](signers.length));
+        additions.push(mpoll);
+        idx = uint8(additions.length - 1);
+      }
+    }
+
+    // integrated vote tallying
+    votesNeeded = requiredVotes;
+    bool[] storage votes = additions[idx].votes;
+    for(i=0; i<signers.length; i++) {
+      // sender must be one of the signers
+      if (votes[i]) {
+        votesNeeded--;
+      } else if (signers[i]==msg.sender) {
+        votes[i] = true;
+        votesNeeded--;
+      }
+
+      if (votesNeeded == 0) {
+        _promoteCandidateToSigner(candidate);
+        break;
+      }
     }
   }
 
-  function voteRemoveSigner(address signer) external {
-    require(signer != 0x0);
 
-    // TODO: put the proposed proposed signer in a mapping, and only
-    // move them to the signers list when all current signers have
-    // agreed to remove them
+  function voteRemoveSigner(address candidate) external returns(uint votesNeeded) {
+    require(candidate != 0x0);
+    assert(signers.length > 0);
+    require(candidate != msg.sender);
 
-    if (signers[signer] != 0) {
-      delete signers[signer];
-      totalSigners--;
+    // find existing candidate, if any
+    uint8 idx = 0;
+
+    for(uint8 i=0; i<removals.length; i++) {
+      if (removals[i].addr == candidate) {
+        idx = i;
+        break;
+      }
+    }
+
+    if (i == removals.length) {  // did not find it
+      // need to add it
+      if (removals.length == MAX_CANDIDATES) {
+        // replace at the head
+
+        // overwrite and initialize
+        Poll storage spoll = removals[removalsHead];
+        spoll.addr = candidate;
+        votes = spoll.votes;
+        for (uint j=0; j < signers.length; j++) {
+          votes[j] = false;
+        }
+
+        idx = removalsHead;
+
+        // increment the head
+        removalsHead++;
+        if (removalsHead == MAX_CANDIDATES) {
+          removalsHead = 0;
+        }
+      } else {
+        // not filled yet, simple case
+        Poll memory mpoll = Poll(candidate, new bool[](signers.length));
+        removals.push(mpoll);
+        idx = uint8(removals.length - 1);
+      }
+    }
+
+    // integrated vote tallying
+    votesNeeded = requiredVotes;
+    bool[] storage votes = removals[idx].votes;
+    for(i=0; i<signers.length; i++) {
+      // sender must be one of the signers
+      if (votes[i]) {
+        votesNeeded--;
+      } else if (signers[i]==msg.sender) {
+        votes[i] = true;
+        votesNeeded--;
+      }
+
+      if (votesNeeded == 0) {
+        _removeSigner(candidate);
+        break;
+      }
     }
   }
+
+
+  // @notice Will receive any eth sent to the contract
+  function () external payable {
+    emit Fund(msg.sender, msg.value);
+  }
+
 
   /**
    * @return hex encoded signature message
@@ -188,12 +323,112 @@ contract QuantaCrossChain is Ownable {
      return b_msg;
   }
 
-  // https://ethereum.stackexchange.com/questions/42995/how-to-send-ether-to-a-contract-in-truffle-test/43011
-  // @notice Logs the address of the sender and amounts paid to the contract
-  event Fund(address indexed _from, uint _value);
+  function validateSignatures(bytes sigMsg,
+                              uint numSigs,
+                              uint8[] v,
+                              bytes32[] r,
+                              bytes32[] s,
+                              bool[] outVerified) internal view returns (bool) {
+    // with 8 signatures, Gas = 107770
 
-  // @notice Will receive any eth sent to the contract
-  function () external payable {
-    emit Fund(msg.sender, msg.value);
+    uint abortThreshold = numSigs - signers.length + 1;
+    bytes32 signed = ECTools.toEthereumSignedMessage(string(sigMsg));
+    address[] memory validated = new address[](numSigs);
+    uint numValidated = 0;
+    address addr;
+
+    uint j = 0;
+    for(uint i=0; ((i<numSigs) && (numValidated<signers.length) && (abortThreshold>0)); i++) {
+      addr = ECTools.recoverSignerVRS(signed, v[i], r[i], s[i]);
+
+      // we anticipate the number of signers to be small, so just do a linear scan
+      for(j=0; j<signers.length; j++) {
+        if (signers[j] == addr) {
+          break;
+        }
+      }
+
+      if (j==signers.length) {
+        abortThreshold--;
+      } else {
+        // dupe check: we anticipate the number of signers to be small, so just do a linear scan
+        for(j=0; j<numValidated; j++) {
+          if (validated[j] == addr) {
+            addr = 0;
+            break;
+          }
+        }
+
+        if (addr == 0) {
+          abortThreshold--;
+        } else {
+          outVerified[i] = true;
+          validated[numValidated] = addr;
+          numValidated++;
+        }
+      }
+    }
+
+    return numValidated == signers.length;
+  }
+
+  function updateRequiredVotes() internal {
+    // solidity division always rounds down
+    // simple majority
+    requiredVotes = signers.length / 2 + 1;
+  }
+
+
+  function _removeSigner(address signer) internal {
+    // swap the signer in each of the voting arrays
+    uint endIdx = removals.length - 1;
+    uint8 signerIdx;
+
+    for(signerIdx=0; signerIdx < signers.length; signerIdx++) {
+      if (signers[signerIdx] == signer) {
+        break;
+      }
+    }
+
+    for (uint i=0; i<=endIdx; i++) {
+      // put our last candidate here
+      removals[i].votes[signerIdx] = removals[i].votes[signers.length-1];
+      removals[i].votes.length--;  // decrease the size
+
+      if (removals[i].addr == signer) {
+        if (i != endIdx) {
+          // put the last one in this index, we will delete the tail eventually
+          removals[i] = removals[endIdx];
+        }
+      }
+    }
+
+    removals.length--;  // delete the last one
+
+    signers[signerIdx] = signers[signers.length - 1];
+    signers.length--;
+
+    // FIXME: the one who casts the winning vote, pays this gas!
+    updateRequiredVotes();
+  }
+
+  function _promoteCandidateToSigner(address candidate) internal {
+    // add our candidate to the end of the voting list for all other addCandidates
+
+    uint8 lastIdx = uint8(additions.length - 1);
+
+    for(uint8 i=0; i < lastIdx; i++) {
+      if (additions[i].addr == candidate) { // our candidate
+        // move the last index to here and remap, technically not a FIFO queue
+        additions[i] = additions[lastIdx];
+      }
+      additions[i].votes.length++;  //make space for our new signer
+    }
+
+    additions.length--;       // delete our candidate
+    signers.push(candidate);  // add our candidate
+
+    // FIXME: the one who casts the winning vote, pays this gas!
+    updateRequiredVotes();
   }
 }

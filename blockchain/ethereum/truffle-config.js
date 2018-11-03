@@ -25,6 +25,16 @@ module.exports = {
         port: 8545,
         network_id: "*", // Match any network id
         gas: 14600000,
+    },
+    // testnets
+    ropsten: {
+      provider: function() {
+        return new HDWalletProvider(process.env.MNENOMIC,
+                                    "https://ropsten.infura.io/v3/" + process.env.INFURA_API_KEY)
+      },
+      network_id: 3,
+      gas: 4700000,
+      // gasPrice: 21
     }
   },
 
@@ -33,15 +43,5 @@ module.exports = {
       enabled: true,
       runs: 500
     }
-  },
-
-  // testnets
-  ropsten: {
-    provider: function() {
-      return new HDWalletProvider(process.env.MNENOMIC, "https://ropsten.infura.io/v3/" + process.env.INFURA_API_KEY)
-    },
-    network_id: 3,
-    gas: 4600000,
-    gasPrice: 21
   }
 };

@@ -139,9 +139,9 @@ func setLastBlock(db kv_store.KVStore, coinName string, newVal int64) bool {
         return false
     }
     //QUANTA Page id is not ascending :(
-    //if newVal < prevBlock {
+    // if newVal < prevBlock {
     //    return false
-    //}
+    // }
     err := db.SetValue(LAST_BLOCK, coinName, strconv.FormatInt(prevBlock,10), strconv.FormatInt(newVal,10))
     if err != nil {
         println("Bucket is not found.")
