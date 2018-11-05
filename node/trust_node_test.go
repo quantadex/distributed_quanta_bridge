@@ -4,158 +4,15 @@ import (
 	"fmt"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/ethclient"
-	"github.com/quantadex/distributed_quanta_bridge/common/logger"
-	"github.com/quantadex/distributed_quanta_bridge/registrar/service"
-	"github.com/quantadex/distributed_quanta_bridge/trust/coin"
 	"github.com/quantadex/distributed_quanta_bridge/trust/coin/contracts"
 	"github.com/stretchr/testify/assert"
-	"os"
-	"sync"
 	"testing"
 	"time"
 )
 
-type QuantaNodeSecrets struct {
-	NodeSecrets []string
-	SourceAccount string
-}
-
-type EthereumTrustSecrets struct {
-	NodeSecrets []string
-	TrustContract string
-}
-
-type EthereumEnv struct {
-	rpc string
-	networkId string
-}
-
-var QUANTA_ISSUER = &QuantaNodeSecrets{
-	NodeSecrets:[]string{
-		"ZBHK5VE5ZM5MJI3FM7JOW7MMUF3FIRUMV3BTLUTJWQHDFEN7MG3J4VAV",
-		"ZDX6DGXBYAR3Z2BS4T4ITRTWPNJOSR5TPTVYN65UKEGP4ILOZ5GXU2KE",
-		"ZC4U5P5DWNXGRUENOCOKZFHAWFKBE7JFOB2BCEKCM7BKXXKQE3DARXIJ",
-	},
-	SourceAccount: "QCISRUJ73RQBHB3C4LA6X537LPGSFZF3YUZ6MOPUOUJR5A63I5TLJML4",
-}
-
-var ROPSTEN_TRUST = &EthereumTrustSecrets {
-	NodeSecrets: []string {
-		// 0xba420ef5d725361d8fdc58cb1e4fa62eda9ec990
-		"A7D7C6A92361590650AD0965970E186179F24F36B2B51CFE83F3AE8886BB6773",
-		// 0xe0006458963c3773b051e767c5c63fee24cd7ff9
-		"4C7F96D0CB8F2C48FD22CCB974513E6E9B0DC89475286BB24D2010E8D82AA461",
-		// 0xba7573c0e805ef71acb7f1c4a55e7b0af416e96a
-		"2E563A40747FA56419FB168ADF507C596E1A604D073D0F9E646B803DFA5BE94C",
-	},
-	TrustContract: "0xBD770336fF47A3B61D4f54cc0Fb541Ea7baAE92d",
-}
-
-const ROPSTEN = "ROPSTEN"
-const LOCAL = "LOCAL"
-
-// must match up with the HorizonUrl
-const QUANTA_ASSET = "0xAc2AFb5463F5Ba00a1161025C2ca0311748BfD2c"
-const QUANTA_ACCOUNT = "QCAO4HRMJDGFPUHRCLCSWARQTJXY2XTAFQUIRG2FAR3SCF26KQLAWZRN"
-
-var ETHER_NETWORKS = map[string]EthereumEnv {
-	ROPSTEN : EthereumEnv{ "https://ropsten.infura.io/v3/7b880b2fb55c454985d1c1540f47cbf6", "3" } ,
-	LOCAL: EthereumEnv{ "http://localhost:7545", "10" },
-}
-
-func generateConfig(quanta *QuantaNodeSecrets, ethereum *EthereumTrustSecrets,
-						etherNet EthereumEnv, index int) *Config {
-	return &Config {
-		ListenIp: "0.0.0.0",
-		ListenPort: 5100+index,
-		UsePrevKeys: true,
-		KvDbName: fmt.Sprintf("kv_db_%d", 5100+index),
-		CoinName: "ETH",
-		IssuerAddress: quanta.SourceAccount,
-		NodeKey: quanta.NodeSecrets[index],
-		HorizonUrl: "http://testnet-02.quantachain.io:8000/",
-		NetworkPassphrase: "QUANTA Test Network ; September 2018",
-		RegistrarIp: "localhost",
-		RegistrarPort: 5001,
-		EthereumNetworkId: etherNet.networkId,
-		EthereumBlockStart: 0,
-		EthereumRpc: etherNet.rpc,
-		EthereumKeyStore: ethereum.NodeSecrets[index],
-	}
-}
-
-func assertMsgCountEqualDoLoop(t *testing.T, label string, expected int, actual int, blockNum int64, nodeNum int, totalNodes int, node *TrustNode) {
-	assert.Equal(t, expected, actual, "%s message count was incorrect for block #%d [node #%d/%d id=%d]", label, blockNum, nodeNum, totalNodes, node.nodeID)
-}
-
-func StartNodes(quanta *QuantaNodeSecrets, ethereum *EthereumTrustSecrets,
-	etherEnv EthereumEnv) []*TrustNode {
-	println("Starting nodes")
-
-	mutex := sync.Mutex{}
-
-	nodes := []*TrustNode{}
-	var wg sync.WaitGroup
-
-	for i := 0; i < len(quanta.NodeSecrets); i++ {
-		wg.Add(1)
-
-		os.Remove(fmt.Sprintf("./kv_db_%d.db", 5100+i))
-
-		config := generateConfig(quanta, ethereum, etherEnv, i)
-
-		go func(config Config) {
-			defer wg.Done()
-
-			coin, err := coin.NewEthereumCoin(config.EthereumNetworkId, config.EthereumRpc)
-			if err != nil {
-				panic("Cannot create ethereum listener")
-			}
-
-			mutex.Lock()
-			node := bootstrapNode(config, coin)
-			nodes = append(nodes, node)
-			mutex.Unlock()
-
-			registerNode(config, node)
-		}(*config)
-	}
-
-	wg.Wait()
-
-	return nodes
-}
-
-func StopNodes(nodes []*TrustNode) {
-
-	for _, n := range nodes {
-		n.Stop()
-	}
-}
-
-func StartRegistry() *service.Server {
-	logger, _ := logger.NewLogger("registrar")
-	s := service.NewServer(service.NewRegistry(), "localhost:5001", logger)
-	s.DoHealthCheck(5)
-	go s.Start()
-	return s
-}
-
-func StopRegistry(s *service.Server) {
-	s.Stop()
-}
-
-func DoLoopDeposit(nodes []*TrustNode, blockIds []int64) {
-	for _, node := range nodes {
-		node.cTQ.DoLoop(blockIds)
-	}
-}
-
-func DoLoopWithdrawal(nodes []*TrustNode, cursor int64) {
-   for _, node := range nodes {
-      go node.qTC.DoLoop(cursor)
-   }
-}
+/*
+ * INTEGRATED TESTING between ROPSTEN & 3-node setup
+ */
 
 /**
  * This one test native token from block 4186072
@@ -167,7 +24,9 @@ func TestRopstenNativeETH(t *testing.T) {
 	time.Sleep(time.Millisecond*250)
 
 	// DEPOSIT to TEST2
-	block := int64(4248970)
+	// 0xba7573C0e805ef71ACB7f1c4a55E7b0af416E96A transfers 0.01 ETH to forward address: 0xb59e4b94e4ed7331ee0520e9377967614ca2dc98 on block 4327101
+	// Foward contract 0xb59e4b94e4ed7331ee0520e9377967614ca2dc98 created on 4327057
+	block := int64(4327057)
 	fmt.Printf("=======================\n[BLOCK %d] BEGIN\n\n", block)
 	for i, node := range nodes {
 		fmt.Printf("[BLOCK %d] Node[#%d/%d id=%d] calling doLoop...\n", block, i+1, len(nodes), node.nodeID)
@@ -181,7 +40,7 @@ func TestRopstenNativeETH(t *testing.T) {
 	fmt.Printf("[BLOCK %d] END\n=======================\n\n", block)
 
 	// Check for the deposit
-	block = 4249018
+	block = 4327101
 	fmt.Printf("=======================\n[BLOCK %d] BEGIN\n\n", block)
 	for i, node := range nodes {
 		fmt.Printf("[BLOCK %d] Node[#%d/%d id=%d] calling doLoop...\n", block, i+1, len(nodes), node.nodeID)
@@ -195,7 +54,7 @@ func TestRopstenNativeETH(t *testing.T) {
 	}
 	fmt.Printf("[BLOCK %d] END\n=======================\n\n", block)
 
-	block = 4249019
+	block = 4327102
 	fmt.Printf("=======================\n[BLOCK %d] BEGIN\n\n", block)
 	for i, node := range nodes {
 		fmt.Printf("[BLOCK %d] Node[#%d/%d id=%d] calling doLoop...\n", block, i+1, len(nodes), node.nodeID)
@@ -203,41 +62,17 @@ func TestRopstenNativeETH(t *testing.T) {
 		fmt.Printf("...[BLOCK %d] Node[#%d/%d] counts %d/%d/%d [deposit/peer/sent]\n\n", block, i+1, len(nodes), len(allDeposits), len(allPeerMsgs), len(allSentMsgs))
 
 		// TODO: inspect the messages for the right content
-
-		if i == 0 {
+		// index 0 does not always send the message.
+		// last node relative from node it was sent from - see round_robin
+		if int(4327101-1) % 3 == i {
 			// the first node doesn't receive any peer messages (yet), we will check for it in block #4249020
 			assertMsgCountEqualDoLoop(t, "deposit", 0, len(allDeposits), block, i+1, len(nodes), node)
-			assertMsgCountEqualDoLoop(t, "peer", 0, len(allPeerMsgs), block, i+1, len(nodes), node)
-			assertMsgCountEqualDoLoop(t, "sent", 0, len(allSentMsgs), block, i+1, len(nodes), node)
+			assertMsgCountEqualDoLoop(t, "peer", 1, len(allPeerMsgs), block, i+1, len(nodes), node)
+			assertMsgCountEqualDoLoop(t, "sent", 1, len(allSentMsgs), block, i+1, len(nodes), node)
 		} else {
 			// the rest of the nodes each receive a peer message
 			assertMsgCountEqualDoLoop(t, "deposit", 0, len(allDeposits), block, i+1, len(nodes), node)
 			assertMsgCountEqualDoLoop(t, "peer", 1, len(allPeerMsgs), block, i+1, len(nodes), node)
-			assertMsgCountEqualDoLoop(t, "sent", 0, len(allSentMsgs), block, i+1, len(nodes), node)
-		}
-	}
-	fmt.Printf("[BLOCK %d] END\n=======================\n\n", block)
-
-	// check for the signed peer messages
-	block = 4249020
-	fmt.Printf("=======================\n[BLOCK %d] BEGIN\n\n", block)
-	for i, node := range nodes {
-		fmt.Printf("[BLOCK %d] Node[#%d/%d id=%d] calling doLoop...\n", block, i+1, len(nodes), node.nodeID)
-		allDeposits, allPeerMsgs, allSentMsgs := node.cTQ.DoLoop([]int64{block})
-		fmt.Printf("...[BLOCK %d] Node[#%d/%d] counts %d/%d/%d [deposit/peer/sent]\n\n", block, i+1, len(nodes), len(allDeposits), len(allPeerMsgs), len(allSentMsgs))
-
-		// TODO: inspect the messages for the right content
-		if i == 0 {
-			// the first node is the last to receive the peer message, and will go ahead and goes ahead and sends the submission message
-			assertMsgCountEqualDoLoop(t, "deposit", 0, len(allDeposits), block, i+1, len(nodes), node)
-			assertMsgCountEqualDoLoop(t, "peer", 1, len(allPeerMsgs), block, i+1, len(nodes), node)
-			assertMsgCountEqualDoLoop(t, "sent", 1, len(allSentMsgs), block, i+1, len(nodes), node)
-
-			// TODO: verify the content of that sent message
-		} else {
-			// the rest of the nodes have nothing to do
-			assertMsgCountEqualDoLoop(t, "deposit", 0, len(allDeposits), block, i+1, len(nodes), node)
-			assertMsgCountEqualDoLoop(t, "peer", 0, len(allPeerMsgs), block, i+1, len(nodes), node)
 			assertMsgCountEqualDoLoop(t, "sent", 0, len(allSentMsgs), block, i+1, len(nodes), node)
 		}
 	}
@@ -252,29 +87,31 @@ func TestRopstenNativeETH(t *testing.T) {
 	StopRegistry(r)
 }
 
+// Block 4354954: ERC-20  0x719791a052ed86360015e659542d3b0b7f44182e created by 0x9b93a4be348ab36c16ec6861602f84321f24e544  tx=https://ropsten.etherscan.io/tx/0xfc50ed99430174aa791ea9fa0883ef12d1ba7aa3a2daf26f3bb255b8f5f9af1b
+// Block 4354971: Forward contract created  0x527370DEF157BD1113DB9448BD05E6402fFb5A0d forwarding to trust contract from 0x9b93a4be348ab36c16ec6861602f84321f24e544
+// Block 4355067: Nothing - get block to agree
+
+// Block 4356004 ERC-20 0x541d973a7168dbbf413eab6993a5e504ec5accb0
+// Block 4356013 sent .0001234  precision 9  tx=https://ropsten.etherscan.io/tx/0x51a1018c6b2afd7bffb52d05178c3b66c9336e8c2dfeca0110f405cc41613492
 func TestRopstenERC20Token(t *testing.T) {
-	//StartRegistry()
-	//nodes := StartNodes(3)
-	//time.Sleep(time.Millisecond*250)
-	//DoLoopDeposit(nodes, []int64{4196673})  // we make deposit
-	//DoLoopDeposit(nodes, []int64{4186072, 4186072, 4186074}) // we create the original smart contract on 74
-	//DoLoopDeposit(nodes, []int64{4196674})
 	r := StartRegistry()
-	nodes := StartNodes(QUANTA_ISSUER, ROPSTEN_TRUST, ETHER_NETWORKS[LOCAL])
-	initialBalance, err := nodes[0].q.GetBalance(QUANTA_ASSET, QUANTA_ACCOUNT)
+	ercContract := "0x541d973a7168dbbf413eab6993a5e504ec5accb0"
+	nodes := StartNodes(QUANTA_ISSUER, ROPSTEN_TRUST, ETHER_NETWORKS[ROPSTEN])
+	initialBalance, err := nodes[0].q.GetBalance(ercContract, QUANTA_ACCOUNT)
 	assert.NoError(t, err)
 
-	fmt.Printf("[ASSET %s] [ACCOUNT %s] initial_balance = %.9f\n", QUANTA_ASSET, QUANTA_ACCOUNT, initialBalance)
+	fmt.Printf("[ASSET %s] [ACCOUNT %s] initial_balance = %.9f\n", ercContract, QUANTA_ACCOUNT, initialBalance)
 
 	time.Sleep(time.Millisecond * 250)
-	//DoLoopDeposit(nodes, []int64{4186072, 4186072, 4186074}) // we create the original smart contract on 74
-	DoLoopDeposit(nodes, []int64{6,7}) // we make deposit
+	DoLoopDeposit(nodes, []int64{4354971}) // forward address
+	DoLoopDeposit(nodes, []int64{4356013}) // we make deposit
+	DoLoopDeposit(nodes, []int64{4356014}) // no-op
+
 	time.Sleep(time.Second * 6)
-	newBalance, err := nodes[0].q.GetBalance(QUANTA_ASSET, QUANTA_ACCOUNT)
+	newBalance, err := nodes[0].q.GetBalance(ercContract, QUANTA_ACCOUNT)
 	assert.NoError(t, err)
-	assert.Equal(t, newBalance, initialBalance+0.0000001)
-	//DoLoopDeposit(nodes, []int64{4196674})
-	time.Sleep(time.Second * 15)
+	assert.Equal(t, newBalance, initialBalance + float64(0.001234))
+	time.Sleep(time.Second * 5)
 	StopNodes(nodes)
 	StopRegistry(r)
 }

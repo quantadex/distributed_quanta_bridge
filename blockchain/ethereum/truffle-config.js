@@ -20,7 +20,12 @@ module.exports = {
       gas: 14600000,
       gasPrice: 21
     },
-
+    test: {
+        host: "127.0.0.1",
+        port: 8545,
+        network_id: "*", // Match any network id
+        gas: 14600000,
+    },
     // testnets
     ropsten: {
       provider: function() {
@@ -29,7 +34,7 @@ module.exports = {
       },
       network_id: 3,
       gas: 4700000,
-      // gasPrice: 21
+      gasPrice: 21
     }
   },
 

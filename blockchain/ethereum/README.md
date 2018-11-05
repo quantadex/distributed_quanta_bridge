@@ -85,6 +85,35 @@ Run the following command to test the contracts.
     $ truffle exec scripts/init_signers.js
 ```
 
+# Deploy to a Geth node
+
+Geth resembles more of a full production node support, and works with the Cross-chain. Ganache-CLI unfortunately
+depends on hex compression, which is not available on its latest release.
+
+```
+    # Launch geth
+    $ make start-geth
+
+    # Start mining for new blocks
+    $ make mine-geth
+```
+
+# Initializing a new Geth blockchain
+
+Inside geth, the genesis is already setup with the keys in keys.txt and geth/data/keystore. To initialize
+a new blockchain, we simply delete the data, and initialize the genesis block.
+
+```
+    # delete the blockchain data
+    $ rm -rf geth/data/geth
+
+    # initialize the genesis block
+    $ geth --datadir ./geth/data/ init ./geth/genesis.json
+
+    # Continue with deploy to a geth node.
+```
+
+
 # Debugger
 
 In three separate terminals:

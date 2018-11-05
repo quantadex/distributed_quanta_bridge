@@ -17,6 +17,11 @@ test: .PHONY
 abi:
 	truffle-export-abi
 
+mine-geth:
+	geth attach geth/data/geth.ipc --exec "miner.start()"
+start-geth:
+	geth --datadir ./geth/data --networkid 15 --ipcpath ./geth/data/geth.ipc --rpc  --unlock 0  --mine --password ./geth/emptypassword.txt  --rpcapi "db,eth,net,web3,miner" --nodiscover  --port "30304" --rpcaddr "0.0.0.0" --rpccorsdomain "*"
+
 migrate-ropsten:
 	truffle migrate --network ropsten
 
