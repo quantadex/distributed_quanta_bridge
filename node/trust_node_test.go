@@ -7,6 +7,7 @@ import (
 	"github.com/quantadex/distributed_quanta_bridge/trust/coin/contracts"
 	"github.com/stretchr/testify/assert"
 	"testing"
+	"github.com/quantadex/distributed_quanta_bridge/common/test"
 	"time"
 )
 
@@ -20,7 +21,7 @@ import (
  */
 func TestRopstenNativeETH(t *testing.T) {
 	r := StartRegistry()
-	nodes := StartNodes(QUANTA_ISSUER, ROPSTEN_TRUST, ETHER_NETWORKS[ROPSTEN])
+	nodes := StartNodes(test.QUANTA_ISSUER, test.ROPSTEN_TRUST, test.ETHER_NETWORKS[test.ROPSTEN])
 	time.Sleep(time.Millisecond*250)
 
 	// DEPOSIT to TEST2
@@ -96,11 +97,11 @@ func TestRopstenNativeETH(t *testing.T) {
 func TestRopstenERC20Token(t *testing.T) {
 	r := StartRegistry()
 	ercContract := "0x541d973a7168dbbf413eab6993a5e504ec5accb0"
-	nodes := StartNodes(QUANTA_ISSUER, ROPSTEN_TRUST, ETHER_NETWORKS[ROPSTEN])
-	initialBalance, err := nodes[0].q.GetBalance(ercContract, QUANTA_ACCOUNT)
+	nodes := StartNodes(test.QUANTA_ISSUER, test.ROPSTEN_TRUST, test.ETHER_NETWORKS[test.ROPSTEN])
+	initialBalance, err := nodes[0].q.GetBalance(ercContract, test.QUANTA_ACCOUNT)
 	assert.NoError(t, err)
 
-	fmt.Printf("[ASSET %s] [ACCOUNT %s] initial_balance = %.9f\n", ercContract, QUANTA_ACCOUNT, initialBalance)
+	fmt.Printf("[ASSET %s] [ACCOUNT %s] initial_balance = %.9f\n", ercContract, test.QUANTA_ACCOUNT, initialBalance)
 
 	time.Sleep(time.Millisecond * 250)
 	DoLoopDeposit(nodes, []int64{4354971}) // forward address
@@ -108,19 +109,20 @@ func TestRopstenERC20Token(t *testing.T) {
 	DoLoopDeposit(nodes, []int64{4356014}) // no-op
 
 	time.Sleep(time.Second * 6)
-	newBalance, err := nodes[0].q.GetBalance(ercContract, QUANTA_ACCOUNT)
+	newBalance, err := nodes[0].q.GetBalance(ercContract, test.QUANTA_ACCOUNT)
 	assert.NoError(t, err)
-	assert.Equal(t, newBalance, initialBalance + float64(0.001234))
+	assert.Equal(t, initialBalance + float64(0.001234), newBalance)
+	fmt.Printf("Initial balance=%f , expecting final balance = %f\n", initialBalance, initialBalance + float64(0.001234))
 	time.Sleep(time.Second * 5)
 	StopNodes(nodes)
 	StopRegistry(r)
 }
 
 func TestWithdrawal(t *testing.T) {
-	ethereumClient, err := ethclient.Dial(ETHER_NETWORKS[ROPSTEN].rpc)
+	ethereumClient, err := ethclient.Dial(test.ETHER_NETWORKS[test.ROPSTEN].Rpc)
 	assert.Nil(t, err)
 
-	trustAddress := common.HexToAddress(ROPSTEN_TRUST.TrustContract)
+	trustAddress := common.HexToAddress(test.ROPSTEN_TRUST.TrustContract)
 	contract, err := contracts.NewTrustContract(trustAddress, ethereumClient)
 	assert.NoError(t, err)
 
@@ -131,7 +133,7 @@ func TestWithdrawal(t *testing.T) {
 
 	println("latest TXID=", txId)
 
-  nodes := StartNodes(QUANTA_ISSUER, ROPSTEN_TRUST, ETHER_NETWORKS[ROPSTEN])
+  	nodes := StartNodes(test.QUANTA_ISSUER, test.ROPSTEN_TRUST, test.ETHER_NETWORKS[test.ROPSTEN])
 
 	cursor := int64(0)
 	fmt.Printf("=======================\n[CURSOR %d] BEGIN\n\n", cursor)

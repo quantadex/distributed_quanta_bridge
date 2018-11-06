@@ -57,12 +57,12 @@ func (c *MockEthereumCoin) DecodeRefund(encoded string) (*coin.Withdrawal, error
 }
 
 func TestFunc (t *testing.T) {
-	m := &MockEthereumCoin{}
-	quanta2Coin := &QuantaToCoin{
-		coinChannel: m,
-	}
-
-	m.setWithdrawalOutput(true, "")
+	//m := &MockEthereumCoin{}
+	//quanta2Coin := &QuantaToCoin{
+	//	coinChannel: m,
+	//}
+	//
+	//m.setWithdrawalOutput(true, "")
 
 	// call code
 

@@ -1,5 +1,4 @@
-ExternalListenPort: 5002
-ListenIp: 0.0.0.0
+FilterTransferEventListenIp: 0.0.0.0
 ListenPort: 5001
 UsePrevKeys: true
 KvDbName: kv_db_5100

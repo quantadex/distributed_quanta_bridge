@@ -2,18 +2,26 @@
 <project version="4">
   <component name="ChangeListManager">
     <list default="true" id="9d03c2a5-2a50-4feb-8d60-02c1c1393273" name="Default Changelist" comment="">
+      <change afterPath="$PROJECT_DIR$/node/common/config.go" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/node/node_test.go" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/trust/coin/run_ethereum.sh" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/README.md" beforeDir="false" afterPath="$PROJECT_DIR$/README.md" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/blockchain/ethereum/scripts/init_signers.js" beforeDir="false" afterPath="$PROJECT_DIR$/blockchain/ethereum/scripts/init_signers.js" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/blockchain/ethereum/Makefile" beforeDir="false" afterPath="$PROJECT_DIR$/blockchain/ethereum/Makefile" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/blockchain/ethereum/geth/data/geth/chaindata/000019.log" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/blockchain/ethereum/geth/data/geth/chaindata/CURRENT" beforeDir="false" afterPath="$PROJECT_DIR$/blockchain/ethereum/geth/data/geth/chaindata/CURRENT" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/blockchain/ethereum/geth/data/geth/chaindata/CURRENT.bak" beforeDir="false" afterPath="$PROJECT_DIR$/blockchain/ethereum/geth/data/geth/chaindata/CURRENT.bak" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/blockchain/ethereum/geth/data/geth/chaindata/LOG" beforeDir="false" afterPath="$PROJECT_DIR$/blockchain/ethereum/geth/data/geth/chaindata/LOG" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/blockchain/ethereum/geth/data/geth/chaindata/MANIFEST-000020" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/blockchain/ethereum/geth/data/geth/transactions.rlp" beforeDir="false" afterPath="$PROJECT_DIR$/blockchain/ethereum/geth/data/geth/transactions.rlp" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/blockchain/ethereum/truffle-config.js" beforeDir="false" afterPath="$PROJECT_DIR$/blockchain/ethereum/truffle-config.js" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/node/config.yml" beforeDir="false" afterPath="$PROJECT_DIR$/node/config.yml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/node/environment_test.go" beforeDir="false" afterPath="$PROJECT_DIR$/common/test/environment.go" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/node/main.go" beforeDir="false" afterPath="$PROJECT_DIR$/node/main.go" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/node/trust_node.go" beforeDir="false" afterPath="$PROJECT_DIR$/node/trust_node.go" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/node/trust_node_test.go" beforeDir="false" afterPath="$PROJECT_DIR$/node/trust_node_test.go" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/registrar/config.yml" beforeDir="false" afterPath="$PROJECT_DIR$/registrar/config.yml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/registrar/service/server.go" beforeDir="false" afterPath="$PROJECT_DIR$/registrar/service/server.go" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/registrar/static/index.html" beforeDir="false" afterPath="$PROJECT_DIR$/registrar/static/index.html" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/trust/control/round_robin.go" beforeDir="false" afterPath="$PROJECT_DIR$/trust/control/round_robin.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/trust/coin/ethereum_client_test.go" beforeDir="false" afterPath="$PROJECT_DIR$/trust/coin/ethereum_client_test.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/trust/control/quanta_to_coin_test.go" beforeDir="false" afterPath="$PROJECT_DIR$/trust/control/quanta_to_coin_test.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/trust/quanta/quanta_client.go" beforeDir="false" afterPath="$PROJECT_DIR$/trust/quanta/quanta_client.go" afterDir="false" />
     </list>
     <option name="EXCLUDED_CONVERTED_TO_IGNORED" value="true" />
     <option name="SHOW_DIALOG" value="false" />
@@ -41,56 +49,67 @@
       <usages-collector id="statistics.file.extensions.open">
         <counts>
           <entry key="311340943Z--7cd737655dff6f95d55b711975d2a4ace32d256e" value="1" />
-          <entry key="Makefile" value="1" />
+          <entry key="Makefile" value="5" />
           <entry key="abi" value="6" />
           <entry key="bin" value="5" />
-          <entry key="go" value="1080" />
-          <entry key="html" value="6" />
-          <entry key="js" value="40" />
-          <entry key="json" value="18" />
+          <entry key="env" value="1" />
+          <entry key="go" value="1168" />
+          <entry key="html" value="7" />
+          <entry key="js" value="48" />
+          <entry key="json" value="22" />
           <entry key="lock" value="1" />
-          <entry key="md" value="9" />
+          <entry key="md" value="14" />
           <entry key="s" value="2" />
-          <entry key="sh" value="5" />
-          <entry key="sol" value="30" />
-          <entry key="toml" value="6" />
+          <entry key="sh" value="7" />
+          <entry key="sol" value="33" />
+          <entry key="toml" value="7" />
           <entry key="trust_contract" value="1" />
-          <entry key="yml" value="29" />
+          <entry key="txt" value="1" />
+          <entry key="yml" value="32" />
         </counts>
       </usages-collector>
       <usages-collector id="statistics.file.types.open">
         <counts>
-          <entry key="Go" value="1080" />
-          <entry key="HTML" value="6" />
-          <entry key="JSON" value="18" />
-          <entry key="JavaScript" value="40" />
-          <entry key="Markdown" value="9" />
-          <entry key="PLAIN_TEXT" value="56" />
-          <entry key="YAML" value="29" />
+          <entry key="Bash" value="2" />
+          <entry key="Go" value="1168" />
+          <entry key="HTML" value="7" />
+          <entry key="JSON" value="22" />
+          <entry key="JavaScript" value="48" />
+          <entry key="Markdown" value="14" />
+          <entry key="PLAIN_TEXT" value="66" />
+          <entry key="YAML" value="32" />
           <entry key="x86 Plan9 Assembly" value="2" />
         </counts>
       </usages-collector>
       <usages-collector id="statistics.file.extensions.edit">
         <counts>
-          <entry key="go" value="44976" />
+          <entry key="Makefile" value="8" />
+          <entry key="env" value="20" />
+          <entry key="go" value="48120" />
           <entry key="html" value="9" />
-          <entry key="js" value="476" />
-          <entry key="md" value="848" />
-          <entry key="sh" value="36" />
-          <entry key="sol" value="135" />
+          <entry key="js" value="511" />
+          <entry key="md" value="1610" />
+          <entry key="sh" value="136" />
+          <entry key="sol" value="143" />
           <entry key="toml" value="36" />
           <entry key="txt" value="51" />
-          <entry key="yml" value="255" />
+          <entry key="yml" value="270" />
         </counts>
       </usages-collector>
       <usages-collector id="statistics.file.types.edit">
         <counts>
-          <entry key="Go" value="44976" />
+          <entry key="Bash" value="100" />
+          <entry key="Go" value="48120" />
           <entry key="HTML" value="9" />
-          <entry key="JavaScript" value="476" />
-          <entry key="Markdown" value="848" />
-          <entry key="PLAIN_TEXT" value="258" />
-          <entry key="YAML" value="255" />
+          <entry key="JavaScript" value="511" />
+          <entry key="Markdown" value="1610" />
+          <entry key="PLAIN_TEXT" value="294" />
+          <entry key="YAML" value="270" />
+        </counts>
+      </usages-collector>
+      <usages-collector id="statistics.go.postfix.template.usages.trigger">
+        <counts>
+          <entry key=".reterr" value="1" />
         </counts>
       </usages-collector>
     </session>
@@ -107,24 +126,67 @@
   <component name="FileEditorManager">
     <leaf SIDE_TABS_SIZE_LIMIT_KEY="300">
       <file pinned="false" current-in-tab="false">
-        <entry file="file://$PROJECT_DIR$/README.md">
-          <provider selected="true" editor-type-id="split-provider[text-editor;MarkdownPreviewEditor]">
-            <state split_layout="SPLIT">
-              <first_editor relative-caret-position="442">
-                <caret line="26" column="18" selection-start-line="26" selection-start-column="18" selection-end-line="26" selection-end-column="18" />
-              </first_editor>
-              <second_editor>
-                <markdownNavigatorState />
-              </second_editor>
+        <entry file="file://$PROJECT_DIR$/trust/control/round_robin.go">
+          <provider selected="true" editor-type-id="text-editor">
+            <state relative-caret-position="466">
+              <caret line="236" column="22" selection-start-line="236" selection-start-column="11" selection-end-line="236" selection-end-column="22" />
+            </state>
+          </provider>
+        </entry>
+      </file>
+      <file pinned="false" current-in-tab="false">
+        <entry file="file://$PROJECT_DIR$/trust/control/quanta_to_coin_test.go">
+          <provider selected="true" editor-type-id="text-editor">
+            <state relative-caret-position="461">
+              <caret line="57" lean-forward="true" selection-start-line="57" selection-end-line="57" />
+            </state>
+          </provider>
+        </entry>
+      </file>
+      <file pinned="false" current-in-tab="false">
+        <entry file="file://$PROJECT_DIR$/trust/quanta/quanta_client_test.go">
+          <provider selected="true" editor-type-id="text-editor">
+            <state relative-caret-position="578">
+              <caret line="38" lean-forward="true" selection-start-line="38" selection-end-line="38" />
             </state>
           </provider>
         </entry>
       </file>
       <file pinned="false" current-in-tab="true">
-        <entry file="file://$PROJECT_DIR$/blockchain/ethereum/contracts/QuantaCrossChain.sol">
+        <entry file="file://$PROJECT_DIR$/node/trust_node_test.go">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="95">
-              <caret line="54" column="56" selection-start-line="54" selection-start-column="27" selection-end-line="54" selection-end-column="56" />
+            <state relative-caret-position="612">
+              <caret line="116" column="20" lean-forward="true" selection-start-line="116" selection-start-column="20" selection-end-line="116" selection-end-column="20" />
+              <folding>
+                <element signature="e#14#308#0" expanded="true" />
+              </folding>
+            </state>
+          </provider>
+        </entry>
+      </file>
+      <file pinned="false" current-in-tab="false">
+        <entry file="file://$PROJECT_DIR$/trust/quanta/quanta_interface.go">
+          <provider selected="true" editor-type-id="text-editor">
+            <state relative-caret-position="339">
+              <caret line="71" lean-forward="true" selection-start-line="71" selection-end-line="71" />
+            </state>
+          </provider>
+        </entry>
+      </file>
+      <file pinned="false" current-in-tab="false">
+        <entry file="file://$PROJECT_DIR$/trust/quanta/quanta_client.go">
+          <provider selected="true" editor-type-id="text-editor">
+            <state relative-caret-position="767">
+              <caret line="210" column="17" lean-forward="true" selection-start-line="210" selection-start-column="17" selection-end-line="210" selection-end-column="17" />
+            </state>
+          </provider>
+        </entry>
+      </file>
+      <file pinned="false" current-in-tab="false">
+        <entry file="file://$PROJECT_DIR$/common/test/environment.go">
+          <provider selected="true" editor-type-id="text-editor">
+            <state relative-caret-position="714">
+              <caret line="42" column="80" selection-start-line="42" selection-start-column="24" selection-end-line="42" selection-end-column="80" />
             </state>
           </provider>
         </entry>
@@ -132,17 +194,17 @@
       <file pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/node/main.go">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="255">
-              <caret line="24" selection-start-line="24" selection-end-line="24" />
+            <state relative-caret-position="764">
+              <caret line="68" lean-forward="true" selection-start-line="68" selection-end-line="68" />
             </state>
           </provider>
         </entry>
       </file>
       <file pinned="false" current-in-tab="false">
-        <entry file="file://$PROJECT_DIR$/node/config.yml">
+        <entry file="file://$PROJECT_DIR$/node/node_test.go">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="272">
-              <caret line="16" column="10" selection-start-line="16" selection-start-column="10" selection-end-line="16" selection-end-column="10" />
+            <state relative-caret-position="677">
+              <caret line="58" column="29" selection-start-line="58" selection-start-column="29" selection-end-line="58" selection-end-column="29" />
             </state>
           </provider>
         </entry>
@@ -150,59 +212,11 @@
       <file pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/node/trust_node.go">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="281">
-              <caret line="296" column="27" selection-start-line="296" selection-start-column="27" selection-end-line="296" selection-end-column="27" />
+            <state relative-caret-position="764">
+              <caret line="338" lean-forward="true" selection-start-line="338" selection-end-line="338" />
               <folding>
-                <element signature="e#14#839#0" expanded="true" />
+                <element signature="e#14#804#0" expanded="true" />
               </folding>
-            </state>
-          </provider>
-        </entry>
-      </file>
-      <file pinned="false" current-in-tab="false">
-        <entry file="file://$PROJECT_DIR$/trust/control/quanta_to_coin.go">
-          <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="242">
-              <caret line="75" selection-start-line="75" selection-end-line="75" selection-end-column="3" />
-              <folding>
-                <element signature="e#17#723#0" expanded="true" />
-              </folding>
-            </state>
-          </provider>
-        </entry>
-      </file>
-      <file pinned="false" current-in-tab="false">
-        <entry file="file://$PROJECT_DIR$/trust/control/coin_to_quanta.go">
-          <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="17">
-              <caret line="85" selection-start-line="85" selection-end-line="85" />
-            </state>
-          </provider>
-        </entry>
-      </file>
-      <file pinned="false" current-in-tab="false">
-        <entry file="file://$PROJECT_DIR$/trust/control/round_robin.go">
-          <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="314">
-              <caret line="321" column="21" selection-start-line="321" selection-start-column="21" selection-end-line="321" selection-end-column="21" />
-            </state>
-          </provider>
-        </entry>
-      </file>
-      <file pinned="false" current-in-tab="false">
-        <entry file="file://$PROJECT_DIR$/registrar/config.yml">
-          <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="68">
-              <caret line="4" column="24" selection-start-line="4" selection-start-column="24" selection-end-line="4" selection-end-column="24" />
-            </state>
-          </provider>
-        </entry>
-      </file>
-      <file pinned="false" current-in-tab="false">
-        <entry file="file://$PROJECT_DIR$/registrar/static/index.html">
-          <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="357">
-              <caret line="21" column="159" selection-start-line="21" selection-start-column="56" selection-end-line="21" selection-end-column="159" />
             </state>
           </provider>
         </entry>
@@ -218,36 +232,36 @@
   </component>
   <component name="FindInProjectRecents">
     <findStrings>
-      <find>signedm</find>
-      <find>0x627306090abab3a6e1400e9345bc60c78a8bef57</find>
-      <find>0x8f0483125fcb9aaaefa9209d8e9d7b9c8b9fb90f</find>
-      <find>decode(</find>
-      <find>decode</find>
-      <find>header</find>
-      <find>txid</find>
-      <find>NewServer</find>
-      <find>Sign(</find>
-      <find>HEALTH_QUEUE</find>
-      <find>make(chan</find>
-      <find>registr</find>
-      <find>http.Server</find>
-      <find>Addr: fmt.Sprintf(&quot;%s:%d&quot;, host, port), Handler: h.handlers</find>
-      <find>ropsten</find>
-      <find>0xcB4F6518c09A18Cd4BF2E1a989bE5D3e3ac9faaC</find>
-      <find>route</find>
-      <find>Result(</find>
-      <find>Result</find>
-      <find>main.go</find>
-      <find>GetNewCoinBlockIDs</find>
-      <find>FInd</find>
-      <find>up ethereum keys</find>
-      <find>MIN</find>
-      <find>BlockStartID</find>
-      <find>C2QOptions</find>
       <find>Msg failed validate transaction</find>
       <find>validateTransaction</find>
       <find>Unable to validate transactions</find>
       <find>Unable to verify refund</find>
+      <find>MISMATCH:</find>
+      <find>MISMATCH: Forwarder address</find>
+      <find>Confirm Refund</find>
+      <find>ropsten</find>
+      <find>assert</find>
+      <find>0x6080604052600436106100565763ffffffff7c01000000000000000000000000000000000000000000000000000000006000350416633c8410a281146100d65780636b9f96ea14610160578063ca32546914610177575b60408051348152905133917f5bac0d4f99f71df67fa7cebba0369126a7cb2b183bcb02b8393dbf5185ba77b6919081900360200190a26000805460405173ffffffffffffffffffffffffffffffffffffffff909116913480156108fc02929091818181858888f193505050501580156100d3573d6000803e3d6000fd5b50005b3480156100e257600080fd5b506100eb6101b5565b6040805160208082528351818301528351919283929083019185019080838360005b8381101561012557818101518382015260200161010d565b50505050905090810190601f1680156101525780820380516001836020036101000a031916815260200191505b509250505060405180910390f35b34801561016c57600080fd5b50610175610242565b005b34801561018357600080fd5b5061018c6102c4565b6040805173ffffffffffffffffffffffffffffffffffffffff9092168252519081900360200190f35b60018054604080516020600284861615610100026000190190941693909304601f8101849004840282018401909252818152929183018282801561023a5780601f1061020f5761010080835404028352916020019161023a565b820191906000526020600020905b81548152906001019060200180831161021d57829003601f168201915b505050505081565b6040805130318152905133917fa98efcd54f1f2ae5457ba3c68d7cf8974003a2bfce00f526f5624264a87bc0ea919081900360200190a26000805460405173ffffffffffffffffffffffffffffffffffffffff90911691303180156108fc02929091818181858888f193505050501580156102c1573d6000803e3d6000fd5b50565b60005473ffffffffffffffffffffffffffffffffffffffff16815600a165627a7a72305820d82a7d9a4bc9b386cf48735eeeba8604049ef496ae95c4636de6499d47103b720029</find>
+      <find>0x608060405234801561001057600080fd5b506040516104d13803806104d183398101604052805160208083015160008054600160a060020a031916600160a060020a038516179055909201805191929091610060916001919084019061011b565b507fa49a9b1337d8427ee784aeaded38ac25b248da00282d53353ef0e2dfb664504a82826040518083600160a060020a0316600160a060020a0316815260200180602001828103825283818151815260200191508051906020019080838360005b838110156100d95781810151838201526020016100c1565b50505050905090810190601f1680156101065780820380516001836020036101000a031916815260200191505b50935050505060405180910390a150506101b6565b828054600181600116156101000203166002900490600052602060002090601f016020900481019282601f1061015c57805160ff1916838001178555610189565b82800160010185558215610189579182015b8281111561018957825182559160200191906001019061016e565b50610195929150610199565b5090565b6101b391905b80821115610195576000815560010161019f565b90565b61030c806101c56000396000f3006080604052600436106100565763ffffffff7c01000000000000000000000000000000000000000000000000000000006000350416633c8410a281146100d65780636b9f96ea14610160578063ca32546914610177575b60408051348152905133917f5bac0d4f99f71df67fa7cebba0369126a7cb2b183bcb02b8393dbf5185ba77b6919081900360200190a26000805460405173ffffffffffffffffffffffffffffffffffffffff909116913480156108fc02929091818181858888f193505050501580156100d3573d6000803e3d6000fd5b50005b3480156100e257600080fd5b506100eb6101b5565b6040805160208082528351818301528351919283929083019185019080838360005b8381101561012557818101518382015260200161010d565b50505050905090810190601f1680156101525780820380516001836020036101000a031916815260200191505b509250505060405180910390f35b34801561016c57600080fd5b50610175610242565b005b34801561018357600080fd5b5061018c6102c4565b6040805173ffffffffffffffffffffffffffffffffffffffff9092168252519081900360200190f35b60018054604080516020600284861615610100026000190190941693909304601f8101849004840282018401909252818152929183018282801561023a5780601f1061020f5761010080835404028352916020019161023a565b820191906000526020600020905b81548152906001019060200180831161021d57829003601f168201915b505050505081565b6040805130318152905133917fa98efcd54f1f2ae5457ba3c68d7cf8974003a2bfce00f526f5624264a87bc0ea919081900360200190a26000805460405173ffffffffffffffffffffffffffffffffffffffff90911691303180156108fc02929091818181858888f193505050501580156102c1573d6000803e3d6000fd5b50565b60005473ffffffffffffffffffffffffffffffffffffffff16815600a165627a7a72305820f03161a8010bca92450c47c8afca14692b54f0d917a1bcbb6d36a9147abf885c0029000000000000000000000000bd770336ff47a3b61d4f54cc0fb541ea7baae92d000000000000000000000000000000000000000000000000000000000000004000000000000000000000000000000000000000000000000000000000000000385143414f3448524d4a44474650554852434c435357415251544a585932585441465155495247324641523353434632364b514c41575a524e0000000000000000</find>
+      <find>608060405234801561001057600080fd5b5060405161041e38038061041e83398101604052805160208083015160008054600160a060020a031916600160a060020a0385161790559092018051919290916100609160019190840190610068565b505050610103565b828054600181600116156101000203166002900490600052602060002090601f016020900481019282601f106100a957805160ff19168380011785556100d6565b828001600101855582156100d6579182015b828111156100d65782518255916020019190600101906100bb565b506100e29291506100e6565b5090565b61010091905b808211156100e257600081556001016100ec565b90565b61030c806101126000396000f3006080604052600436106100565763ffffffff7c01000000000000000000000000000000000000000000000000000000006000350416633c8410a281146100d65780636b9f96ea14610160578063ca32546914610177575b60408051348152905133917f5bac0d4f99f71df67fa7cebba0369126a7cb2b183bcb02b8393dbf5185ba77b6919081900360200190a26000805460405173ffffffffffffffffffffffffffffffffffffffff909116913480156108fc02929091818181858888f193505050501580156100d3573d6000803e3d6000fd5b50005b3480156100e257600080fd5b506100eb6101b5565b6040805160208082528351818301528351919283929083019185019080838360005b8381101561012557818101518382015260200161010d565b50505050905090810190601f1680156101525780820380516001836020036101000a031916815260200191505b509250505060405180910390f35b34801561016c57600080fd5b50610175610242565b005b34801561018357600080fd5b5061018c6102c4565b6040805173ffffffffffffffffffffffffffffffffffffffff9092168252519081900360200190f35b60018054604080516020600284861615610100026000190190941693909304601f8101849004840282018401909252818152929183018282801561023a5780601f1061020f5761010080835404028352916020019161023a565b820191906000526020600020905b81548152906001019060200180831161021d57829003601f168201915b505050505081565b6040805130318152905133917fa98efcd54f1f2ae5457ba3c68d7cf8974003a2bfce00f526f5624264a87bc0ea919081900360200190a26000805460405173ffffffffffffffffffffffffffffffffffffffff90911691303180156108fc02929091818181858888f193505050501580156102c1573d6000803e3d6000fd5b50565b60005473ffffffffffffffffffffffffffffffffffffffff16815600a165627a7a7230582043822668310b3d2e90aa63e4d6df1b84d5beb5b293b898420b19f04f9269d9770029</find>
+      <find>processNewDeposit:</find>
+      <find>0x608060405234801561001057600080fd5b506040516104d13803806104d18339810160405280516020808301</find>
+      <find>decimals</find>
+      <find>.Client</find>
+      <find>WeiToStellar</find>
+      <find>amount=</find>
+      <find>GetForwardersInBlock</find>
+      <find>forwardx</find>
+      <find>connection refused</find>
+      <find>start</find>
+      <find>ETHADDR_QUANTAADDR</find>
+      <find>ExternalListenPort\: 5002\n</find>
+      <find>FilterTransferEvent</find>
+      <find>KvDbName</find>
+      <find>http://localhost:7545</find>
+      <find>StartRegistry</find>
+      <find>config</find>
+      <find>0x541d973a7168dbbF413EaB6993A5e504Ec5accb0</find>
     </findStrings>
     <replaceStrings>
       <replace>github.com/stellar/go</replace>
@@ -271,57 +285,57 @@
   <component name="IdeDocumentHistory">
     <option name="CHANGED_PATHS">
       <list>
-        <option value="$PROJECT_DIR$/trust/key_manager/key_manager_interface.go" />
-        <option value="$PROJECT_DIR$/trust/coin/dummy_coin.go" />
-        <option value="$PROJECT_DIR$/trust/peer_contact/peer_contact_interface.go" />
-        <option value="$PROJECT_DIR$/trust/coin/coin_interface.go" />
-        <option value="$PROJECT_DIR$/trust/key_manager/quanta_key_manager.go" />
-        <option value="$PROJECT_DIR$/blockchain/ethereum/contracts/zeppelin/token/BasicToken.sol" />
-        <option value="$PROJECT_DIR$/trust/quanta/quanta_interface.go" />
-        <option value="$PROJECT_DIR$/trust/coin/contracts/token.go" />
-        <option value="$PROJECT_DIR$/blockchain/ethereum/contracts/crosschain/QuantaCrossChain.bin" />
-        <option value="$PROJECT_DIR$/blockchain/ethereum/migrations/1_initial_migration.js" />
-        <option value="$PROJECT_DIR$/blockchain/ethereum/build/contracts/QuantaCrossChain.json" />
-        <option value="$PROJECT_DIR$/blockchain/ethereum/scripts/get_accounts.js" />
-        <option value="$PROJECT_DIR$/common/manifest/manifest.go" />
-        <option value="$PROJECT_DIR$/trust/peer_contact/trust_peer_node.go" />
-        <option value="$PROJECT_DIR$/vendor/github.com/quantadex/quanta_book/consensus/cosi/consensus.go" />
-        <option value="$PROJECT_DIR$/blockchain/ethereum/scripts/send_trust_eth.js" />
-        <option value="$PROJECT_DIR$/blockchain/ethereum/scripts/get_contract_address.js" />
         <option value="$PROJECT_DIR$/vendor/github.com/ethereum/go-ethereum/accounts/abi/bind/base.go" />
         <option value="$PROJECT_DIR$/trust/coin/contracts/trust_contract.go" />
         <option value="$PROJECT_DIR$/trust/coin/contracts/generate.go" />
-        <option value="$PROJECT_DIR$/trust/coin/contracts/generate_abi.sh" />
-        <option value="$PROJECT_DIR$/blockchain/ethereum/truffle-config.js" />
-        <option value="$PROJECT_DIR$/blockchain/ethereum/README.md" />
         <option value="$PROJECT_DIR$/trust/key_manager/ethereum_key_manager.go" />
-        <option value="$PROJECT_DIR$/trust/coin/ethereum_client_test.go" />
         <option value="$PROJECT_DIR$/blockchain/ethereum/scripts/init_signers.js" />
-        <option value="$PROJECT_DIR$/trust/coin/ethereum_coin.go" />
-        <option value="$PROJECT_DIR$/trust/control/quanta_to_coin.go" />
-        <option value="$PROJECT_DIR$/trust/quanta/quanta_client.go" />
         <option value="$PROJECT_DIR$/registrar/main.go" />
         <option value="$PROJECT_DIR$/trust/registrar_client/registrar_client.go" />
         <option value="$PROJECT_DIR$/registrar/service/registry.go" />
         <option value="$PROJECT_DIR$/common/listener/listener_interface.go" />
         <option value="$PROJECT_DIR$/node/node_agent.go" />
         <option value="$PROJECT_DIR$/common/listener/http_service.go" />
-        <option value="$PROJECT_DIR$/trust/coin/ethereum_client.go" />
         <option value="$PROJECT_DIR$/trust/quanta/codes/codes.go" />
         <option value="$PROJECT_DIR$/trust/quanta/tx_error.go" />
         <option value="$PROJECT_DIR$/common/logger/logger_interface.go" />
         <option value="$PROJECT_DIR$/common/logger/go-logger.go" />
         <option value="$PROJECT_DIR$/trust/quanta/submission_worker.go" />
-        <option value="$PROJECT_DIR$/node/config.yml" />
-        <option value="$PROJECT_DIR$/node/trust_node_test.go" />
-        <option value="$PROJECT_DIR$/node/main.go" />
-        <option value="$PROJECT_DIR$/node/trust_node.go" />
         <option value="$PROJECT_DIR$/registrar/service/server.go" />
         <option value="$PROJECT_DIR$/registrar/static/index.html" />
         <option value="$PROJECT_DIR$/registrar/config.yml" />
         <option value="$PROJECT_DIR$/trust/control/round_robin.go" />
         <option value="$PROJECT_DIR$/README.md" />
         <option value="$PROJECT_DIR$/trust/control/coin_to_quanta.go" />
+        <option value="$PROJECT_DIR$/blockchain/ethereum/.env" />
+        <option value="$PROJECT_DIR$/blockchain/ethereum/scripts/new_erc20.js" />
+        <option value="$PROJECT_DIR$/blockchain/ethereum/scripts/new_forward_address.js" />
+        <option value="$PROJECT_DIR$/registrar/Forwarder/contract.go" />
+        <option value="$PROJECT_DIR$/blockchain/ethereum/scripts/transfer_erc20.js" />
+        <option value="$PROJECT_DIR$/trust/control/quanta_to_coin.go" />
+        <option value="$PROJECT_DIR$/trust/coin/contracts/generate_abi.sh" />
+        <option value="$PROJECT_DIR$/blockchain/ethereum/contracts/SimpleToken.sol" />
+        <option value="$PROJECT_DIR$/trust/coin/ethereum_interface.go" />
+        <option value="$PROJECT_DIR$/trust/coin/ethereum_interface_test.go" />
+        <option value="$PROJECT_DIR$/blockchain/ethereum/README.md" />
+        <option value="$PROJECT_DIR$/trust/coin/ethereum_coin.go" />
+        <option value="$PROJECT_DIR$/node/environment_test.go" />
+        <option value="$PROJECT_DIR$/node/rest_api.go" />
+        <option value="$PROJECT_DIR$/node/config.yml" />
+        <option value="$PROJECT_DIR$/trust/coin/ethereum_client.go" />
+        <option value="$PROJECT_DIR$/common/test/environment_test.go" />
+        <option value="$PROJECT_DIR$/node/common/config.go" />
+        <option value="$PROJECT_DIR$/node/node_test.go" />
+        <option value="$PROJECT_DIR$/trust/coin/run_ethereum.sh" />
+        <option value="$PROJECT_DIR$/blockchain/ethereum/Makefile" />
+        <option value="$PROJECT_DIR$/blockchain/ethereum/truffle-config.js" />
+        <option value="$PROJECT_DIR$/common/test/environment.go" />
+        <option value="$PROJECT_DIR$/trust/coin/ethereum_client_test.go" />
+        <option value="$PROJECT_DIR$/trust/control/quanta_to_coin_test.go" />
+        <option value="$PROJECT_DIR$/node/trust_node.go" />
+        <option value="$PROJECT_DIR$/node/main.go" />
+        <option value="$PROJECT_DIR$/trust/quanta/quanta_client.go" />
+        <option value="$PROJECT_DIR$/node/trust_node_test.go" />
       </list>
     </option>
   </component>
@@ -341,9 +355,9 @@
     </packageJsonPaths>
   </component>
   <component name="ProjectFrameBounds">
-    <option name="x" value="294" />
-    <option name="y" value="28" />
-    <option name="width" value="1562" />
+    <option name="x" value="471" />
+    <option name="y" value="25" />
+    <option name="width" value="1446" />
     <option name="height" value="1008" />
   </component>
   <component name="ProjectInspectionProfilesVisibleTreeState">
@@ -389,7 +403,23 @@
               <item name="distributed_quanta_bridge" type="462c0819:PsiDirectoryNode" />
               <item name="blockchain" type="462c0819:PsiDirectoryNode" />
               <item name="ethereum" type="462c0819:PsiDirectoryNode" />
-              <item name="contracts" type="462c0819:PsiDirectoryNode" />
+              <item name="geth" type="462c0819:PsiDirectoryNode" />
+            </path>
+            <path>
+              <item name="distributed_quanta_bridge" type="b2602c69:ProjectViewProjectNode" />
+              <item name="distributed_quanta_bridge" type="462c0819:PsiDirectoryNode" />
+              <item name="common" type="462c0819:PsiDirectoryNode" />
+            </path>
+            <path>
+              <item name="distributed_quanta_bridge" type="b2602c69:ProjectViewProjectNode" />
+              <item name="distributed_quanta_bridge" type="462c0819:PsiDirectoryNode" />
+              <item name="common" type="462c0819:PsiDirectoryNode" />
+              <item name="test" type="462c0819:PsiDirectoryNode" />
+            </path>
+            <path>
+              <item name="distributed_quanta_bridge" type="b2602c69:ProjectViewProjectNode" />
+              <item name="distributed_quanta_bridge" type="462c0819:PsiDirectoryNode" />
+              <item name="keystore" type="462c0819:PsiDirectoryNode" />
             </path>
             <path>
               <item name="distributed_quanta_bridge" type="b2602c69:ProjectViewProjectNode" />
@@ -410,7 +440,37 @@
               <item name="distributed_quanta_bridge" type="b2602c69:ProjectViewProjectNode" />
               <item name="distributed_quanta_bridge" type="462c0819:PsiDirectoryNode" />
               <item name="trust" type="462c0819:PsiDirectoryNode" />
+              <item name="coin" type="462c0819:PsiDirectoryNode" />
+            </path>
+            <path>
+              <item name="distributed_quanta_bridge" type="b2602c69:ProjectViewProjectNode" />
+              <item name="distributed_quanta_bridge" type="462c0819:PsiDirectoryNode" />
+              <item name="trust" type="462c0819:PsiDirectoryNode" />
               <item name="control" type="462c0819:PsiDirectoryNode" />
+            </path>
+            <path>
+              <item name="distributed_quanta_bridge" type="b2602c69:ProjectViewProjectNode" />
+              <item name="distributed_quanta_bridge" type="462c0819:PsiDirectoryNode" />
+              <item name="trust" type="462c0819:PsiDirectoryNode" />
+              <item name="key_manager" type="462c0819:PsiDirectoryNode" />
+            </path>
+            <path>
+              <item name="distributed_quanta_bridge" type="b2602c69:ProjectViewProjectNode" />
+              <item name="distributed_quanta_bridge" type="462c0819:PsiDirectoryNode" />
+              <item name="trust" type="462c0819:PsiDirectoryNode" />
+              <item name="peer_contact" type="462c0819:PsiDirectoryNode" />
+            </path>
+            <path>
+              <item name="distributed_quanta_bridge" type="b2602c69:ProjectViewProjectNode" />
+              <item name="distributed_quanta_bridge" type="462c0819:PsiDirectoryNode" />
+              <item name="trust" type="462c0819:PsiDirectoryNode" />
+              <item name="quanta" type="462c0819:PsiDirectoryNode" />
+            </path>
+            <path>
+              <item name="distributed_quanta_bridge" type="b2602c69:ProjectViewProjectNode" />
+              <item name="distributed_quanta_bridge" type="462c0819:PsiDirectoryNode" />
+              <item name="trust" type="462c0819:PsiDirectoryNode" />
+              <item name="registrar_client" type="462c0819:PsiDirectoryNode" />
             </path>
             <path>
               <item name="distributed_quanta_bridge" type="b2602c69:ProjectViewProjectNode" />
@@ -439,11 +499,11 @@
   </component>
   <component name="RecentsManager">
     <key name="MoveFile.RECENT_KEYS">
+      <recent name="$PROJECT_DIR$/common/test" />
       <recent name="$PROJECT_DIR$/trust/coin/contracts" />
       <recent name="$PROJECT_DIR$" />
       <recent name="$PROJECT_DIR$/registrar/service" />
       <recent name="$PROJECT_DIR$/registrar/keystore" />
-      <recent name="$PROJECT_DIR$/registrar/Forwarder" />
     </key>
   </component>
   <component name="RunDashboard">
@@ -458,7 +518,7 @@
       </list>
     </option>
   </component>
-  <component name="RunManager" selected="Go Test.test Node withdrawal">
+  <component name="RunManager" selected="Go Test.test Node">
     <configuration name="node" type="GoApplicationRunConfiguration" factoryName="Go Application">
       <module name="distributed_quanta_bridge" />
       <working_directory value="$PROJECT_DIR$/node" />
@@ -489,7 +549,7 @@
       <package value="github.com/quantadex/distributed_quanta_bridge/node" />
       <directory value="$PROJECT_DIR$/" />
       <filePath value="$PROJECT_DIR$/" />
-      <pattern value=".*Withdrawal.*" />
+      <pattern value=".*TestRopstenERC20Token.*" />
       <method v="2" />
     </configuration>
     <configuration name="test Node" type="GoTestRunConfiguration" factoryName="Go Test">
@@ -553,35 +613,35 @@
     <option name="ACTIVE_ACTIONS" value=",ALPHA_COMPARATOR" />
   </component>
   <component name="TestHistory">
-    <history-entry file="test_Node - 2018.10.23 at 16h 21m 25s.xml">
-      <configuration name="test Node" configurationId="GoTestRunConfiguration" />
-    </history-entry>
-    <history-entry file="test_Node - 2018.10.23 at 16h 25m 40s.xml">
-      <configuration name="test Node" configurationId="GoTestRunConfiguration" />
-    </history-entry>
-    <history-entry file="test_Node - 2018.10.23 at 16h 27m 59s.xml">
-      <configuration name="test Node" configurationId="GoTestRunConfiguration" />
-    </history-entry>
-    <history-entry file="test_Node - 2018.10.23 at 16h 29m 48s.xml">
-      <configuration name="test Node" configurationId="GoTestRunConfiguration" />
-    </history-entry>
-    <history-entry file="test_Node - 2018.10.23 at 16h 33m 29s.xml">
-      <configuration name="test Node" configurationId="GoTestRunConfiguration" />
-    </history-entry>
-    <history-entry file="test_Node - 2018.10.23 at 17h 15m 01s.xml">
-      <configuration name="test Node" configurationId="GoTestRunConfiguration" />
-    </history-entry>
-    <history-entry file="test_Node - 2018.10.25 at 11h 49m 21s.xml">
-      <configuration name="test Node" configurationId="GoTestRunConfiguration" />
-    </history-entry>
-    <history-entry file="test_Node - 2018.10.25 at 11h 49m 39s.xml">
-      <configuration name="test Node" configurationId="GoTestRunConfiguration" />
-    </history-entry>
-    <history-entry file="test_Node_withdrawal - 2018.10.25 at 11h 53m 33s.xml">
+    <history-entry file="test_Node_withdrawal - 2018.11.03 at 01h 09m 26s.xml">
       <configuration name="test Node withdrawal" configurationId="GoTestRunConfiguration" />
     </history-entry>
-    <history-entry file="test_Node_withdrawal - 2018.10.25 at 11h 54m 16s.xml">
+    <history-entry file="test_Node_withdrawal - 2018.11.03 at 01h 18m 16s.xml">
       <configuration name="test Node withdrawal" configurationId="GoTestRunConfiguration" />
+    </history-entry>
+    <history-entry file="test_Node_withdrawal - 2018.11.03 at 01h 23m 55s.xml">
+      <configuration name="test Node withdrawal" configurationId="GoTestRunConfiguration" />
+    </history-entry>
+    <history-entry file="test_Node_withdrawal - 2018.11.03 at 01h 25m 55s.xml">
+      <configuration name="test Node withdrawal" configurationId="GoTestRunConfiguration" />
+    </history-entry>
+    <history-entry file="test_Node_withdrawal - 2018.11.03 at 01h 28m 25s.xml">
+      <configuration name="test Node withdrawal" configurationId="GoTestRunConfiguration" />
+    </history-entry>
+    <history-entry file="test_Node_withdrawal - 2018.11.03 at 01h 29m 35s.xml">
+      <configuration name="test Node withdrawal" configurationId="GoTestRunConfiguration" />
+    </history-entry>
+    <history-entry file="test_Node - 2018.11.06 at 00h 00m 23s.xml">
+      <configuration name="test Node" configurationId="GoTestRunConfiguration" />
+    </history-entry>
+    <history-entry file="test_Node - 2018.11.06 at 00h 00m 53s.xml">
+      <configuration name="test Node" configurationId="GoTestRunConfiguration" />
+    </history-entry>
+    <history-entry file="test_Node - 2018.11.06 at 00h 01m 08s.xml">
+      <configuration name="test Node" configurationId="GoTestRunConfiguration" />
+    </history-entry>
+    <history-entry file="test_Node - 2018.11.06 at 00h 01m 31s.xml">
+      <configuration name="test Node" configurationId="GoTestRunConfiguration" />
     </history-entry>
   </component>
   <component name="TodoView">
@@ -594,15 +654,35 @@
     </todo-panel>
   </component>
   <component name="ToolWindowManager">
-    <frame x="294" y="28" width="1562" height="1008" extended-state="0" />
+    <frame x="471" y="25" width="1446" height="1008" extended-state="0" />
     <editor active="true" />
     <layout>
-      <window_info active="true" content_ui="combo" id="Project" order="0" sideWeight="0.60465115" visible="true" weight="0.25263157" />
+      <window_info active="true" content_ui="combo" id="Project" order="0" sideWeight="0.60465115" visible="true" weight="0.31552705" />
       <window_info id="Favorites" order="1" side_tool="true" />
       <window_info anchor="bottom" id="Message" order="0" />
       <window_info anchor="bottom" id="Find" order="1" sideWeight="0.4983845" weight="0.3607456" />
       <window_info anchor="bottom" id="TODO" order="2" weight="0.32894737" />
-      <window_info anchor="bottom" id="Run" order="3" visible="true" weight="0.29694322" />
+      <window_info anchor="bottom" id="Run" order="3" weight="0.37720034" />
+      <window_info anchor="bottom" id="Debug" order="4" sideWeight="0.49879226" weight="0.39583334" />
+      <window_info anchor="bottom" id="Cvs" order="5" weight="0.25" />
+      <window_info anchor="bottom" id="Inspection" order="6" weight="0.4" />
+      <window_info anchor="bottom" id="Database Changes" order="7" show_stripe_button="false" />
+      <window_info anchor="bottom" id="Version Control" order="8" />
+      <window_info anchor="bottom" id="Terminal" order="9" sideWeight="0.4983845" weight="0.123362444" />
+      <window_info anchor="bottom" id="Event Log" order="10" sideWeight="0.5012077" side_tool="true" weight="0.39928487" />
+      <window_info anchor="right" id="Commander" internal_type="SLIDING" order="0" type="SLIDING" weight="0.4" />
+      <window_info anchor="right" id="Ant Build" order="1" weight="0.25" />
+      <window_info anchor="right" content_ui="combo" id="Hierarchy" order="2" weight="0.25" />
+      <window_info anchor="right" id="Database" order="3" />
+      <window_info anchor="right" id="Structure" order="4" sideWeight="0.39534885" side_tool="true" weight="0.21978022" />
+    </layout>
+    <layout-to-restore>
+      <window_info active="true" content_ui="combo" id="Project" order="0" sideWeight="0.60465115" visible="true" weight="0.27045178" />
+      <window_info id="Favorites" order="1" side_tool="true" />
+      <window_info anchor="bottom" id="Message" order="0" />
+      <window_info anchor="bottom" id="Find" order="1" sideWeight="0.4983845" weight="0.3607456" />
+      <window_info anchor="bottom" id="TODO" order="2" weight="0.32894737" />
+      <window_info anchor="bottom" id="Run" order="3" visible="true" weight="0.48035914" />
       <window_info anchor="bottom" id="Debug" order="4" sideWeight="0.49879226" weight="0.39583334" />
       <window_info anchor="bottom" id="Cvs" order="5" weight="0.25" />
       <window_info anchor="bottom" id="Inspection" order="6" weight="0.4" />
@@ -614,8 +694,8 @@
       <window_info anchor="right" id="Ant Build" order="1" weight="0.25" />
       <window_info anchor="right" content_ui="combo" id="Hierarchy" order="2" weight="0.25" />
       <window_info anchor="right" id="Database" order="3" />
-      <window_info anchor="right" id="Structure" order="4" sideWeight="0.39534885" side_tool="true" visible="true" weight="0.09934211" />
-    </layout>
+      <window_info anchor="right" id="Structure" order="4" sideWeight="0.39534885" side_tool="true" visible="true" weight="0.21978022" />
+    </layout-to-restore>
   </component>
   <component name="TypeScriptGeneratedFilesManager">
     <option name="version" value="1" />
@@ -666,6 +746,12 @@
           <line>224</line>
           <option name="timeStamp" value="39" />
         </line-breakpoint>
+        <line-breakpoint enabled="true" type="DlvLineBreakpoint">
+          <url>file://$PROJECT_DIR$/node/trust_node_test.go</url>
+          <line>2</line>
+          <properties />
+          <option name="timeStamp" value="44" />
+        </line-breakpoint>
       </breakpoints>
     </breakpoint-manager>
     <watches-manager>
@@ -675,310 +761,68 @@
     </watches-manager>
   </component>
   <component name="editorHistoryManager">
-    <entry file="file://$PROJECT_DIR$/blockchain/ethereum/scripts/print_contract_address.js">
+    <entry file="file://$PROJECT_DIR$/registrar/Forwarder/contract.go">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="136">
-          <caret line="8" column="1" selection-start-line="8" selection-start-column="1" selection-end-line="8" selection-end-column="1" />
+        <state relative-caret-position="221">
+          <caret line="13" lean-forward="true" selection-start-line="13" selection-end-line="13" />
+          <folding>
+            <element signature="e#126#337#0" expanded="true" />
+          </folding>
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/blockchain/ethereum/scripts/print_accounts.js">
+    <entry file="file://$PROJECT_DIR$/trust/coin/contracts/trust_contract.go">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="1190">
+          <caret line="80" column="5" selection-start-line="80" selection-start-column="5" selection-end-line="80" selection-end-column="5" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/trust/coin/contracts/generate_abi.sh">
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="102">
-          <caret line="6" column="1" lean-forward="true" selection-start-line="6" selection-start-column="1" selection-end-line="6" selection-end-column="1" />
+          <caret line="6" lean-forward="true" selection-start-line="6" selection-end-line="6" />
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/blockchain/ethereum/scripts/init_signers.js">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="85">
-          <caret line="5" column="36" lean-forward="true" selection-start-line="5" selection-start-column="36" selection-end-line="5" selection-end-column="36" />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/trust/quanta/quanta_client_test.go">
+    <entry file="file://$PROJECT_DIR$/trust/coin/contracts/generate.go">
       <provider selected="true" editor-type-id="text-editor" />
     </entry>
-    <entry file="file://$PROJECT_DIR$/trust/quanta/quanta_interface.go">
+    <entry file="file://$PROJECT_DIR$/trust/coin/contracts/token.go">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="158">
-          <caret line="62" column="4" selection-start-line="62" selection-start-column="4" selection-end-line="62" selection-end-column="4" />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/trust/quanta/quanta_client.go">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="238">
-          <caret line="31" column="4" selection-start-line="31" selection-start-column="4" selection-end-line="31" selection-end-column="4" />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/vendor/github.com/stellar/go/keypair/main.go">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="181">
-          <caret line="38" column="9" selection-start-line="38" selection-start-column="4" selection-end-line="38" selection-end-column="9" />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/trust/key_manager/quanta_key_manager.go">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="215">
-          <caret line="99" column="20" selection-start-line="99" selection-start-column="20" selection-end-line="99" selection-end-column="20" />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/trust/registrar_client/registrar_client.go">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="126">
-          <caret line="28" column="1" lean-forward="true" selection-start-line="28" selection-start-column="1" selection-end-line="28" selection-end-column="1" />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/vendor/github.com/ethereum/go-ethereum/metrics/registry.go">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="206">
-          <caret line="224" column="4" selection-start-line="224" selection-start-column="4" selection-end-line="224" selection-end-column="4" />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/node/node_agent.go">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="333">
-          <caret line="56" column="11" selection-start-line="56" selection-start-column="11" selection-end-line="56" selection-end-column="11" />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/common/listener/listener_interface.go">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="265">
-          <caret line="52" column="4" selection-start-line="52" selection-start-column="4" selection-end-line="52" selection-end-column="4" />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/common/listener/http_service.go">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="394">
-          <caret line="51" column="1" lean-forward="true" selection-start-line="51" selection-start-column="1" selection-end-line="51" selection-end-column="1" />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file:///usr/local/Cellar/go/1.10.3/libexec/src/net/http/server.go">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="316">
-          <caret line="2966" column="5" selection-start-line="2966" selection-start-column="5" selection-end-line="2966" selection-end-column="5" />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/trust/coin/ethereum_client_test.go">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="108">
-          <caret line="158" column="5" lean-forward="true" selection-start-line="158" selection-start-column="5" selection-end-line="158" selection-end-column="5" />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/trust/coin/ethereum_coin_test.go">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="196">
-          <caret line="22" column="30" selection-start-line="22" selection-start-column="30" selection-end-line="22" selection-end-column="30" />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/trust/control/transaction_ledger.go">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="151">
-          <caret line="20" column="4" selection-start-line="20" selection-start-column="4" selection-end-line="20" selection-end-column="4" />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/trust/coin/ethereum_client.go">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="17">
-          <caret line="175" column="19" selection-start-line="175" selection-start-column="19" selection-end-line="175" selection-end-column="19" />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file:///usr/local/Cellar/go/1.10.3/libexec/src/net/http/response.go">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="250">
-          <caret line="32" column="5" selection-start-line="32" selection-start-column="5" selection-end-line="32" selection-end-column="5" />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/vendor/github.com/stellar/go/support/errors/main.go">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="-686" />
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/trust/quanta/codes/codes.go">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="119">
-          <caret line="7" column="1" lean-forward="true" selection-start-line="7" selection-start-column="1" selection-end-line="7" selection-end-column="1" />
+        <state relative-caret-position="-987">
+          <caret line="266" column="11" selection-start-line="266" selection-start-column="3" selection-end-line="266" selection-end-column="11" />
           <folding>
-            <element signature="e#139#209#0" expanded="true" />
+            <element signature="e#126#434#0" expanded="true" />
           </folding>
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/vendor/github.com/stellar/go/clients/horizon/error.go">
+    <entry file="file://$PROJECT_DIR$/blockchain/ethereum/contracts/SimpleToken.sol">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="220">
-          <caret line="56" column="19" selection-start-line="56" selection-start-column="19" selection-end-line="56" selection-end-column="19" />
+        <state relative-caret-position="136">
+          <caret line="8" column="41" selection-start-line="8" selection-start-column="41" selection-end-line="8" selection-end-column="41" />
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/vendor/github.com/stellar/go/clients/horizon/main.go">
+    <entry file="file://$PROJECT_DIR$/blockchain/ethereum/scripts/new_erc20.js">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="399">
-          <caret line="87" column="4" selection-start-line="87" selection-start-column="4" selection-end-line="87" selection-end-column="4" />
+        <state relative-caret-position="102">
+          <caret line="6" column="6" lean-forward="true" selection-start-line="6" selection-start-column="6" selection-end-line="6" selection-end-column="6" />
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/vendor/github.com/stellar/go/clients/horizon/responses.go">
+    <entry file="file:///usr/local/Cellar/go/1.10.3/libexec/src/math/pow10.go">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="185">
-          <caret line="186" column="4" selection-start-line="186" selection-start-column="4" selection-end-line="186" selection-end-column="4" />
+        <state relative-caret-position="425">
+          <caret line="29" column="5" selection-start-line="29" selection-start-column="5" selection-end-line="29" selection-end-column="5" />
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/common/logger/go-logger.go">
+    <entry file="file://$PROJECT_DIR$/Gopkg.toml">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="28">
-          <caret line="10" column="5" selection-start-line="10" selection-start-column="5" selection-end-line="10" selection-end-column="5" />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/common/logger/logger_interface.go">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="289">
-          <caret line="17" column="15" selection-start-line="17" selection-start-column="15" selection-end-line="17" selection-end-column="15" />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/trust/quanta/tx_error.go">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="338">
-          <caret line="39" column="35" selection-start-line="39" selection-start-column="35" selection-end-line="39" selection-end-column="35" />
-          <folding>
-            <element signature="e#18#145#0" expanded="true" />
-          </folding>
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/trust/quanta/submission_worker.go">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="182">
-          <caret line="52" column="9" selection-start-line="52" selection-start-column="9" selection-end-line="52" selection-end-column="9" />
-          <folding>
-            <element signature="e#16#300#0" expanded="true" />
-          </folding>
-        </state>
-      </provider>
-    </entry>
-    <entry file="file:///usr/local/Cellar/go/1.10.3/libexec/src/testing/testing.go">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="488">
-          <caret line="741" selection-start-line="741" selection-end-line="741" />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/vendor/github.com/spf13/viper/viper.go">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="17">
-          <caret line="1165" column="5" selection-start-line="1165" selection-start-column="5" selection-end-line="1165" selection-end-column="5" />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/trust/key_manager/ethereum_key_manager.go">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="133">
-          <caret line="20" column="29" selection-start-line="20" selection-start-column="29" selection-end-line="20" selection-end-column="29" />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/trust/key_manager/key_manager_interface.go">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="202">
-          <caret line="25" column="4" selection-start-line="25" selection-start-column="4" selection-end-line="25" selection-end-column="4" />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/registrar/service/registry_test.go">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="476">
-          <caret line="39" column="5" selection-start-line="39" selection-start-column="5" selection-end-line="39" selection-end-column="5" />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/common/manifest/manifest.go">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="-752">
-          <caret line="13" column="5" selection-start-line="13" selection-start-column="5" selection-end-line="13" selection-end-column="5" />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/trust/registrar_client/registrar_client_interface.go">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="218">
-          <caret line="66" column="4" selection-start-line="66" selection-start-column="4" selection-end-line="66" selection-end-column="4" />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/trust/coin/ethereum_coin.go">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="113">
-          <caret line="39" column="23" selection-start-line="39" selection-start-column="23" selection-end-line="39" selection-end-column="23" />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/trust/coin/coin_interface.go">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="121">
-          <caret line="55" column="4" selection-start-line="55" selection-start-column="4" selection-end-line="55" selection-end-column="4" />
-          <folding>
-            <element signature="e#14#156#0" expanded="true" />
-          </folding>
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/node/trust_node_test.go">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="224">
-          <caret line="33" column="67" selection-start-line="33" selection-start-column="25" selection-end-line="33" selection-end-column="67" />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/registrar/service/registry.go">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="60">
-          <caret line="32" column="42" selection-start-line="32" selection-start-column="42" selection-end-line="32" selection-end-column="42" />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/registrar/service/server.go">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="213">
-          <caret line="137" column="50" selection-start-line="137" selection-start-column="50" selection-end-line="137" selection-end-column="50" />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/registrar/main.go">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="255">
-          <caret line="20" column="13" lean-forward="true" selection-start-line="20" selection-start-column="13" selection-end-line="20" selection-end-column="13" />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/registrar/static/index.html">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="357">
-          <caret line="21" column="159" selection-start-line="21" selection-start-column="56" selection-end-line="21" selection-end-column="159" />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/trust/control/round_robin.go">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="314">
-          <caret line="321" column="21" selection-start-line="321" selection-start-column="21" selection-end-line="321" selection-end-column="21" />
+        <state relative-caret-position="94">
+          <caret line="19" column="20" lean-forward="true" selection-start-line="19" selection-start-column="20" selection-end-line="19" selection-end-column="20" />
         </state>
       </provider>
     </entry>
@@ -989,52 +833,11 @@
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/node/main.go">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="255">
-          <caret line="24" selection-start-line="24" selection-end-line="24" />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/node/config.yml">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="272">
-          <caret line="16" column="10" selection-start-line="16" selection-start-column="10" selection-end-line="16" selection-end-column="10" />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/node/trust_node.go">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="281">
-          <caret line="296" column="27" selection-start-line="296" selection-start-column="27" selection-end-line="296" selection-end-column="27" />
-          <folding>
-            <element signature="e#14#839#0" expanded="true" />
-          </folding>
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/trust/control/quanta_to_coin.go">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="242">
-          <caret line="75" selection-start-line="75" selection-end-line="75" selection-end-column="3" />
-          <folding>
-            <element signature="e#17#723#0" expanded="true" />
-          </folding>
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/trust/control/coin_to_quanta.go">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="17">
-          <caret line="85" selection-start-line="85" selection-end-line="85" />
-        </state>
-      </provider>
-    </entry>
     <entry file="file://$PROJECT_DIR$/README.md">
       <provider selected="true" editor-type-id="split-provider[text-editor;MarkdownPreviewEditor]">
         <state split_layout="SPLIT">
-          <first_editor relative-caret-position="442">
-            <caret line="26" column="18" selection-start-line="26" selection-start-column="18" selection-end-line="26" selection-end-column="18" />
+          <first_editor relative-caret-position="166">
+            <caret line="49" column="21" selection-start-line="49" selection-start-column="13" selection-end-line="49" selection-end-column="21" />
           </first_editor>
           <second_editor>
             <markdownNavigatorState />
@@ -1042,10 +845,284 @@
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/blockchain/ethereum/contracts/QuantaCrossChain.sol">
+    <entry file="file://$PROJECT_DIR$/blockchain/ethereum/README.md">
+      <provider selected="true" editor-type-id="split-provider[text-editor;MarkdownPreviewEditor]">
+        <state split_layout="SPLIT">
+          <first_editor relative-caret-position="-67">
+            <caret line="104" selection-start-line="104" selection-end-line="104" />
+          </first_editor>
+          <second_editor>
+            <markdownNavigatorState />
+          </second_editor>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/blockchain/ethereum/scripts/new_forward_address.js">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="95">
-          <caret line="54" column="56" selection-start-line="54" selection-start-column="27" selection-end-line="54" selection-end-column="56" />
+        <state relative-caret-position="85">
+          <caret line="5" lean-forward="true" selection-start-line="5" selection-end-line="12" selection-end-column="1" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/blockchain/ethereum/contracts/QuantaForwarder.sol">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="340">
+          <caret line="20" column="3" lean-forward="true" selection-start-line="20" selection-start-column="3" selection-end-line="20" selection-end-column="3" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/trust/coin/coin_interface.go">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="121">
+          <caret line="89" column="4" selection-start-line="89" selection-start-column="4" selection-end-line="89" selection-end-column="4" />
+          <folding>
+            <element signature="e#14#156#0" expanded="true" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/registrar/service/registry.go">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="374">
+          <caret line="32" column="42" selection-start-line="32" selection-start-column="42" selection-end-line="32" selection-end-column="42" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/registrar/service/server.go">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="51">
+          <caret line="15" selection-start-line="15" selection-end-line="68" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/common/kv_store/bolt_store.go">
+      <provider selected="true" editor-type-id="text-editor" />
+    </entry>
+    <entry file="file://$PROJECT_DIR$/registrar/main.go">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="255">
+          <caret line="20" column="13" selection-start-line="20" selection-start-column="13" selection-end-line="20" selection-end-column="13" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/common/kv_store/bucket_names.go">
+      <provider selected="true" editor-type-id="text-editor" />
+    </entry>
+    <entry file="file://$PROJECT_DIR$/trust/control/quanta_to_coin.go">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="133">
+          <caret line="198" column="45" selection-start-line="198" selection-start-column="31" selection-end-line="198" selection-end-column="45" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/trust/coin/ethereum_interface.go">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="856">
+          <caret line="97" column="4" selection-start-line="97" selection-start-column="4" selection-end-line="97" selection-end-column="4" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/trust/control/coin_to_quanta.go">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="474">
+          <caret line="193" column="111" selection-start-line="193" selection-start-column="111" selection-end-line="193" selection-end-column="111" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file:///usr/local/Cellar/go/1.10.3/libexec/src/net/http/server.go">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="428">
+          <caret line="132" column="4" selection-start-line="132" selection-start-column="4" selection-end-line="132" selection-end-column="4" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/registrar/static/index.html">
+      <provider selected="true" editor-type-id="text-editor" />
+    </entry>
+    <entry file="file://$PROJECT_DIR$/common/kv_store/kv_store_interface.go">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="315">
+          <caret line="68" column="4" selection-start-line="68" selection-start-column="4" selection-end-line="68" selection-end-column="4" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/node/rest_api.go">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="303">
+          <caret line="43" column="49" selection-start-line="43" selection-start-column="49" selection-end-line="43" selection-end-column="49" />
+          <folding>
+            <element signature="e#14#113#0" expanded="true" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/node/config.yml">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="85">
+          <caret line="5" column="13" lean-forward="true" selection-start-line="5" selection-start-column="13" selection-end-line="5" selection-end-column="13" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/trust/coin/ethereum_client.go">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="-126">
+          <caret line="237" lean-forward="true" selection-start-line="237" selection-end-line="237" />
+          <folding>
+            <element signature="e#14#573#0" expanded="true" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/trust/coin/ethereum_coin.go">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="1306">
+          <caret line="83" column="27" selection-start-line="83" selection-start-column="27" selection-end-line="83" selection-end-column="27" />
+          <folding>
+            <element signature="e#14#308#0" expanded="true" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/trust/coin/ethereum_interface_test.go">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="51">
+          <caret line="7" lean-forward="true" selection-start-line="7" selection-end-line="7" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/node/common/config.go">
+      <provider selected="true" editor-type-id="text-editor">
+        <state>
+          <caret column="14" selection-start-column="14" selection-end-column="14" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/trust/coin/run_ethereum.sh">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="51">
+          <caret line="3" column="15" selection-start-line="3" selection-start-column="15" selection-end-line="3" selection-end-column="15" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/blockchain/ethereum/Makefile">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="374">
+          <caret line="22" column="256" selection-start-line="22" selection-start-column="256" selection-end-line="22" selection-end-column="256" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/blockchain/ethereum/truffle-config.js">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="268">
+          <caret line="24" column="15" selection-start-line="24" selection-start-column="15" selection-end-line="24" selection-end-column="15" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/blockchain/ethereum/geth/keys.txt">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="187">
+          <caret line="11" column="70" selection-start-line="11" selection-start-column="4" selection-end-line="11" selection-end-column="70" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/trust/coin/ethereum_coin_test.go">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="-680" />
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/node/node_agent.go">
+      <provider selected="true" editor-type-id="text-editor" />
+    </entry>
+    <entry file="file://$PROJECT_DIR$/common/math_test.go">
+      <provider selected="true" editor-type-id="text-editor" />
+    </entry>
+    <entry file="file:///usr/local/Cellar/go/1.10.3/libexec/src/os/exec/exec.go">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="-3434">
+          <caret line="337" column="14" selection-start-line="337" selection-start-column="14" selection-end-line="337" selection-end-column="14" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/trust/coin/ethereum_client_test.go">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="636">
+          <caret line="212" column="19" lean-forward="true" selection-start-line="212" selection-start-column="19" selection-end-line="212" selection-end-column="19" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/trust/control/round_robin.go">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="466">
+          <caret line="236" column="22" selection-start-line="236" selection-start-column="11" selection-end-line="236" selection-end-column="22" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/trust/control/quanta_to_coin_test.go">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="461">
+          <caret line="57" lean-forward="true" selection-start-line="57" selection-end-line="57" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/node/trust_node.go">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="764">
+          <caret line="338" lean-forward="true" selection-start-line="338" selection-end-line="338" />
+          <folding>
+            <element signature="e#14#804#0" expanded="true" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/node/main.go">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="764">
+          <caret line="68" lean-forward="true" selection-start-line="68" selection-end-line="68" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/node/node_test.go">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="677">
+          <caret line="58" column="29" selection-start-line="58" selection-start-column="29" selection-end-line="58" selection-end-column="29" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/common/test/environment.go">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="714">
+          <caret line="42" column="80" selection-start-line="42" selection-start-column="24" selection-end-line="42" selection-end-column="80" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/trust/quanta/quanta_interface.go">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="339">
+          <caret line="71" lean-forward="true" selection-start-line="71" selection-end-line="71" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/trust/quanta/quanta_client.go">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="767">
+          <caret line="210" column="17" lean-forward="true" selection-start-line="210" selection-start-column="17" selection-end-line="210" selection-end-column="17" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/trust/quanta/quanta_client_test.go">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="578">
+          <caret line="38" lean-forward="true" selection-start-line="38" selection-end-line="38" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/node/trust_node_test.go">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="612">
+          <caret line="116" column="20" lean-forward="true" selection-start-line="116" selection-start-column="20" selection-end-line="116" selection-end-column="20" />
+          <folding>
+            <element signature="e#14#308#0" expanded="true" />
+          </folding>
         </state>
       </provider>
     </entry>

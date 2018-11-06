@@ -12,15 +12,16 @@ import (
 	"math/big"
 	"strings"
 	"testing"
+	"github.com/quantadex/distributed_quanta_bridge/common/test"
+	"os"
+	"os/exec"
 )
 
-// https://goethereumbook.org/event-read-erc20/
-const ropsten_infura = "https://ropsten.infura.io/v3/7b880b2fb55c454985d1c1540f47cbf6"
-const blockNumber = 4177625
 
 func TestCheckDepositNode(t *testing.T) {
-	client := &Listener{NetworkID: ROPSTEN_NETWORK_ID}
-	ethereumClient, err := ethclient.Dial(ropsten_infura)
+	network := test.ETHER_NETWORKS[test.ROPSTEN]
+	client := &Listener{NetworkID: network.NetworkId}
+	ethereumClient, err := ethclient.Dial(network.Rpc)
 	if err != nil {
 		t.Error(err)
 		return
@@ -29,7 +30,10 @@ func TestCheckDepositNode(t *testing.T) {
 	client.Client = ethereumClient
 	client.Start()
 
-	events, err := client.FilterTransferEvent(blockNumber, map[string]string{"0x8954eaeba3970d50697bb272aa08b51ceb76e6ea": ""})
+	const blockNumber = 4356013
+
+	// https://ropsten.etherscan.io/tx/0x51a1018c6b2afd7bffb52d05178c3b66c9336e8c2dfeca0110f405cc41613492
+	events, err := client.FilterTransferEvent(blockNumber, map[string]string{"0x527370def157bd1113db9448bd05e6402ffb5a0d": ""})
 	if err != nil {
 		println("block not found??")
 		return
@@ -40,20 +44,21 @@ func TestCheckDepositNode(t *testing.T) {
 	}
 	fmt.Printf("%v\n", events)
 
-	deposits, err := client.GetNativeDeposits(blockNumber, map[string]string{strings.ToLower("0x555Ee11FBDDc0E49A9bAB358A8941AD95fFDB48f"): ""})
-	if err != nil || len(deposits) != 8 {
-		t.Error("Expecting 8 eth transfer", len(deposits))
+	// https://ropsten.etherscan.io/tx/0x1af4e1eeaa9c2f823d7c2b37973cf8829896ea217b36bdcc1049ce1ff19504f2
+	// expecting .15 ETH to 0xb59e4b94e4ed7331ee0520e9377967614ca2dc98
+	deposits, err := client.GetNativeDeposits(4327101, map[string]string{strings.ToLower("0xb59e4b94e4ed7331ee0520e9377967614ca2dc98"): ""})
+	if err != nil || len(deposits) != 1 {
+		t.Error("Expecting 1 eth transfer", len(deposits))
 		return
 	}
-
-	fmt.Printf("%v\n", deposits)
 }
 
 func TestForwardScan(t *testing.T) {
 	//to := "0xe0006458963c3773b051e767c5c63fee24cd7ff9"
+	network := test.ETHER_NETWORKS[test.ROPSTEN]
+	client := &Listener{NetworkID: network.NetworkId}
+	ethereumClient, err := ethclient.Dial(network.Rpc)
 
-	client := &Listener{NetworkID: ROPSTEN_NETWORK_ID}
-	ethereumClient, err := ethclient.Dial(ropsten_infura)
 	if err != nil {
 		t.Error(err)
 		return
@@ -73,7 +78,7 @@ func TestForwardScan(t *testing.T) {
 
 func TestWithdrawalTX(t *testing.T) {
 	km, _ := key_manager.NewEthKeyManager()
-	err := km.LoadNodeKeys("file://keystore/key--7cd737655dff6f95d55b711975d2a4ace32d256e")
+	err := km.LoadNodeKeys("file://../../keystore/key--7cd737655dff6f95d55b711975d2a4ace32d256e")
 	if err != nil {
 		t.Error(err)
 		return
@@ -87,7 +92,7 @@ func TestWithdrawalTX(t *testing.T) {
 	userAuth := bind.NewKeyedTransactor(userKey)
 
 	sim := backends.NewSimulatedBackend(core.GenesisAlloc{
-		userAuth.From: {Balance: big.NewInt(10000000000)}}, 500000)
+		userAuth.From: {Balance: big.NewInt(10000000000)}}, 5000000)
 
 	w := &Withdrawal{
 		TxId:               1,
@@ -146,7 +151,8 @@ func TestWithdrawalGanacheTX(t *testing.T) {
 		Signatures:         nil,
 	}
 
-	coin, _ := NewEthereumCoin("1539926805437", "http://localhost:7545")
+	network := test.ETHER_NETWORKS[test.LOCAL]
+	coin, _ := NewEthereumCoin(network.NetworkId, network.Rpc)
 	coin.Attach()
 	encoded, _ := coin.EncodeRefund(*w)
 	println(encoded)
@@ -175,7 +181,9 @@ func TestWithdrawalGanacheTX(t *testing.T) {
  * Test that we can connect to ganache
  */
 func TestGanacheTX(t *testing.T) {
-	coin, err := NewEthereumCoin("5777", "http://localhost:7545")
+	network := test.ETHER_NETWORKS[test.LOCAL]
+
+	coin, err := NewEthereumCoin(network.NetworkId, network.Rpc)
 	if err != nil {
 		t.Error(err)
 		return
@@ -190,4 +198,26 @@ func TestGanacheTX(t *testing.T) {
 
 	// try to get out of bound
 	coin.GetDepositsInBlock(50000, map[string]string{})
+}
+
+var cmd *exec.Cmd
+
+func setupEthereum() {
+	fmt.Println("Spinning up GETH")
+	cmd = exec.Command("./run_ethereum.sh")
+	cmd.Start()
+}
+
+func teardownEthereum() {
+	if err := cmd.Process.Kill(); err != nil {
+		fmt.Printf("failed to kill process: %v", err)
+	}
+}
+
+// https://www.philosophicalhacker.com/post/integration-tests-in-go/
+func TestMain(m *testing.M) {
+	setupEthereum()
+	result := m.Run()
+	teardownEthereum()
+	os.Exit(result)
 }

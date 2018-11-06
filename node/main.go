@@ -9,6 +9,7 @@ import (
 	"flag"
 	"io/ioutil"
 	"bytes"
+	"github.com/quantadex/distributed_quanta_bridge/node/common"
 )
 
 /**
@@ -33,7 +34,7 @@ func main() {
 		panic(fmt.Errorf("Fatal error config file: %s \n", err))
 	}
 
-	config := Config {}
+	config := common.Config {}
 	err = viper.Unmarshal(&config)
 	if err != nil {
 		panic(fmt.Errorf("Fatal error config file: %s \n", err))

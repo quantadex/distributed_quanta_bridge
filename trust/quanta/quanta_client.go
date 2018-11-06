@@ -19,6 +19,7 @@ import (
 	"strconv"
 	"time"
 	"github.com/ethereum/go-ethereum/common"
+	"strings"
 )
 
 type QuantaClientOptions struct {
@@ -175,12 +176,16 @@ func (q *QuantaClient) GetTopBlockID(accountId string) (int64, error) {
 
 func (q *QuantaClient) GetBalance(assetName string, quantaAddress string) (float64, error) {
 	m, err := q.GetAllBalances(quantaAddress)
-	for k, v := range m {
-		if k == assetName {
-			return v, nil
-		}
+	fmt.Printf("balance for %v\n", m)
+	balance, ok := m[strings.ToLower(assetName)]
+
+	if !ok {
+		err = errors.New("not found")
+	} else {
+		err = nil
 	}
-	return 0, err
+
+	return balance, err
 }
 
 func (q *QuantaClient) GetAllBalances(quantaAddress string) (map[string]float64, error) {
@@ -200,7 +205,7 @@ func (q *QuantaClient) GetAllBalances(quantaAddress string) (map[string]float64,
 		if balances.Records[i].AssetCode == "" {
 			m["native"], _ = strconv.ParseFloat(balances.Records[i].Balance, 64)
 		} else {
-			m[balances.Records[i].AssetCode], _ = strconv.ParseFloat(balances.Records[i].Balance, 64)
+			m[strings.ToLower(balances.Records[i].AssetCode)], _ = strconv.ParseFloat(balances.Records[i].Balance, 64)
 		}
 	}
 	return m, err
