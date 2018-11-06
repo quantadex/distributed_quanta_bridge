@@ -231,6 +231,11 @@ func (l *Listener) FilterTransferEvent(blockNumber int64, toAddress map[string]s
 		//fmt.Printf("Log Block Number: %d\n", vLog.BlockNumber)
 		//fmt.Printf("Log Index: %d %s\n", vLog.Index, vLog.Topics[0].Hex())
 		//fmt.Println(vLog.TxHash.Hex())
+
+		if len(vLog.Topics) < 1 {
+			continue
+		}
+
 		switch vLog.Topics[0].Hex() {
 		case logTransferSigHash.Hex():
 
