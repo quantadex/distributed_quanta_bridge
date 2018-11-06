@@ -61,6 +61,7 @@ var ETHER_NETWORKS = map[string]EthereumEnv {
 func generateConfig(quanta *QuantaNodeSecrets, ethereum *EthereumTrustSecrets,
 	etherNet EthereumEnv, index int) *Config {
 	return &Config {
+		ExternalListenPort: 5200+index,
 		ListenIp: "0.0.0.0",
 		ListenPort: 5100+index,
 		UsePrevKeys: true,

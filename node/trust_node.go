@@ -15,6 +15,7 @@ import (
 	"github.com/quantadex/distributed_quanta_bridge/trust/registrar_client"
 	"strconv"
 	"time"
+	"fmt"
 )
 
 const (
@@ -46,11 +47,13 @@ type TrustNode struct {
 	coinName string
 	queue    queue.Queue
 	listener listener.Listener
+	restApi	 *Server
 
 	doneChan chan bool
 }
 
 type Config struct {
+	ExternalListenPort int
 	ListenIp           string
 	ListenPort         int
 	UsePrevKeys        bool
@@ -185,6 +188,9 @@ func initNode(config Config, targetCoin coin.Coin) (*TrustNode, bool) {
 		node.log.Error("Failed to attach to reg listener")
 		return nil, false
 	}
+
+	node.restApi = NewApiServer(node.db, fmt.Sprintf(":%d", config.ExternalListenPort), node.log)
+
 	return node, true
 }
 
@@ -215,6 +221,8 @@ func (n *TrustNode) registerNode(config Config) bool {
 		n.log.Error("Failed to send node info to registrar " + err.Error())
 		return false
 	}
+
+	go n.restApi.Start()
 
 	// Now we sit and wait to be added to quorum
 	for {
@@ -345,4 +353,5 @@ func registerNode(config Config, node *TrustNode) error {
 func (n *TrustNode) Stop() {
 	n.doneChan <- true
 	n.listener.Stop()
+	n.restApi.Stop()
 }
