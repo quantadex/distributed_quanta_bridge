@@ -20,3 +20,10 @@ report*.xml
 gotest*.out
 node/kv_db*.db
 node/node
+
+
+.idea/workspace.xml
+.idea/tasks.xml
+.idea/dictionaries
+.idea/vcs.xml
+.idea/jsLibraryMappings.xml
