@@ -27,3 +27,5 @@ node/node
 .idea/dictionaries
 .idea/vcs.xml
 .idea/jsLibraryMappings.xml
+
+blockchain/ethereum/geth/data/*
