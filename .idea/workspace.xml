@@ -1,10 +1,10 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project version="4">
   <component name="ChangeListManager">
-    <list default="true" id="9d03c2a5-2a50-4feb-8d60-02c1c1393273" name="Default Changelist" comment="">
-      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+    <list default="true" id="9d03c2a5-2a50-4feb-8d60-02c1c1393273" name="Default Changelist" comment="Merge remote-tracking branch 'origin/master' into dev/pooja&#10;&#10;# Conflicts:&#10;#&#9;trust/control/quanta_to_coin.go&#10;#&#9;trust/control/quanta_to_coin_test.go&#10;#&#9;trust/control/transaction_ledger.go">
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/node/node_test.go" beforeDir="false" afterPath="$PROJECT_DIR$/node/node_test.go" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/node/trust_node_test.go" beforeDir="false" afterPath="$PROJECT_DIR$/node/trust_node_test.go" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/trust/coin/ethereum_client.go" beforeDir="false" afterPath="$PROJECT_DIR$/trust/coin/ethereum_client.go" afterDir="false" />
     </list>
     <option name="EXCLUDED_CONVERTED_TO_IGNORED" value="true" />
     <option name="SHOW_DIALOG" value="false" />
@@ -103,25 +103,25 @@
       </usages-collector>
       <usages-collector id="statistics.file.extensions.edit">
         <counts>
-          <entry key="go" value="147" />
+          <entry key="go" value="290" />
           <entry key="txt" value="11" />
         </counts>
       </usages-collector>
       <usages-collector id="statistics.file.types.edit">
         <counts>
-          <entry key="Go" value="147" />
+          <entry key="Go" value="290" />
           <entry key="PLAIN_TEXT" value="11" />
         </counts>
       </usages-collector>
       <usages-collector id="statistics.file.extensions.open">
         <counts>
-          <entry key="go" value="58" />
+          <entry key="go" value="60" />
           <entry key="json" value="1" />
         </counts>
       </usages-collector>
       <usages-collector id="statistics.file.types.open">
         <counts>
-          <entry key="Go" value="58" />
+          <entry key="Go" value="60" />
           <entry key="JSON" value="1" />
         </counts>
       </usages-collector>
@@ -132,20 +132,38 @@
       <file pinned="false" current-in-tab="true">
         <entry file="file://$PROJECT_DIR$/node/trust_node_test.go">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="328">
-              <caret line="199" column="23" selection-start-line="199" selection-start-column="23" selection-end-line="199" selection-end-column="23" />
+            <state relative-caret-position="15">
+              <caret line="120" column="16" lean-forward="true" selection-start-line="120" selection-start-column="16" selection-end-line="120" selection-end-column="16" />
               <folding>
-                <element signature="e#14#507#0" expanded="true" />
+                <element signature="e#14#308#0" expanded="true" />
               </folding>
             </state>
           </provider>
         </entry>
       </file>
       <file pinned="false" current-in-tab="false">
-        <entry file="file://$PROJECT_DIR$/trust/coin/ethereum_coin.go">
+        <entry file="file://$PROJECT_DIR$/node/node_test.go">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="141">
-              <caret line="59" selection-start-line="59" selection-end-line="59" />
+            <state relative-caret-position="164">
+              <caret line="58" selection-start-line="58" selection-end-line="58" />
+            </state>
+          </provider>
+        </entry>
+      </file>
+      <file pinned="false" current-in-tab="false">
+        <entry file="file://$PROJECT_DIR$/common/test/environment.go">
+          <provider selected="true" editor-type-id="text-editor">
+            <state relative-caret-position="45">
+              <caret line="3" column="12" selection-start-line="3" selection-start-column="12" selection-end-line="3" selection-end-column="12" />
+            </state>
+          </provider>
+        </entry>
+      </file>
+      <file pinned="false" current-in-tab="false">
+        <entry file="file://$PROJECT_DIR$/node/trust_node.go">
+          <provider selected="true" editor-type-id="text-editor">
+            <state relative-caret-position="155">
+              <caret line="305" selection-start-line="305" selection-end-line="305" />
             </state>
           </provider>
         </entry>
@@ -153,17 +171,59 @@
       <file pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/trust/coin/ethereum_client.go">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="-1204">
-              <caret line="120" selection-start-line="120" selection-end-line="120" />
+            <state relative-caret-position="-466">
+              <caret line="369" column="10" selection-start-line="369" selection-start-column="4" selection-end-line="369" selection-end-column="10" />
             </state>
           </provider>
         </entry>
       </file>
       <file pinned="false" current-in-tab="false">
-        <entry file="file://$PROJECT_DIR$/vendor/github.com/ethereum/go-ethereum/ethclient/ethclient.go">
+        <entry file="file://$PROJECT_DIR$/trust/control/transaction_ledger.go">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="161">
-              <caret line="97" selection-start-line="97" selection-end-line="97" />
+            <state relative-caret-position="88">
+              <caret line="51" column="19" selection-start-line="51" selection-start-column="19" selection-end-line="51" selection-end-column="19" />
+            </state>
+          </provider>
+        </entry>
+      </file>
+      <file pinned="false" current-in-tab="false">
+        <entry file="file://$PROJECT_DIR$/trust/control/quanta_to_coin.go">
+          <provider selected="true" editor-type-id="text-editor">
+            <state relative-caret-position="-270">
+              <caret line="192" column="3" selection-start-line="192" selection-start-column="3" selection-end-line="192" selection-end-column="3" />
+            </state>
+          </provider>
+        </entry>
+      </file>
+      <file pinned="false" current-in-tab="false">
+        <entry file="file://$PROJECT_DIR$/trust/control/quanta_to_coin_test.go">
+          <provider selected="true" editor-type-id="text-editor">
+            <state relative-caret-position="915">
+              <caret line="61" column="19" selection-start-line="61" selection-start-column="19" selection-end-line="61" selection-end-column="19" />
+              <folding>
+                <element signature="e#17#331#0" expanded="true" />
+              </folding>
+            </state>
+          </provider>
+        </entry>
+      </file>
+      <file pinned="false" current-in-tab="false">
+        <entry file="file://$PROJECT_DIR$/common/kv_store/bolt_store.go">
+          <provider selected="true" editor-type-id="text-editor">
+            <state relative-caret-position="358">
+              <caret line="32" column="1" selection-start-line="32" selection-start-column="1" selection-end-line="32" selection-end-column="1" />
+            </state>
+          </provider>
+        </entry>
+      </file>
+      <file pinned="false" current-in-tab="false">
+        <entry file="file://$PROJECT_DIR$/trust/coin/coin_interface.go">
+          <provider selected="true" editor-type-id="text-editor">
+            <state relative-caret-position="220">
+              <caret line="89" column="4" selection-start-line="89" selection-start-column="4" selection-end-line="89" selection-end-column="4" />
+              <folding>
+                <element signature="e#14#156#0" expanded="true" />
+              </folding>
             </state>
           </provider>
         </entry>
@@ -232,8 +292,6 @@
   <component name="IdeDocumentHistory">
     <option name="CHANGED_PATHS">
       <list>
-        <option value="$PROJECT_DIR$/trust/coin/dummy_coin.go" />
-        <option value="$PROJECT_DIR$/trust/peer_contact/peer_contact_interface.go" />
         <option value="$PROJECT_DIR$/trust/coin/coin_interface.go" />
         <option value="$PROJECT_DIR$/trust/key_manager/quanta_key_manager.go" />
         <option value="$PROJECT_DIR$/blockchain/ethereum/contracts/zeppelin/token/BasicToken.sol" />
@@ -282,6 +340,8 @@
         <option value="$PROJECT_DIR$/trust/control/coin_to_quanta.go" />
         <option value="$PROJECT_DIR$/trust/coin/ethereum_client.go" />
         <option value="$PROJECT_DIR$/registrar/Forwarder/contract.go" />
+        <option value="$PROJECT_DIR$/trust/control/quanta_to_coin_test.go" />
+        <option value="$PROJECT_DIR$/node/node_test.go" />
         <option value="$PROJECT_DIR$/node/trust_node_test.go" />
       </list>
     </option>
@@ -323,17 +383,6 @@
       <foldersAlwaysOnTop value="true" />
     </navigator>
     <panes>
-      <pane id="Scope">
-        <subPane subId="Scope 'Project Files'; set:Project Files; class com.intellij.psi.search.scope.ProjectFilesScope">
-          <expand>
-            <path>
-              <item name="distributed_quanta_bridge" type="3d21c010:ScopeViewTreeModel$ProjectNode" />
-              <item name="" type="442cc68d:ScopeViewTreeModel$RootNode" />
-            </path>
-          </expand>
-          <select />
-        </subPane>
-      </pane>
       <pane id="ProjectPane">
         <subPane>
           <expand>
@@ -345,6 +394,17 @@
               <item name="distributed_quanta_bridge" type="b2602c69:ProjectViewProjectNode" />
               <item name="distributed_quanta_bridge" type="462c0819:PsiDirectoryNode" />
               <item name="common" type="462c0819:PsiDirectoryNode" />
+            </path>
+            <path>
+              <item name="distributed_quanta_bridge" type="b2602c69:ProjectViewProjectNode" />
+              <item name="distributed_quanta_bridge" type="462c0819:PsiDirectoryNode" />
+              <item name="common" type="462c0819:PsiDirectoryNode" />
+              <item name="kv_store" type="462c0819:PsiDirectoryNode" />
+            </path>
+            <path>
+              <item name="distributed_quanta_bridge" type="b2602c69:ProjectViewProjectNode" />
+              <item name="distributed_quanta_bridge" type="462c0819:PsiDirectoryNode" />
+              <item name="keystore" type="462c0819:PsiDirectoryNode" />
             </path>
             <path>
               <item name="distributed_quanta_bridge" type="b2602c69:ProjectViewProjectNode" />
@@ -375,6 +435,28 @@
               <item name="trust" type="462c0819:PsiDirectoryNode" />
               <item name="control" type="462c0819:PsiDirectoryNode" />
             </path>
+            <path>
+              <item name="distributed_quanta_bridge" type="b2602c69:ProjectViewProjectNode" />
+              <item name="distributed_quanta_bridge" type="462c0819:PsiDirectoryNode" />
+              <item name="vendor" type="462c0819:PsiDirectoryNode" />
+            </path>
+            <path>
+              <item name="distributed_quanta_bridge" type="b2602c69:ProjectViewProjectNode" />
+              <item name="distributed_quanta_bridge" type="462c0819:PsiDirectoryNode" />
+              <item name="vendor" type="462c0819:PsiDirectoryNode" />
+              <item name="github.com" type="462c0819:PsiDirectoryNode" />
+            </path>
+          </expand>
+          <select />
+        </subPane>
+      </pane>
+      <pane id="Scope">
+        <subPane subId="Scope 'Project Files'; set:Project Files; class com.intellij.psi.search.scope.ProjectFilesScope">
+          <expand>
+            <path>
+              <item name="distributed_quanta_bridge" type="3d21c010:ScopeViewTreeModel$ProjectNode" />
+              <item name="" type="442cc68d:ScopeViewTreeModel$RootNode" />
+            </path>
           </expand>
           <select />
         </subPane>
@@ -395,7 +477,7 @@
     <property name="nodejs_interpreter_path.stuck_in_default_project" value="undefined stuck path" />
     <property name="nodejs_npm_path_reset_for_default_project" value="true" />
     <property name="run.code.analysis.last.selected.profile" value="pProject Default" />
-    <property name="settings.editor.selected.configurable" value="preferences.sourceCode.Protobuf" />
+    <property name="settings.editor.selected.configurable" value="preferences.sourceCode" />
   </component>
   <component name="RecentsManager">
     <key name="MoveFile.RECENT_KEYS">
@@ -418,7 +500,7 @@
       </list>
     </option>
   </component>
-  <component name="RunManager" selected="Go Test.TestRopstenERC20Token in github.com/quantadex/distributed_quanta_bridge/node">
+  <component name="RunManager" selected="Go Test.TestTrustNode_Stop in github.com/quantadex/distributed_quanta_bridge/node">
     <configuration name="node" type="GoApplicationRunConfiguration" factoryName="Go Application">
       <module name="distributed_quanta_bridge" />
       <working_directory value="$PROJECT_DIR$/node" />
@@ -449,6 +531,39 @@
       <directory value="$PROJECT_DIR$/" />
       <filePath value="$PROJECT_DIR$/" />
       <pattern value="^TestRopstenERC20Token$" />
+      <method v="2" />
+    </configuration>
+    <configuration name="TestSubmitWithdrawalRecovery in github.com/quantadex/distributed_quanta_bridge/trust/control" type="GoTestRunConfiguration" factoryName="Go Test" temporary="true" nameIsGenerated="true">
+      <module name="distributed_quanta_bridge" />
+      <working_directory value="$PROJECT_DIR$/trust/control" />
+      <framework value="gotest" />
+      <kind value="PACKAGE" />
+      <package value="github.com/quantadex/distributed_quanta_bridge/trust/control" />
+      <directory value="$PROJECT_DIR$/" />
+      <filePath value="$PROJECT_DIR$/" />
+      <pattern value="^TestSubmitWithdrawalRecovery$" />
+      <method v="2" />
+    </configuration>
+    <configuration name="TestTrustNode_Stop in github.com/quantadex/distributed_quanta_bridge/node" type="GoTestRunConfiguration" factoryName="Go Test" temporary="true" nameIsGenerated="true">
+      <module name="distributed_quanta_bridge" />
+      <working_directory value="$PROJECT_DIR$/node" />
+      <framework value="gotest" />
+      <kind value="PACKAGE" />
+      <package value="github.com/quantadex/distributed_quanta_bridge/node" />
+      <directory value="$PROJECT_DIR$/" />
+      <filePath value="$PROJECT_DIR$/" />
+      <pattern value="^TestTrustNode_Stop$" />
+      <method v="2" />
+    </configuration>
+    <configuration name="TestWithdrawal in github.com/quantadex/distributed_quanta_bridge/node" type="GoTestRunConfiguration" factoryName="Go Test" temporary="true" nameIsGenerated="true">
+      <module name="distributed_quanta_bridge" />
+      <working_directory value="$PROJECT_DIR$/node" />
+      <framework value="gotest" />
+      <kind value="PACKAGE" />
+      <package value="github.com/quantadex/distributed_quanta_bridge/node" />
+      <directory value="$PROJECT_DIR$/" />
+      <filePath value="$PROJECT_DIR$/" />
+      <pattern value="^TestWithdrawal$" />
       <method v="2" />
     </configuration>
     <configuration name="test Node withdrawal" type="GoTestRunConfiguration" factoryName="Go Test">
@@ -518,10 +633,16 @@
       <item itemvalue="Go Test.testEthereum" />
       <item itemvalue="Go Test.testQuantaClient" />
       <item itemvalue="Go Test.TestRopstenERC20Token in github.com/quantadex/distributed_quanta_bridge/node" />
+      <item itemvalue="Go Test.TestSubmitWithdrawalRecovery in github.com/quantadex/distributed_quanta_bridge/trust/control" />
+      <item itemvalue="Go Test.TestTrustNode_Stop in github.com/quantadex/distributed_quanta_bridge/node" />
+      <item itemvalue="Go Test.TestWithdrawal in github.com/quantadex/distributed_quanta_bridge/node" />
     </list>
     <recent_temporary>
       <list>
+        <item itemvalue="Go Test.TestTrustNode_Stop in github.com/quantadex/distributed_quanta_bridge/node" />
         <item itemvalue="Go Test.TestRopstenERC20Token in github.com/quantadex/distributed_quanta_bridge/node" />
+        <item itemvalue="Go Test.TestWithdrawal in github.com/quantadex/distributed_quanta_bridge/node" />
+        <item itemvalue="Go Test.TestSubmitWithdrawalRecovery in github.com/quantadex/distributed_quanta_bridge/trust/control" />
       </list>
     </recent_temporary>
   </component>
@@ -530,21 +651,6 @@
     <option name="ACTIVE_ACTIONS" value=",ALPHA_COMPARATOR" />
   </component>
   <component name="TestHistory">
-    <history-entry file="TestRopstenERC20Token_in_github_com_quantadex_distributed_quanta_bridge_node - 2018.11.01 at 16h 50m 29s.xml">
-      <configuration name="TestRopstenERC20Token in github.com/quantadex/distributed_quanta_bridge/node" configurationId="GoTestRunConfiguration" />
-    </history-entry>
-    <history-entry file="TestRopstenERC20Token_in_github_com_quantadex_distributed_quanta_bridge_node - 2018.11.01 at 16h 55m 08s.xml">
-      <configuration name="TestRopstenERC20Token in github.com/quantadex/distributed_quanta_bridge/node" configurationId="GoTestRunConfiguration" />
-    </history-entry>
-    <history-entry file="TestRopstenERC20Token_in_github_com_quantadex_distributed_quanta_bridge_node - 2018.11.01 at 16h 55m 34s.xml">
-      <configuration name="TestRopstenERC20Token in github.com/quantadex/distributed_quanta_bridge/node" configurationId="GoTestRunConfiguration" />
-    </history-entry>
-    <history-entry file="TestRopstenERC20Token_in_github_com_quantadex_distributed_quanta_bridge_node - 2018.11.01 at 16h 59m 58s.xml">
-      <configuration name="TestRopstenERC20Token in github.com/quantadex/distributed_quanta_bridge/node" configurationId="GoTestRunConfiguration" />
-    </history-entry>
-    <history-entry file="TestRopstenERC20Token_in_github_com_quantadex_distributed_quanta_bridge_node - 2018.11.01 at 17h 03m 33s.xml">
-      <configuration name="TestRopstenERC20Token in github.com/quantadex/distributed_quanta_bridge/node" configurationId="GoTestRunConfiguration" />
-    </history-entry>
     <history-entry file="TestRopstenERC20Token_in_github_com_quantadex_distributed_quanta_bridge_node - 2018.11.01 at 17h 03m 58s.xml">
       <configuration name="TestRopstenERC20Token in github.com/quantadex/distributed_quanta_bridge/node" configurationId="GoTestRunConfiguration" />
     </history-entry>
@@ -560,6 +666,21 @@
     <history-entry file="TestRopstenERC20Token_in_github_com_quantadex_distributed_quanta_bridge_node - 2018.11.02 at 10h 36m 27s.xml">
       <configuration name="TestRopstenERC20Token in github.com/quantadex/distributed_quanta_bridge/node" configurationId="GoTestRunConfiguration" />
     </history-entry>
+    <history-entry file="TestSubmitWithdrawalRecovery_in_github_com_quantadex_distributed_quanta_bridge_trust_control - 2018.11.07 at 12h 24m 42s.xml">
+      <configuration name="TestSubmitWithdrawalRecovery in github.com/quantadex/distributed_quanta_bridge/trust/control" configurationId="GoTestRunConfiguration" />
+    </history-entry>
+    <history-entry file="TestSubmitWithdrawalRecovery_in_github_com_quantadex_distributed_quanta_bridge_trust_control - 2018.11.07 at 12h 33m 21s.xml">
+      <configuration name="TestSubmitWithdrawalRecovery in github.com/quantadex/distributed_quanta_bridge/trust/control" configurationId="GoTestRunConfiguration" />
+    </history-entry>
+    <history-entry file="TestWithdrawal_in_github_com_quantadex_distributed_quanta_bridge_node - 2018.11.07 at 13h 23m 01s.xml">
+      <configuration name="TestWithdrawal in github.com/quantadex/distributed_quanta_bridge/node" configurationId="GoTestRunConfiguration" />
+    </history-entry>
+    <history-entry file="TestRopstenERC20Token_in_github_com_quantadex_distributed_quanta_bridge_node - 2018.11.07 at 13h 23m 32s.xml">
+      <configuration name="TestRopstenERC20Token in github.com/quantadex/distributed_quanta_bridge/node" configurationId="GoTestRunConfiguration" />
+    </history-entry>
+    <history-entry file="TestTrustNode_Stop_in_github_com_quantadex_distributed_quanta_bridge_node - 2018.11.07 at 13h 23m 47s.xml">
+      <configuration name="TestTrustNode_Stop in github.com/quantadex/distributed_quanta_bridge/node" configurationId="GoTestRunConfiguration" />
+    </history-entry>
   </component>
   <component name="TodoView">
     <todo-panel id="selected-file">
@@ -573,24 +694,24 @@
   <component name="ToolWindowManager">
     <frame x="-1" y="0" width="1922" height="1053" extended-state="6" />
     <layout>
-      <window_info content_ui="combo" id="Project" order="0" sideWeight="0.60465115" visible="true" weight="0.16061899" />
+      <window_info content_ui="combo" id="Project" order="0" sideWeight="0.60465115" visible="true" weight="0.16221985" />
       <window_info id="Favorites" order="1" side_tool="true" />
       <window_info anchor="bottom" id="Message" order="0" />
       <window_info anchor="bottom" id="Find" order="1" sideWeight="0.4983845" weight="0.3607456" />
       <window_info anchor="bottom" id="TODO" order="2" weight="0.32894737" />
-      <window_info active="true" anchor="bottom" id="Run" order="3" visible="true" weight="0.41612902" />
+      <window_info anchor="bottom" id="Run" order="3" weight="0.41612902" />
       <window_info anchor="bottom" id="Debug" order="4" sideWeight="0.49879226" weight="0.39548022" />
       <window_info anchor="bottom" id="Cvs" order="5" weight="0.25" />
       <window_info anchor="bottom" id="Inspection" order="6" weight="0.4" />
       <window_info anchor="bottom" id="Database Changes" order="7" show_stripe_button="false" />
       <window_info anchor="bottom" id="Version Control" order="8" weight="0.32903227" />
-      <window_info anchor="bottom" id="Terminal" order="9" sideWeight="0.4983845" weight="0.3" />
+      <window_info active="true" anchor="bottom" id="Terminal" order="9" sideWeight="0.4983845" visible="true" weight="0.3" />
       <window_info anchor="bottom" id="Event Log" order="10" sideWeight="0.5012077" side_tool="true" weight="0.39928487" />
       <window_info anchor="right" id="Commander" internal_type="SLIDING" order="0" type="SLIDING" weight="0.4" />
       <window_info anchor="right" id="Ant Build" order="1" weight="0.25" />
       <window_info anchor="right" content_ui="combo" id="Hierarchy" order="2" sideWeight="0.49847096" weight="0.2497332" />
       <window_info anchor="right" id="Database" order="3" />
-      <window_info anchor="right" id="Structure" order="4" sideWeight="0.50152904" side_tool="true" weight="0.075773746" />
+      <window_info anchor="right" id="Structure" order="4" sideWeight="0.50152904" side_tool="true" weight="0.20917822" />
     </layout>
   </component>
   <component name="TypeScriptGeneratedFilesManager">
@@ -601,7 +722,9 @@
   </component>
   <component name="VcsManagerConfiguration">
     <MESSAGE value="loop twice" />
-    <option name="LAST_COMMIT_MESSAGE" value="loop twice" />
+    <MESSAGE value="Merge remote-tracking branch 'origin/master' into dev/pooja&#10;&#10;# Conflicts:&#10;#&#9;.idea/workspace.xml&#10;#&#9;trust/control/quanta_to_coin.go&#10;#&#9;trust/control/quanta_to_coin_test.go&#10;#&#9;trust/control/transaction_ledger.go" />
+    <MESSAGE value="Merge remote-tracking branch 'origin/master' into dev/pooja&#10;&#10;# Conflicts:&#10;#&#9;trust/control/quanta_to_coin.go&#10;#&#9;trust/control/quanta_to_coin_test.go&#10;#&#9;trust/control/transaction_ledger.go" />
+    <option name="LAST_COMMIT_MESSAGE" value="Merge remote-tracking branch 'origin/master' into dev/pooja&#10;&#10;# Conflicts:&#10;#&#9;trust/control/quanta_to_coin.go&#10;#&#9;trust/control/quanta_to_coin_test.go&#10;#&#9;trust/control/transaction_ledger.go" />
   </component>
   <component name="XDebuggerManager">
     <breakpoint-manager>
@@ -669,13 +792,11 @@
         <line-breakpoint enabled="true" type="DlvLineBreakpoint">
           <url>file://$PROJECT_DIR$/trust/coin/ethereum_client.go</url>
           <line>124</line>
-          <properties />
           <option name="timeStamp" value="56" />
         </line-breakpoint>
         <line-breakpoint enabled="true" type="DlvLineBreakpoint">
           <url>file://$PROJECT_DIR$/vendor/github.com/ethereum/go-ethereum/common/hexutil/json.go</url>
           <line>305</line>
-          <properties />
           <option name="timeStamp" value="57" />
         </line-breakpoint>
       </breakpoints>
@@ -690,34 +811,6 @@
     </watches-manager>
   </component>
   <component name="editorHistoryManager">
-    <entry file="file://$PROJECT_DIR$/trust/registrar_client/registrar_client_interface.go">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="218">
-          <caret line="66" column="4" selection-start-line="66" selection-start-column="4" selection-end-line="66" selection-end-column="4" />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/registrar/service/registry.go">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="60">
-          <caret line="32" column="42" selection-start-line="32" selection-start-column="42" selection-end-line="32" selection-end-column="42" />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/registrar/service/server.go">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="213">
-          <caret line="137" column="50" selection-start-line="137" selection-start-column="50" selection-end-line="137" selection-end-column="50" />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/registrar/main.go">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="255">
-          <caret line="20" column="13" lean-forward="true" selection-start-line="20" selection-start-column="13" selection-end-line="20" selection-end-column="13" />
-        </state>
-      </provider>
-    </entry>
     <entry file="file://$PROJECT_DIR$/registrar/static/index.html">
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="357">
@@ -777,15 +870,15 @@
     </entry>
     <entry file="file://$PROJECT_DIR$/common/kv_store/kv_store_interface.go">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="1020">
-          <caret line="68" column="4" selection-start-line="68" selection-start-column="4" selection-end-line="68" selection-end-column="4" />
+        <state relative-caret-position="1350">
+          <caret line="90" column="21" selection-start-line="90" selection-start-column="12" selection-end-line="90" selection-end-column="21" />
         </state>
       </provider>
     </entry>
     <entry file="file://$PROJECT_DIR$/common/kv_store/bolt_store.go">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="1455">
-          <caret line="102" selection-start-line="102" selection-end-line="102" />
+        <state relative-caret-position="358">
+          <caret line="32" column="1" selection-start-line="32" selection-start-column="1" selection-end-line="32" selection-end-column="1" />
         </state>
       </provider>
     </entry>
@@ -805,15 +898,15 @@
     </entry>
     <entry file="file://$PROJECT_DIR$/trust/control/transaction_ledger.go">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="615">
-          <caret line="46" column="39" selection-start-line="46" selection-start-column="39" selection-end-line="46" selection-end-column="39" />
+        <state relative-caret-position="88">
+          <caret line="51" column="19" selection-start-line="51" selection-start-column="19" selection-end-line="51" selection-end-column="19" />
         </state>
       </provider>
     </entry>
     <entry file="file://$PROJECT_DIR$/trust/control/quanta_to_coin.go">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="-2171">
-          <caret line="49" column="39" selection-start-line="49" selection-start-column="39" selection-end-line="49" selection-end-column="39" />
+        <state relative-caret-position="-270">
+          <caret line="192" column="3" selection-start-line="192" selection-start-column="3" selection-end-line="192" selection-end-column="3" />
         </state>
       </provider>
     </entry>
@@ -897,13 +990,6 @@
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/node/trust_node.go">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="149">
-          <caret line="316" selection-start-line="316" selection-end-line="316" />
-        </state>
-      </provider>
-    </entry>
     <entry file="file://$PROJECT_DIR$/registrar/Forwarder/contract.go">
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="10">
@@ -913,8 +999,8 @@
     </entry>
     <entry file="file://$PROJECT_DIR$/trust/coin/coin_interface.go">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="182">
-          <caret line="68" column="4" selection-start-line="68" selection-start-column="4" selection-end-line="68" selection-end-column="4" />
+        <state relative-caret-position="220">
+          <caret line="89" column="4" selection-start-line="89" selection-start-column="4" selection-end-line="89" selection-end-column="4" />
           <folding>
             <element signature="e#14#156#0" expanded="true" />
           </folding>
@@ -1017,13 +1103,6 @@
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/trust/coin/ethereum_client.go">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="-1204">
-          <caret line="120" selection-start-line="120" selection-end-line="120" />
-        </state>
-      </provider>
-    </entry>
     <entry file="file://$PROJECT_DIR$/trust/coin/ethereum_coin.go">
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="141">
@@ -1031,12 +1110,53 @@
         </state>
       </provider>
     </entry>
+    <entry file="file://$PROJECT_DIR$/trust/coin/ethereum_client.go">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="-466">
+          <caret line="369" column="10" selection-start-line="369" selection-start-column="4" selection-end-line="369" selection-end-column="10" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/trust/control/quanta_to_coin_test.go">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="915">
+          <caret line="61" column="19" selection-start-line="61" selection-start-column="19" selection-end-line="61" selection-end-column="19" />
+          <folding>
+            <element signature="e#17#331#0" expanded="true" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/trust/coin/coin_proxy.go">
+      <provider selected="true" editor-type-id="text-editor" />
+    </entry>
+    <entry file="file://$PROJECT_DIR$/common/test/environment.go">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="45">
+          <caret line="3" column="12" selection-start-line="3" selection-start-column="12" selection-end-line="3" selection-end-column="12" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/node/trust_node.go">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="155">
+          <caret line="305" selection-start-line="305" selection-end-line="305" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/node/node_test.go">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="164">
+          <caret line="58" selection-start-line="58" selection-end-line="58" />
+        </state>
+      </provider>
+    </entry>
     <entry file="file://$PROJECT_DIR$/node/trust_node_test.go">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="328">
-          <caret line="199" column="23" selection-start-line="199" selection-start-column="23" selection-end-line="199" selection-end-column="23" />
+        <state relative-caret-position="15">
+          <caret line="120" column="16" lean-forward="true" selection-start-line="120" selection-start-column="16" selection-end-line="120" selection-end-column="16" />
           <folding>
-            <element signature="e#14#507#0" expanded="true" />
+            <element signature="e#14#308#0" expanded="true" />
           </folding>
         </state>
       </provider>
