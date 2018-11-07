@@ -2,7 +2,6 @@
 <project version="4">
   <component name="ChangeListManager">
     <list default="true" id="9d03c2a5-2a50-4feb-8d60-02c1c1393273" name="Default Changelist" comment="Merge remote-tracking branch 'origin/master' into dev/pooja&#10;&#10;# Conflicts:&#10;#&#9;trust/control/quanta_to_coin.go&#10;#&#9;trust/control/quanta_to_coin_test.go&#10;#&#9;trust/control/transaction_ledger.go">
-      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" />
       <change beforePath="$PROJECT_DIR$/node/node_test.go" beforeDir="false" afterPath="$PROJECT_DIR$/node/node_test.go" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/node/trust_node_test.go" beforeDir="false" afterPath="$PROJECT_DIR$/node/trust_node_test.go" afterDir="false" />
     </list>
@@ -103,14 +102,14 @@
       </usages-collector>
       <usages-collector id="statistics.file.extensions.edit">
         <counts>
-          <entry key="go" value="290" />
-          <entry key="txt" value="11" />
+          <entry key="go" value="306" />
+          <entry key="txt" value="31" />
         </counts>
       </usages-collector>
       <usages-collector id="statistics.file.types.edit">
         <counts>
-          <entry key="Go" value="290" />
-          <entry key="PLAIN_TEXT" value="11" />
+          <entry key="Go" value="306" />
+          <entry key="PLAIN_TEXT" value="31" />
         </counts>
       </usages-collector>
       <usages-collector id="statistics.file.extensions.open">
@@ -132,8 +131,8 @@
       <file pinned="false" current-in-tab="true">
         <entry file="file://$PROJECT_DIR$/node/trust_node_test.go">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="15">
-              <caret line="120" column="16" lean-forward="true" selection-start-line="120" selection-start-column="16" selection-end-line="120" selection-end-column="16" />
+            <state relative-caret-position="-151">
+              <caret line="125" column="26" selection-start-line="125" selection-start-column="26" selection-end-line="125" selection-end-column="26" />
               <folding>
                 <element signature="e#14#308#0" expanded="true" />
               </folding>
@@ -651,21 +650,6 @@
     <option name="ACTIVE_ACTIONS" value=",ALPHA_COMPARATOR" />
   </component>
   <component name="TestHistory">
-    <history-entry file="TestRopstenERC20Token_in_github_com_quantadex_distributed_quanta_bridge_node - 2018.11.01 at 17h 03m 58s.xml">
-      <configuration name="TestRopstenERC20Token in github.com/quantadex/distributed_quanta_bridge/node" configurationId="GoTestRunConfiguration" />
-    </history-entry>
-    <history-entry file="TestRopstenERC20Token_in_github_com_quantadex_distributed_quanta_bridge_node - 2018.11.01 at 17h 11m 11s.xml">
-      <configuration name="TestRopstenERC20Token in github.com/quantadex/distributed_quanta_bridge/node" configurationId="GoTestRunConfiguration" />
-    </history-entry>
-    <history-entry file="TestRopstenERC20Token_in_github_com_quantadex_distributed_quanta_bridge_node - 2018.11.01 at 17h 23m 55s.xml">
-      <configuration name="TestRopstenERC20Token in github.com/quantadex/distributed_quanta_bridge/node" configurationId="GoTestRunConfiguration" />
-    </history-entry>
-    <history-entry file="TestRopstenERC20Token_in_github_com_quantadex_distributed_quanta_bridge_node - 2018.11.01 at 18h 19m 58s.xml">
-      <configuration name="TestRopstenERC20Token in github.com/quantadex/distributed_quanta_bridge/node" configurationId="GoTestRunConfiguration" />
-    </history-entry>
-    <history-entry file="TestRopstenERC20Token_in_github_com_quantadex_distributed_quanta_bridge_node - 2018.11.02 at 10h 36m 27s.xml">
-      <configuration name="TestRopstenERC20Token in github.com/quantadex/distributed_quanta_bridge/node" configurationId="GoTestRunConfiguration" />
-    </history-entry>
     <history-entry file="TestSubmitWithdrawalRecovery_in_github_com_quantadex_distributed_quanta_bridge_trust_control - 2018.11.07 at 12h 24m 42s.xml">
       <configuration name="TestSubmitWithdrawalRecovery in github.com/quantadex/distributed_quanta_bridge/trust/control" configurationId="GoTestRunConfiguration" />
     </history-entry>
@@ -681,6 +665,21 @@
     <history-entry file="TestTrustNode_Stop_in_github_com_quantadex_distributed_quanta_bridge_node - 2018.11.07 at 13h 23m 47s.xml">
       <configuration name="TestTrustNode_Stop in github.com/quantadex/distributed_quanta_bridge/node" configurationId="GoTestRunConfiguration" />
     </history-entry>
+    <history-entry file="TestTrustNode_Stop_in_github_com_quantadex_distributed_quanta_bridge_node - 2018.11.07 at 13h 36m 09s.xml">
+      <configuration name="TestTrustNode_Stop in github.com/quantadex/distributed_quanta_bridge/node" configurationId="GoTestRunConfiguration" />
+    </history-entry>
+    <history-entry file="TestTrustNode_Stop_in_github_com_quantadex_distributed_quanta_bridge_node - 2018.11.07 at 13h 36m 45s.xml">
+      <configuration name="TestTrustNode_Stop in github.com/quantadex/distributed_quanta_bridge/node" configurationId="GoTestRunConfiguration" />
+    </history-entry>
+    <history-entry file="TestRopstenERC20Token_in_github_com_quantadex_distributed_quanta_bridge_node - 2018.11.07 at 13h 38m 40s.xml">
+      <configuration name="TestRopstenERC20Token in github.com/quantadex/distributed_quanta_bridge/node" configurationId="GoTestRunConfiguration" />
+    </history-entry>
+    <history-entry file="TestTrustNode_Stop_in_github_com_quantadex_distributed_quanta_bridge_node - 2018.11.07 at 13h 39m 02s.xml">
+      <configuration name="TestTrustNode_Stop in github.com/quantadex/distributed_quanta_bridge/node" configurationId="GoTestRunConfiguration" />
+    </history-entry>
+    <history-entry file="TestTrustNode_Stop_in_github_com_quantadex_distributed_quanta_bridge_node - 2018.11.07 at 13h 40m 54s.xml">
+      <configuration name="TestTrustNode_Stop in github.com/quantadex/distributed_quanta_bridge/node" configurationId="GoTestRunConfiguration" />
+    </history-entry>
   </component>
   <component name="TodoView">
     <todo-panel id="selected-file">
@@ -693,19 +692,20 @@
   </component>
   <component name="ToolWindowManager">
     <frame x="-1" y="0" width="1922" height="1053" extended-state="6" />
+    <editor active="true" />
     <layout>
       <window_info content_ui="combo" id="Project" order="0" sideWeight="0.60465115" visible="true" weight="0.16221985" />
       <window_info id="Favorites" order="1" side_tool="true" />
       <window_info anchor="bottom" id="Message" order="0" />
       <window_info anchor="bottom" id="Find" order="1" sideWeight="0.4983845" weight="0.3607456" />
       <window_info anchor="bottom" id="TODO" order="2" weight="0.32894737" />
-      <window_info anchor="bottom" id="Run" order="3" weight="0.41612902" />
+      <window_info active="true" anchor="bottom" id="Run" order="3" visible="true" weight="0.41612902" />
       <window_info anchor="bottom" id="Debug" order="4" sideWeight="0.49879226" weight="0.39548022" />
       <window_info anchor="bottom" id="Cvs" order="5" weight="0.25" />
       <window_info anchor="bottom" id="Inspection" order="6" weight="0.4" />
       <window_info anchor="bottom" id="Database Changes" order="7" show_stripe_button="false" />
       <window_info anchor="bottom" id="Version Control" order="8" weight="0.32903227" />
-      <window_info active="true" anchor="bottom" id="Terminal" order="9" sideWeight="0.4983845" visible="true" weight="0.3" />
+      <window_info anchor="bottom" id="Terminal" order="9" sideWeight="0.4983845" weight="0.3" />
       <window_info anchor="bottom" id="Event Log" order="10" sideWeight="0.5012077" side_tool="true" weight="0.39928487" />
       <window_info anchor="right" id="Commander" internal_type="SLIDING" order="0" type="SLIDING" weight="0.4" />
       <window_info anchor="right" id="Ant Build" order="1" weight="0.25" />
@@ -724,7 +724,8 @@
     <MESSAGE value="loop twice" />
     <MESSAGE value="Merge remote-tracking branch 'origin/master' into dev/pooja&#10;&#10;# Conflicts:&#10;#&#9;.idea/workspace.xml&#10;#&#9;trust/control/quanta_to_coin.go&#10;#&#9;trust/control/quanta_to_coin_test.go&#10;#&#9;trust/control/transaction_ledger.go" />
     <MESSAGE value="Merge remote-tracking branch 'origin/master' into dev/pooja&#10;&#10;# Conflicts:&#10;#&#9;trust/control/quanta_to_coin.go&#10;#&#9;trust/control/quanta_to_coin_test.go&#10;#&#9;trust/control/transaction_ledger.go" />
-    <option name="LAST_COMMIT_MESSAGE" value="Merge remote-tracking branch 'origin/master' into dev/pooja&#10;&#10;# Conflicts:&#10;#&#9;trust/control/quanta_to_coin.go&#10;#&#9;trust/control/quanta_to_coin_test.go&#10;#&#9;trust/control/transaction_ledger.go" />
+    <MESSAGE value="ignore workspace.xml" />
+    <option name="LAST_COMMIT_MESSAGE" value="ignore workspace.xml" />
   </component>
   <component name="XDebuggerManager">
     <breakpoint-manager>
@@ -1153,8 +1154,8 @@
     </entry>
     <entry file="file://$PROJECT_DIR$/node/trust_node_test.go">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="15">
-          <caret line="120" column="16" lean-forward="true" selection-start-line="120" selection-start-column="16" selection-end-line="120" selection-end-column="16" />
+        <state relative-caret-position="-151">
+          <caret line="125" column="26" selection-start-line="125" selection-start-column="26" selection-end-line="125" selection-end-column="26" />
           <folding>
             <element signature="e#14#308#0" expanded="true" />
           </folding>
