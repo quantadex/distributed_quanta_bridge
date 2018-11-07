@@ -41,7 +41,7 @@ type QuantaToCoin struct {
 	rr                  *RoundRobinSigner
 	cosi                *cosi.Cosi
 	trustPeer           *peer_contact.TrustPeerNode
-	deferQ              *queue.DeferQ
+	deferQ 				*queue.DeferQ
 }
 
 /**
@@ -194,14 +194,19 @@ func (c *QuantaToCoin) SubmitWithdrawal(w *coin.Withdrawal) {
  * DoLoop
  *
  * Does one complete loop. Pulling all new quanta blocks and processing any refunds in them
+ * returns []Refund, txId string, error
+ *     txId is the transaction id hex string if the withdrawal was a success, otherwise 0x0
  */
-func (c *QuantaToCoin) DoLoop(cursor int64) {
+func (c *QuantaToCoin) DoLoop(cursor int64) ([]quanta.Refund, string, error) {
 	refunds, _, err := c.quantaChannel.GetRefundsInBlock(cursor, c.quantaTrustAddress)
 
 	if err != nil {
 		c.logger.Error(err.Error())
-		return
+		return refunds, "0x0", err
 	}
+
+	txResult := "0x0";
+	errResult := error(nil);
 
 	c.logger.Infof("QuantaToCoin Epoch=%d refunds %v", c.deferQ.Epoch(), refunds)
 
@@ -216,7 +221,7 @@ func (c *QuantaToCoin) DoLoop(cursor int64) {
 		success := setLastBlock(c.db, QUANTA, refund.PageTokenID)
 		if !success {
 			c.logger.Error("Failed to mark block as signed")
-			return
+			return refunds, "0x0", errors.New("Failed to mark block as signed")
 		}
 	}
 
@@ -229,10 +234,9 @@ func (c *QuantaToCoin) DoLoop(cursor int64) {
 		//TODO: do checksum check, should bounce back the payment
 		if refund.DestinationAddress == "" {
 			c.logger.Error("Refund is missing destination address, skipping.")
-		}
-
-		// i'm the leader
-		if c.nodeID == 0 && refund.DestinationAddress != "" {
+		} else if refund.Amount == uint64(0) {
+			c.logger.Error("Amount is too small")
+		} else if c.nodeID == 0 {
 			txId, err := c.coinChannel.GetTxID(common.HexToAddress(c.coinContractAddress))
 			if err != nil {
 				c.logger.Error("Could not get txID: " + err.Error() + " " + c.coinContractAddress)
@@ -250,7 +254,7 @@ func (c *QuantaToCoin) DoLoop(cursor int64) {
 
 			if err != nil {
 				c.logger.Error("Failed to encode refund " + err.Error())
-				return
+				return refunds, "0x0", err
 			}
 
 			// wait for other node to see the tx
@@ -260,6 +264,7 @@ func (c *QuantaToCoin) DoLoop(cursor int64) {
 			result := <-c.cosi.FinalSigChan
 
 			if result.Msg == nil {
+				errResult = errors.New("Unable to sign for refund")
 				c.logger.Error("Unable to sign for refund")
 			} else {
 				// save this to queue for later in case ETH RPC is down.
@@ -276,5 +281,7 @@ func (c *QuantaToCoin) DoLoop(cursor int64) {
 		}
 	}
 	c.deferQ.AddTick()
-	c.logger.Infof("Next cursor is = %d", cursor)
+	c.logger.Infof("Next cursor is = %d, numRefunds=%d, txId=%s", cursor, len(refunds), txResult)
+
+	return refunds, txResult, errResult
 }

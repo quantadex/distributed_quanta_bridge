@@ -2,6 +2,7 @@ const BN = require('bn.js')
 const ByteBuffer = require("bytebuffer");
 const Utils = require('ethereumjs-util')
 const Web3Utils = require('web3-utils');
+const assertjs = require('assert');
 
 const BIG_ENDIAN = 'be';
 const ADDRESS_0X0 = '0x0000000000000000000000000000000000000000'
@@ -13,13 +14,14 @@ function _toQuantaPaymentSigMsg(txId, erc20Addr, toAddr, amount, debug=false, pr
 
   var erc20AddrPart = ADDRESS_0X0_PART;
   if (typeof erc20Addr == 'string') {
-    assert.equal(Utils.isHexPrefixed(erc20Addr), true);
+    assertjs(Utils.isHexPrefixed(erc20Addr));
     erc20AddrPart = Utils.stripHexPrefix(erc20Addr);
   }
 
-  assert.equal(typeof txId, 'number');
-  assert.equal(typeof toAddr, 'string');
-  assert.equal(Utils.isHexPrefixed(toAddr), true);
+  assertjs(typeof txId == 'number');
+  assertjs(typeof toAddr == 'string');
+  assertjs(Utils.isHexPrefixed(toAddr));
+  assertjs((typeof amount == 'number') || (typeof amount == 'string'))
   // amount must be a number or a string, i.e. for big numbers like "1000000000000000000"
 
   var totalBytes = 0;
@@ -35,7 +37,7 @@ function _toQuantaPaymentSigMsg(txId, erc20Addr, toAddr, amount, debug=false, pr
   } else if (typeof amount == 'number') {
     bnPart = new BN(amount);
   } else {
-    assert(false);
+    assertjs(false);
   }
   elems.push(bnPart.toArrayLike(Buffer, BIG_ENDIAN, 32));
 
@@ -53,7 +55,7 @@ function _toQuantaPaymentSigMsg(txId, erc20Addr, toAddr, amount, debug=false, pr
   var buf = Buffer.concat(elems, totalBytes);
   var msg = buf.toString('hex');
 
-  assert.equal(buf.length, totalBytes);
+  assertjs(buf.length == totalBytes);
 
   if (debug) {
     console.log("totalBytes=" + totalBytes + " (" + (totalBytes*8) + " bits)");

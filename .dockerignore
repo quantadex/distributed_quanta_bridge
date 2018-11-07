@@ -1,0 +1,26 @@
+vendor
+tmp
+
+# Binaries for programs and plugins
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+
+# Test binary, build with `go test -c`
+*.test
+
+# Output of the go coverage tool, specifically when used with LiteIDE
+*.out
+
+.git
+.gitignore
+.idea
+
+Dockerfile
+Makefile
+
+blockchain/ethereum/build
+blockchain/ethereum/node_modules
+

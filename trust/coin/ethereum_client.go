@@ -231,6 +231,11 @@ func (l *Listener) FilterTransferEvent(blockNumber int64, toAddress map[string]s
 		//fmt.Printf("Log Block Number: %d\n", vLog.BlockNumber)
 		//fmt.Printf("Log Index: %d %s\n", vLog.Index, vLog.Topics[0].Hex())
 		//fmt.Println(vLog.TxHash.Hex())
+
+		if len(vLog.Topics) < 1 {
+			continue
+		}
+
 		switch vLog.Topics[0].Hex() {
 		case logTransferSigHash.Hex():
 
@@ -251,15 +256,24 @@ func (l *Listener) FilterTransferEvent(blockNumber int64, toAddress map[string]s
 			transferEvent.To = common.HexToAddress(vLog.Topics[2].Hex())
 
 			//fmt.Printf("From: %s\n", transferEvent.From.Hex())
-			//fmt.Printf("To: %s Tok=%s\n", transferEvent.To.Hex(), transferEvent.Tokens.String())
 
 			if quantaAddr, ok := toAddress[strings.ToLower(transferEvent.To.Hex())]; ok {
+				fmt.Printf("To: %s Tok=%s\n", transferEvent.To.Hex(), transferEvent.Tokens.String())
+
+				erc20, err := contracts.NewSimpleToken(vLog.Address, l.Client.(bind.ContractBackend))
+				if err != nil {
+
+				}
+				dec, err := erc20.Decimals(nil)
+				if err != nil {
+					dec = 0
+				}
 
 				events = append(events, &Deposit{
 					QuantaAddr: quantaAddr,
 					CoinName:   vLog.Address.Hex(),
 					SenderAddr: transferEvent.To.Hex(),
-					Amount:     WeiToStellar(transferEvent.Tokens.Int64()),
+					Amount:     Erc20AmountToStellar(transferEvent.Tokens.Int64(), dec),
 				})
 			}
 
@@ -290,8 +304,13 @@ func (l *Listener) GetForwardContract(blockNumber int64) ([]*ForwardInput, error
 		println(data)
 
 		// matches our forwarding contract
-		if strings.HasPrefix(data, Forwarder.ForwarderBin) {
-			remain := strings.TrimPrefix(data, Forwarder.ForwarderBin)
+		if strings.HasPrefix(data, Forwarder.ForwarderBin) || strings.HasPrefix(data, Forwarder.ForwarderBinV2) {
+			var remain string
+			if strings.HasPrefix(data, Forwarder.ForwarderBin) {
+				remain =  strings.TrimPrefix(data, Forwarder.ForwarderBin)
+			} else {
+				remain =  strings.TrimPrefix(data, Forwarder.ForwarderBinV2)
+			}
 
 			input := &ForwardInput{}
 			vals, err := ABI.Constructor.Inputs.UnpackValues(common.Hex2Bytes(remain))

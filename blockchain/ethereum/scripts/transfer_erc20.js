@@ -7,5 +7,6 @@ module.exports = function(callback) {
 
     return SimpleToken.at(erc20Address).transfer(destAddress, parseInt(amountInWei)).then((e) => {
         console.log(e)
+        callback()
     });
 }

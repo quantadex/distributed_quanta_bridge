@@ -15,6 +15,8 @@ import (
 	"github.com/quantadex/distributed_quanta_bridge/trust/registrar_client"
 	"strconv"
 	"time"
+	"fmt"
+	"github.com/quantadex/distributed_quanta_bridge/node/common"
 )
 
 const (
@@ -46,27 +48,9 @@ type TrustNode struct {
 	coinName string
 	queue    queue.Queue
 	listener listener.Listener
+	restApi	 *Server
 
 	doneChan chan bool
-}
-
-type Config struct {
-	ListenIp           string
-	ListenPort         int
-	UsePrevKeys        bool
-	KvDbName           string
-	CoinName           string
-	IssuerAddress      string
-	NodeKey            string
-	HorizonUrl         string
-	NetworkPassphrase  string
-	RegistrarIp        string
-	RegistrarPort      int
-	EthereumNetworkId  string
-	EthereumBlockStart int64
-	EthereumRpc        string
-	EthereumTrustAddr  string
-	EthereumKeyStore   string
 }
 
 /**
@@ -74,7 +58,7 @@ type Config struct {
  *
  * Initialize all sub-modules. Attach to databases.
  */
-func initNode(config Config, targetCoin coin.Coin) (*TrustNode, bool) {
+func initNode(config common.Config, targetCoin coin.Coin) (*TrustNode, bool) {
 	var err error
 	node := &TrustNode{}
 	node.doneChan = make(chan bool, 1)
@@ -185,6 +169,9 @@ func initNode(config Config, targetCoin coin.Coin) (*TrustNode, bool) {
 		node.log.Error("Failed to attach to reg listener")
 		return nil, false
 	}
+
+	node.restApi = NewApiServer(node.db, fmt.Sprintf(":%d", config.ExternalListenPort), node.log)
+
 	return node, true
 }
 
@@ -196,7 +183,7 @@ func initNode(config Config, targetCoin coin.Coin) (*TrustNode, bool) {
  * When a quorum has been created of which this node is a part of, the registrar
  * will send it the manifest. Upon receiving a manifest this function returns
  */
-func (n *TrustNode) registerNode(config Config) bool {
+func (n *TrustNode) registerNode(config common.Config) bool {
 	nodeIP := config.ListenIp
 	nodePort := config.ListenPort
 	if nodeIP == "" {
@@ -215,6 +202,8 @@ func (n *TrustNode) registerNode(config Config) bool {
 		n.log.Error("Failed to send node info to registrar " + err.Error())
 		return false
 	}
+
+	go n.restApi.Start()
 
 	// Now we sit and wait to be added to quorum
 	for {
@@ -248,7 +237,7 @@ func (n *TrustNode) registerNode(config Config) bool {
  *
  * Once we are part of a quorum we can create the trusts.
  */
-func (n *TrustNode) initTrust(config Config) {
+func (n *TrustNode) initTrust(config common.Config) {
 	n.log.Info("Trust initialized")
 	n.qTC = control.NewQuantaToCoin(n.log,
 		n.db,
@@ -311,7 +300,7 @@ func (n *TrustNode) run() {
 	}
 }
 
-func bootstrapNode(config Config, targetCoin coin.Coin) *TrustNode {
+func bootstrapNode(config common.Config, targetCoin coin.Coin) *TrustNode {
 	node, success := initNode(config, targetCoin)
 	if !success {
 		panic("Failed to init node")
@@ -332,7 +321,7 @@ func bootstrapNode(config Config, targetCoin coin.Coin) *TrustNode {
 	return node
 }
 
-func registerNode(config Config, node *TrustNode) error {
+func registerNode(config common.Config, node *TrustNode) error {
 	success := node.registerNode(config)
 	if !success {
 		node.log.Error("Failed to register node")
@@ -345,4 +334,5 @@ func registerNode(config Config, node *TrustNode) error {
 func (n *TrustNode) Stop() {
 	n.doneChan <- true
 	n.listener.Stop()
+	n.restApi.Stop()
 }
