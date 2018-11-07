@@ -103,13 +103,13 @@
       <usages-collector id="statistics.file.extensions.edit">
         <counts>
           <entry key="go" value="306" />
-          <entry key="txt" value="53" />
+          <entry key="txt" value="80" />
         </counts>
       </usages-collector>
       <usages-collector id="statistics.file.types.edit">
         <counts>
           <entry key="Go" value="306" />
-          <entry key="PLAIN_TEXT" value="53" />
+          <entry key="PLAIN_TEXT" value="80" />
         </counts>
       </usages-collector>
       <usages-collector id="statistics.file.extensions.open">
@@ -725,7 +725,8 @@
     <MESSAGE value="Merge remote-tracking branch 'origin/master' into dev/pooja&#10;&#10;# Conflicts:&#10;#&#9;trust/control/quanta_to_coin.go&#10;#&#9;trust/control/quanta_to_coin_test.go&#10;#&#9;trust/control/transaction_ledger.go" />
     <MESSAGE value="ignore workspace.xml" />
     <MESSAGE value="Removing workspace.xml" />
-    <option name="LAST_COMMIT_MESSAGE" value="Removing workspace.xml" />
+    <MESSAGE value="Removing workspace.xml file" />
+    <option name="LAST_COMMIT_MESSAGE" value="Removing workspace.xml file" />
   </component>
   <component name="XDebuggerManager">
     <breakpoint-manager>
