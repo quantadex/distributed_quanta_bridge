@@ -41,7 +41,7 @@ type QuantaToCoin struct {
 	rr                  *RoundRobinSigner
 	cosi                *cosi.Cosi
 	trustPeer           *peer_contact.TrustPeerNode
-	deferQ 				*queue.DeferQ
+	deferQ              *queue.DeferQ
 }
 
 /**
@@ -205,8 +205,8 @@ func (c *QuantaToCoin) DoLoop(cursor int64) ([]quanta.Refund, string, error) {
 		return refunds, "0x0", err
 	}
 
-	txResult := "0x0";
-	errResult := error(nil);
+	txResult := "0x0"
+	errResult := error(nil)
 
 	c.logger.Infof("QuantaToCoin Epoch=%d refunds %v", c.deferQ.Epoch(), refunds)
 

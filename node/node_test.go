@@ -1,38 +1,38 @@
 package main
 
 import (
-	"github.com/quantadex/distributed_quanta_bridge/registrar/service"
-	"github.com/quantadex/distributed_quanta_bridge/common/logger"
 	"fmt"
-	"testing"
-	"sync"
-	"os"
-	"github.com/quantadex/distributed_quanta_bridge/trust/coin"
+	"github.com/quantadex/distributed_quanta_bridge/common/logger"
 	"github.com/quantadex/distributed_quanta_bridge/common/test"
 	"github.com/quantadex/distributed_quanta_bridge/node/common"
+	"github.com/quantadex/distributed_quanta_bridge/registrar/service"
+	"github.com/quantadex/distributed_quanta_bridge/trust/coin"
 	"github.com/stretchr/testify/assert"
+	"os"
+	"sync"
+	"testing"
 )
 
 func generateConfig(quanta *test.QuantaNodeSecrets, ethereum *test.EthereumTrustSecrets,
 	etherNet test.EthereumEnv, index int) *common.Config {
-	return &common.Config {
-		ExternalListenPort: 5200+index,
-		ListenIp: "0.0.0.0",
-		ListenPort: 5100+index,
-		UsePrevKeys: true,
-		KvDbName: fmt.Sprintf("kv_db_%d", 5100+index),
-		CoinName: "ETH",
-		IssuerAddress: quanta.SourceAccount,
-		NodeKey: quanta.NodeSecrets[index],
-		HorizonUrl: "http://testnet-02.quantachain.io:8000/",
-		NetworkPassphrase: "QUANTA Test Network ; September 2018",
-		RegistrarIp: "localhost",
-		RegistrarPort: 5001,
-		EthereumNetworkId: etherNet.NetworkId,
+	return &common.Config{
+		ExternalListenPort: 5200 + index,
+		ListenIp:           "0.0.0.0",
+		ListenPort:         5100 + index,
+		UsePrevKeys:        true,
+		KvDbName:           fmt.Sprintf("kv_db_%d", 5100+index),
+		CoinName:           "ETH",
+		IssuerAddress:      quanta.SourceAccount,
+		NodeKey:            quanta.NodeSecrets[index],
+		HorizonUrl:         "http://testnet-02.quantachain.io:8000/",
+		NetworkPassphrase:  "QUANTA Test Network ; September 2018",
+		RegistrarIp:        "localhost",
+		RegistrarPort:      5001,
+		EthereumNetworkId:  etherNet.NetworkId,
 		EthereumBlockStart: 0,
-		EthereumRpc: etherNet.Rpc,
-		EthereumKeyStore: ethereum.NodeSecrets[index],
-		EthereumTrustAddr: ethereum.TrustContract,
+		EthereumRpc:        etherNet.Rpc,
+		EthereumKeyStore:   ethereum.NodeSecrets[index],
+		EthereumTrustAddr:  ethereum.TrustContract,
 	}
 }
 

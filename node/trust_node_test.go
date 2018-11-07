@@ -4,10 +4,10 @@ import (
 	"fmt"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/ethclient"
+	"github.com/quantadex/distributed_quanta_bridge/common/test"
 	"github.com/quantadex/distributed_quanta_bridge/trust/coin/contracts"
 	"github.com/stretchr/testify/assert"
 	"testing"
-	"github.com/quantadex/distributed_quanta_bridge/common/test"
 	"time"
 )
 
@@ -22,7 +22,7 @@ import (
 func TestRopstenNativeETH(t *testing.T) {
 	r := StartRegistry()
 	nodes := StartNodes(test.QUANTA_ISSUER, test.ROPSTEN_TRUST, test.ETHER_NETWORKS[test.ROPSTEN])
-	time.Sleep(time.Millisecond*250)
+	time.Sleep(time.Millisecond * 250)
 
 	// DEPOSIT to TEST2
 	// 0xba7573C0e805ef71ACB7f1c4a55E7b0af416E96A transfers 0.01 ETH to forward address: 0xb59e4b94e4ed7331ee0520e9377967614ca2dc98 on block 4327101
@@ -65,7 +65,7 @@ func TestRopstenNativeETH(t *testing.T) {
 		// TODO: inspect the messages for the right content
 		// index 0 does not always send the message.
 		// last node relative from node it was sent from - see round_robin
-		if int(4327101-1) % 3 == i {
+		if int(4327101-1)%3 == i {
 			// the first node doesn't receive any peer messages (yet), we will check for it in block #4249020
 			assertMsgCountEqualDoLoop(t, "deposit", 0, len(allDeposits), block, i+1, len(nodes), node)
 			assertMsgCountEqualDoLoop(t, "peer", 1, len(allPeerMsgs), block, i+1, len(nodes), node)
@@ -111,8 +111,8 @@ func TestRopstenERC20Token(t *testing.T) {
 	time.Sleep(time.Second * 6)
 	newBalance, err := nodes[0].q.GetBalance(ercContract, test.QUANTA_ACCOUNT)
 	assert.NoError(t, err)
-	assert.Equal(t, initialBalance + float64(0.001234), newBalance)
-	fmt.Printf("Initial balance=%f , expecting final balance = %f\n", initialBalance, initialBalance + float64(0.001234))
+	assert.Equal(t, initialBalance+float64(0.001234), newBalance)
+	fmt.Printf("Initial balance=%f , expecting final balance = %f\n", initialBalance, initialBalance+float64(0.001234))
 	time.Sleep(time.Second * 5)
 	StopNodes(nodes)
 	StopRegistry(r)
@@ -133,7 +133,7 @@ func TestWithdrawal(t *testing.T) {
 
 	println("latest TXID=", txId)
 
-  	nodes := StartNodes(test.QUANTA_ISSUER, test.ROPSTEN_TRUST, test.ETHER_NETWORKS[test.ROPSTEN])
+	nodes := StartNodes(test.QUANTA_ISSUER, test.ROPSTEN_TRUST, test.ETHER_NETWORKS[test.ROPSTEN])
 
 	cursor := int64(0)
 	fmt.Printf("=======================\n[CURSOR %d] BEGIN\n\n", cursor)
@@ -153,7 +153,7 @@ func TestWithdrawal(t *testing.T) {
 		assert.NoError(t, err, "error: cursor #%d [node #%d/%d id=%d]", cursor, i+1, len(nodes), node.nodeID)
 		assert.Zero(t, len(refunds), "refunds: cursor #%d [node #%d/%d id=%d]", cursor, i+1, len(nodes), node.nodeID)
 
-		if (i == 0) {
+		if i == 0 {
 			// first one should of submitted a withdrawal transaction
 			assert.NotEqual(t, "0x0", txId, "txId: cursor #%d [node #%d/%d id=%d]", cursor, i+1, len(nodes), node.nodeID)
 		} else {
