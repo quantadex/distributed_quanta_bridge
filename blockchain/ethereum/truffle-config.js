@@ -24,7 +24,8 @@ module.exports = {
         host: "127.0.0.1",
         port: 7545,
         network_id: "*", // Match any network id
-        gas: 14600000,
+        gas: 3000000,
+        gasPrice: 30,
     },
     // testnets
     ropsten: {

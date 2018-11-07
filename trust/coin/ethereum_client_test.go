@@ -143,7 +143,7 @@ s[hex] = 0x190f0f012abf3d8f222576a95622a0a9904a460a551b6b3e3671aecd1832f2b9
 
 func TestWithdrawalGanacheTX(t *testing.T) {
 	w := &Withdrawal{
-		TxId:               1,
+		TxId:               10000,
 		CoinName:           "ETH",
 		DestinationAddress: "0xC5fdf4076b8F3A5357c5E395ab970B5B54098Fef",
 		QuantaBlockID:      1,
@@ -151,14 +151,14 @@ func TestWithdrawalGanacheTX(t *testing.T) {
 		Signatures:         nil,
 	}
 
-	network := test.ETHER_NETWORKS[test.LOCAL]
+	network := test.ETHER_NETWORKS[test.ROPSTEN]
 	coin, _ := NewEthereumCoin(network.NetworkId, network.Rpc)
 	coin.Attach()
 	encoded, _ := coin.EncodeRefund(*w)
 	println(encoded)
 
 	km, _ := key_manager.NewEthKeyManager()
-	err := km.LoadNodeKeys("c87509a1c067bbde78beb793e6fa76530b6382a4c0241e5e4a9ec0a0f44dc0d3")
+	err := km.LoadNodeKeys(test.ROPSTEN_TRUST.NodeSecrets[0])
 	if err != nil {
 		t.Error(err)
 		return
@@ -170,7 +170,8 @@ func TestWithdrawalGanacheTX(t *testing.T) {
 
 	w.Signatures = []string{signed}
 
-	tx, err := coin.SendWithdrawal(common.HexToAddress("0xdda6327139485221633a1fcd65f4ac932e60a2e1"), km.GetPrivateKey(), w)
+	// 0xcfed223fab2a41b5a5a5f9aaae2d1e882cb6fe2d <-- geth
+	tx, err := coin.SendWithdrawal(common.HexToAddress(test.ROPSTEN_TRUST.TrustContract), km.GetPrivateKey(), w)
 	if err != nil {
 		println("ERR: ", err.Error())
 	}
@@ -216,8 +217,13 @@ func teardownEthereum() {
 
 // https://www.philosophicalhacker.com/post/integration-tests-in-go/
 func TestMain(m *testing.M) {
-	setupEthereum()
+	if !testing.Short() {
+		setupEthereum()
+	}
 	result := m.Run()
-	teardownEthereum()
+
+	if !testing.Short() {
+		teardownEthereum()
+	}
 	os.Exit(result)
 }
