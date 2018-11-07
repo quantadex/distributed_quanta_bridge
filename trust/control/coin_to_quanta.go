@@ -15,6 +15,14 @@ import (
 	"github.com/quantadex/distributed_quanta_bridge/trust/quanta"
 )
 
+//TODO: Refactor to use Cosi instead of RR
+// in RR, it's up to the last one to submit to the next one if fails
+// # of round O(n)
+// consistency
+
+//TODO: Separate polling for coin & submitter
+
+
 /**
  * CoinToQuanta
  *

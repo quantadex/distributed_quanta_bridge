@@ -32,6 +32,11 @@ type KeyManager interface {
      */
     GetPublicKey() (string, error)
 
+    /**
+     * GetPrivateKey
+     *
+     * Returns the private key as ecdsa.
+     */
     GetPrivateKey() (*ecdsa.PrivateKey)
 
     /**
@@ -40,7 +45,6 @@ type KeyManager interface {
      * Uses the private key to sign the given message and returns the signed message
      */
     SignMessage(original []byte) ([]byte, error)
-
 
     /**
      * SignMessage
@@ -59,8 +63,9 @@ type KeyManager interface {
     VerifySignatureObj(original interface{}, key string) bool
 
     /**
-     * SignTX
-     * Decodes the transaction envelope, and adds our signature
+     * SignTransaction
+     * Decodes the transaction, and return signature with
+     * our key
      */
      SignTransaction(encoded string) (string, error)
 
