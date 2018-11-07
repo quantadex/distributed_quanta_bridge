@@ -21,7 +21,28 @@ import (
 // consistency
 
 //TODO: Separate polling for coin & submitter
+//TODO: Use postgres for storage
+//TODO: ./node initdb
+/*
+ Table: Deposits
+  tx   string
+  coin string
+  created datetime
+  amount int64
+  blockId int64
+  from  string
+  to    string
+  status enum ('DEPOSIT', 'SIGNED')
+  submit_tx  string  // must broadcast
+  submit_signers string
+  submit_confirm int // keep scanning for confirm
+  submit_date  datetime
 
+
+Submitter scans for status 'DEPOSIT', and attempt to submit.
+If other node are not ready, submission will fail.
+
+*/
 
 /**
  * CoinToQuanta
