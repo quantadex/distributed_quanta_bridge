@@ -61,6 +61,8 @@ type KVStore interface {
 
 	RemoveKey(tableName string, key string) error
 
+	CloseDB() error
+
 	/*
 	 * GetAllValues
 	 *

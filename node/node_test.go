@@ -40,15 +40,51 @@ func assertMsgCountEqualDoLoop(t *testing.T, label string, expected int, actual 
 	assert.Equal(t, expected, actual, "%s message count was incorrect for block #%d [node #%d/%d id=%d]", label, blockNum, nodeNum, totalNodes, node.nodeID)
 }
 
+func StartNodesWithIndexes(quanta *test.QuantaNodeSecrets, ethereum *test.EthereumTrustSecrets,
+	etherEnv test.EthereumEnv, removePrevDB bool, indexesToStart []int, nodes []*TrustNode) []*TrustNode {
+	println("Starting nodes")
+
+	mutex := sync.Mutex{}
+	var wg sync.WaitGroup
+
+	for i := 0; i < len(indexesToStart); i++ {
+		wg.Add(1)
+
+		if removePrevDB {
+			os.Remove(fmt.Sprintf("./kv_db_%d.db", 5100+i))
+		}
+
+		config := generateConfig(quanta, ethereum, etherEnv, i)
+		config.KvDbName = nodes[0].dbName
+
+		go func(config common.Config) {
+			defer wg.Done()
+
+			coin, err := coin.NewEthereumCoin(config.EthereumNetworkId, config.EthereumRpc)
+			if err != nil {
+				panic("Cannot create ethereum listener")
+			}
+
+			mutex.Lock()
+			node := bootstrapNode(config, coin)
+			nodes[indexesToStart[0]] = node
+			fmt.Println("hello")
+			mutex.Unlock()
+			registerNode(config, node)
+		}(*config)
+
+		wg.Wait()
+	}
+	return nodes
+}
+
 func StartNodes(quanta *test.QuantaNodeSecrets, ethereum *test.EthereumTrustSecrets,
 	etherEnv test.EthereumEnv) []*TrustNode {
 	println("Starting nodes")
 
 	mutex := sync.Mutex{}
-
-	nodes := []*TrustNode{}
 	var wg sync.WaitGroup
-
+	nodes := []*TrustNode{}
 	for i := 0; i < len(quanta.NodeSecrets); i++ {
 		wg.Add(1)
 
@@ -78,8 +114,25 @@ func StartNodes(quanta *test.QuantaNodeSecrets, ethereum *test.EthereumTrustSecr
 	return nodes
 }
 
-func StopNodes(nodes []*TrustNode) {
+func StartNodeListener(quanta *test.QuantaNodeSecrets, ethereum *test.EthereumTrustSecrets,
+	etherEnv test.EthereumEnv, nodes []*TrustNode) []*TrustNode {
+	fmt.Println("\nStarting Node again")
+	config := generateConfig(quanta, ethereum, etherEnv, 0)
+	nodes[0].StartListener(*config)
 
+	return nodes
+}
+
+func StopNodeListener(node *TrustNode) {
+	fmt.Println("\nStopping node")
+	node.StopListener()
+}
+func StopSingleNode(node *TrustNode) {
+	fmt.Println("\nStopping node")
+	node.Stop()
+}
+
+func StopNodes(nodes []*TrustNode) {
 	for _, n := range nodes {
 		n.Stop()
 	}

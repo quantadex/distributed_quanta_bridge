@@ -118,6 +118,136 @@ func TestRopstenERC20Token(t *testing.T) {
 	StopRegistry(r)
 }
 
+func TestTrustNode_Stop(t *testing.T) {
+	r := StartRegistry()
+	//indexes := []int{0,1,2}
+	//nodes := []*TrustNode{}
+	//nodes = StartNodesWithIndexes(test.QUANTA_ISSUER, test.ROPSTEN_TRUST, test.ETHER_NETWORKS[test.ROPSTEN],true,indexes, nodes)
+	nodes := StartNodes(test.QUANTA_ISSUER, test.ROPSTEN_TRUST, test.ETHER_NETWORKS[test.ROPSTEN])
+	time.Sleep(time.Millisecond * 250)
+
+	block := int64(4327057)
+	fmt.Printf("=======================\n[BLOCK %d] BEGIN\n\n", block)
+	for i, node := range nodes {
+		fmt.Printf("[BLOCK %d] Node[#%d/%d id=%d] calling doLoop...\n", block, i+1, len(nodes), node.nodeID)
+		allDeposits, allPeerMsgs, allSentMsgs := node.cTQ.DoLoop([]int64{block})
+		fmt.Printf("...[BLOCK %d] Node[#%d/%d] counts %d/%d/%d [deposit/peer/sent]\n\n", block, i+1, len(nodes), len(allDeposits), len(allPeerMsgs), len(allSentMsgs))
+		assertMsgCountEqualDoLoop(t, "sent", 0, len(allSentMsgs), block, i+1, len(nodes), node)
+	}
+	fmt.Printf("[BLOCK %d] END\n=======================\n\n", block)
+
+	block = 4327101
+	fmt.Printf("=======================\n[BLOCK %d] BEGIN\n\n", block)
+	for i, node := range nodes {
+		fmt.Printf("[BLOCK %d] Node[#%d/%d id=%d] calling doLoop...\n", block, i+1, len(nodes), node.nodeID)
+		allDeposits, allPeerMsgs, allSentMsgs := node.cTQ.DoLoop([]int64{block})
+		fmt.Printf("...[BLOCK %d] Node[#%d/%d] counts %d/%d/%d [deposit/peer/sent]\n\n", block, i+1, len(nodes), len(allDeposits), len(allPeerMsgs), len(allSentMsgs))
+		assertMsgCountEqualDoLoop(t, "sent", 0, len(allSentMsgs), block, i+1, len(nodes), node)
+	}
+	fmt.Printf("[BLOCK %d] END\n=======================\n\n", block)
+
+	block = 4327102
+	fmt.Printf("=======================\n[BLOCK %d] BEGIN\n\n", block)
+	for i, node := range nodes {
+		fmt.Printf("[BLOCK %d] Node[#%d/%d id=%d] calling doLoop...\n", block, i+1, len(nodes), node.nodeID)
+		allDeposits, allPeerMsgs, allSentMsgs := node.cTQ.DoLoop([]int64{block})
+		fmt.Printf("...[BLOCK %d] Node[#%d/%d] counts %d/%d/%d [deposit/peer/sent]\n\n", block, i+1, len(nodes), len(allDeposits), len(allPeerMsgs), len(allSentMsgs))
+
+		if int(4327101-1)%3 == i {
+			assertMsgCountEqualDoLoop(t, "sent", 1, len(allSentMsgs), block, i+1, len(nodes), node)
+		} else {
+			assertMsgCountEqualDoLoop(t, "sent", 0, len(allSentMsgs), block, i+1, len(nodes), node)
+		}
+
+	}
+
+	//StopNodeListener(nodes[0])
+	StopSingleNode(nodes[0])
+	time.Sleep(time.Second * 6)
+
+	block = int64(4327057)
+	fmt.Printf("=======================\n[BLOCK %d] BEGIN\n\n", block)
+	for i, node := range nodes {
+		fmt.Printf("[BLOCK %d] Node[#%d/%d id=%d] calling doLoop\n", block, i+1, len(nodes), node.nodeID)
+		allDeposits, allPeerMsgs, allSentMsgs := nodes[i].cTQ.DoLoop([]int64{block})
+		fmt.Printf("[BLOCK %d] Node[#%d/%d] counts %d/%d/%d [deposit/peer/sent]\n\n", block, i+1, len(nodes), len(allDeposits), len(allPeerMsgs), len(allSentMsgs))
+		assertMsgCountEqualDoLoop(t, "sent", 0, len(allSentMsgs), block, i, len(nodes), node)
+		assertMsgCountEqualDoLoop(t, "peer", 0, len(allPeerMsgs), block, i+1, len(nodes), node)
+	}
+	fmt.Printf("[BLOCK %d] END\n=======================\n\n", block)
+
+	block = 4327127
+	fmt.Printf("=======================\n[BLOCK %d] BEGIN\n\n", block)
+	for i, node := range nodes {
+		fmt.Printf("[BLOCK %d] Node[#%d/%d id=%d] calling doLoop\n", block, i+1, len(nodes), node.nodeID)
+		allDeposits, allPeerMsgs, allSentMsgs := nodes[i].cTQ.DoLoop([]int64{block})
+		fmt.Printf("[BLOCK %d] Node[#%d/%d] counts %d/%d/%d [deposit/peer/sent]\n\n", block, i+1, len(nodes), len(allDeposits), len(allPeerMsgs), len(allSentMsgs))
+		assertMsgCountEqualDoLoop(t, "sent", 0, len(allSentMsgs), block, i, len(nodes), node)
+		assertMsgCountEqualDoLoop(t, "peer", 0, len(allPeerMsgs), block, i+1, len(nodes), node)
+	}
+	fmt.Printf("[BLOCK %d] END\n=======================\n\n", block)
+
+	block = 4327128
+	fmt.Printf("=======================\n[BLOCK %d] BEGIN\n\n", block)
+	for i, node := range nodes {
+		fmt.Printf("[BLOCK %d] Node[#%d/%d id=%d] calling doLoop\n", block, i+1, len(nodes), node.nodeID)
+		allDeposits, allPeerMsgs, allSentMsgs := nodes[i].cTQ.DoLoop([]int64{block})
+		fmt.Printf("[BLOCK %d] Node[#%d/%d] counts %d/%d/%d [deposit/peer/sent]\n\n", block, i+1, len(nodes), len(allDeposits), len(allPeerMsgs), len(allSentMsgs))
+		assertMsgCountEqualDoLoop(t, "sent", 0, len(allSentMsgs), block, i, len(nodes), node)
+		if (4327128-1)%3 == i {
+			assertMsgCountEqualDoLoop(t, "peer", 1, len(allPeerMsgs), block, i+1, len(nodes), node)
+		} else {
+			assertMsgCountEqualDoLoop(t, "peer", 0, len(allPeerMsgs), block, i+1, len(nodes), node)
+		}
+
+	}
+	fmt.Printf("[BLOCK %d] END\n=======================\n\n", block)
+
+	time.Sleep(time.Second * 6)
+
+	indexToStart := []int{0}
+	//nodes = StartNodeListener(test.QUANTA_ISSUER, test.ROPSTEN_TRUST, test.ETHER_NETWORKS[test.ROPSTEN], nodes)
+	nodes = StartNodesWithIndexes(test.QUANTA_ISSUER, test.ROPSTEN_TRUST, test.ETHER_NETWORKS[test.ROPSTEN], false, indexToStart, nodes)
+	time.Sleep(time.Second * 6)
+	block = int64(4327057)
+	fmt.Printf("=======================\n[BLOCK %d] BEGIN\n\n", block)
+	for i, node := range nodes {
+		fmt.Printf("[BLOCK %d] Node[#%d/%d id=%d] calling doLoop...\n", block, i+1, len(nodes), node.nodeID)
+		allDeposits, allPeerMsgs, allSentMsgs := node.cTQ.DoLoop([]int64{block})
+		fmt.Printf("...[BLOCK %d] Node[#%d/%d] counts %d/%d/%d [deposit/peer/sent]\n\n", block, i+1, len(nodes), len(allDeposits), len(allPeerMsgs), len(allSentMsgs))
+		assertMsgCountEqualDoLoop(t, "sent", 0, len(allSentMsgs), block, i+1, len(nodes), node)
+	}
+	fmt.Printf("[BLOCK %d] END\n=======================\n\n", block)
+
+	block = 4327101
+	fmt.Printf("=======================\n[BLOCK %d] BEGIN\n\n", block)
+	for i, node := range nodes {
+		fmt.Printf("[BLOCK %d] Node[#%d/%d id=%d] calling doLoop...\n", block, i+1, len(nodes), node.nodeID)
+		allDeposits, allPeerMsgs, allSentMsgs := node.cTQ.DoLoop([]int64{block})
+		fmt.Printf("...[BLOCK %d] Node[#%d/%d] counts %d/%d/%d [deposit/peer/sent]\n\n", block, i+1, len(nodes), len(allDeposits), len(allPeerMsgs), len(allSentMsgs))
+		assertMsgCountEqualDoLoop(t, "sent", 0, len(allSentMsgs), block, i+1, len(nodes), node)
+	}
+	fmt.Printf("[BLOCK %d] END\n=======================\n\n", block)
+
+	block = 4327102
+	fmt.Printf("=======================\n[BLOCK %d] BEGIN\n\n", block)
+	for i, node := range nodes {
+		fmt.Printf("[BLOCK %d] Node[#%d/%d id=%d] calling doLoop...\n", block, i+1, len(nodes), node.nodeID)
+		allDeposits, allPeerMsgs, allSentMsgs := node.cTQ.DoLoop([]int64{block})
+		fmt.Printf("...[BLOCK %d] Node[#%d/%d] counts %d/%d/%d [deposit/peer/sent]\n\n", block, i+1, len(nodes), len(allDeposits), len(allPeerMsgs), len(allSentMsgs))
+
+		if int(4327101-1)%3 == i {
+			assertMsgCountEqualDoLoop(t, "sent", 1, len(allSentMsgs), block, i+1, len(nodes), node)
+		} else {
+			assertMsgCountEqualDoLoop(t, "sent", 0, len(allSentMsgs), block, i+1, len(nodes), node)
+		}
+	}
+
+	time.Sleep(time.Second * 6)
+	StopNodes(nodes)
+	StopRegistry(r)
+}
+
 func TestWithdrawal(t *testing.T) {
 	ethereumClient, err := ethclient.Dial(test.ETHER_NETWORKS[test.ROPSTEN].Rpc)
 	assert.Nil(t, err)
