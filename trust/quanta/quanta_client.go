@@ -234,9 +234,12 @@ func (q *QuantaClient) GetRefundsInBlock(cursor int64, trustAddress string) ([]R
 	println(url)
 
 	resp, err := q.horizonClient.HTTP.Get(url)
+
 	if err != nil {
 		return nil, 0, err
 	}
+
+	defer resp.Body.Close()
 
 	var operations Operations
 	if err := json.NewDecoder(resp.Body).Decode(&operations); err != nil {
