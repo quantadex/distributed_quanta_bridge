@@ -49,7 +49,7 @@ type TrustNode struct {
 	queue    queue.Queue
 	listener listener.Listener
 	restApi  *Server
-	dbName   string
+
 	doneChan chan bool
 }
 
@@ -108,8 +108,6 @@ func initNode(config common.Config, targetCoin coin.Coin) (*TrustNode, bool) {
 	if err != nil {
 		node.log.Error("Failed to connect to database")
 		return nil, false
-	} else {
-		node.dbName = config.KvDbName
 	}
 
 	if needsInitialize {
