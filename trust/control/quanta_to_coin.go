@@ -271,12 +271,14 @@ func (c *QuantaToCoin) DoLoop(cursor int64) ([]quanta.Refund, string, error) {
 				w.Signatures = result.Msg
 				// save in eth_tx_log_signed (kvstore) [S=signed,X=submitted,F=failed(uncoverable), R=retry(connection failed)] ; recoverable=RPC not available
 				c.logger.Infof("Great! Cosi successfully signed refund")
-				c.SubmitWithdrawal(&w)
-				//tx, err := c.coinChannel.SendWithdrawal(common.HexToAddress(c.coinContractAddress), c.coinkM.GetPrivateKey(), &w)
-				//if err != nil {
-				//	c.logger.Error(err.Error())
-				//}
-				//c.logger.Infof("Submitted withdrawal in tx=%s", tx)
+				//c.SubmitWithdrawal(&w)
+				tx, err := c.coinChannel.SendWithdrawal(common.HexToAddress(c.coinContractAddress), c.coinkM.GetPrivateKey(), &w)
+				if err != nil {
+					c.logger.Error(err.Error())
+				}
+				c.logger.Infof("Submitted withdrawal in tx=%s", tx)
+				txResult = tx
+				errResult = err
 			}
 		}
 	}
