@@ -32,6 +32,12 @@ func (s *BoltStore) Connect(name string) error {
 	return err
 }
 
+func (s *BoltStore) CloseDB() error {
+	var err error
+	err = s.db.Close()
+	return err
+}
+
 func (s *BoltStore) CreateTable(tableName string) error {
 	return s.db.Update(func(tx *bolt.Tx) error {
 		_, err := tx.CreateBucket([]byte(tableName))

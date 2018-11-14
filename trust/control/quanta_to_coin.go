@@ -1,6 +1,8 @@
 package control
 
+import "C"
 import (
+	"encoding/json"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/pkg/errors"
 	"github.com/quantadex/distributed_quanta_bridge/common/kv_store"
@@ -12,9 +14,9 @@ import (
 	"github.com/quantadex/distributed_quanta_bridge/trust/peer_contact"
 	"github.com/quantadex/distributed_quanta_bridge/trust/quanta"
 	"github.com/quantadex/quanta_book/consensus/cosi"
+	"strconv"
 	"strings"
 	"time"
-	"encoding/json"
 )
 
 const QUANTA = "QUANTA"
@@ -39,7 +41,7 @@ type QuantaToCoin struct {
 	rr                  *RoundRobinSigner
 	cosi                *cosi.Cosi
 	trustPeer           *peer_contact.TrustPeerNode
-	deferQ 				*queue.DeferQ
+	deferQ              *queue.DeferQ
 }
 
 /**
@@ -148,16 +150,44 @@ func NewQuantaToCoin(log logger.Logger,
 	return res
 }
 
-func (c *QuantaToCoin) WithdrawalSubmitter() {
-	for {
-		time.Sleep(time.Second)
+func (c *QuantaToCoin) WithdrawalLoop(w *coin.Withdrawal) {
+	signed, _ := c.db.GetAllValues(kv_store.ETH_TX_LOG_SIGNED)
+	for key, value := range signed {
+		_, err := c.coinChannel.SendWithdrawal(common.HexToAddress(c.quantaTrustAddress), nil, w)
+		if err == nil {
+			c.db.SetValue(kv_store.ETH_TX_LOG_SUBMITTED, key, "", value)
+			c.db.RemoveKey(kv_store.ETH_TX_LOG_SIGNED, key)
+		} else if strings.Contains(err.Error(), "connect: connection refused") {
+			c.db.SetValue(kv_store.ETH_TX_LOG_RETRY, key, "", value)
+		} else if strings.Contains(err.Error(), "insufficient funds for gas * price + value") {
+			c.db.SetValue(kv_store.ETH_TX_LOG_FAILED_RECOVERABLE, key, "", value)
+		} else if err.Error() == "Failed" {
+			c.db.SetValue(kv_store.ETH_TX_LOG_FAILED_UNRECOVERABLE, key, "", value)
+		}
+	}
+	retry, _ := c.db.GetAllValues(kv_store.ETH_TX_LOG_RETRY)
+	for key, msg := range retry {
+		_, err := c.coinChannel.SendWithdrawal(common.HexToAddress(c.quantaTrustAddress), nil, w)
+		if err == nil {
+			c.db.SetValue(kv_store.ETH_TX_LOG_SUBMITTED, key, "", msg)
+			c.db.RemoveKey(kv_store.ETH_TX_LOG_RETRY, key)
+			c.db.RemoveKey(kv_store.ETH_TX_LOG_SIGNED, key)
+		}
 	}
 }
 
 // Receives withdrawal with all of the signatures - queue it properly
 // for submission, and retry as neccessary
 func (c *QuantaToCoin) SubmitWithdrawal(w *coin.Withdrawal) {
+	InitLedger(c.db)
 
+	key := strconv.Itoa(int(w.TxId))
+	msg, _ := json.Marshal(w)
+	value := string(msg)
+
+	c.db.SetValue(kv_store.ETH_TX_LOG, key, "", value)
+	c.db.SetValue(kv_store.ETH_TX_LOG_SIGNED, key, "", value)
+	c.WithdrawalLoop(w)
 }
 
 /**
@@ -175,8 +205,8 @@ func (c *QuantaToCoin) DoLoop(cursor int64) ([]quanta.Refund, string, error) {
 		return refunds, "0x0", err
 	}
 
-	txResult := "0x0";
-	errResult := error(nil);
+	txResult := "0x0"
+	errResult := error(nil)
 
 	c.logger.Infof("QuantaToCoin Epoch=%d refunds %v", c.deferQ.Epoch(), refunds)
 
@@ -241,13 +271,12 @@ func (c *QuantaToCoin) DoLoop(cursor int64) ([]quanta.Refund, string, error) {
 				w.Signatures = result.Msg
 				// save in eth_tx_log_signed (kvstore) [S=signed,X=submitted,F=failed(uncoverable), R=retry(connection failed)] ; recoverable=RPC not available
 				c.logger.Infof("Great! Cosi successfully signed refund")
-				tx, err := c.coinChannel.SendWithdrawal(common.HexToAddress(c.coinContractAddress), c.coinkM.GetPrivateKey(), &w)
-				if err != nil {
-					c.logger.Error(err.Error())
-				}
-				c.logger.Infof("Submitted withdrawal in tx=%s", tx)
-				txResult = tx
-				errResult = err
+				c.SubmitWithdrawal(&w)
+				//tx, err := c.coinChannel.SendWithdrawal(common.HexToAddress(c.coinContractAddress), c.coinkM.GetPrivateKey(), &w)
+				//if err != nil {
+				//	c.logger.Error(err.Error())
+				//}
+				//c.logger.Infof("Submitted withdrawal in tx=%s", tx)
 			}
 		}
 	}

@@ -1,12 +1,14 @@
 package main
 
 import (
+	"fmt"
 	"github.com/go-errors/errors"
 	"github.com/quantadex/distributed_quanta_bridge/common/kv_store"
 	"github.com/quantadex/distributed_quanta_bridge/common/listener"
 	"github.com/quantadex/distributed_quanta_bridge/common/logger"
 	"github.com/quantadex/distributed_quanta_bridge/common/manifest"
 	"github.com/quantadex/distributed_quanta_bridge/common/queue"
+	"github.com/quantadex/distributed_quanta_bridge/node/common"
 	"github.com/quantadex/distributed_quanta_bridge/trust/coin"
 	"github.com/quantadex/distributed_quanta_bridge/trust/control"
 	"github.com/quantadex/distributed_quanta_bridge/trust/key_manager"
@@ -15,8 +17,6 @@ import (
 	"github.com/quantadex/distributed_quanta_bridge/trust/registrar_client"
 	"strconv"
 	"time"
-	"fmt"
-	"github.com/quantadex/distributed_quanta_bridge/node/common"
 )
 
 const (
@@ -48,7 +48,7 @@ type TrustNode struct {
 	coinName string
 	queue    queue.Queue
 	listener listener.Listener
-	restApi	 *Server
+	restApi  *Server
 
 	doneChan chan bool
 }
@@ -332,7 +332,22 @@ func registerNode(config common.Config, node *TrustNode) error {
 }
 
 func (n *TrustNode) Stop() {
+	n.db.CloseDB()
 	n.doneChan <- true
 	n.listener.Stop()
 	n.restApi.Stop()
+}
+
+func (node *TrustNode) StopListener() {
+	node.listener.Stop()
+}
+
+func (node *TrustNode) StartListener(config common.Config) {
+	go func() {
+		err := node.listener.Run(config.ListenIp, config.ListenPort)
+		if err != nil {
+			node.log.Error("Failed to start listener")
+			return
+		}
+	}()
 }

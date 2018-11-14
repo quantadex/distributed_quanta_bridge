@@ -8,15 +8,14 @@ import (
 	"github.com/ethereum/go-ethereum/core"
 	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/ethereum/go-ethereum/ethclient"
+	"github.com/quantadex/distributed_quanta_bridge/common/test"
 	"github.com/quantadex/distributed_quanta_bridge/trust/key_manager"
 	"math/big"
-	"strings"
-	"testing"
-	"github.com/quantadex/distributed_quanta_bridge/common/test"
 	"os"
 	"os/exec"
+	"strings"
+	"testing"
 )
-
 
 func TestCheckDepositNode(t *testing.T) {
 	network := test.ETHER_NETWORKS[test.ROPSTEN]

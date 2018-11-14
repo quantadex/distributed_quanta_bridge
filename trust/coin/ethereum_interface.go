@@ -1,12 +1,12 @@
 package coin
 
 import (
-	"math/big"
-	"github.com/ethereum/go-ethereum/common"
-	"github.com/stellar/go/support/log"
 	"context"
 	"github.com/ethereum/go-ethereum"
+	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
+	"github.com/stellar/go/support/log"
+	"math/big"
 )
 
 type LogTransfer struct {
@@ -19,9 +19,9 @@ var (
 	ten      = big.NewInt(10)
 	eighteen = big.NewInt(18)
 	// weiInEth = 10^18
-	weiInEth = new(big.Rat).SetInt(new(big.Int).Exp(ten, eighteen, nil))
-	StellarAmountPrecision =  new(big.Rat).SetInt(new(big.Int).Exp(ten, big.NewInt(7), nil))
-	ROPSTEN_NETWORK_ID = "3"
+	weiInEth               = new(big.Rat).SetInt(new(big.Int).Exp(ten, eighteen, nil))
+	StellarAmountPrecision = new(big.Rat).SetInt(new(big.Int).Exp(ten, big.NewInt(7), nil))
+	ROPSTEN_NETWORK_ID     = "3"
 )
 
 type TransactionHandler func(transaction Transaction) error
@@ -64,22 +64,21 @@ type Listener struct {
 	log *log.Entry
 }
 
-
 func WeiToStellar(valueInWei int64) int64 {
 	valueEth := new(big.Rat).SetInt64(valueInWei)
 	powerDelta := new(big.Rat).SetInt(new(big.Int).Exp(ten, big.NewInt(11), nil))
 	result := new(big.Rat)
-	result = result.Quo(valueEth,  powerDelta)
+	result = result.Quo(valueEth, powerDelta)
 
-	num,_ := new(big.Int).SetString(result.FloatString(0),10)
+	num, _ := new(big.Int).SetString(result.FloatString(0), 10)
 	return num.Int64()
 }
 
 func Erc20AmountToStellar(valueInWei int64, dec uint8) int64 {
 	valueEth := new(big.Rat).SetInt64(valueInWei)
-	powerDelta := new(big.Rat).SetInt(new(big.Int).Exp(ten, big.NewInt(18 - int64(dec)), nil))
+	powerDelta := new(big.Rat).SetInt(new(big.Int).Exp(ten, big.NewInt(18-int64(dec)), nil))
 	result := new(big.Rat)
-	result = result.Mul(valueEth,  powerDelta)
+	result = result.Mul(valueEth, powerDelta)
 
 	return WeiToStellar(result.Num().Int64())
 }
@@ -94,7 +93,6 @@ func StellarToWei(valueInStellar uint64) uint64 {
 
 type ForwardInput struct {
 	ContractAddress common.Address
-	Trust common.Address
-	QuantaAddr string
+	Trust           common.Address
+	QuantaAddr      string
 }
-

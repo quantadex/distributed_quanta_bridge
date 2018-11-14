@@ -1,15 +1,15 @@
 package main
 
 import (
-	"github.com/spf13/viper"
-	"fmt"
-	"github.com/quantadex/distributed_quanta_bridge/trust/coin"
-	"github.com/quantadex/distributed_quanta_bridge/registrar/service"
-	"github.com/quantadex/distributed_quanta_bridge/common/logger"
-	"flag"
-	"io/ioutil"
 	"bytes"
+	"flag"
+	"fmt"
+	"github.com/quantadex/distributed_quanta_bridge/common/logger"
 	"github.com/quantadex/distributed_quanta_bridge/node/common"
+	"github.com/quantadex/distributed_quanta_bridge/registrar/service"
+	"github.com/quantadex/distributed_quanta_bridge/trust/coin"
+	"github.com/spf13/viper"
+	"io/ioutil"
 )
 
 /**
@@ -34,13 +34,13 @@ func main() {
 		panic(fmt.Errorf("Fatal error config file: %s \n", err))
 	}
 
-	config := common.Config {}
+	config := common.Config{}
 	err = viper.Unmarshal(&config)
 	if err != nil {
 		panic(fmt.Errorf("Fatal error config file: %s \n", err))
 	}
 
-	if (*enableRegistry) {
+	if *enableRegistry {
 		// start registrar if we need to
 		logger, _ := logger.NewLogger("registrar")
 		registrarUrl := fmt.Sprintf(":%d", config.RegistrarPort)
@@ -49,7 +49,7 @@ func main() {
 		go s.Start()
 	}
 
-	if (*portNumber != 0) {
+	if *portNumber != 0 {
 		config.ListenPort = *portNumber
 	}
 

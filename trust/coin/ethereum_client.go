@@ -194,7 +194,7 @@ func (l *Listener) GetNativeDeposits(blockNumber int64, toAddress map[string]str
 					CoinName:   "ETH",
 					SenderAddr: tx.To().Hex(),
 					Amount:     WeiToStellar(tx.Value().Int64()),
-					BlockID: blockNumber,
+					BlockID:    blockNumber,
 				})
 			}
 		}
@@ -301,15 +301,15 @@ func (l *Listener) GetForwardContract(blockNumber int64) ([]*ForwardInput, error
 	events := []*ForwardInput{}
 	for _, tx := range blocks.Transactions() {
 		data := common.Bytes2Hex(tx.Data())
-		//println(data)
+		println(data)
 
 		// matches our forwarding contract
 		if strings.HasPrefix(data, Forwarder.ForwarderBin) || strings.HasPrefix(data, Forwarder.ForwarderBinV2) {
 			var remain string
 			if strings.HasPrefix(data, Forwarder.ForwarderBin) {
-				remain =  strings.TrimPrefix(data, Forwarder.ForwarderBin)
+				remain = strings.TrimPrefix(data, Forwarder.ForwarderBin)
 			} else {
-				remain =  strings.TrimPrefix(data, Forwarder.ForwarderBinV2)
+				remain = strings.TrimPrefix(data, Forwarder.ForwarderBinV2)
 			}
 
 			input := &ForwardInput{}

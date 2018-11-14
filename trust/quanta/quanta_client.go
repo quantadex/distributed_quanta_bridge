@@ -11,15 +11,15 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/ethereum/go-ethereum/common"
 	"github.com/quantadex/distributed_quanta_bridge/common/logger"
 	"github.com/quantadex/distributed_quanta_bridge/common/queue"
 	"github.com/stellar/go/amount"
 	"github.com/stellar/go/xdr"
 	"net/http"
 	"strconv"
-	"time"
-	"github.com/ethereum/go-ethereum/common"
 	"strings"
+	"time"
 )
 
 type QuantaClientOptions struct {

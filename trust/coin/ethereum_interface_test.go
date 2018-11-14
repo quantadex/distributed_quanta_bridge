@@ -1,9 +1,9 @@
 package coin
 
 import (
-	"testing"
 	"github.com/magiconair/properties/assert"
 	"math"
+	"testing"
 )
 
 func TestWeiToStellar(t *testing.T) {

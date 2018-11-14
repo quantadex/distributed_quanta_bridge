@@ -1,38 +1,39 @@
 package main
 
 import (
-	"github.com/quantadex/distributed_quanta_bridge/registrar/service"
-	"github.com/quantadex/distributed_quanta_bridge/common/logger"
 	"fmt"
-	"testing"
-	"sync"
-	"os"
-	"github.com/quantadex/distributed_quanta_bridge/trust/coin"
+	"github.com/quantadex/distributed_quanta_bridge/common/logger"
 	"github.com/quantadex/distributed_quanta_bridge/common/test"
 	"github.com/quantadex/distributed_quanta_bridge/node/common"
+	"github.com/quantadex/distributed_quanta_bridge/registrar/service"
+	"github.com/quantadex/distributed_quanta_bridge/trust/coin"
 	"github.com/stretchr/testify/assert"
+	"os"
+	"sync"
+	"testing"
+	"time"
 )
 
 func generateConfig(quanta *test.QuantaNodeSecrets, ethereum *test.EthereumTrustSecrets,
 	etherNet test.EthereumEnv, index int) *common.Config {
-	return &common.Config {
-		ExternalListenPort: 5200+index,
-		ListenIp: "0.0.0.0",
-		ListenPort: 5100+index,
-		UsePrevKeys: true,
-		KvDbName: fmt.Sprintf("kv_db_%d", 5100+index),
-		CoinName: "ETH",
-		IssuerAddress: quanta.SourceAccount,
-		NodeKey: quanta.NodeSecrets[index],
-		HorizonUrl: "http://testnet-02.quantachain.io:8000/",
-		NetworkPassphrase: "QUANTA Test Network ; September 2018",
-		RegistrarIp: "localhost",
-		RegistrarPort: 5001,
-		EthereumNetworkId: etherNet.NetworkId,
+	return &common.Config{
+		ExternalListenPort: 5200 + index,
+		ListenIp:           "0.0.0.0",
+		ListenPort:         5100 + index,
+		UsePrevKeys:        true,
+		KvDbName:           fmt.Sprintf("kv_db_%d", 5100+index),
+		CoinName:           "ETH",
+		IssuerAddress:      quanta.SourceAccount,
+		NodeKey:            quanta.NodeSecrets[index],
+		HorizonUrl:         "http://testnet-02.quantachain.io:8000/",
+		NetworkPassphrase:  "QUANTA Test Network ; September 2018",
+		RegistrarIp:        "localhost",
+		RegistrarPort:      5001,
+		EthereumNetworkId:  etherNet.NetworkId,
 		EthereumBlockStart: 0,
-		EthereumRpc: etherNet.Rpc,
-		EthereumKeyStore: ethereum.NodeSecrets[index],
-		EthereumTrustAddr: ethereum.TrustContract,
+		EthereumRpc:        etherNet.Rpc,
+		EthereumKeyStore:   ethereum.NodeSecrets[index],
+		EthereumTrustAddr:  ethereum.TrustContract,
 	}
 }
 
@@ -40,23 +41,39 @@ func assertMsgCountEqualDoLoop(t *testing.T, label string, expected int, actual 
 	assert.Equal(t, expected, actual, "%s message count was incorrect for block #%d [node #%d/%d id=%d]", label, blockNum, nodeNum, totalNodes, node.nodeID)
 }
 
-func StartNodes(quanta *test.QuantaNodeSecrets, ethereum *test.EthereumTrustSecrets,
-	etherEnv test.EthereumEnv) []*TrustNode {
+/**
+ * StartNodesWithIndexes starts the nodes with indexesToStart, which indexes into the quanta/ethereum child keys.
+ * Indexes of nodes []*TrustNode should always be the same as the index of the quanta/ethereum index.
+ * We can assume that nodes[]*TrustNode is pre-allocated with len(quanta child keys)
+ * nodes[]*TrustNode are not modified
+ */
+func StartNodesWithIndexes(quanta *test.QuantaNodeSecrets, ethereum *test.EthereumTrustSecrets,
+	etherEnv test.EthereumEnv, removePrevDB bool, indexesToStart []int, nodesIn []*TrustNode) []*TrustNode {
 	println("Starting nodes")
 
-	mutex := sync.Mutex{}
+	nodes := make([]*TrustNode, 3)
+	copy(nodes, nodesIn)
 
-	nodes := []*TrustNode{}
+	mutex := sync.Mutex{}
 	var wg sync.WaitGroup
 
-	for i := 0; i < len(quanta.NodeSecrets); i++ {
+	for i := 0; i < len(indexesToStart); i++ {
+		currentIndex := indexesToStart[i]
+
+		if nodes[currentIndex] != nil {
+			println("Error: Node is already started!")
+			continue
+		}
+
 		wg.Add(1)
 
-		os.Remove(fmt.Sprintf("./kv_db_%d.db", 5100+i))
+		if removePrevDB {
+			os.Remove(fmt.Sprintf("./kv_db_%d.db", 5100+currentIndex))
+		}
 
-		config := generateConfig(quanta, ethereum, etherEnv, i)
+		config := generateConfig(quanta, ethereum, etherEnv, currentIndex)
 
-		go func(config common.Config) {
+		go func(config common.Config, currentIndex int) {
 			defer wg.Done()
 
 			coin, err := coin.NewEthereumCoin(config.EthereumNetworkId, config.EthereumRpc)
@@ -66,22 +83,43 @@ func StartNodes(quanta *test.QuantaNodeSecrets, ethereum *test.EthereumTrustSecr
 
 			mutex.Lock()
 			node := bootstrapNode(config, coin)
-			nodes = append(nodes, node)
+			nodes[currentIndex] = node
 			mutex.Unlock()
 
 			registerNode(config, node)
-		}(*config)
-	}
+		}(*config, currentIndex)
 
+		time.Sleep(time.Second)
+	}
 	wg.Wait()
+	return nodes
+}
+
+func StartNodes(quanta *test.QuantaNodeSecrets, ethereum *test.EthereumTrustSecrets,
+	etherEnv test.EthereumEnv) []*TrustNode {
+	nodes := make([]*TrustNode, 3)
+	return StartNodesWithIndexes(quanta, ethereum, etherEnv, true, []int{0, 1, 2}, nodes)
+}
+
+func StartNodeListener(quanta *test.QuantaNodeSecrets, ethereum *test.EthereumTrustSecrets,
+	etherEnv test.EthereumEnv, nodes []*TrustNode) []*TrustNode {
+	fmt.Println("\nStarting Node again")
+	config := generateConfig(quanta, ethereum, etherEnv, 0)
+	nodes[0].StartListener(*config)
 
 	return nodes
 }
 
-func StopNodes(nodes []*TrustNode) {
+func StopNodeListener(node *TrustNode) {
+	fmt.Println("\nStopping node")
+	node.StopListener()
+}
 
-	for _, n := range nodes {
-		n.Stop()
+func StopNodes(nodes []*TrustNode, indexesToStart []int) {
+	fmt.Println("Stopping Nodes")
+	for _, n := range indexesToStart {
+		nodes[n].Stop()
+		nodes[n] = nil
 	}
 }
 
