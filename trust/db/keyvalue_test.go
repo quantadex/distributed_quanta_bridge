@@ -1,0 +1,41 @@
+package db
+
+import (
+	"testing"
+	"fmt"
+	"github.com/go-pg/pg"
+)
+
+func TestKeyValue(t *testing.T) {
+	DatabaseUrl := fmt.Sprintf("postgres://postgres:@localhost/crosschain_%d",0)
+	rDb := &DB{}
+	info, err := pg.ParseURL(DatabaseUrl)
+	if err != nil {
+		t.Error(err)
+	}
+	rDb.Connect(info.Network, info.User, info.Password, info.Database)
+	rDb.Debug()
+
+	err = UpdateValue(rDb, "key", "val1")
+	if err != nil {
+		t.Error(err)
+	}
+
+	v := GetValue(rDb, "key")
+	if v == nil {
+		t.Error("should found value")
+	}
+
+	println(v.Id, v.Value)
+
+	err = UpdateValue(rDb, "key", "val2")
+	v = GetValue(rDb, "key")
+	if v == nil {
+		t.Error("should found value")
+	}
+	if v.Value != "val2" {
+		t.Error("Unexpected value")
+	}
+
+	println(v.Id, v.Value)
+}
