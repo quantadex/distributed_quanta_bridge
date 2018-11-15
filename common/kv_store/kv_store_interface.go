@@ -1,5 +1,6 @@
 package kv_store
 
+
 /**
  * KVStore
  *
@@ -91,4 +92,8 @@ type KVStore interface {
 
 func NewKVStore() (KVStore, error) {
 	return &BoltStore{}, nil
+}
+
+func NewKVPGStore() (KVStore, error) {
+	return &PostgresKVStore{}, nil
 }

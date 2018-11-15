@@ -95,4 +95,6 @@ type ForwardInput struct {
 	ContractAddress common.Address
 	Trust           common.Address
 	QuantaAddr      string
+	TxHash			string
+	Blockchain      string
 }

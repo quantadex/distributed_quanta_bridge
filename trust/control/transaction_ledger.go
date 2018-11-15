@@ -139,7 +139,7 @@ func signTx(db kv_store.KVStore, table string, k string) bool {
 func GetLastBlock(db kv_store.KVStore, coinName string) (int64, bool) {
 	v, err := db.GetValue(LAST_BLOCK, coinName)
 	if err != nil {
-		return 0, false
+		return 0, true
 	}
 	if v == nil {
 		return 0, true
@@ -168,7 +168,7 @@ func setLastBlock(db kv_store.KVStore, coinName string, newVal int64) bool {
 	// }
 	err := db.SetValue(LAST_BLOCK, coinName, strconv.FormatInt(prevBlock, 10), strconv.FormatInt(newVal, 10))
 	if err != nil {
-		println("Bucket is not found.")
+		println("Bucket is not found." + err.Error())
 		return false
 	}
 	return true

@@ -27,6 +27,11 @@ func GetValue(db *DB, id string) *KeyValue {
 	return tx
 }
 
+func RemoveKey(db *DB, id string) error {
+	_, err := db.Model(&KeyValue{}).Where("id=?", id).Delete()
+	return err
+}
+
 func UpdateValue(db *DB, id string, value string) error {
 	tx := &KeyValue{ id, value, time.Now() }
 	_, err := db.Model(tx).OnConflict("(id) DO UPDATE").Set("value = EXCLUDED.value,updated = EXCLUDED.updated").Insert()

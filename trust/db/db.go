@@ -27,12 +27,12 @@ func (db *DB) Connect(addr, user, pass, database string) {
 			Database: "postgres",
 		})
 
-		//_, err := db.Exec("DROP DATABASE IF EXISTS " + database)
-		//if err != nil {
-		//	panic(err)
-		//}
+		_, err := db.Exec("DROP DATABASE IF EXISTS " + database)
+		if err != nil {
+			panic(err)
+		}
 
-		_, err := db.Exec("CREATE DATABASE " + database)
+		_, err = db.Exec("CREATE DATABASE " + database)
 		if err != nil {
 			panic(err)
 		}
@@ -44,6 +44,7 @@ func (db *DB) Connect(addr, user, pass, database string) {
 		Password: pass,
 		Database: database,
 	})
+
 	if db.DebugSQL {
 		db.db.OnQueryProcessed(func(event *pg.QueryProcessedEvent) {
 			log.Println(event.FormattedQuery())

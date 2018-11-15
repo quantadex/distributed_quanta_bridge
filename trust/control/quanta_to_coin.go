@@ -17,6 +17,7 @@ import (
 	"strconv"
 	"strings"
 	"time"
+	"github.com/quantadex/distributed_quanta_bridge/trust/db"
 )
 
 const QUANTA = "QUANTA"
@@ -30,7 +31,8 @@ const DQ_QUANTA2COIN = "DQ_QUANTA2COIN"
  */
 type QuantaToCoin struct {
 	logger              logger.Logger
-	db                  kv_store.KVStore
+	db					kv_store.KVStore
+	rDb					*db.DB
 	coinChannel         coin.Coin
 	quantaChannel       quanta.Quanta
 	quantaTrustAddress  string
@@ -51,7 +53,8 @@ type QuantaToCoin struct {
  * All modules must already have been initialized and passed in here.
  */
 func NewQuantaToCoin(log logger.Logger,
-	db kv_store.KVStore,
+	db_ kv_store.KVStore,
+	rDb *db.DB,
 	c coin.Coin,
 	q quanta.Quanta,
 	man *manifest.Manifest,
@@ -64,7 +67,8 @@ func NewQuantaToCoin(log logger.Logger,
 	nodeID int) *QuantaToCoin {
 	res := &QuantaToCoin{}
 	res.logger = log
-	res.db = db
+	res.db = db_
+	res.rDb = rDb
 	res.coinChannel = c
 	res.quantaChannel = q
 	res.quantaTrustAddress = quantaTrustAddress
@@ -84,14 +88,16 @@ func NewQuantaToCoin(log logger.Logger,
 			log.Error("Unable to decode refund")
 			return err
 		}
-
-		refKey := getKeyName(withdrawal.CoinName, withdrawal.DestinationAddress, withdrawal.QuantaBlockID)
-		state := getState(db, QUANTA_CONFIRMED, refKey)
-		if state == CONFIRMED {
-			return nil
+		tx := db.GetTransaction(rDb, withdrawal.Tx)
+		if tx != nil {
+			// we're not going to sign again
+			if tx.Signed == false {
+				return nil
+			}
+			log.Error("Unable to verify refund " + tx.Tx)
 		}
-		log.Error("Unable to verify refund " + refKey + " " + state)
-		return errors.New("Unable to verify: " + refKey)
+
+		return errors.New("Unable to verify: " + withdrawal.Tx)
 	}
 
 	res.cosi.Persist = func(msg string) error {
@@ -101,12 +107,10 @@ func NewQuantaToCoin(log logger.Logger,
 			return err
 		}
 
-		refKey := getKeyName(withdrawal.CoinName, withdrawal.DestinationAddress, withdrawal.QuantaBlockID)
-
-		success := signTx(db, QUANTA_CONFIRMED, refKey)
-		if !success {
-			res.logger.Error("Failed to confirm transaction")
-			return errors.New("Failed to confirm transaction")
+		err = db.SignWithdrawal(rDb, withdrawal)
+		if err != nil {
+			res.logger.Error("Failed to confirm transaction: " + err.Error())
+			return errors.New("Failed to confirm transaction: "+ err.Error())
 		}
 		return nil
 	}
@@ -179,7 +183,7 @@ func (c *QuantaToCoin) WithdrawalLoop(w *coin.Withdrawal) {
 // Receives withdrawal with all of the signatures - queue it properly
 // for submission, and retry as neccessary
 func (c *QuantaToCoin) SubmitWithdrawal(w *coin.Withdrawal) {
-	InitLedger(c.db)
+	//InitLedger(c.db)
 
 	key := strconv.Itoa(int(w.TxId))
 	msg, _ := json.Marshal(w)
@@ -212,12 +216,20 @@ func (c *QuantaToCoin) DoLoop(cursor int64) ([]quanta.Refund, string, error) {
 
 	// separate confirm, and sign as two different stages
 	for _, refund := range refunds {
-		refKey := getKeyName(refund.CoinName, strings.ToLower(common.HexToAddress(refund.DestinationAddress).Hex()), int64(refund.OperationID))
-		c.logger.Infof("Confirm Refund = %s tx=%s pt=%d", refKey, refund.TransactionId, refund.PageTokenID)
-		confirmTx(c.db, QUANTA_CONFIRMED, refKey)
+		c.logger.Infof("Confirm Refund tx=%s pt=%d", refund.TransactionId, refund.PageTokenID)
 
-		c.deferQ.Put(DQ_QUANTA2COIN, &refund)
+		w := &coin.Withdrawal{
+			Tx: 				refund.TransactionId,
+			CoinName:           refund.CoinName,
+			DestinationAddress: refund.DestinationAddress,
+			QuantaBlockID:      refund.OperationID,
+			Amount:             coin.StellarToWei(refund.Amount),
+		}
+		db.ConfirmWithdrawal(c.rDb, w)
+
+		c.deferQ.Put(DQ_QUANTA2COIN, w)
 		cursor = refund.PageTokenID
+
 		success := setLastBlock(c.db, QUANTA, refund.PageTokenID)
 		if !success {
 			c.logger.Error("Failed to mark block as signed")
@@ -226,15 +238,18 @@ func (c *QuantaToCoin) DoLoop(cursor int64) ([]quanta.Refund, string, error) {
 	}
 
 	// TODO: make this process multiple refunds in one pass
-	refundI, _ := c.deferQ.Get(DQ_QUANTA2COIN)
+	for {
+		refundI, _ := c.deferQ.Get(DQ_QUANTA2COIN)
 
-	if refundI != nil {
-		refund := refundI.(*quanta.Refund)
+		if refundI == nil {
+			break
+		}
+		w := refundI.(*coin.Withdrawal)
 
 		//TODO: do checksum check, should bounce back the payment
-		if refund.DestinationAddress == "" {
+		if w.DestinationAddress == "" {
 			c.logger.Error("Refund is missing destination address, skipping.")
-		} else if refund.Amount == uint64(0) {
+		} else if w.Amount == uint64(0) {
 			c.logger.Error("Amount is too small")
 		} else if c.nodeID == 0 {
 			txId, err := c.coinChannel.GetTxID(common.HexToAddress(c.coinContractAddress))
@@ -242,15 +257,10 @@ func (c *QuantaToCoin) DoLoop(cursor int64) ([]quanta.Refund, string, error) {
 				c.logger.Error("Could not get txID: " + err.Error() + " " + c.coinContractAddress)
 				//TODO: How to handle this?
 			}
-			w := coin.Withdrawal{
-				TxId:               txId + 1,
-				CoinName:           refund.CoinName,
-				DestinationAddress: refund.DestinationAddress,
-				QuantaBlockID:      refund.OperationID,
-				Amount:             coin.StellarToWei(refund.Amount),
-			}
+			w.TxId = txId + 1
+
 			c.logger.Infof("Start new round %s to=%s amount=%d", w.CoinName, w.DestinationAddress, w.Amount)
-			encoded, err := c.coinChannel.EncodeRefund(w)
+			encoded, err := c.coinChannel.EncodeRefund(*w)
 
 			if err != nil {
 				c.logger.Error("Failed to encode refund " + err.Error())
@@ -272,7 +282,7 @@ func (c *QuantaToCoin) DoLoop(cursor int64) ([]quanta.Refund, string, error) {
 				// save in eth_tx_log_signed (kvstore) [S=signed,X=submitted,F=failed(uncoverable), R=retry(connection failed)] ; recoverable=RPC not available
 				c.logger.Infof("Great! Cosi successfully signed refund")
 				//c.SubmitWithdrawal(&w)
-				tx, err := c.coinChannel.SendWithdrawal(common.HexToAddress(c.coinContractAddress), c.coinkM.GetPrivateKey(), &w)
+				tx, err := c.coinChannel.SendWithdrawal(common.HexToAddress(c.coinContractAddress), c.coinkM.GetPrivateKey(), w)
 				if err != nil {
 					c.logger.Error(err.Error())
 				}
@@ -282,6 +292,7 @@ func (c *QuantaToCoin) DoLoop(cursor int64) ([]quanta.Refund, string, error) {
 			}
 		}
 	}
+
 	c.deferQ.AddTick()
 	c.logger.Infof("Next cursor is = %d, numRefunds=%d, txId=%s", cursor, len(refunds), txResult)
 

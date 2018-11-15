@@ -17,6 +17,8 @@ import (
 	"github.com/quantadex/distributed_quanta_bridge/trust/registrar_client"
 	"strconv"
 	"time"
+	"github.com/quantadex/distributed_quanta_bridge/trust/db"
+	"github.com/go-pg/pg"
 )
 
 const (
@@ -40,6 +42,7 @@ type TrustNode struct {
 	q        quanta.Quanta
 	c        coin.Coin
 	db       kv_store.KVStore
+	rDb		 *db.DB
 	peer     peer_contact.PeerContact
 	reg      registrar_client.RegistrarContact
 	cTQ      *control.CoinToQuanta
@@ -98,13 +101,13 @@ func initNode(config common.Config, targetCoin coin.Coin) (*TrustNode, bool) {
 
 	needsInitialize := !kv_store.DbExists(config.KvDbName)
 
-	node.db, err = kv_store.NewKVStore()
+	node.db, err = kv_store.NewKVPGStore()
 	if err != nil {
 		node.log.Error("Failed to create database")
 		return nil, false
 	}
 
-	err = node.db.Connect(config.KvDbName)
+	err = node.db.Connect(config.DatabaseUrl)
 	if err != nil {
 		node.log.Error("Failed to connect to database")
 		return nil, false
@@ -114,6 +117,18 @@ func initNode(config common.Config, targetCoin coin.Coin) (*TrustNode, bool) {
 		node.log.Info("Initialize ledger")
 		control.InitLedger(node.db)
 	}
+
+	// connect to do
+	node.rDb = &db.DB{}
+	info, err := pg.ParseURL(config.DatabaseUrl)
+	if err != nil {
+		node.log.Error(err.Error())
+	}
+	//node.rDb.Debug()
+	node.rDb.Connect(info.Network, info.User, info.Password, info.Database)
+	db.MigrateTx(node.rDb)
+	db.MigrateKv(node.rDb)
+	db.MigrateXC(node.rDb)
 
 	node.c = targetCoin
 
@@ -241,6 +256,7 @@ func (n *TrustNode) initTrust(config common.Config) {
 	n.log.Info("Trust initialized")
 	n.qTC = control.NewQuantaToCoin(n.log,
 		n.db,
+		n.rDb,
 		n.c,
 		n.q,
 		n.man,

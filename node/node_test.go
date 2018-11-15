@@ -12,6 +12,7 @@ import (
 	"sync"
 	"testing"
 	"time"
+	"github.com/quantadex/distributed_quanta_bridge/trust/db"
 )
 
 func generateConfig(quanta *test.QuantaNodeSecrets, ethereum *test.EthereumTrustSecrets,
@@ -34,6 +35,7 @@ func generateConfig(quanta *test.QuantaNodeSecrets, ethereum *test.EthereumTrust
 		EthereumRpc:        etherNet.Rpc,
 		EthereumKeyStore:   ethereum.NodeSecrets[index],
 		EthereumTrustAddr:  ethereum.TrustContract,
+		DatabaseUrl:		fmt.Sprintf("postgres://postgres:@localhost/crosschain_%d",index),
 	}
 }
 
@@ -86,6 +88,7 @@ func StartNodesWithIndexes(quanta *test.QuantaNodeSecrets, ethereum *test.Ethere
 			nodes[currentIndex] = node
 			mutex.Unlock()
 
+			db.EmptyTable(node.rDb)
 			registerNode(config, node)
 		}(*config, currentIndex)
 

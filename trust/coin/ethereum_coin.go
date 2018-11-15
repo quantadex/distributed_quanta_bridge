@@ -24,6 +24,7 @@ type EthereumCoin struct {
 
 type EncodedMsg struct {
 	Message string
+	Tx string
 	BlockNumber int64
 }
 
@@ -105,7 +106,7 @@ func (c *EthereumCoin) EncodeRefund(w Withdrawal) (string, error) {
 	//binary.Write(&encoded, binary.BigEndian, abi.U256(new(big.Int).SetUint64(uint64(w.Amount))))
 
 	//println("# of bytes " , encoded.Len(), common2.Bytes2Hex(encoded.Bytes()))
-	data, err := json.Marshal(&EncodedMsg{ common2.Bytes2Hex(encoded.Bytes()), w.QuantaBlockID})
+	data, err := json.Marshal(&EncodedMsg{ common2.Bytes2Hex(encoded.Bytes()),  w.Tx, w.QuantaBlockID})
 	return common2.Bytes2Hex(data), err
 }
 
@@ -118,6 +119,7 @@ func (c *EthereumCoin) DecodeRefund(encoded string) (*Withdrawal, error) {
 	}
 
 	w := &Withdrawal{}
+	w.Tx = msg.Tx
 	w.QuantaBlockID = msg.BlockNumber
 	decoded = common2.Hex2Bytes(msg.Message)
 

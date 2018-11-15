@@ -24,8 +24,10 @@ import (
 const DEPOSIT="deposit"
 const WITHDRAWAL="withdrawal"
 
-const CONFIRMED="confirmed"
-const SIGNED="signed"
+const SUBMIT_QUEUE="queue"
+const SUBMIT_RECOVERABLE="recoverable"
+const SUBMIT_FATAL="fatal"
+const SUBMIT_SUCCESS="success"
 
 type Transaction struct {
 	Type   string // deposit | withdrawal
@@ -36,7 +38,8 @@ type Transaction struct {
 	BlockId int64
 	From string
 	To string
-	Status string
+	Signed bool 		`sql:",notnull"`
+	SubmitState string
 	SubmitTx string
 	SubmitSigners string
 	SubmitConfirm_block int
@@ -53,7 +56,7 @@ func ConfirmDeposit(db *DB, dep *coin.Deposit) error {
 		BlockId: dep.BlockID,
 		From: dep.SenderAddr,
 		To: dep.QuantaAddr,
-		Status: CONFIRMED,
+		Signed: false,
 	}
 
 	return db.Insert(tx)
@@ -62,8 +65,16 @@ func ConfirmDeposit(db *DB, dep *coin.Deposit) error {
 func SignDeposit(db *DB, dep *coin.Deposit) error {
 	tx := &Transaction{Type: DEPOSIT, Tx: dep.Tx}
 	tx.SubmitDate = time.Now()
-	tx.Status = SIGNED
-	_, err := db.Model(tx).Column("Status","SubmitDate").Where("Tx",dep.Tx).Returning("*").Update()
+	tx.Signed = true
+	_, err := db.Model(tx).Column("Signed").Where("Tx=?",dep.Tx).Returning("*").Update()
+	return err
+}
+
+func ChangeSubmitState(db *DB, id string, state string) error {
+	tx := &Transaction{Tx: id}
+	tx.SubmitDate = time.Now()
+	tx.SubmitState = state
+	_, err := db.Model(tx).Column("Signed","SubmitDate").Where("Tx=?",state).Returning("*").Update()
 	return err
 }
 
@@ -78,7 +89,7 @@ func ConfirmWithdrawal(db *DB, dep *coin.Withdrawal) error {
 		BlockId: dep.QuantaBlockID,
 		From: "",
 		To: dep.DestinationAddress,
-		Status: CONFIRMED,
+		Signed: false,
 	}
 
 	return db.Insert(tx)
@@ -87,15 +98,31 @@ func ConfirmWithdrawal(db *DB, dep *coin.Withdrawal) error {
 func SignWithdrawal(db *DB, dep *coin.Withdrawal) error {
 	tx := &Transaction{Type: WITHDRAWAL, Tx: dep.Tx}
 	tx.SubmitDate = time.Now()
-	tx.Status = SIGNED
-	_, err := db.Model(tx).Column("Status","SubmitDate").Where("Tx",dep.Tx).Returning("*").Update()
+	tx.Signed = true
+	_, err := db.Model(tx).Column("signed").Where("Tx=?",dep.Tx).Returning("*").Update()
 	return err
 }
 
-func Migrate(db *DB) error {
+func MigrateTx(db *DB) error {
 	err := db.CreateTable(&Transaction{})
 	if err != nil {
 		return err
 	}
+	return err
+}
+
+func GetTransaction(db *DB, txID string) *Transaction {
+	tx := &Transaction{}
+	err := db.Model(tx).Where("Tx=?", txID ).Select()
+	if err != nil {
+		println("unable to get tx" + err.Error())
+		return nil
+	}
+	return tx
+}
+
+func EmptyTable(db *DB) error {
+	st, err := db.db.Prepare("TRUNCATE table transactions")
+	_, err = st.Exec()
 	return err
 }

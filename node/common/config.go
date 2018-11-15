@@ -6,6 +6,7 @@ type Config struct {
 	ListenPort         int
 	UsePrevKeys        bool
 	KvDbName           string
+	DatabaseUrl		   string
 	CoinName           string
 	IssuerAddress      string
 	NodeKey            string
