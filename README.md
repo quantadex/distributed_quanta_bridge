@@ -1,5 +1,32 @@
 # Crosschain Architecture
 
+# Install Geth
+
+    # https://github.com/ethereum/go-ethereum/wiki/Installation-Instructions-for-Ubuntu
+    $ sudo apt-get install software-properties-common
+    $ sudo add-apt-repository -y ppa:ethereum/ethereum
+    $ sudo apt-get update
+    $ sudo apt-get install ethereum
+
+    $ geth version
+    Version: 1.8.17-stable
+    Go Version: go1.10
+
+# Testing
+
+## Start the Ethereum Client (geth)
+
+    cd blockchain/ethereum
+    make start-geth
+
+## Start the Geth Miner
+
+    cd blockchain/ethereum
+    make mine-geth
+
+## Run all tests
+
+    go test -v ./common/... ./node/... ./registrar/... ./trust/...
 
 ## Configuring Lumen
 
@@ -70,5 +97,33 @@ It's possible that eth timestamp is a head of QUANTA timestamp, vice versa. So w
 
     web3.eth.getBlockNumber((err, res) => {console.log(res)})
     4345932
+
+# Trust Node BTC Wallets
+
+The `key_manager.BitcoinKeyManager` expects a wallet bdb file containing a bucket called `btc.keymanager.quanta`, and two keys: `wif` and `wifLen`.
+
+The `keystore/init-btc-wallet.go` CLI tool can help create this database file.
+
+* Create a wallet db with a randomly generated private key
+
+      $ go run init-bitcoin-wallet.go mywallet.db
+      {
+        "wif": "L3JmFBnbyDbCv2hcfmWpQ29dprUEGNoE9W5T1jyDwG8qXzBvApHt",
+        "address": "1DHKnigvnvBQomDQ5iEVFToz4NG6JLgoNU"
+      }
+
+* Create a wallet db from an existing WIF
+
+      $ go run init-bitcoin-wallet.go mywallet.db KzjFnmUNMQhqRiztb1DvmDzS24JqDxFFbaBjWHy8LmNnciPsrbnv
+      {
+        "wif": "KzjFnmUNMQhqRiztb1DvmDzS24JqDxFFbaBjWHy8LmNnciPsrbnv",
+        "address": "18AoQa6L4BXCnwZSb4osAEHqX8QTGg17mt"
+      }
+
+* `test_btc_wallet.db`
+
+   This file was created using the aforementioned CLI and is used by the unit tests.
+
+   **Do not modify!**
 
 ## Links

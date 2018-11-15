@@ -20,7 +20,7 @@ type KeyManager interface {
 
     /**
      * LoadNodeKeys
-     * 
+     *
      * Loads the keys from the node key store.
      */
     LoadNodeKeys(privKey string) error
@@ -83,4 +83,8 @@ func NewKeyManager(network string) (KeyManager, error) {
 
 func NewEthKeyManager() (KeyManager, error) {
     return &EthereumKeyManager{}, nil
+}
+
+func NewBtcKeyManager() (KeyManager, error) {
+    return &BitcoinKeyManager{}, nil
 }

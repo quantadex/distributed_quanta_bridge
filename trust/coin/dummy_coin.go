@@ -60,6 +60,10 @@ func (c *DummyCoin) Attach() error {
 	return nil
 }
 
+func (c *DummyCoin) Detach() error {
+	return nil
+}
+
 func (c *DummyCoin) EncodeRefund(w Withdrawal) (string, error) {
 	return "", nil
 }

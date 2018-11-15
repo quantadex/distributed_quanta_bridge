@@ -79,6 +79,7 @@ type Balance struct {
 }
 
 // remember to test coins < 10^7
+// https://www.stellar.org/developers/guides/concepts/assets.html#amount-precision-and-representation
 func (q *QuantaClient) CreateProposeTransaction(deposit *coin.Deposit) (string, error) {
 	amount := fmt.Sprintf("%.7f", float64(deposit.Amount)/10000000)
 	println("Propose TX: ", deposit.CoinName, q.Issuer, amount, deposit.QuantaAddr)

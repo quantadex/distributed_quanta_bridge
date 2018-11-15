@@ -333,6 +333,12 @@ func registerNode(config common.Config, node *TrustNode) error {
 
 func (n *TrustNode) Stop() {
 	n.doneChan <- true
+
+	err := n.c.Detach()
+	if err != nil {
+		n.log.Error("Failed to detach from coin " + err.Error())
+	}
+
 	n.listener.Stop()
 	n.restApi.Stop()
 }

@@ -32,9 +32,64 @@
   branch = "master"
   digest = "1:0bd9f11575e82b723837f50e170d010ec29a50aa8ca02a962c439146f03aea55"
   name = "github.com/btcsuite/btcd"
-  packages = ["btcec"]
+  packages = [
+    "btcec",
+    "btcjson",
+    "chaincfg",
+    "chaincfg/chainhash",
+    "rpcclient",
+    "txscript",
+    "wire",
+  ]
   pruneopts = "T"
   revision = "67e573d211ace594f1366b4ce9d39726c4b19bd0"
+
+[[projects]]
+  branch = "master"
+  digest = "1:30d4a548e09bca4a0c77317c58e7407e2a65c15325e944f9c08a7b7992f8a59e"
+  name = "github.com/btcsuite/btclog"
+  packages = ["."]
+  pruneopts = "T"
+  revision = "84c8d2346e9fc8c7b947e243b9c24e6df9fd206a"
+
+[[projects]]
+  branch = "master"
+  digest = "1:4b2262fd5a250400e8fd6aa3fde325dc6d547929c375636ad9b2c9cc352c7054"
+  name = "github.com/btcsuite/btcutil"
+  packages = [
+    ".",
+    "base58",
+    "bech32",
+  ]
+  pruneopts = "T"
+  revision = "ab6388e0c60ae4834a1f57511e20c17b5f78be4b"
+
+[[projects]]
+  branch = "master"
+  digest = "1:fec4a6b6f9410f43dd31a24debe29b2085020110a4d03907c0e08b644444a9c8"
+  name = "github.com/btcsuite/btcwallet"
+  packages = [
+    "walletdb",
+    "walletdb/bdb",
+  ]
+  pruneopts = "T"
+  revision = "9eec895db8ffa3574bb96f132c5d6eaa22bea3cf"
+
+[[projects]]
+  branch = "master"
+  digest = "1:422f38d57f1bc0fdc34f26d0f1026869a3710400b09b5478c9288efa13573cfa"
+  name = "github.com/btcsuite/go-socks"
+  packages = ["socks"]
+  pruneopts = "T"
+  revision = "4720035b7bfd2a9bb130b1c184f8bbe41b6f0d0f"
+
+[[projects]]
+  branch = "master"
+  digest = "1:0c86bb908769e764c918826ff3809c1ecc3a7a41f715dbac69ef2bd5c1357c3c"
+  name = "github.com/btcsuite/websocket"
+  packages = ["."]
+  pruneopts = "T"
+  revision = "31079b6807923eb23992c421b114992b95131b55"
 
 [[projects]]
   digest = "1:fed1f537c2f1269fe475a8556c393fe466641682d73ef8fd0491cd3aa1e47bad"
@@ -43,6 +98,14 @@
   pruneopts = "T"
   revision = "deb3ae2ef2610fde3330947281941c562861188b"
   version = "2018.01.18"
+
+[[projects]]
+  digest = "1:aeb8d6f9c2846d02201f90806372a105f85dc7a5065abdb34a64a3ed896e90c9"
+  name = "github.com/coreos/bbolt"
+  packages = ["."]
+  pruneopts = "T"
+  revision = "583e8937c61f1af6513608ccc75c97b6abdf4ff9"
+  version = "v1.3.0"
 
 [[projects]]
   digest = "1:9f42202ac457c462ad8bb9642806d275af9ab4850cf0b1960b9c6f083d4a309a"
@@ -540,6 +603,15 @@
   analyzer-version = 1
   input-imports = [
     "github.com/boltdb/bolt",
+    "github.com/btcsuite/btcd/btcec",
+    "github.com/btcsuite/btcd/chaincfg",
+    "github.com/btcsuite/btcd/chaincfg/chainhash",
+    "github.com/btcsuite/btcd/rpcclient",
+    "github.com/btcsuite/btcd/txscript",
+    "github.com/btcsuite/btcd/wire",
+    "github.com/btcsuite/btcutil",
+    "github.com/btcsuite/btcwallet/walletdb",
+    "github.com/btcsuite/btcwallet/walletdb/bdb",
     "github.com/emirpasic/gods/lists/doublylinkedlist",
     "github.com/ethereum/go-ethereum",
     "github.com/ethereum/go-ethereum/accounts/abi",

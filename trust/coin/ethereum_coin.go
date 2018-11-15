@@ -43,6 +43,10 @@ func (c *EthereumCoin) Attach() error {
 	return nil
 }
 
+func (c *EthereumCoin) Detach() error {
+	panic("implement me")
+}
+
 func (c *EthereumCoin) GetTopBlockID() (int64, error) {
 	topBlockId, err := c.client.GetTopBlockNumber()
 	if err != nil {

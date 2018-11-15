@@ -1,4 +1,4 @@
-package coin
+package key_manager
 
 import (
 	"fmt"
@@ -8,7 +8,7 @@ import (
 	"github.com/ethereum/go-ethereum/core"
 	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/ethereum/go-ethereum/ethclient"
-	"github.com/quantadex/distributed_quanta_bridge/trust/key_manager"
+	"github.com/quantadex/distributed_quanta_bridge/trust/coin"
 	"math/big"
 	"strings"
 	"testing"
@@ -20,7 +20,7 @@ import (
 
 func TestCheckDepositNode(t *testing.T) {
 	network := test.ETHER_NETWORKS[test.ROPSTEN]
-	client := &Listener{NetworkID: network.NetworkId}
+	client := &coin.Listener{NetworkID: network.NetworkId}
 	ethereumClient, err := ethclient.Dial(network.Rpc)
 	if err != nil {
 		t.Error(err)
@@ -56,7 +56,7 @@ func TestCheckDepositNode(t *testing.T) {
 func TestForwardScan(t *testing.T) {
 	//to := "0xe0006458963c3773b051e767c5c63fee24cd7ff9"
 	network := test.ETHER_NETWORKS[test.ROPSTEN]
-	client := &Listener{NetworkID: network.NetworkId}
+	client := &coin.Listener{NetworkID: network.NetworkId}
 	ethereumClient, err := ethclient.Dial(network.Rpc)
 
 	if err != nil {
@@ -77,7 +77,7 @@ func TestForwardScan(t *testing.T) {
 }
 
 func TestWithdrawalTX(t *testing.T) {
-	km, _ := key_manager.NewEthKeyManager()
+	km, _ := NewEthKeyManager()
 	err := km.LoadNodeKeys("file://../../keystore/key--7cd737655dff6f95d55b711975d2a4ace32d256e")
 	if err != nil {
 		t.Error(err)
@@ -94,7 +94,7 @@ func TestWithdrawalTX(t *testing.T) {
 	sim := backends.NewSimulatedBackend(core.GenesisAlloc{
 		userAuth.From: {Balance: big.NewInt(10000000000)}}, 5000000)
 
-	w := &Withdrawal{
+	w := &coin.Withdrawal{
 		TxId:               1,
 		CoinName:           "ETH",
 		DestinationAddress: dest.From.Hex(),
@@ -103,15 +103,15 @@ func TestWithdrawalTX(t *testing.T) {
 		Signatures:         nil,
 	}
 
-	coin := &EthereumCoin{}
-	encoded, _ := coin.EncodeRefund(*w)
-	println(encoded)
+	mycoin := &coin.EthereumCoin{}
+	encoded, _ := mycoin.EncodeRefund(*w)
+	fmt.Printf("encoded: %s\n", encoded)
 	signed, _ := km.SignTransaction(encoded)
-	println("signed", signed)
+	fmt.Printf("signed: %s\n", signed)
 
 	w.Signatures = []string{signed, signed, signed}
 
-	client := &Listener{NetworkID: ROPSTEN_NETWORK_ID}
+	client := &coin.Listener{NetworkID: coin.ROPSTEN_NETWORK_ID}
 	tx, err := client.SendWithdrawal(sim, userAuth.From, userKey, w)
 
 	if err != nil {
@@ -142,7 +142,7 @@ s[hex] = 0x190f0f012abf3d8f222576a95622a0a9904a460a551b6b3e3671aecd1832f2b9
 */
 
 func TestWithdrawalGanacheTX(t *testing.T) {
-	w := &Withdrawal{
+	w := &coin.Withdrawal{
 		TxId:               10000,
 		CoinName:           "ETH",
 		DestinationAddress: "0xC5fdf4076b8F3A5357c5E395ab970B5B54098Fef",
@@ -152,12 +152,14 @@ func TestWithdrawalGanacheTX(t *testing.T) {
 	}
 
 	network := test.ETHER_NETWORKS[test.ROPSTEN]
-	coin, _ := NewEthereumCoin(network.NetworkId, network.Rpc)
-	coin.Attach()
+	coin, _ := coin.NewEthereumCoin(network.NetworkId, network.Rpc)
+	err := coin.Attach()
+	assert.NoError(err)
+	defer coin.Detach()
 	encoded, _ := coin.EncodeRefund(*w)
 	println(encoded)
 
-	km, _ := key_manager.NewEthKeyManager()
+	km, _ := NewEthKeyManager()
 	err := km.LoadNodeKeys(test.ROPSTEN_TRUST.NodeSecrets[0])
 	if err != nil {
 		t.Error(err)
@@ -184,16 +186,14 @@ func TestWithdrawalGanacheTX(t *testing.T) {
 func TestGanacheTX(t *testing.T) {
 	network := test.ETHER_NETWORKS[test.LOCAL]
 
-	coin, err := NewEthereumCoin(network.NetworkId, network.Rpc)
+	coin, err := coin.NewEthereumCoin(network.NetworkId, network.Rpc)
 	if err != nil {
 		t.Error(err)
 		return
 	}
 	err = coin.Attach()
-	if err != nil {
-		t.Error(err)
-		return
-	}
+	assert.NoError(err)
+	defer coin.Detach()
 	blockId, err := coin.GetTopBlockID()
 	println(blockId)
 

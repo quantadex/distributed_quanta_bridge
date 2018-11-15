@@ -11,7 +11,19 @@ func TestWeiToStellar(t *testing.T) {
 	assert.Equal(t, val, int64(0))
 
 	val = WeiToStellar(1000000000000000000)
-	assert.Equal(t, val, int64(10000000)) // equal to 1 stellar
+	assert.Equal(t, int64(val), int64(10000000)) // equal to 1 stellar
+}
+
+func TestStellarToWei(t *testing.T) {
+	val := StellarToWei(10000000)
+	assert.Equal(t, val, uint64(1000000000000000000))
+}
+
+func TestWeiToStellarToWei(t *testing.T) {
+	m := 1000000000000000000
+	x := WeiToStellar(int64(m))
+	n := StellarToWei(uint64(x))
+	assert.Equal(t, uint64(m), n)
 }
 
 func TestErc20AmountToStellar(t *testing.T) {

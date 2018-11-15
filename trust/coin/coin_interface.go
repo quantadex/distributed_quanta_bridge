@@ -35,7 +35,7 @@ type Withdrawal struct {
 
 /**
  * Coin
- * 
+ *
  * This module attaches to a coin-core (e.g. eth-core) node running on the same machine.
  * It is used to get the block updates from the coin as well as submit payment to the contract.
  *
@@ -47,6 +47,13 @@ type Coin interface {
      * Connect to the specified coin core node. Return error if failed.
      */
     Attach() error
+
+    /**
+     * Detach
+     *
+     * Disconnect to the specified coin core node. Return error if failed.
+     */
+    Detach() error
 
     /**
      * GetTopBlockID
