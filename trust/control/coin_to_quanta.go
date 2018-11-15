@@ -21,7 +21,7 @@ import (
 // consistency
 
 //TODO: Separate polling for coin & submitter
-//TODO: Use postgres for storage
+//TODO: Use postgres for db
 //TODO: ./node initdb
 /*
  Table: Deposits

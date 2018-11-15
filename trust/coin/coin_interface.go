@@ -12,6 +12,7 @@ import (
  * The deposit struct captures the data of making a deposit into the trust
  */
 type Deposit struct {
+    Tx string
     CoinName string // Type of coin (e.g. ETH)
     SenderAddr string
     QuantaAddr string // Destination quanta acount
@@ -25,6 +26,7 @@ type Deposit struct {
  * The data structure that needs to be filled out to do a succesful withdrawal.
  */
 type Withdrawal struct {
+    Tx string
     TxId uint64 // The Node authorizing this
     CoinName string // The type of coin (e.g. ETH)
     DestinationAddress string // Where this money is going

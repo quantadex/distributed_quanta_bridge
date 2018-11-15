@@ -44,7 +44,7 @@ type Client interface {
 }
 
 // Storage is an interface that must be implemented by an object using
-// persistent storage.
+// persistent db.
 type Storage interface {
 	// GetEthereumBlockToProcess gets the number of Ethereum block to process. `0` means the
 	// processing should start from the current block.
