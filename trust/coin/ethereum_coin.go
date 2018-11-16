@@ -44,7 +44,7 @@ func (c *EthereumCoin) Attach() error {
 }
 
 func (c *EthereumCoin) Detach() error {
-	panic("implement me")
+	return nil  // TODO
 }
 
 func (c *EthereumCoin) GetTopBlockID() (int64, error) {
