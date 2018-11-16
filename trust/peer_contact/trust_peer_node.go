@@ -19,9 +19,11 @@ type TrustPeerNode struct {
 	peer   PeerContact
 	nodeID int
 	q      queue.Queue
+	queueName string
+	apiUrl string
 }
 
-func NewTrustPeerNode(man *manifest.Manifest, peer PeerContact, nodeID int, q queue.Queue) *TrustPeerNode {
+func NewTrustPeerNode(man *manifest.Manifest, peer PeerContact, nodeID int, q queue.Queue, queueName string, apiUrl string) *TrustPeerNode {
 	//fmt.Printf("setup peer node\n")
 	//for _, p := range man.Nodes {
 	//	println(p.Port)
@@ -31,11 +33,13 @@ func NewTrustPeerNode(man *manifest.Manifest, peer PeerContact, nodeID int, q qu
 		peer:   peer,
 		nodeID: nodeID,
 		q:      q,
+		queueName: queueName,
+		apiUrl: apiUrl,
 	}
 }
 
-func (t *TrustPeerNode) GetRefundMsg() *cosi.CosiMessage {
-	data, err := t.q.Get(queue.REFUNDMSG_QUEUE)
+func (t *TrustPeerNode) GetMsg() *cosi.CosiMessage {
+	data, err := t.q.Get(t.queueName)
 	if err != nil {
 		//fmt.Printf("queue is empty\n")
 		return nil
@@ -52,8 +56,8 @@ func (t *TrustPeerNode) GetRefundMsg() *cosi.CosiMessage {
 
 func (t *TrustPeerNode) SendMsg(destinationNodeID int, msg interface{}) error {
 	peer := t.man.Nodes[destinationNodeID]
-	url := fmt.Sprintf("http://%s:%s/node/api/refund", peer.IP, peer.Port)
-	fmt.Println("Send to peer " + url)
+	url := fmt.Sprintf("http://%s:%s%s", peer.IP, peer.Port, t.apiUrl)
+	//fmt.Println("Send to peer " + url)
 
 	//if signature := crypto.SignMessage(msg, t.peer.privateKey); signature != nil {
 	//msg.Signature = *signature

@@ -195,6 +195,7 @@ func (l *Listener) GetNativeDeposits(blockNumber int64, toAddress map[string]str
 					SenderAddr: tx.To().Hex(),
 					Amount:     WeiToStellar(tx.Value().Int64()),
 					BlockID:    blockNumber,
+					Tx: tx.Hash().Hex(),
 				})
 			}
 		}
@@ -274,6 +275,7 @@ func (l *Listener) FilterTransferEvent(blockNumber int64, toAddress map[string]s
 					CoinName:   vLog.Address.Hex(),
 					SenderAddr: transferEvent.To.Hex(),
 					Amount:     Erc20AmountToStellar(transferEvent.Tokens.Int64(), dec),
+					Tx: vLog.TxHash.Hex(),
 				})
 			}
 
@@ -301,7 +303,7 @@ func (l *Listener) GetForwardContract(blockNumber int64) ([]*ForwardInput, error
 	events := []*ForwardInput{}
 	for _, tx := range blocks.Transactions() {
 		data := common.Bytes2Hex(tx.Data())
-		println(data)
+		//println(data)
 
 		// matches our forwarding contract
 		if strings.HasPrefix(data, Forwarder.ForwarderBin) || strings.HasPrefix(data, Forwarder.ForwarderBinV2) {
@@ -330,6 +332,7 @@ func (l *Listener) GetForwardContract(blockNumber int64) ([]*ForwardInput, error
 				continue
 			}
 
+			input.Blockchain = BLOCKCHAIN_ETH
 			input.ContractAddress = tr.ContractAddress
 			input.Trust = vals[0].(common.Address)
 			input.QuantaAddr = vals[1].(string)

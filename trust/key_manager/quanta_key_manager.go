@@ -38,7 +38,7 @@ func (k *QuantaKeyManager) SignTransaction(base64 string) (string, error) {
 		println("Sign error")
 		return "", err
 	}
-	return xdr.MarshalBase64(b.E)
+	return xdr.MarshalBase64(b.E.Signatures[0])
 }
 
 

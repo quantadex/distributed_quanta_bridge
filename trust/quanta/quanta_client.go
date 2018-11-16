@@ -3,10 +3,9 @@ package quanta
 import (
 	"github.com/quantadex/distributed_quanta_bridge/common/kv_store"
 	"github.com/quantadex/distributed_quanta_bridge/trust/coin"
-	"github.com/quantadex/distributed_quanta_bridge/trust/peer_contact"
-	b "github.com/stellar/go/build"
-	"github.com/stellar/go/clients/horizon"
+	"github.com/stellar/go/build"
 
+	"github.com/stellar/go/clients/horizon"
 	"encoding/base64"
 	"encoding/json"
 	"errors"
@@ -20,10 +19,13 @@ import (
 	"strconv"
 	"strings"
 	"time"
+	"github.com/quantadex/distributed_quanta_bridge/trust/db"
+	"log"
 )
 
 type QuantaClientOptions struct {
 	Logger     logger.Logger
+	Db		   *db.DB
 	Network    string
 	Issuer     string // pub key
 	HorizonUrl string
@@ -83,14 +85,14 @@ func (q *QuantaClient) CreateProposeTransaction(deposit *coin.Deposit) (string, 
 	amount := fmt.Sprintf("%.7f", float64(deposit.Amount)/10000000)
 	println("Propose TX: ", deposit.CoinName, q.Issuer, amount, deposit.QuantaAddr)
 
-	tx, err := b.Transaction(
-		b.Network{q.Network},
-		b.SourceAccount{q.Issuer},
-		b.AutoSequence{q.horizonClient},
+	tx, err := build.Transaction(
+		build.Network{q.Network},
+		build.SourceAccount{q.Issuer},
+		build.AutoSequence{q.horizonClient},
 		//b.Sequence{ 0 },
-		b.Payment(
-			b.Destination{deposit.QuantaAddr},
-			b.CreditAmount{deposit.CoinName, q.Issuer, amount},
+		build.Payment(
+			build.Destination{deposit.QuantaAddr},
+			build.CreditAmount{deposit.CoinName, q.Issuer, amount},
 		),
 	)
 
@@ -141,10 +143,7 @@ func (q *QuantaClient) Attach() error {
 }
 
 func (q *QuantaClient) AttachQueue(kv kv_store.KVStore) error {
-	q.kv = kv
-	q.kv.CreateTable(kv_store.PENDING_QUANTA_TX)
-	q.kv.CreateTable(kv_store.COMPLETED_QUANTA_TX)
-	q.worker = NewSubmitWorker(q.HorizonUrl, q.Logger)
+	q.worker = NewSubmitWorker(q.QuantaClientOptions)
 	q.worker.AttachQueue(q.kv)
 	go q.worker.Dispatch()
 	return nil
@@ -292,14 +291,37 @@ func (q *QuantaClient) GetRefundsInBlock(cursor int64, trustAddress string) ([]R
 	return refunds, cursor, nil
 }
 
-func (q *QuantaClient) ProcessDeposit(deposit peer_contact.PeerMessage) error {
-	//x, _ := q.GetBalance("poojakishoreshah", "QCAO4HRMJDGFPUHRCLCSWARQTJXY2XTAFQUIRG2FAR3SCF26KQLAWZRN")
-	//x, _ := q.GetTopBlockID("QCAO4HRMJDGFPUHRCLCSWARQTJXY2XTAFQUIRG2FAR3SCF26KQLAWZRN")
-	//fmt.Println(x)
-	data, err := json.Marshal(deposit)
+func (q *QuantaClient) postProcessTransaction(base64 string, sigs []string) (string, error) {
+	txe := &xdr.TransactionEnvelope{}
+	err := xdr.SafeUnmarshalBase64(base64, txe)
 	if err != nil {
-		return err
+		return "", err
 	}
-	key := strconv.Itoa(int(deposit.Proposal.BlockID)) + deposit.Proposal.CoinName + deposit.Proposal.QuantaAdress
-	return q.kv.SetValue(kv_store.PENDING_QUANTA_TX, key, "", string(data))
+
+	b := &build.TransactionEnvelopeBuilder{E: txe}
+	b.Init()
+
+	err = b.MutateTX(build.Network{q.QuantaClientOptions.Network})
+	if err != nil {
+		log.Fatal(err)
+	}
+	decs := []xdr.DecoratedSignature{}
+	for _, s := range sigs {
+		xs := xdr.DecoratedSignature{}
+		err := xdr.SafeUnmarshalBase64(s, &xs)
+		if err != nil {
+			q.Logger.Error("unmarshall error sig")
+		}
+		decs = append(decs, xs)
+	}
+
+	b.E.Signatures = decs
+
+	return xdr.MarshalBase64(b.E)
+}
+
+func (q *QuantaClient) ProcessDeposit(deposit *coin.Deposit, proposed string) error {
+	txe , err := q.postProcessTransaction(proposed, deposit.Signatures)
+	println(txe, err)
+	return db.ChangeSubmitQueue(q.Db, deposit.Tx, txe)
 }

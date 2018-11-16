@@ -2,8 +2,6 @@ package control
 
 import (
 	"fmt"
-	"strings"
-
 	"github.com/ethereum/go-ethereum/common"
 	common2 "github.com/quantadex/distributed_quanta_bridge/common"
 	"github.com/quantadex/distributed_quanta_bridge/common/kv_store"
@@ -13,36 +11,21 @@ import (
 	"github.com/quantadex/distributed_quanta_bridge/trust/key_manager"
 	"github.com/quantadex/distributed_quanta_bridge/trust/peer_contact"
 	"github.com/quantadex/distributed_quanta_bridge/trust/quanta"
+	"github.com/quantadex/distributed_quanta_bridge/trust/db"
+	"time"
+	"strings"
+	"errors"
+	"github.com/quantadex/quanta_book/consensus/cosi"
+	"encoding/json"
+	"github.com/quantadex/distributed_quanta_bridge/common/queue"
 )
 
-//TODO: Refactor to use Cosi instead of RR
-// in RR, it's up to the last one to submit to the next one if fails
-// # of round O(n)
-// consistency
 
-//TODO: Separate polling for coin & submitter
-//TODO: Use postgres for db
-//TODO: ./node initdb
-/*
- Table: Deposits
-  tx   string
-  coin string
-  created datetime
-  amount int64
-  blockId int64
-  from  string
-  to    string
-  status enum ('DEPOSIT', 'SIGNED')
-  submit_tx  string  // must broadcast
-  submit_signers string
-  submit_confirm int // keep scanning for confirm
-  submit_date  datetime
-
-
-Submitter scans for status 'DEPOSIT', and attempt to submit.
-If other node are not ready, submission will fail.
-
-*/
+type DepositResult struct {
+	D *coin.Deposit
+	Err error
+	Tx string
+}
 
 /**
  * CoinToQuanta
@@ -51,15 +34,20 @@ If other node are not ready, submission will fail.
  * and using the round robin module creates transactions in quanta
  */
 type CoinToQuanta struct {
-	log           logger.Logger
+	logger           logger.Logger
 	coinChannel   coin.Coin
 	quantaChannel quanta.Quanta
 	db            kv_store.KVStore
+	rDb			  *db.DB
 	man           *manifest.Manifest
 	peer          peer_contact.PeerContact
 	coinName      string
 	trustAddress  common.Address
-	rr            *RoundRobinSigner
+	trustPeer           *peer_contact.TrustPeerNode
+	cosi                *cosi.Cosi
+	doneChan			chan bool
+	SuccessCb			func(DepositResult)
+	nodeID              int
 	C2QOptions
 }
 
@@ -77,7 +65,8 @@ const MAX_PROCESS_BLOCKS = 100
  * Initializes nothing so it should all be already initialized.
  */
 func NewCoinToQuanta(log logger.Logger,
-	db kv_store.KVStore,
+	db_ kv_store.KVStore,
+	rDb *db.DB,
 	c coin.Coin,
 	q quanta.Quanta,
 	man *manifest.Manifest,
@@ -85,17 +74,124 @@ func NewCoinToQuanta(log logger.Logger,
 	coinName string,
 	nodeID int,
 	peer peer_contact.PeerContact,
+	queue_ queue.Queue,
 	options C2QOptions) *CoinToQuanta {
 	res := &CoinToQuanta{C2QOptions: options}
-	res.log = log
+	res.logger = log
 	res.coinChannel = c
 	res.quantaChannel = q
-	res.db = db
+	res.db = db_
+	res.rDb = rDb
 	res.man = man
+	res.nodeID = nodeID
 	res.coinName = coinName
 	res.peer = peer
-	res.rr = NewRoundRobinSigner(log, man, nodeID, kM, db, q, peer)
 	res.trustAddress = common.HexToAddress(options.EthTrustAddress)
+	res.doneChan = make(chan bool, 1)
+	res.trustPeer = peer_contact.NewTrustPeerNode(man, peer, nodeID, queue_, queue.PEERMSG_QUEUE, "/node/api/peer")
+
+
+	res.cosi = cosi.NewProtocol(res.trustPeer, nodeID == 0, time.Second*3)
+
+	res.cosi.Verify = func(encoded string) error {
+		decoded := common.Hex2Bytes(encoded)
+		msg := &coin.EncodedMsg{}
+		err := json.Unmarshal(decoded, msg)
+		if err != nil {
+			return err
+		}
+
+		deposit, err := res.quantaChannel.DecodeTransaction(msg.Message)
+		if err != nil {
+			log.Error("Unable to decode quanta tx")
+			return err
+		}
+
+		deposit.Tx = msg.Tx
+
+		if err != nil {
+			log.Error("Unable to decode quanta tx")
+			return err
+		}
+		tx, err := db.GetTransaction(rDb, deposit.Tx)
+		if tx != nil {
+			// we're not going to sign again
+			if tx.Signed == false {
+				return nil
+			}
+			log.Error("Unable to verify refund " + tx.Tx)
+		}
+
+		return errors.New("Unable to verify: " + deposit.Tx + " " + err.Error())
+	}
+
+	res.cosi.Persist = func(encoded string) error {
+		decoded := common.Hex2Bytes(encoded)
+		msg := &coin.EncodedMsg{}
+		err := json.Unmarshal(decoded, msg)
+		if err != nil {
+			return err
+		}
+
+		deposit, err := res.quantaChannel.DecodeTransaction(msg.Message)
+		if err != nil {
+			log.Error("Unable to decode quanta tx")
+			return err
+		}
+
+		deposit.Tx = msg.Tx
+
+		if err != nil {
+			log.Error("Unable to decode refund at persist")
+			return err
+		}
+
+		err = db.SignDeposit(rDb, deposit)
+		if err != nil {
+			return errors.New("Failed to confirm transaction: "+ err.Error())
+		}
+		return nil
+	}
+
+	res.cosi.SignMsg = func(encoded string) (string, error) {
+		decoded := common.Hex2Bytes(encoded)
+		msg := &coin.EncodedMsg{}
+		err := json.Unmarshal(decoded, msg)
+		if err != nil {
+			return "", err
+		}
+
+		encodedSig, err := kM.SignTransaction(msg.Message)
+		log.Infof("Sign msg %s", encodedSig)
+
+		if err != nil {
+			log.Error("Unable to Sign/encode refund msg")
+			return "", err
+		}
+
+		return encodedSig, nil
+	}
+
+	res.cosi.Start()
+
+	go func() {
+		for {
+			// feed messages back
+			msg := res.trustPeer.GetMsg()
+
+			if msg != nil {
+				//log.Infof("Got peer message %v", msg.Signed)
+				res.cosi.CosiMsgChan <- msg
+				continue
+			}
+
+			time.Sleep(100 * time.Millisecond)
+		}
+	}()
+
+	go res.dispatchIssuance()
+
+
 	return res
 }
 
@@ -107,23 +203,23 @@ func NewCoinToQuanta(log logger.Logger,
 func (c *CoinToQuanta) GetNewCoinBlockIDs() []int64 {
 	lastProcessed, valid := GetLastBlock(c.db, c.coinName)
 	if !valid {
-		c.log.Error("Failed to get last processed ID")
+		c.logger.Error("Failed to get last processed ID")
 		return nil
 	}
 
 	currentTop, err := c.coinChannel.GetTopBlockID()
 	if err != nil {
-		c.log.Error("Failed to get current top block")
+		c.logger.Error("Failed to get current top block")
 		return nil
 	}
 
 	if lastProcessed > currentTop {
-		c.log.Error("Coin top block smaller than last processed")
+		c.logger.Error("Coin top block smaller than last processed")
 		return nil
 	}
 
 	if lastProcessed == currentTop {
-		c.log.Debug(fmt.Sprintf("Coin2Quanta: No new block last=%d top=%d", lastProcessed, currentTop))
+		c.logger.Debug(fmt.Sprintf("Coin2Quanta: No new block last=%d top=%d", lastProcessed, currentTop))
 		return nil
 	}
 	blocks := make([]int64, 0)
@@ -133,7 +229,7 @@ func (c *CoinToQuanta) GetNewCoinBlockIDs() []int64 {
 			break
 		}
 	}
-	c.log.Info(fmt.Sprintf("Got blocks %v", blocks))
+	c.logger.Info(fmt.Sprintf("Got blocks %v", blocks))
 
 	return blocks
 }
@@ -143,42 +239,93 @@ func (c *CoinToQuanta) GetNewCoinBlockIDs() []int64 {
  *
  * Returns deposits made to the coin trust account in this block
  */
-func (c *CoinToQuanta) getDepositsInBlock(blockID int64) []*coin.Deposit {
-	watchAddresses, err := c.db.GetAllValues(ETHADDR_QUANTAADDR)
+func (c *CoinToQuanta) getDepositsInBlock(blockID int64) ([]*coin.Deposit, error) {
+	watchAddresses := db.GetCrosschainByBlockchain(c.rDb, c.coinName)
+	watchMap := make(map[string]string)
+
+	for _, w := range watchAddresses {
+		watchMap[strings.ToLower(w.Address)] = w.QuantaAddr
+	}
+	deposits, err := c.coinChannel.GetDepositsInBlock(blockID, watchMap)
+
 	if err != nil {
-		c.log.Error("Failed to get watch addresses")
-		return nil
+		return nil, err
 	}
 
-	deposits, err := c.coinChannel.GetDepositsInBlock(blockID, watchAddresses)
-
-	//var m map[string]string
-	//m = make(map[string]string)
-	//m[strings.ToLower("0xb1E02e31c9A2403FeAFA7E483Ebb3e1b5ffa3164")] = "QCAO4HRMJDGFPUHRCLCSWARQTJXY2XTAFQUIRG2FAR3SCF26KQLAWZRN"
-
-	//deposits, err := c.coinChannel.GetDepositsInBlock(blockID, m)
-	if err != nil {
-		c.log.Error("Failed to get deposits from block")
-		return nil
-	}
-
-	return deposits
+	return deposits, nil
 }
 
-/**
- * submitMessages
- *
- * Send withdrawal messagaes to quanta core
- */
-func (c *CoinToQuanta) submitMessages(msgs []*peer_contact.PeerMessage) {
-	for _, msg := range msgs {
-		err := c.quantaChannel.ProcessDeposit(*msg)
-		if err != nil {
-			c.log.Error("Failed to submit deposit " + err.Error())
+func (c *CoinToQuanta) dispatchIssuance() {
+	for {
+		select {
+		case <-time.After(time.Second):
+			txs := db.QueryDepositByAge(c.rDb, time.Now().Add(-time.Second*5), []string{db.SUBMIT_CONSENSUS})
+			for _, tx := range txs {
+				w := &coin.Deposit{
+					Tx: tx.Tx,
+					CoinName: tx.Coin,
+					QuantaAddr: tx.To,
+					BlockID: tx.BlockId,
+					SenderAddr: tx.From,
+					Amount: tx.Amount,
+				}
+				c.StartConsensus(w)
+			}
+		case <- c.doneChan:
+			c.logger.Infof("Exiting.")
+			break
 		}
-		c.log.Infof("Submit deposit to %s %d",
-			msg.Proposal.QuantaAdress, msg.Proposal.Amount)
 	}
+}
+
+func (c *CoinToQuanta) StartConsensus(tx *coin.Deposit) (string, error) {
+	txResult := HEX_NULL
+	errResult := error(nil)
+
+	c.logger.Infof("Start new round %s %s to=%s amount=%d", tx.Tx, tx.CoinName, tx.QuantaAddr, tx.Amount)
+
+	encoded, err := c.quantaChannel.CreateProposeTransaction(tx)
+
+	if err != nil {
+		c.logger.Error("Failed to encode refund 1" + err.Error())
+		return HEX_NULL, err
+	}
+
+	data, err := json.Marshal(&coin.EncodedMsg{ encoded,  tx.Tx, tx.BlockID})
+
+	if err != nil {
+		c.logger.Error("Failed to encode refund 2" + err.Error())
+		return HEX_NULL, err
+	}
+
+	// wait for other node to see the tx
+	c.cosi.StartNewRound(common.Bytes2Hex(data))
+
+	result := <-c.cosi.FinalSigChan
+
+	if result.Msg == nil {
+		errResult = errors.New("Unable to sign for refund")
+		c.logger.Error("Unable to sign for refund")
+	} else {
+		// save this to queue for later in case ETH RPC is down.
+		tx.Signatures = result.Msg
+		// save in eth_tx_log_signed (kvstore) [S=signed,X=submitted,F=failed(uncoverable), R=retry(connection failed)] ; recoverable=RPC not available
+		c.logger.Infof("Great! Cosi successfully signed deposit")
+
+		c.quantaChannel.ProcessDeposit(tx, encoded)
+
+		txResult = ""
+		errResult = err
+
+		if c.SuccessCb != nil {
+			c.SuccessCb(DepositResult{ tx, errResult, txResult})
+		}
+	}
+	return txResult, errResult
+}
+
+func (c *CoinToQuanta) Stop() {
+	c.doneChan <- true
 }
 
 /**
@@ -188,74 +335,61 @@ func (c *CoinToQuanta) submitMessages(msgs []*peer_contact.PeerMessage) {
  * Shoot those into round robin
  * Get all ready messages from RR and send these to quanta.
  *
- * returns allDeposits []*coin.Deposit,
- *         allPeerMsgs []*peer_contact.PeerMessage,
- *         allSentMsgs []*peer_contact.PeerMessage
+ * returns allDeposits []*coin.Deposit
  */
-func (c *CoinToQuanta) DoLoop(blockIDs []int64) ([]*coin.Deposit, []*peer_contact.PeerMessage, []*peer_contact.PeerMessage) {
-	c.rr.deferQ.AddTick()
-	c.log.Info(fmt.Sprintf("***** Start of Epoch %d # of blocks=%d man.N=%d,man.Q=%d *** ",
-		c.rr.deferQ.Epoch(), len(blockIDs), c.man.N, c.man.Q))
+func (c *CoinToQuanta) DoLoop(blockIDs []int64) ([]*coin.Deposit) {
+	c.logger.Info(fmt.Sprintf("***** Start # of blocks=%d man.N=%d,man.Q=%d *** ", len(blockIDs), c.man.N, c.man.Q))
 
 	allDeposits := make([]*coin.Deposit, 0)
 
 	if blockIDs != nil {
 		for _, blockID := range blockIDs {
-			deposits := c.getDepositsInBlock(blockID)
-			if deposits != nil {
-				c.log.Info(fmt.Sprintf("Block %d Got deposits %d %v", blockID, len(deposits), deposits))
-				c.rr.processNewDeposits(deposits)
+			deposits, err := c.getDepositsInBlock(blockID)
+			if err != nil {
+				c.logger.Error("Failed to get deposits from block: " + err.Error())
+				return allDeposits
+			}
 
-				for i := 0; i < len(deposits); i++ {
-					allDeposits = append(allDeposits, deposits[i])
+			if deposits != nil {
+				c.logger.Info(fmt.Sprintf("Block %d Got deposits %d %v", blockID, len(deposits), deposits))
+
+				for _, dep := range deposits {
+					err = db.ConfirmDeposit(c.rDb, dep)
+					if err != nil {
+						c.logger.Error("Cannot insert into db:" + err.Error())
+					}
+
+					allDeposits = append(allDeposits, dep)
+
+					if c.nodeID == 0 {
+						db.ChangeSubmitState(c.rDb, dep.Tx, db.SUBMIT_CONSENSUS)
+					}
 				}
 			}
 
 			addresses, err := c.coinChannel.GetForwardersInBlock(blockID)
 			if err != nil {
-				c.log.Error(err.Error())
+				c.logger.Error(err.Error())
 				continue
 			}
 
 			for _, addr := range addresses {
 				if addr.Trust.Hex() == c.trustAddress.Hex() {
-					c.log.Infof("New Forwarder Address ETH->QUANTA address, %s -> %s", addr.ContractAddress.Hex(), addr.QuantaAddr)
-					c.db.SetValue(ETHADDR_QUANTAADDR, strings.ToLower(addr.ContractAddress.Hex()), "", addr.QuantaAddr)
+					c.logger.Infof("New Forwarder Address ETH->QUANTA address, %s -> %s", addr.ContractAddress.Hex(), addr.QuantaAddr)
+					db.AddCrosschainAddress(c.rDb, addr)
 				} else {
-					c.log.Error(fmt.Sprintf("MISMATCH: Forwarder address[%s] in blockID=%d does not match our trustAddress[%s]",
+					c.logger.Error(fmt.Sprintf("MISMATCH: Forwarder address[%s] in blockID=%d does not match our trustAddress[%s]",
 						addr.Trust.Hex(), blockID, c.trustAddress.Hex()))
 				}
 			}
 		}
 	}
 
-	allMsgs := make([]*peer_contact.PeerMessage, 0)
-	expiredMsgs, _ := c.rr.deferQ.Get(DQ_NAME)
-
-	if expiredMsgs != nil {
-		allMsgs = append(allMsgs, expiredMsgs.(*peer_contact.PeerMessage))
-	}
-
-	for true {
-		msg := c.peer.GetMsg()
-		if msg == nil {
-			break
-		}
-		c.log.Infof("Got peer message %v", msg)
-		allMsgs = append(allMsgs, msg)
-	}
-
-	toSend := c.rr.processNewPeerMsgs(allMsgs)
-	if len(toSend) > 0 {
-		c.log.Infof("Submitting %d messages", len(toSend))
-		c.submitMessages(toSend)
-	}
-
 	if len(blockIDs) > 0 {
 		lastBlockId := blockIDs[len(blockIDs)-1]
-		c.log.Infof("set last block coin=%s height=%d", c.coinName, lastBlockId)
+		c.logger.Infof("set last block coin=%s height=%d", c.coinName, lastBlockId)
 		setLastBlock(c.db, c.coinName, lastBlockId)
 	}
 
-	return allDeposits, allMsgs, toSend
+	return allDeposits
 }

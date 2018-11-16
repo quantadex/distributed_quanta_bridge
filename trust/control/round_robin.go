@@ -69,12 +69,12 @@ func NewRoundRobinSigner(log logger.Logger,
  *
  */
 func (r *RoundRobinSigner) validateTransaction(msg *peer_contact.PeerMessage) bool {
-	txKey := getKeyName(msg.Proposal.CoinName, msg.Proposal.QuantaAdress, msg.Proposal.BlockID)
-	state := getState(r.db, COIN_CONFIRMED, txKey)
-	r.log.Infof("Validate transaction key=%s state=%s", txKey, state)
-	if state == CONFIRMED {
-		return true
-	}
+	//txKey := getKeyName(msg.Proposal.CoinName, msg.Proposal.QuantaAdress, msg.Proposal.BlockID)
+	//state := getState(r.db, COIN_CONFIRMED, txKey)
+	//r.log.Infof("Validate transaction key=%s state=%s", txKey, state)
+	//if state == CONFIRMED {
+	//	return true
+	//}
 	return false
 }
 
@@ -151,12 +151,12 @@ func (r *RoundRobinSigner) createNewPeerMsg(deposit *coin.Deposit, missedNodes i
  *
  */
 func (r *RoundRobinSigner) signPeerMsg(msg *peer_contact.PeerMessage) bool {
-	txKey := getKeyName(msg.Proposal.CoinName, msg.Proposal.QuantaAdress, msg.Proposal.BlockID)
-	success := signTx(r.db, COIN_CONFIRMED, txKey)
-	if !success {
-		r.log.Error("Failed to mark as signed")
-		return false
-	}
+	//txKey := getKeyName(msg.Proposal.CoinName, msg.Proposal.QuantaAdress, msg.Proposal.BlockID)
+	//success := signTx(r.db, COIN_CONFIRMED, txKey)
+	//if !success {
+	//	r.log.Error("Failed to mark as signed")
+	//	return false
+	//}
 	data := msg.MSG
 	var err error
 
@@ -218,7 +218,7 @@ func (r *RoundRobinSigner) processNewDeposits(deposits []*coin.Deposit) {
 		r.log.Infof("processNewDeposit: %s->%s token=%s  amount=%d",
 			deposit.SenderAddr, deposit.QuantaAddr, deposit.CoinName, deposit.Amount)
 
-		confirmTx(r.db, COIN_CONFIRMED, getKeyName(deposit.CoinName, deposit.QuantaAddr, deposit.BlockID))
+		//confirmTx(r.db, COIN_CONFIRMED, getKeyName(deposit.CoinName, deposit.QuantaAddr, deposit.BlockID))
 
 		startNode := deposit.BlockID % int64(r.man.N)
 		missedNodes := 0

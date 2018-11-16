@@ -132,7 +132,7 @@ func initNode(config common.Config, targetCoin coin.Coin) (*TrustNode, bool) {
 
 	node.c = targetCoin
 
-	node.coinName = config.CoinName
+	node.coinName = coin.BLOCKCHAIN_ETH
 	err = node.c.Attach()
 	if err != nil {
 		node.log.Error("Failed to attach to coin " + err.Error())
@@ -141,6 +141,7 @@ func initNode(config common.Config, targetCoin coin.Coin) (*TrustNode, bool) {
 
 	node.q, err = quanta.NewQuanta(quanta.QuantaClientOptions{
 		node.log,
+		node.rDb,
 		config.NetworkPassphrase,
 		config.IssuerAddress,
 		config.HorizonUrl,
@@ -270,6 +271,7 @@ func (n *TrustNode) initTrust(config common.Config) {
 
 	n.cTQ = control.NewCoinToQuanta(n.log,
 		n.db,
+		n.rDb,
 		n.c,
 		n.q,
 		n.man,
@@ -277,6 +279,7 @@ func (n *TrustNode) initTrust(config common.Config) {
 		n.coinName,
 		n.nodeID,
 		n.peer,
+		n.queue,
 		control.C2QOptions{
 			config.EthereumTrustAddr,
 			config.EthereumBlockStart,

@@ -25,6 +25,7 @@ import (
 const DEPOSIT="deposit"
 const WITHDRAWAL="withdrawal"
 
+const SUBMIT_CONSENSUS="consensus"
 const SUBMIT_QUEUE="queue"
 const SUBMIT_RECOVERABLE="recoverable"
 const SUBMIT_FATAL="fatal"
@@ -67,11 +68,20 @@ func SignDeposit(db *DB, dep *coin.Deposit) error {
 	tx := &Transaction{Type: DEPOSIT, Tx: dep.Tx}
 	tx.SubmitDate = time.Now()
 	tx.Signed = true
-	_, err := db.Model(tx).Column("Signed").Where("Tx=?",dep.Tx).Returning("*").Update()
+	_, err := db.Model(tx).Column("signed").Where("Tx=?",dep.Tx).Update()
 	return err
 }
 
-func ChangeSubmitState(db *DB, id string, state string, ) error {
+func ChangeSubmitQueue(db *DB, id string, submitTx string) error {
+	tx := &Transaction{Tx: id}
+	tx.SubmitDate = time.Now()
+	tx.SubmitState = SUBMIT_QUEUE
+	tx.SubmitTx = submitTx
+	_, err := db.Model(tx).Column("submit_state","submit_date","submit_tx").Where("Tx=?",id).Returning("*").Update()
+	return err
+}
+
+func ChangeSubmitState(db *DB, id string, state string) error {
 	tx := &Transaction{Tx: id}
 	tx.SubmitDate = time.Now()
 	tx.SubmitState = state
@@ -126,9 +136,18 @@ func GetTransaction(db *DB, txID string) (*Transaction, error) {
 	return nil, errors.New("not found")
 }
 
-func QueryTransactionByAge(db *DB, age time.Time, states []string) []Transaction {
+func QueryDepositByAge(db *DB, age time.Time, states []string) []Transaction {
 	var txs []Transaction
-	err := db.Model(&txs).Where("Created <= ?", age).WhereIn("submit_state IN ?", states).Select()
+	err := db.Model(&txs).Where("Created <= ? AND Type=?", age, DEPOSIT).WhereIn("submit_state IN ?", states).Select()
+	if err != nil {
+		println("unable to query query: " + err.Error())
+	}
+	return txs
+}
+
+func QueryWithdrawalByAge(db *DB, age time.Time, states []string) []Transaction {
+	var txs []Transaction
+	err := db.Model(&txs).Where("Created <= ? AND Type=?", age, WITHDRAWAL).WhereIn("submit_state IN ?", states).Select()
 	if err != nil {
 		println("unable to query query: " + err.Error())
 	}
@@ -138,5 +157,12 @@ func QueryTransactionByAge(db *DB, age time.Time, states []string) []Transaction
 func EmptyTable(db *DB) error {
 	st, err := db.db.Prepare("TRUNCATE table transactions")
 	_, err = st.Exec()
+
+	st, err = db.db.Prepare("TRUNCATE table crosschain_addresses")
+	_, err = st.Exec()
+
+	st, err = db.db.Prepare("TRUNCATE table key_values")
+	_, err = st.Exec()
+
 	return err
 }

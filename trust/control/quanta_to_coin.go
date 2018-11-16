@@ -82,7 +82,7 @@ func NewQuantaToCoin(log logger.Logger,
 	res.coinName = coinName
 	res.nodeID = nodeID
 	res.doneChan = make(chan bool, 1)
-	res.trustPeer = peer_contact.NewTrustPeerNode(man, peer, nodeID, queue_)
+	res.trustPeer = peer_contact.NewTrustPeerNode(man, peer, nodeID, queue_, queue.REFUNDMSG_QUEUE, "/node/api/refund")
 	res.cosi = cosi.NewProtocol(res.trustPeer, nodeID == 0, time.Second*3)
 
 	res.cosi.Verify = func(msg string) error {
@@ -142,7 +142,7 @@ func NewQuantaToCoin(log logger.Logger,
 	go func() {
 		for {
 			// feed messages back
-			msg := res.trustPeer.GetRefundMsg()
+			msg := res.trustPeer.GetMsg()
 
 			if msg != nil {
 				//log.Infof("Got peer message %v", msg.Signed)
@@ -164,7 +164,7 @@ func (c *QuantaToCoin) DispatchWithdrawal() {
 	for {
 		select {
 			case <-time.After(time.Second):
-				txs := db.QueryTransactionByAge(c.rDb, time.Now().Add(-time.Second*5), []string{db.SUBMIT_QUEUE, db.SUBMIT_RECOVERABLE})
+				txs := db.QueryWithdrawalByAge(c.rDb, time.Now().Add(-time.Second*5), []string{db.SUBMIT_CONSENSUS})
 				for _, tx := range txs {
 					w := &coin.Withdrawal{
 						Tx: tx.Tx,
@@ -187,7 +187,7 @@ func (c *QuantaToCoin) Stop() {
 }
 
 func (c *QuantaToCoin) StartConsensus(w *coin.Withdrawal) (string, error) {
-	txResult := "0x0"
+	txResult := HEX_NULL
 	errResult := error(nil)
 
 	txId, err := c.coinChannel.GetTxID(common.HexToAddress(c.coinContractAddress))
@@ -202,7 +202,7 @@ func (c *QuantaToCoin) StartConsensus(w *coin.Withdrawal) (string, error) {
 
 	if err != nil {
 		c.logger.Error("Failed to encode refund " + err.Error())
-		return "0x0", err
+		return HEX_NULL, err
 	}
 
 	// wait for other node to see the tx
@@ -229,6 +229,7 @@ func (c *QuantaToCoin) StartConsensus(w *coin.Withdrawal) (string, error) {
 				db.ChangeSubmitState(c.rDb, w.Tx, db.SUBMIT_RECOVERABLE)
 			}
 		}
+
 		db.ChangeSubmitState(c.rDb, w.Tx, db.SUBMIT_SUCCESS)
 
 		c.logger.Infof("Submitted withdrawal in tx=%s", tx)
@@ -280,7 +281,7 @@ func (c *QuantaToCoin) DoLoop(cursor int64) ([]quanta.Refund, error) {
 		} else if w.Amount == uint64(0) {
 			c.logger.Error("Amount is too small")
 		} else if c.nodeID == 0 {
-			db.ChangeSubmitState(c.rDb, w.Tx, db.SUBMIT_QUEUE)
+			db.ChangeSubmitState(c.rDb, w.Tx, db.SUBMIT_CONSENSUS)
 		}
 
 		success := setLastBlock(c.db, QUANTA, refund.PageTokenID)

@@ -25,6 +25,8 @@ const (
 	NOT_FOUND          = "NF"
 )
 
+const HEX_NULL = "0x0"
+
 /**
  * initLedger
  *
@@ -32,46 +34,11 @@ const (
  * Creates tables for keeping coin and quanta state
  */
 func InitLedger(kv kv_store.KVStore) error {
-	err := kv.CreateTable(QUANTA_CONFIRMED)
+	err := kv.CreateTable(LAST_BLOCK)
 	if err != nil {
 		return errors.New("Failed to create table")
 	}
-	err = kv.CreateTable(COIN_CONFIRMED)
-	if err != nil {
-		return errors.New("Failed to create table")
-	}
-	err = kv.CreateTable(LAST_BLOCK)
-	if err != nil {
-		return errors.New("Failed to create table")
-	}
-	err = kv.CreateTable(ETHADDR_QUANTAADDR)
-	if err != nil {
-		return errors.New("Failed to create table")
-	}
-	err = kv.CreateTable(kv_store.ETH_TX_LOG)
-	if err != nil {
-		return errors.New("Failed to create table")
-	}
-	err = kv.CreateTable(kv_store.ETH_TX_LOG_SIGNED)
-	if err != nil {
-		return errors.New("Failed to create table")
-	}
-	err = kv.CreateTable(kv_store.ETH_TX_LOG_FAILED_UNRECOVERABLE)
-	if err != nil {
-		return errors.New("Failed to create table")
-	}
-	err = kv.CreateTable(kv_store.ETH_TX_LOG_RETRY)
-	if err != nil {
-		return errors.New("Failed to create table")
-	}
-	err = kv.CreateTable(kv_store.ETH_TX_LOG_FAILED_RECOVERABLE)
-	if err != nil {
-		return errors.New("Failed to create table")
-	}
-	err = kv.CreateTable(kv_store.ETH_TX_LOG_SUBMITTED)
-	if err != nil {
-		return errors.New("Failed to create table")
-	}
+
 	return nil
 }
 
@@ -83,51 +50,6 @@ func InitLedger(kv kv_store.KVStore) error {
  */
 func getKeyName(coinName string, dstAddress string, blockID int64) string {
 	return fmt.Sprintf("%s-%s-%09d", coinName, dstAddress, blockID)
-}
-
-/**
- * getState
- *
- * Returns the state for a given key in a given table.
- * Only states of (ERROR, NOT_FOUND, CONFIRMED, SIGNED) are possible.
- */
-func getState(db kv_store.KVStore, table string, k string) string {
-	v, err := db.GetValue(table, k)
-	if err != nil {
-		return ERROR
-	}
-	if v == nil {
-		return NOT_FOUND
-	}
-	return *v
-}
-
-/**
- * confirmTx
- *
- * If a given key does not exist, it will be inserted into the table in state CONFIRMED.
- * Returns true. In all other cases returns false.
- */
-func confirmTx(db kv_store.KVStore, table string, k string) bool {
-	err := db.SetValue(table, k, "", CONFIRMED)
-	if err != nil {
-		return false
-	}
-	return true
-}
-
-/**
- * signTx
- *
- * If a given key exists with state CONFIRMED will update state to SIGNED.
- * Returns true. In all other cases false.
- */
-func signTx(db kv_store.KVStore, table string, k string) bool {
-	err := db.SetValue(table, k, CONFIRMED, SIGNED)
-	if err != nil {
-		return false
-	}
-	return true
 }
 
 /**

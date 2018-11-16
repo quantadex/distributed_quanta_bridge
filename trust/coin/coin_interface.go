@@ -6,6 +6,7 @@ import (
     "crypto/ecdsa"
 )
 
+const BLOCKCHAIN_ETH = "ETH"
 /**
  * Deposit
  *
@@ -18,6 +19,7 @@ type Deposit struct {
     QuantaAddr string // Destination quanta acount
     Amount int64 // Deposit size
     BlockID int64 // The blockID in which this deposit was found
+    Signatures []string // hex signatures via quanta
 }
 
 /**

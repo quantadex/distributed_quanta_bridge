@@ -2,9 +2,7 @@ package quanta
 
 import (
 	"github.com/quantadex/distributed_quanta_bridge/common/kv_store"
-	"github.com/quantadex/distributed_quanta_bridge/common/logger"
 	"github.com/quantadex/distributed_quanta_bridge/trust/coin"
-	"github.com/quantadex/distributed_quanta_bridge/trust/peer_contact"
 )
 
 const QUANTA_PRECISION = 10000000
@@ -68,7 +66,7 @@ type Quanta interface {
 	 * Once enough nodes have signed the deposit the last node sends it to quanta to
 	 * transfer the funds into the user's quanta account
 	 */
-	ProcessDeposit(deposit peer_contact.PeerMessage) error
+	ProcessDeposit(deposit *coin.Deposit, proposed string) error
 
 	GetBalance(assetName string, quantaAddress string) (float64, error)
 	GetAllBalances(quantaAddress string) (map[string]float64, error)
@@ -91,6 +89,6 @@ type SubmitWorker interface {
 	AttachQueue(kv kv_store.KVStore) error
 }
 
-func NewSubmitWorker(horizonUrl string, logger logger.Logger) SubmitWorker {
-	return &SubmitWorkerImpl{logger: logger, horizonUrl: horizonUrl}
+func NewSubmitWorker(options QuantaClientOptions) SubmitWorker {
+	return &SubmitWorkerImpl{QuantaClientOptions:options}
 }
