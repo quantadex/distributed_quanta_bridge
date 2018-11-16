@@ -31,7 +31,7 @@ const SUBMIT_SUCCESS="success"
 
 type Transaction struct {
 	Type   string // deposit | withdrawal
-	Tx     string
+	Tx     string		`sql:",pk"`
 	Coin   string
 	Created time.Time
 	Amount int64
@@ -74,7 +74,7 @@ func ChangeSubmitState(db *DB, id string, state string) error {
 	tx := &Transaction{Tx: id}
 	tx.SubmitDate = time.Now()
 	tx.SubmitState = state
-	_, err := db.Model(tx).Column("Signed","SubmitDate").Where("Tx=?",state).Returning("*").Update()
+	_, err := db.Model(tx).Column("submit_state","submit_date").Where("Tx=?",id).Returning("*").Update()
 	return err
 }
 
@@ -99,7 +99,7 @@ func SignWithdrawal(db *DB, dep *coin.Withdrawal) error {
 	tx := &Transaction{Type: WITHDRAWAL, Tx: dep.Tx}
 	tx.SubmitDate = time.Now()
 	tx.Signed = true
-	_, err := db.Model(tx).Column("signed").Where("Tx=?",dep.Tx).Returning("*").Update()
+	_, err := db.Model(tx).Column("signed").Where("Tx=?",dep.Tx).Update()
 	return err
 }
 
@@ -112,13 +112,22 @@ func MigrateTx(db *DB) error {
 }
 
 func GetTransaction(db *DB, txID string) *Transaction {
-	tx := &Transaction{}
-	err := db.Model(tx).Where("Tx=?", txID ).Select()
+	var txs Transaction
+	err := db.Model(txs).Where("Tx=?", txID ).Limit(1).Select()
 	if err != nil {
-		println("unable to get tx" + err.Error())
+		println("unable to get tx: " + err.Error())
 		return nil
 	}
-	return tx
+	return &txs
+}
+
+func QueryTransactionByAge(db *DB, age time.Time, states []string) []Transaction {
+	var txs []Transaction
+	err := db.Model(&txs).Where("Created <= ?", age).WhereIn("submit_state IN ?", states).Select()
+	if err != nil {
+		println("unable to query query: " + err.Error())
+	}
+	return txs
 }
 
 func EmptyTable(db *DB) error {
