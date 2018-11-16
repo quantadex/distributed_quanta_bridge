@@ -387,15 +387,12 @@ func (l *Listener) SendWithdrawal(conn bind.ContractBackend,
 		var r1 [32]byte
 		copy(r1[0:32], data[0:32])
 		r = append(r, r1)
-		println(common.Bytes2Hex(data[0:32]))
 
 		var s1 [32]byte
 		copy(s1[0:32], data[32:64])
 		s = append(s, s1)
-		println(common.Bytes2Hex(data[32:64]))
 
 		v = append(v, data[64]+27)
-		println(data[64] + 27)
 	}
 
 	fmt.Println("prepare to send to contract")

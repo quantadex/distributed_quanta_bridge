@@ -3,6 +3,7 @@ package db
 import (
 	"time"
 	"github.com/quantadex/distributed_quanta_bridge/trust/coin"
+	"github.com/go-errors/errors"
 )
 
 /*
@@ -70,7 +71,7 @@ func SignDeposit(db *DB, dep *coin.Deposit) error {
 	return err
 }
 
-func ChangeSubmitState(db *DB, id string, state string) error {
+func ChangeSubmitState(db *DB, id string, state string, ) error {
 	tx := &Transaction{Tx: id}
 	tx.SubmitDate = time.Now()
 	tx.SubmitState = state
@@ -111,14 +112,18 @@ func MigrateTx(db *DB) error {
 	return err
 }
 
-func GetTransaction(db *DB, txID string) *Transaction {
-	var txs Transaction
-	err := db.Model(txs).Where("Tx=?", txID ).Limit(1).Select()
+func GetTransaction(db *DB, txID string) (*Transaction, error) {
+	var txs []Transaction
+	err := db.Model(&txs).Where("Tx=?", txID ).Limit(1).Select()
 	if err != nil {
 		println("unable to get tx: " + err.Error())
-		return nil
+		return nil, err
 	}
-	return &txs
+
+	if len(txs) > 0 {
+		return &txs[0], nil
+	}
+	return nil, errors.New("not found")
 }
 
 func QueryTransactionByAge(db *DB, age time.Time, states []string) []Transaction {

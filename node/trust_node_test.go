@@ -9,6 +9,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"testing"
 	"time"
+	"github.com/quantadex/distributed_quanta_bridge/trust/control"
 )
 
 /*
@@ -123,6 +124,7 @@ func TestTrustNode_Stop(t *testing.T) {
 	//indexes := []int{0,1,2}
 	//nodes := []*TrustNode{}
 	//nodes = StartNodesWithIndexes(test.QUANTA_ISSUER, test.ROPSTEN_TRUST, test.ETHER_NETWORKS[test.ROPSTEN],true,indexes, nodes)
+
 	nodes := StartNodes(test.QUANTA_ISSUER, test.ROPSTEN_TRUST, test.ETHER_NETWORKS[test.ROPSTEN])
 	time.Sleep(time.Millisecond * 250)
 
@@ -272,49 +274,36 @@ func TestWithdrawal(t *testing.T) {
 
 	txId, err := contract.TxIdLast(nil)
 	assert.NoError(t, err)
-
 	println("latest TXID=", txId)
 
 	nodes := StartNodes(test.QUANTA_ISSUER, test.ROPSTEN_TRUST, test.ETHER_NETWORKS[test.ROPSTEN])
 
+	withdrawResult := make(chan control.WithdrawalResult)
+
+	nodes[0].qTC.SuccessCb = func(c control.WithdrawalResult) {
+		withdrawResult <- c
+	}
+
 	cursor := int64(0)
 	fmt.Printf("=======================\n[CURSOR %d] BEGIN\n\n", cursor)
 	for i, node := range nodes {
-		refunds, txId, err := node.qTC.DoLoop(cursor)
+		refunds, err := node.qTC.DoLoop(cursor)
 		assert.NoError(t, err, "error: cursor #%d [node #%d/%d id=%d]", cursor, i+1, len(nodes), node.nodeID)
 		assert.Equal(t, 28, len(refunds), "refunds: cursor #%d [node #%d/%d id=%d]", cursor, i+1, len(nodes), node.nodeID)
-		assert.Equal(t, "0x0", txId, "txId: cursor #%d [node #%d/%d id=%d]", cursor, i+1, len(nodes), node.nodeID)
 	}
+
 	fmt.Printf("[CURSOR %d] END\n=======================\n\n", cursor)
 
-	// check for the Cosi!
-	cursor = int64(1912892534296577)
-	fmt.Printf("=======================\n[CURSOR %d] BEGIN\n\n", cursor)
-	for i, node := range nodes {
-		refunds, txId, err := node.qTC.DoLoop(cursor)
-		assert.NoError(t, err, "error: cursor #%d [node #%d/%d id=%d]", cursor, i+1, len(nodes), node.nodeID)
-		assert.Zero(t, len(refunds), "refunds: cursor #%d [node #%d/%d id=%d]", cursor, i+1, len(nodes), node.nodeID)
-
-		if i == 0 {
-			// first one should of submitted a withdrawal transaction
-			assert.NotEqual(t, "0x0", txId, "txId: cursor #%d [node #%d/%d id=%d]", cursor, i+1, len(nodes), node.nodeID)
-		} else {
-			assert.Equal(t, "0x0", txId, "txId: cursor #%d [node #%d/%d id=%d]", cursor, i+1, len(nodes), node.nodeID)
-		}
+	var w *control.WithdrawalResult
+	select {
+		case <- time.After(time.Second*8):
+			w = nil
+		case w_ := <- withdrawResult:
+			w = &w_
 	}
-	fmt.Printf("[CURSOR %d] END\n=======================\n\n", cursor)
 
-	// check for the refund confirmations
-	cursor = int64(1912892534296100)
-	fmt.Printf("=======================\n[CURSOR %d] BEGIN\n\n", cursor)
-	for i, node := range nodes {
-		refunds, txId, err := node.qTC.DoLoop(cursor)
-		assert.NoError(t, err, "error: cursor #%d [node #%d/%d id=%d]", cursor, i+1, len(nodes), node.nodeID)
-		// all three nodes should confirm a refund (from loop2)
-		assert.Equal(t, 1, len(refunds), "refunds: cursor #%d [node #%d/%d id=%d]", cursor, i+1, len(nodes), node.nodeID)
-		assert.Equal(t, "0x0", txId, "txId: cursor #%d [node #%d/%d id=%d]", cursor, i+1, len(nodes), node.nodeID)
-	}
-	fmt.Printf("[CURSOR %d] END\n=======================\n\n", cursor)
+	assert.NotNil(t, w, "We expect withdrawal completed")
+	assert.NoError(t, w.Err, "should not get an error")
 
 	StopNodes(nodes, []int{0, 1, 2})
 	StopRegistry(r)

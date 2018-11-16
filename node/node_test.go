@@ -90,6 +90,9 @@ func StartNodesWithIndexes(quanta *test.QuantaNodeSecrets, ethereum *test.Ethere
 
 			db.EmptyTable(node.rDb)
 			registerNode(config, node)
+
+			// ensure they start on time
+			time.Sleep(time.Millisecond*250)
 		}(*config, currentIndex)
 
 		time.Sleep(time.Second)

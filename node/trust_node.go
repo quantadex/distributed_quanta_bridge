@@ -350,6 +350,7 @@ func registerNode(config common.Config, node *TrustNode) error {
 func (n *TrustNode) Stop() {
 	n.db.CloseDB()
 	n.doneChan <- true
+	n.qTC.Stop()
 	n.listener.Stop()
 	n.restApi.Stop()
 }
