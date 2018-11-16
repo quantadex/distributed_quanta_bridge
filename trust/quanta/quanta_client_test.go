@@ -148,20 +148,3 @@ func TestCreateProposeTransactionNinesAmount(t *testing.T) {
 
 	assert.Equal(t, int64(999999999999999), int64(payOp.Amount))
 }
-
-func TestDecodeTransactionMaxAmount(t *testing.T) {
-	client, err := _GetClient()
-
-	odeposit := coin.Deposit{
-		"ACME",
-		"QARMQQVXLEUCTUYXVGBXOQ6BTO7EFCG42KO5RLWEMTFP4XU4BIF6ATBI",
-		"QAJUT2FOY66CDSB6TNLOQSJHL4STHF2HFTIGTMJ7XNRNQDIKPBPG42H5",
-		999999999999999,
-		0,  // ignored?
-	}
-
-	encoded, err := client.CreateProposeTransaction(&odeposit)
-	deposit, err := client.DecodeTransaction(encoded)
-	assert.NoError(t, err)
-	assert.Equal(t, int64(999999999999999), int64(deposit.Amount))
-}
