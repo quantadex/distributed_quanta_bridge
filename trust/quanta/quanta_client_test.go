@@ -11,6 +11,11 @@ import (
 	"testing"
 )
 
+var (
+	// 9223372036854775807
+	maxInt64 = int64(uint64(math.Exp2(63)) - 1)
+)
+
 func _GetClient() (Quanta, error){
 	client, err := NewQuanta(QuantaClientOptions{
 		Logger: logger.NewGoLogger("test"),
@@ -114,22 +119,6 @@ func TestDecodeTransaction(t *testing.T) {
 	assert.Equal(t, int64(0), deposit.BlockID)
 }
 
-func TestCreateProposeTransactionInvalidAmount(t *testing.T) {
-	client, _ := _GetClient()
-
-	odeposit := coin.Deposit{
-		"ACME",
-		"QARMQQVXLEUCTUYXVGBXOQ6BTO7EFCG42KO5RLWEMTFP4XU4BIF6ATBI",
-		"QAJUT2FOY66CDSB6TNLOQSJHL4STHF2HFTIGTMJ7XNRNQDIKPBPG42H5",
-	  999999999999999 + 1,
-		0,
-	}
-
-	_, err := client.CreateProposeTransaction(&odeposit)
-
-	assert.Error(t, err)
-}
-
 func TestCreateProposeTransactionNinesAmount(t *testing.T) {
 	client, _ := _GetClient()
 
@@ -150,17 +139,14 @@ func TestCreateProposeTransactionNinesAmount(t *testing.T) {
 	assert.Equal(t, int64(999999999999999), int64(payOp.Amount))
 }
 
-func TestCreateProposeTransactionMaxSupportedStellarAmount(t *testing.T) {
+func TestCreateProposeTransactionZeroAmount(t *testing.T) {
 	client, _ := _GetClient()
-
-  maxStellarAmount := int64(uint64(math.Exp2(63)) - 1)
-	println("max stellar amount: ", maxStellarAmount)
 
 	odeposit := coin.Deposit{
 		"ACME",
 		"QARMQQVXLEUCTUYXVGBXOQ6BTO7EFCG42KO5RLWEMTFP4XU4BIF6ATBI",
 		"QAJUT2FOY66CDSB6TNLOQSJHL4STHF2HFTIGTMJ7XNRNQDIKPBPG42H5",
-	  int64(maxStellarAmount),
+	  0,
 		0,  // ignored?
 	}
 
@@ -170,9 +156,45 @@ func TestCreateProposeTransactionMaxSupportedStellarAmount(t *testing.T) {
 	_ = xdr.SafeUnmarshalBase64(encoded, txe)
 	payOp, _ := txe.Tx.Operations[0].Body.GetPaymentOp()
 
-	// FIXME: test case fails, loss of precision somehow!
-	// expected: 9223372036854775807
-	// actual  : 9223372036854775391
+	assert.Equal(t, int64(0), int64(payOp.Amount))
+}
 
-	assert.Equal(t, maxStellarAmount, int64(payOp.Amount))
+func TestCreateProposeTransactionOneAmount(t *testing.T) {
+	client, _ := _GetClient()
+
+	odeposit := coin.Deposit{
+		"ACME",
+		"QARMQQVXLEUCTUYXVGBXOQ6BTO7EFCG42KO5RLWEMTFP4XU4BIF6ATBI",
+		"QAJUT2FOY66CDSB6TNLOQSJHL4STHF2HFTIGTMJ7XNRNQDIKPBPG42H5",
+	  1,
+		0,  // ignored?
+	}
+
+	encoded, _ := client.CreateProposeTransaction(&odeposit)
+
+	txe := &xdr.TransactionEnvelope{}
+	_ = xdr.SafeUnmarshalBase64(encoded, txe)
+	payOp, _ := txe.Tx.Operations[0].Body.GetPaymentOp()
+
+	assert.Equal(t, int64(1), int64(payOp.Amount))
+}
+
+func TestCreateProposeTransactionMaxInt64Amount(t *testing.T) {
+	client, _ := _GetClient()
+
+	odeposit := coin.Deposit{
+		"ACME",
+		"QARMQQVXLEUCTUYXVGBXOQ6BTO7EFCG42KO5RLWEMTFP4XU4BIF6ATBI",
+		"QAJUT2FOY66CDSB6TNLOQSJHL4STHF2HFTIGTMJ7XNRNQDIKPBPG42H5",
+	  maxInt64,
+		0,  // ignored?
+	}
+
+	encoded, _ := client.CreateProposeTransaction(&odeposit)
+
+	txe := &xdr.TransactionEnvelope{}
+	_ = xdr.SafeUnmarshalBase64(encoded, txe)
+	payOp, _ := txe.Tx.Operations[0].Body.GetPaymentOp()
+
+	assert.Equal(t, maxInt64, int64(payOp.Amount))
 }

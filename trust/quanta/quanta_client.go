@@ -1,6 +1,7 @@
 package quanta
 
 import (
+	"math/big"
 	"github.com/quantadex/distributed_quanta_bridge/common/kv_store"
 	"github.com/quantadex/distributed_quanta_bridge/trust/coin"
 	"github.com/quantadex/distributed_quanta_bridge/trust/peer_contact"
@@ -21,6 +22,7 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 	"strings"
 )
+
 
 type QuantaClientOptions struct {
 	Logger     logger.Logger
@@ -78,10 +80,21 @@ type Balance struct {
 	AssetIssuer string `json:"asset_issuer"`
 }
 
-// remember to test coins < 10^7
-// https://www.stellar.org/developers/guides/concepts/assets.html#amount-precision-and-representation
+var (
+	ten      = big.NewInt(10)
+	ten7     = new(big.Rat).SetInt(new(big.Int).Exp(ten, big.NewInt(7), nil))
+)
+
+/** Create proposed transaction object from the deposit.
+ *
+ * see https://www.stellar.org/developers/guides/concepts/assets.html#amount-precision-and-representation
+ */
 func (q *QuantaClient) CreateProposeTransaction(deposit *coin.Deposit) (string, error) {
-	amount := fmt.Sprintf("%.7f", float64(deposit.Amount)/10000000)
+	numerator := new(big.Rat).SetInt64(deposit.Amount)
+	amountRat := new(big.Rat).Quo(numerator, ten7)
+
+	amount := amountRat.FloatString(7)
+
 	println("Propose TX: ", deposit.CoinName, q.Issuer, amount, deposit.QuantaAddr)
 
 	tx, err := b.Transaction(
