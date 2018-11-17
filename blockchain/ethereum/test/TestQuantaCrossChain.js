@@ -1255,9 +1255,11 @@ contract('QuantaCrossChain voting 5 signers dupe vote', async (accounts) => {
 });
 
 
+/** Test cases around voting for more than active MAX_ADD_CANDIDATES.
+ */
 contract('QuantaCrossChain voting 5 signers 11 candidates', async (accounts) => {
   var initialGasBalances;
-  const maxCandidates = 10;  // must match QuantaCrossChain.MAX_CANDIDATES
+  const maxCandidates = 10;  // must match QuantaCrossChain.MAX_ADD_CANDIDATES
   var contract;
   var candidate;
   var added = 0;
@@ -1265,7 +1267,7 @@ contract('QuantaCrossChain voting 5 signers 11 candidates', async (accounts) => 
   it("should deploy the contract", async () => {
     contract = await QuantaCrossChain.deployed();
 
-//    initialGasBalances = await getGasBalances(accounts);
+    // initialGasBalances = await getGasBalances(accounts);
     await contract.assignInitialSigners([accounts[0], accounts[1], accounts[2], accounts[3], accounts[4]]);
   });
 
@@ -1333,9 +1335,115 @@ contract('QuantaCrossChain voting 5 signers 11 candidates', async (accounts) => 
     assert.equal(count, 0);  // should zero out
   });
 
-//  it("should print gas balances", async () => { await printGasUsed(accounts, initialGasBalances); });
+  // it("should print gas balances", async () => { await printGasUsed(accounts, initialGasBalances); });
 });
 
+/** Test cases around voting to remove more than active MAX_REMOVE_CANDIDATES.
+ */
+contract('QuantaCrossChain voting remove 6 signers 6 candidates', async (accounts) => {
+  var initialGasBalances;
+  const maxCandidates = 5;  // must match QuantaCrossChain.MAX_REMOVE_CANDIDATES
+  var contract;
+  var candidate;
+  var added = 0;
+  var simpleMajority = 0;
+
+  it("should deploy the contract", async () => {
+    contract = await QuantaCrossChain.deployed();
+
+    // initialGasBalances = await getGasBalances(accounts);
+    await contract.assignInitialSigners([accounts[0], accounts[1], accounts[2], accounts[3], accounts[4], accounts[5]]);
+
+    simpleMajority = Number(await contract.requiredVotes());
+    assert.equal(4, simpleMajority);
+  });
+
+  it("should allow votes up to max", async () => {
+    for(var i=0; i < maxCandidates; i++) {
+      candidate = accounts[1+i];
+
+      // accounts[0] will try to sack everybody else! :)
+      await contract.voteRemoveSigner(candidate, {from: accounts[0]});
+      let count = Number(await contract.getRemoveCandidateVotes(candidate));
+      assert.equal(count, 1);
+
+      let numRemoveCandidates = Number(await contract.numRemoveCandidates());
+      assert.equal(numRemoveCandidates, i+1);
+    }
+
+    let numRemoveCandidates = Number(await contract.numRemoveCandidates());
+    assert.equal(numRemoveCandidates, maxCandidates);
+  });
+
+  it("should overwrite first candidate", async () => {
+    candidate = accounts[0]
+    await contract.voteRemoveSigner(candidate, {from: accounts[1]});
+
+    let numRemoveCandidates = Number(await contract.numRemoveCandidates());
+    assert.equal(numRemoveCandidates, maxCandidates);
+
+    let count = Number(await contract.getRemoveCandidateVotes(accounts[0]));
+    assert.equal(count, 1);
+
+    count = Number(await contract.getRemoveCandidateVotes(accounts[1]));
+    assert.equal(count, 0);  // this one got overwritten by the overflow
+
+    // the rest should stay put
+    count = Number(await contract.getRemoveCandidateVotes(accounts[2]));
+    assert.equal(count, 1);
+
+    count = Number(await contract.getRemoveCandidateVotes(accounts[3]));
+    assert.equal(count, 1);
+
+    count = Number(await contract.getRemoveCandidateVotes(accounts[4]));
+    assert.equal(count, 1);
+
+    count = Number(await contract.getRemoveCandidateVotes(accounts[5]));
+    assert.equal(count, 1);
+  });
+
+  // this test case had account[0] try to vote everyone else out
+  // we complete this scenario by getting everyone else to successfully
+  // vote account[0] out :)
+  it("should have blood in the water", async () => {
+    let candidates;
+    let votes;
+    let candidate = accounts[0];
+    let isSigner;
+
+    candidates = Number(await contract.numRemoveCandidates());
+    votes = Number(await contract.getRemoveCandidateVotes(candidate))
+    isSigner = await contract.isSigner(candidate)
+    assert.equal(votes, 1)
+    assert.equal(candidates, maxCandidates)
+    assert.equal(isSigner, true)
+
+    await contract.voteRemoveSigner(candidate, {from: accounts[2]});
+    candidates = Number(await contract.numRemoveCandidates());
+    votes = Number(await contract.getRemoveCandidateVotes(candidate))
+    isSigner = await contract.isSigner(candidate)
+    assert.equal(votes, 2)
+    assert.equal(candidates, maxCandidates)
+    assert.equal(isSigner, true)
+
+    await contract.voteRemoveSigner(candidate, {from: accounts[3]});
+    candidates = Number(await contract.numRemoveCandidates());
+    votes = Number(await contract.getRemoveCandidateVotes(candidate))
+    isSigner = await contract.isSigner(candidate)
+    assert.equal(votes, 3)
+    assert.equal(candidates, maxCandidates)
+    assert.equal(isSigner, true)
+
+    // final 4th vote!
+    await contract.voteRemoveSigner(candidate, {from: accounts[4]});
+    candidates = Number(await contract.numRemoveCandidates());
+    votes = Number(await contract.getRemoveCandidateVotes(candidate))
+    isSigner = await contract.isSigner(candidate)
+    assert.equal(candidates, maxCandidates-1)  // signer removed!
+    assert.equal(votes, 0)  // no more votes, because removed
+    assert.equal(isSigner, false)  // outta here!
+  });
+});
 
 contract('gas report', async (accounts) => {
   it("should print total gas usage", async () => {

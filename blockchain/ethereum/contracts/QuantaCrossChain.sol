@@ -21,7 +21,8 @@ contract QuantaCrossChain is Ownable {
     address addr;
     bool[] votes;
   }
-  uint8 public MAX_CANDIDATES = 10;
+  uint8 public MAX_ADD_CANDIDATES = 10;
+  uint8 public MAX_REMOVE_CANDIDATES = 5;
 
   Poll[] additions;
   uint8 additionsHead;
@@ -152,7 +153,10 @@ contract QuantaCrossChain is Ownable {
     emit TransactionResult(success, txIdLast, erc20Addr, toAddr, amount, verified);
   }
 
-
+  /** Vote to add the candidate. Caller automatically votes for this candidate.
+   * If more than MAX_ADD_CANDIDATES are active, then one is silently dropped
+   * and replaced with the new candidate.
+   * Simple majority ratifies the candidate */
   function voteAddSigner(address candidate) external returns(uint votesNeeded) {
     require(candidate != 0x0);
     assert(signers.length > 0);
@@ -170,7 +174,7 @@ contract QuantaCrossChain is Ownable {
 
     if (i == additions.length) {  // did not find it
       // need to add it
-      if (additions.length == MAX_CANDIDATES) {
+      if (additions.length == MAX_ADD_CANDIDATES) {
         // replace at the head
 
         // initialize
@@ -185,7 +189,7 @@ contract QuantaCrossChain is Ownable {
 
         // increment the head
         additionsHead++;
-        if (additionsHead == MAX_CANDIDATES) {
+        if (additionsHead == MAX_ADD_CANDIDATES) {
           additionsHead = 0;
         }
       } else {
@@ -215,7 +219,10 @@ contract QuantaCrossChain is Ownable {
     }
   }
 
-
+  /** Vote to remove the candidate signer. Caller automatically votes for this candidate.
+   * If more than MAX_REMOVE_CANDIDATES are active, then one is silently dropped
+   * and replaced with the new candidate.
+   * Simple majority removes the signer. */
   function voteRemoveSigner(address candidate) external returns(uint votesNeeded) {
     require(candidate != 0x0);
     assert(signers.length > 0);
@@ -233,7 +240,7 @@ contract QuantaCrossChain is Ownable {
 
     if (i == removals.length) {  // did not find it
       // need to add it
-      if (removals.length == MAX_CANDIDATES) {
+      if (removals.length == MAX_REMOVE_CANDIDATES) {
         // replace at the head
 
         // overwrite and initialize
@@ -248,7 +255,7 @@ contract QuantaCrossChain is Ownable {
 
         // increment the head
         removalsHead++;
-        if (removalsHead == MAX_CANDIDATES) {
+        if (removalsHead == MAX_REMOVE_CANDIDATES) {
           removalsHead = 0;
         }
       } else {
