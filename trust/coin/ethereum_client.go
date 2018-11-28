@@ -306,12 +306,14 @@ func (l *Listener) GetForwardContract(blockNumber int64) ([]*ForwardInput, error
 		//println(data)
 
 		// matches our forwarding contract
-		if strings.HasPrefix(data, Forwarder.ForwarderBin) || strings.HasPrefix(data, Forwarder.ForwarderBinV2) {
+		if strings.HasPrefix(data, Forwarder.ForwarderBin) || strings.HasPrefix(data, Forwarder.ForwarderBinV2) || strings.HasPrefix(data, Forwarder.ForwarderBinV3) {
 			var remain string
 			if strings.HasPrefix(data, Forwarder.ForwarderBin) {
 				remain = strings.TrimPrefix(data, Forwarder.ForwarderBin)
-			} else {
+			} else if strings.HasPrefix(data, Forwarder.ForwarderBinV2)  {
 				remain = strings.TrimPrefix(data, Forwarder.ForwarderBinV2)
+			} else {
+				remain = strings.TrimPrefix(data, Forwarder.ForwarderBinV3)
 			}
 
 			input := &ForwardInput{}

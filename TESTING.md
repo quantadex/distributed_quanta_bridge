@@ -81,7 +81,7 @@ In one terminal:
 > truffle exec scripts/init_signers.js  --network test
 
 Note: make sure your EthereumBlockStart config is 0, setup your configurations
-      in a privatenet
+​      in a privatenet
 
 Your private ethereum:
 
@@ -219,4 +219,47 @@ setup asset:  (replace issuer)
 See: https://quanta.gitbook.io/documentation/testnet/transfer-eth-erc-20
 
 
+# Testing tips:
+
+Always know what you should expect to see.
+
+
+
+**Running the nodes:**
+
+1. We should expect the nodes to process deposits for each block.  
+
+```
+Got blocks [1976 1977 1978 1979 1980 1981 1982 1983 1984 1985 1986 1987 1988 1989 1990 1991 1992 1993 1994]
+***** Start # of blocks=0 man.N=3,man.Q=3 *** 
+http://testnet-02.quantachain.io:8000//accounts/QBU734ICFLPITA6IYTZCUJEQWLIOV2R5DHVCAXGJ4AB4XMBTMM4MSB7P/payments?order=asc&limit=100&cursor=0
+2018/11/28 11:54:19 I [5000] QuantaToCoin refunds []
+2018/11/28 11:54:19 I [5000] Next cursor is = 0, numRefunds=0
+2018/11/28 11:54:22 D [5000] Coin2Quanta: No new block last=1994 top=1994
+```
+
+
+
+2. Creating a new forwarding address
+
+```
+   truffle exec scripts/new_forward_address.js 0x9fbda871d559710256a2502a2517b794b482db40 QC2PFVZGWAZ2MXZPIHQLO2LJ5F5PZCVRN756FEFVHLGMWANQK3SOTKWW --network test
+   
+   
+   2018/11/28 11:36:14 I [5000] New Forwarder Address ETH->QUANTA address, 0xAa588d3737B611baFD7bD713445b314BD453a5C8 -> QC2PFVZGWAZ2MXZPIHQLO2LJ5F5PZCVRN756FEFVHLGMWANQK3SOTKWW
+   
+```
+
+Take note of the block # when it was executed.  so you know which block number to look for in the logs
+
+
+3. Forwarding address should show up on each of the node:
+
+```
+   2018/11/28 11:36:14 I [5000] New Forwarder Address ETH->QUANTA address, 0xAa588d3737B611baFD7bD713445b314BD453a5C8 -> QC2PFVZGWAZ2MXZPIHQLO2LJ5F5PZCVRN756FEFVHLGMWANQK3SOTKWW
+```
+
+
+
+4. Make a deposit, take a note of amount, and block number
 

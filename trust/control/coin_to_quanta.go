@@ -351,7 +351,9 @@ func (c *CoinToQuanta) DoLoop(blockIDs []int64) ([]*coin.Deposit) {
 			}
 
 			if deposits != nil {
-				c.logger.Info(fmt.Sprintf("Block %d Got deposits %d %v", blockID, len(deposits), deposits))
+				if len(deposits) > 0 {
+					c.logger.Info(fmt.Sprintf("Block %d Got deposits %d %v", blockID, len(deposits), deposits))
+				}
 
 				for _, dep := range deposits {
 					err = db.ConfirmDeposit(c.rDb, dep)

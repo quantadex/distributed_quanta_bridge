@@ -107,6 +107,7 @@ func initNode(config common.Config, targetCoin coin.Coin) (*TrustNode, bool) {
 		return nil, false
 	}
 
+	println(config.DatabaseUrl)
 	err = node.db.Connect(config.DatabaseUrl)
 	if err != nil {
 		node.log.Error("Failed to connect to database")
