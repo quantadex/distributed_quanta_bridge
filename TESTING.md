@@ -70,15 +70,32 @@ Note the the Trust contract.
 ## Deploy in privatenet
 
 ### deploy geth
-geth --datadir ./geth/data init ./geth/genesis.json
-make start-geth
-
-
 > cd blockchain/ethereum
-> export MNENOMIC=xxx
-> truffle compile
-> truffle migrate --network ropsten --reset
+> geth --datadir ./geth/data init ./geth/genesis.json
 
+In one terminal:
+> make start-geth
+> truffle compile
+> truffle migrate --network test
+> truffle exec scripts/print_accounts.js  --network test
+> truffle exec scripts/init_signers.js  --network test
+
+Note: make sure your EthereumBlockStart config is 0, setup your configurations
+      in a privatenet
+
+Your private ethereum:
+
+(0) c87509a1c067bbde78beb793e6fa76530b6382a4c0241e5e4a9ec0a0f44dc0d3
+(1) ae6ae8e5ccbfb04590405997ee2d52d2b330726137b875053c36d94e974d162f
+(2) 0dbbe8e4ae425a6d2687f1a7e3ba17bc98c673636790f1b8ad91193c05875ef1
+
+Use the private key, and setup your (4) key in your metamask:
+
+0xc88b703fb08cbea894b6aeff5a544fb92e78a18e19814cd85da83b71f772aa6c
+
+Create forwarding:
+> truffle exec scripts/new_forward_address.js 0x9fbda871d559710256a2502a2517b794b482db40 QC2PFVZGWAZ2MXZPIHQLO2LJ5F5PZCVRN756FEFVHLGMWANQK3SOTKWW --network test
+forwarding:  0xfb88de099e13c3ed21f80a7a1e49f8caecf10df6
 
 ## setup nodes
 
@@ -92,7 +109,7 @@ truffle exec scripts/print_accounts.js  --network ropsten
 
 
 ## create database
-
+```
 quoc@MacBook-Pro-8:~/Projects/go/src/github.com/quantadex/distributed_quanta_bridge/node$ psql
 psql (9.6.3)
 Type "help" for help.
@@ -103,7 +120,7 @@ CREATE DATABASE
 quoc=# create database crosschain_3;
 CREATE DATABASE
 quoc=# \q
-
+```
 ## setup the signers for trust contract
 
 Change the following:
