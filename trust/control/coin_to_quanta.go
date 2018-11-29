@@ -1,32 +1,31 @@
 package control
 
 import (
+	"encoding/json"
+	"errors"
 	"fmt"
 	"github.com/ethereum/go-ethereum/common"
 	common2 "github.com/quantadex/distributed_quanta_bridge/common"
 	"github.com/quantadex/distributed_quanta_bridge/common/kv_store"
 	"github.com/quantadex/distributed_quanta_bridge/common/logger"
 	"github.com/quantadex/distributed_quanta_bridge/common/manifest"
+	"github.com/quantadex/distributed_quanta_bridge/common/queue"
 	"github.com/quantadex/distributed_quanta_bridge/trust/coin"
+	"github.com/quantadex/distributed_quanta_bridge/trust/db"
 	"github.com/quantadex/distributed_quanta_bridge/trust/key_manager"
 	"github.com/quantadex/distributed_quanta_bridge/trust/peer_contact"
 	"github.com/quantadex/distributed_quanta_bridge/trust/quanta"
-	"github.com/quantadex/distributed_quanta_bridge/trust/db"
-	"time"
-	"strings"
-	"errors"
 	"github.com/quantadex/quanta_book/consensus/cosi"
-	"encoding/json"
-	"github.com/quantadex/distributed_quanta_bridge/common/queue"
 	"github.com/stellar/go/clients/horizon"
 	"net/http"
+	"strings"
+	"time"
 )
 
-
 type DepositResult struct {
-	D *coin.Deposit
+	D   *coin.Deposit
 	Err error
-	Tx string
+	Tx  string
 }
 
 /**
@@ -36,25 +35,25 @@ type DepositResult struct {
  * and using the round robin module creates transactions in quanta
  */
 type CoinToQuanta struct {
-	logger           logger.Logger
+	logger        logger.Logger
 	coinChannel   coin.Coin
 	quantaChannel quanta.Quanta
 	db            kv_store.KVStore
-	rDb			  *db.DB
+	rDb           *db.DB
 	man           *manifest.Manifest
 	peer          peer_contact.PeerContact
 	coinName      string
 	trustAddress  common.Address
-	trustPeer           *peer_contact.TrustPeerNode
-	cosi                *cosi.Cosi
+	trustPeer     *peer_contact.TrustPeerNode
+	cosi          *cosi.Cosi
 	horizonClient *horizon.Client
 
-	readyChan			chan bool
-	doneChan			chan bool
-	SuccessCb			func(DepositResult)
-	nodeID              int
+	readyChan chan bool
+	doneChan  chan bool
+	SuccessCb func(DepositResult)
+	nodeID    int
 	C2QOptions
-	quantaOptions		quanta.QuantaClientOptions
+	quantaOptions quanta.QuantaClientOptions
 }
 
 type C2QOptions struct {
@@ -100,7 +99,7 @@ func NewCoinToQuanta(log logger.Logger,
 
 	res.trustPeer = peer_contact.NewTrustPeerNode(man, peer, nodeID, queue_, queue.PEERMSG_QUEUE, "/node/api/peer")
 	res.horizonClient = &horizon.Client{
-		URL: quantaOptions.HorizonUrl,
+		URL:  quantaOptions.HorizonUrl,
 		HTTP: http.DefaultClient,
 	}
 
@@ -161,7 +160,7 @@ func NewCoinToQuanta(log logger.Logger,
 
 		err = db.SignDeposit(rDb, deposit)
 		if err != nil {
-			return errors.New("Failed to confirm transaction: "+ err.Error())
+			return errors.New("Failed to confirm transaction: " + err.Error())
 		}
 		return nil
 	}
@@ -203,7 +202,6 @@ func NewCoinToQuanta(log logger.Logger,
 	}()
 
 	go res.dispatchIssuance()
-
 
 	return res
 }
@@ -270,14 +268,14 @@ func (c *CoinToQuanta) getDepositsInBlock(blockID int64) ([]*coin.Deposit, error
 
 func (c *CoinToQuanta) processDeposits() {
 	txs := db.QueryDepositByAge(c.rDb, time.Now().Add(-time.Second*5), []string{db.SUBMIT_CONSENSUS})
-	for _, tx := range txs {
+	if len(txs) > 0 {
 		w := &coin.Deposit{
-			Tx:         tx.Tx,
-			CoinName:   tx.Coin,
-			QuantaAddr: tx.To,
-			BlockID:    tx.BlockId,
-			SenderAddr: tx.From,
-			Amount:     tx.Amount,
+			Tx:         txs[0].Tx,
+			CoinName:   txs[0].Coin,
+			QuantaAddr: txs[0].To,
+			BlockID:    txs[0].BlockId,
+			SenderAddr: txs[0].From,
+			Amount:     txs[0].Amount,
 		}
 
 		c.StartConsensus(w)
@@ -324,7 +322,7 @@ func (c *CoinToQuanta) dispatchIssuance() {
 				c.processSubmissions()
 			}
 
-		case <- c.doneChan:
+		case <-c.doneChan:
 			c.logger.Infof("Exiting.")
 			break
 		}
@@ -344,7 +342,7 @@ func (c *CoinToQuanta) StartConsensus(tx *coin.Deposit) (string, error) {
 		return HEX_NULL, err
 	}
 
-	data, err := json.Marshal(&coin.EncodedMsg{ encoded,  tx.Tx, tx.BlockID})
+	data, err := json.Marshal(&coin.EncodedMsg{encoded, tx.Tx, tx.BlockID})
 
 	if err != nil {
 		c.logger.Error("Failed to encode refund 2" + err.Error())
@@ -365,7 +363,7 @@ func (c *CoinToQuanta) StartConsensus(tx *coin.Deposit) (string, error) {
 		// save in eth_tx_log_signed (kvstore) [S=signed,X=submitted,F=failed(uncoverable), R=retry(connection failed)] ; recoverable=RPC not available
 		c.logger.Infof("Great! Cosi successfully signed deposit")
 
-		txe , err := quanta.PostProcessTransaction(c.quantaOptions.Network, encoded, tx.Signatures)
+		txe, err := quanta.PostProcessTransaction(c.quantaOptions.Network, encoded, tx.Signatures)
 		db.ChangeSubmitQueue(c.rDb, tx.Tx, txe)
 		//c.quantaChannel.ProcessDeposit(tx, encoded)
 
@@ -373,7 +371,7 @@ func (c *CoinToQuanta) StartConsensus(tx *coin.Deposit) (string, error) {
 		errResult = err
 
 		if c.SuccessCb != nil {
-			c.SuccessCb(DepositResult{ tx, errResult, txResult})
+			c.SuccessCb(DepositResult{tx, errResult, txResult})
 		}
 	}
 	return txResult, errResult
@@ -392,7 +390,7 @@ func (c *CoinToQuanta) Stop() {
  *
  * returns allDeposits []*coin.Deposit
  */
-func (c *CoinToQuanta) DoLoop(blockIDs []int64) ([]*coin.Deposit) {
+func (c *CoinToQuanta) DoLoop(blockIDs []int64) []*coin.Deposit {
 	c.logger.Info(fmt.Sprintf("***** Start # of blocks=%d man.N=%d,man.Q=%d *** ", len(blockIDs), c.man.N, c.man.Q))
 
 	allDeposits := make([]*coin.Deposit, 0)
