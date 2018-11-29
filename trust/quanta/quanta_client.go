@@ -143,9 +143,9 @@ func (q *QuantaClient) Attach() error {
 }
 
 func (q *QuantaClient) AttachQueue(kv kv_store.KVStore) error {
-	q.worker = NewSubmitWorker(q.QuantaClientOptions)
-	q.worker.AttachQueue(q.kv)
-	go q.worker.Dispatch()
+	//q.worker = NewSubmitWorker(q.QuantaClientOptions)
+	//q.worker.AttachQueue(q.kv)
+	//go q.worker.Dispatch()
 	return nil
 }
 
@@ -230,7 +230,7 @@ func (q *QuantaClient) GetTransactionWithHash(hash string) (*horizon.Transaction
 // returns nextPageToken
 func (q *QuantaClient) GetRefundsInBlock(cursor int64, trustAddress string) ([]Refund, int64, error) {
 	url := fmt.Sprintf("%s/accounts/%s/payments?order=asc&limit=100&cursor=%d", q.horizonClient.URL, trustAddress, cursor)
-	println(url)
+	//println(url)
 
 	resp, err := q.horizonClient.HTTP.Get(url)
 
@@ -291,7 +291,7 @@ func (q *QuantaClient) GetRefundsInBlock(cursor int64, trustAddress string) ([]R
 	return refunds, cursor, nil
 }
 
-func (q *QuantaClient) postProcessTransaction(base64 string, sigs []string) (string, error) {
+func PostProcessTransaction(network string, base64 string, sigs []string) (string, error) {
 	txe := &xdr.TransactionEnvelope{}
 	err := xdr.SafeUnmarshalBase64(base64, txe)
 	if err != nil {
@@ -301,7 +301,7 @@ func (q *QuantaClient) postProcessTransaction(base64 string, sigs []string) (str
 	b := &build.TransactionEnvelopeBuilder{E: txe}
 	b.Init()
 
-	err = b.MutateTX(build.Network{q.QuantaClientOptions.Network})
+	err = b.MutateTX(build.Network{network})
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -310,7 +310,8 @@ func (q *QuantaClient) postProcessTransaction(base64 string, sigs []string) (str
 		xs := xdr.DecoratedSignature{}
 		err := xdr.SafeUnmarshalBase64(s, &xs)
 		if err != nil {
-			q.Logger.Error("unmarshall error sig")
+			//q.Logger.Error("unmarshall error sig")
+			return "", err
 		}
 		decs = append(decs, xs)
 	}
@@ -321,7 +322,7 @@ func (q *QuantaClient) postProcessTransaction(base64 string, sigs []string) (str
 }
 
 func (q *QuantaClient) ProcessDeposit(deposit *coin.Deposit, proposed string) error {
-	txe , err := q.postProcessTransaction(proposed, deposit.Signatures)
+	txe , err := PostProcessTransaction(q.QuantaClientOptions.Network, proposed, deposit.Signatures)
 	println(txe, err)
 	return db.ChangeSubmitQueue(q.Db, deposit.Tx, txe)
 }

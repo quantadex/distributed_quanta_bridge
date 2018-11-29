@@ -284,6 +284,10 @@ func (n *TrustNode) initTrust(config common.Config) {
 		control.C2QOptions{
 			config.EthereumTrustAddr,
 			config.EthereumBlockStart,
+		},
+		quanta.QuantaClientOptions{
+			HorizonUrl: config.HorizonUrl,
+			Network: config.NetworkPassphrase,
 		})
 }
 

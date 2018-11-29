@@ -18,6 +18,8 @@ import (
 	"github.com/quantadex/quanta_book/consensus/cosi"
 	"encoding/json"
 	"github.com/quantadex/distributed_quanta_bridge/common/queue"
+	"github.com/stellar/go/clients/horizon"
+	"net/http"
 )
 
 
@@ -45,10 +47,14 @@ type CoinToQuanta struct {
 	trustAddress  common.Address
 	trustPeer           *peer_contact.TrustPeerNode
 	cosi                *cosi.Cosi
+	horizonClient *horizon.Client
+
+	readyChan			chan bool
 	doneChan			chan bool
 	SuccessCb			func(DepositResult)
 	nodeID              int
 	C2QOptions
+	quantaOptions		quanta.QuantaClientOptions
 }
 
 type C2QOptions struct {
@@ -75,7 +81,8 @@ func NewCoinToQuanta(log logger.Logger,
 	nodeID int,
 	peer peer_contact.PeerContact,
 	queue_ queue.Queue,
-	options C2QOptions) *CoinToQuanta {
+	options C2QOptions,
+	quantaOptions quanta.QuantaClientOptions) *CoinToQuanta {
 	res := &CoinToQuanta{C2QOptions: options}
 	res.logger = log
 	res.coinChannel = c
@@ -88,8 +95,14 @@ func NewCoinToQuanta(log logger.Logger,
 	res.peer = peer
 	res.trustAddress = common.HexToAddress(options.EthTrustAddress)
 	res.doneChan = make(chan bool, 1)
-	res.trustPeer = peer_contact.NewTrustPeerNode(man, peer, nodeID, queue_, queue.PEERMSG_QUEUE, "/node/api/peer")
+	res.readyChan = make(chan bool, 1)
+	res.quantaOptions = quantaOptions
 
+	res.trustPeer = peer_contact.NewTrustPeerNode(man, peer, nodeID, queue_, queue.PEERMSG_QUEUE, "/node/api/peer")
+	res.horizonClient = &horizon.Client{
+		URL: quantaOptions.HorizonUrl,
+		HTTP: http.DefaultClient,
+	}
 
 	res.cosi = cosi.NewProtocol(res.trustPeer, nodeID == 0, time.Second*3)
 
@@ -255,22 +268,62 @@ func (c *CoinToQuanta) getDepositsInBlock(blockID int64) ([]*coin.Deposit, error
 	return deposits, nil
 }
 
+func (c *CoinToQuanta) processDeposits() {
+	txs := db.QueryDepositByAge(c.rDb, time.Now().Add(-time.Second*5), []string{db.SUBMIT_CONSENSUS})
+	for _, tx := range txs {
+		w := &coin.Deposit{
+			Tx:         tx.Tx,
+			CoinName:   tx.Coin,
+			QuantaAddr: tx.To,
+			BlockID:    tx.BlockId,
+			SenderAddr: tx.From,
+			Amount:     tx.Amount,
+		}
+
+		c.StartConsensus(w)
+	}
+}
+
+func (c *CoinToQuanta) processSubmissions() {
+	data := db.QueryDepositByAge(c.rDb, time.Now(), []string{db.SUBMIT_QUEUE})
+	if len(data) > 0 {
+		c.logger.Errorf("processSubmissions pending=%d", len(data))
+	}
+
+	for k, v := range data {
+
+		c.logger.Infof("Submit TX: %s signed=%v %v", v.Tx, v.Signed, v.SubmitTx)
+
+		res, err := c.horizonClient.SubmitTransaction(v.SubmitTx)
+		if err != nil {
+			msg := quanta.ErrorString(err, false)
+			c.logger.Error("could not submit transaction " + msg)
+			if strings.Contains(msg, "tx_bad_seq") {
+				db.ChangeSubmitState(c.rDb, v.Tx, db.SUBMIT_FATAL)
+			}
+		} else {
+			c.logger.Infof("Successful tx submission %s,remove %s", res.Hash, k)
+			err = db.ChangeSubmitState(c.rDb, v.Tx, db.SUBMIT_SUCCESS)
+			if err != nil {
+				c.logger.Error("Error removing key=" + v.Tx)
+			}
+		}
+
+	}
+}
+
 func (c *CoinToQuanta) dispatchIssuance() {
+	ready := true
 	for {
 		select {
+		case <-c.readyChan:
+			ready = true
 		case <-time.After(time.Second):
-			txs := db.QueryDepositByAge(c.rDb, time.Now().Add(-time.Second*5), []string{db.SUBMIT_CONSENSUS})
-			for _, tx := range txs {
-				w := &coin.Deposit{
-					Tx: tx.Tx,
-					CoinName: tx.Coin,
-					QuantaAddr: tx.To,
-					BlockID: tx.BlockId,
-					SenderAddr: tx.From,
-					Amount: tx.Amount,
-				}
-				c.StartConsensus(w)
+			if ready {
+				c.processDeposits()
+				c.processSubmissions()
 			}
+
 		case <- c.doneChan:
 			c.logger.Infof("Exiting.")
 			break
@@ -312,7 +365,9 @@ func (c *CoinToQuanta) StartConsensus(tx *coin.Deposit) (string, error) {
 		// save in eth_tx_log_signed (kvstore) [S=signed,X=submitted,F=failed(uncoverable), R=retry(connection failed)] ; recoverable=RPC not available
 		c.logger.Infof("Great! Cosi successfully signed deposit")
 
-		c.quantaChannel.ProcessDeposit(tx, encoded)
+		txe , err := quanta.PostProcessTransaction(c.quantaOptions.Network, encoded, tx.Signatures)
+		db.ChangeSubmitQueue(c.rDb, tx.Tx, txe)
+		//c.quantaChannel.ProcessDeposit(tx, encoded)
 
 		txResult = ""
 		errResult = err
