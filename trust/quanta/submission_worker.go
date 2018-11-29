@@ -6,12 +6,40 @@ import (
 	"net/http"
 	"time"
 	"github.com/quantadex/distributed_quanta_bridge/trust/db"
+	"fmt"
+	"github.com/pkg/errors"
 )
 
 type SubmitWorkerImpl struct {
 	horizonClient *horizon.Client
 	QuantaClientOptions
 }
+
+func ErrorString(err error, showStackTrace ...bool) string {
+	var errorString string
+	herr, isHorizonError := errors.Cause(err).(*horizon.Error)
+
+	if isHorizonError {
+		errorString += fmt.Sprintf("%v: %v", herr.Problem.Status, herr.Problem.Title)
+
+		resultCodes, err := herr.ResultCodes()
+		if err == nil {
+			errorString += fmt.Sprintf(" (%v)", resultCodes)
+		}
+	} else {
+		errorString = fmt.Sprintf("%v", err)
+	}
+
+	if len(showStackTrace) > 0 {
+		if isHorizonError {
+			errorString += fmt.Sprintf("\nDetail: %s\nType: %s\n", herr.Problem.Detail, herr.Problem.Type)
+		}
+		errorString += fmt.Sprintf("\nStack trace:\n%+v\n", err)
+	}
+
+	return errorString
+}
+
 
 func (s *SubmitWorkerImpl) Dispatch() {
 	if s.Logger == nil {
@@ -31,13 +59,7 @@ func (s *SubmitWorkerImpl) Dispatch() {
 
 			res, err := s.horizonClient.SubmitTransaction(v.SubmitTx)
 			if err != nil {
-				err2 := err.(*horizon.Error)
-				s.Logger.Error("could not submit transaction " + err2.Error() + err2.Problem.Detail)
-
-				txError := FailedTransactionError{res.Result}
-				opCodes, _ := txError.OperationResultCodes()
-				txCodes, _ := txError.TransactionResultCode()
-				s.Logger.Errorf("Op codes %v Tx codes %v", opCodes, txCodes)
+				s.Logger.Error("could not submit transaction " + ErrorString(err, false))
 			} else {
 				s.Logger.Infof("Successful tx submission %s,remove %s", res.Hash, k)
 				err = db.ChangeSubmitState(s.Db, v.Tx, db.SUBMIT_SUCCESS)
