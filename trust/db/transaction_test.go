@@ -46,14 +46,14 @@ func TestTransactionQuery(t *testing.T) {
 	}
 
 	// query at time t
-	txs := QueryTransactionByAge(rDb, time.Now().Add(-time.Second*3), []string{ SUBMIT_QUEUE})
+	txs := QueryDepositByAge(rDb, time.Now().Add(-time.Second*3), []string{ SUBMIT_QUEUE})
 	if len(txs) != 0 {
 		t.Error("Expecting to have zero items")
 	}
 
 	// query at time t - 3
 	time.Sleep(time.Second * 4)
-	txs = QueryTransactionByAge(rDb, time.Now().Add(-time.Second*3), []string{ SUBMIT_QUEUE})
+	txs = QueryDepositByAge(rDb, time.Now().Add(-time.Second*3), []string{ SUBMIT_QUEUE})
 	if len(txs) != 1 {
 		t.Error("Expecting to have one items")
 	}
