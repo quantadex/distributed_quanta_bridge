@@ -6,6 +6,7 @@ import (
 	"github.com/go-pg/pg"
 	"github.com/quantadex/distributed_quanta_bridge/trust/coin"
 	"time"
+	"github.com/stretchr/testify/assert"
 )
 
 func TestTransactionQuery(t *testing.T) {
@@ -46,15 +47,16 @@ func TestTransactionQuery(t *testing.T) {
 	}
 
 	// query at time t
-	txs := QueryDepositByAge(rDb, time.Now().Add(-time.Second*3), []string{ SUBMIT_QUEUE})
+	txs := QueryWithdrawalByAge(rDb, time.Now().Add(-time.Second*3), []string{ SUBMIT_QUEUE})
 	if len(txs) != 0 {
 		t.Error("Expecting to have zero items")
 	}
 
 	// query at time t - 3
 	time.Sleep(time.Second * 4)
-	txs = QueryDepositByAge(rDb, time.Now().Add(-time.Second*3), []string{ SUBMIT_QUEUE})
+	txs = QueryWithdrawalByAge(rDb, time.Now().Add(-time.Second*3), []string{ SUBMIT_QUEUE})
 	if len(txs) != 1 {
+		assert.Equal(t, 1, len(txs))
 		t.Error("Expecting to have one items")
 	}
 
