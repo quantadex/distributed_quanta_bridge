@@ -25,11 +25,11 @@
 
 [[projects]]
   branch = "master"
-  digest = "1:c1a6eac1aa52b62daff552d5bd043453a8675b7f9eee0ea924ed7b00a5a56264"
+  digest = "1:31e0eca58e061205b8763184d8d31b85555b660a4ab7d11724cf1b595e002fb8"
   name = "github.com/aristanetworks/goarista"
   packages = ["monotime"]
   pruneopts = "T"
-  revision = "5faa74ffbed7096292069fdcd0eae96146a3158a"
+  revision = "f7cbe917ef623dd7062366ce4a1a0558c997f437"
 
 [[projects]]
   branch = "master"
@@ -49,11 +49,11 @@
 
 [[projects]]
   branch = "master"
-  digest = "1:05e21a7d7c3058ac655d1fadd968cc1268ef8c77782415227df1f3a1118a2868"
+  digest = "1:74e6390b521e5f68be220af535e4122b246401bbd118a08a36cac84818bae4ad"
   name = "github.com/btcsuite/btcd"
   packages = ["btcec"]
   pruneopts = "T"
-  revision = "3dcf298fed2d5fd65918dc560b3942b2aa0629e8"
+  revision = "7d2daa5bfef28c5e282571bc06416516936115ee"
 
 [[projects]]
   digest = "1:fed1f537c2f1269fe475a8556c393fe466641682d73ef8fd0491cd3aa1e47bad"
@@ -161,7 +161,7 @@
   packages = ["."]
   pruneopts = "T"
   revision = "f04e7487e9a6b9d9837d52743fb5f40576c56411"
-  version = "v0.1.1"
+  version = "v0.2.0"
 
 [[projects]]
   digest = "1:aacef5f5e45685f2aeda5534d0a750dee6859de7e9088cdd06192787bb01ae6d"
@@ -360,7 +360,7 @@
 
 [[projects]]
   branch = "develop"
-  digest = "1:20729b6cc88700a8fd5ecd24178987b45cadc1bd130c28e2154013becc2940f1"
+  digest = "1:d56777f0bc68f62552c98a658c024b60a66736e24999d1f0b6dd23ae2ef9af9a"
   name = "github.com/quantadex/quanta_book"
   packages = [
     "common",
@@ -369,7 +369,7 @@
     "storage/pb",
   ]
   pruneopts = "T"
-  revision = "1b7c53521125ef7d4e3f4c16906f7239b1792563"
+  revision = "cb28cd68676330fb608624068f09c087a0d064c6"
 
 [[projects]]
   digest = "1:9787d2d3220cbfd444596afd03ab0abcf391df169b789fbe3eae27fa2e426cf6"
@@ -526,14 +526,14 @@
 
 [[projects]]
   branch = "master"
-  digest = "1:a92d7dd2268883d2d466576cb7319cc5321c906d853da4b4ac1ffc407895f809"
+  digest = "1:9f65bf850da1e1c8f97187d98643b580734a3550f73b12dd751fc723d1cf4b2c"
   name = "golang.org/x/net"
   packages = [
     "context",
     "websocket",
   ]
   pruneopts = "T"
-  revision = "adae6a3d119ae4890b46832a2e88a95adc62b8e7"
+  revision = "351d144fa1fc0bd934e2408202be0c29f25e35a0"
 
 [[projects]]
   branch = "master"
@@ -570,12 +570,12 @@
   revision = "c1b8fa8bdccecb0b8db834ee0b92fdbcfa606dd6"
 
 [[projects]]
-  digest = "1:342378ac4dcb378a5448dd723f0784ae519383532f5e70ade24132c4c8693202"
+  digest = "1:4d2e5a73dc1500038e504a8d78b986630e3626dc027bc030ba5c75da257cdb96"
   name = "gopkg.in/yaml.v2"
   packages = ["."]
   pruneopts = "T"
-  revision = "5420a8b6744d3b0345ab293f6fcba19c978f1183"
-  version = "v2.2.1"
+  revision = "51d6538a90f86fe93ac480b35f37b2be17fef232"
+  version = "v2.2.2"
 
 [[projects]]
   digest = "1:999d566ad1ae4303c456af5a155f7b42401cca4fd33552567ed9dd997b107a08"
