@@ -296,7 +296,7 @@ func (c *CoinToQuanta) processSubmissions() {
 		if err != nil {
 			msg := quanta.ErrorString(err, false)
 			c.logger.Error("could not submit transaction " + msg)
-			if strings.Contains(msg, "tx_bad_seq") {
+			if strings.Contains(msg, "tx_bad_seq") || strings.Contains(msg, "op_malformed") {
 				db.ChangeSubmitState(c.rDb, v.Tx, db.SUBMIT_FATAL)
 			}
 		} else {

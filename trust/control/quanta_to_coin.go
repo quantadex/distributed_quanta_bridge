@@ -225,7 +225,11 @@ func (c *QuantaToCoin) StartConsensus(w *coin.Withdrawal) (string, error) {
 
 		if err != nil {
 			c.logger.Errorf("Error submission: %s", err.Error())
-			if strings.Contains(err.Error(), "connect: connection refused") {
+			if strings.Contains(err.Error(), "known transaction") {
+				db.ChangeSubmitState(c.rDb, w.Tx, db.SUBMIT_FATAL)
+			} else if strings.Contains(err.Error(), "replacement transaction underpriced") {
+				db.ChangeSubmitState(c.rDb, w.Tx, db.SUBMIT_FATAL)
+			} else if strings.Contains(err.Error(), "connect: connection refused") {
 				db.ChangeSubmitState(c.rDb, w.Tx, db.SUBMIT_RECOVERABLE)
 			} else if strings.Contains(err.Error(), "insufficient funds for gas * price + value") {
 				db.ChangeSubmitState(c.rDb, w.Tx, db.SUBMIT_RECOVERABLE)
