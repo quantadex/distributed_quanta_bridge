@@ -19,6 +19,7 @@ import (
 	"time"
 	"github.com/quantadex/distributed_quanta_bridge/trust/db"
 	"github.com/go-pg/pg"
+	"github.com/op/go-logging"
 )
 
 const (
@@ -67,9 +68,17 @@ func initNode(config common.Config, targetCoin coin.Coin) (*TrustNode, bool) {
 	node.doneChan = make(chan bool, 1)
 	node.queue = queue.NewMemoryQueue()
 	node.log, err = logger.NewLogger(strconv.Itoa(config.ListenPort))
+
 	if err != nil {
 		return nil, false
 	}
+
+	level, err := logging.LogLevel(config.LogLevel)
+	if err != nil {
+		fmt.Println("Log level not parsed")
+		level = logging.INFO
+	}
+	node.log.SetLogLevel(level)
 
 	node.quantakM, err = key_manager.NewKeyManager(config.NetworkPassphrase)
 	if err != nil {

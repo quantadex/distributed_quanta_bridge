@@ -1,5 +1,7 @@
 package logger
 
+import "github.com/op/go-logging"
+
 /**
  * Logger
  *
@@ -12,6 +14,9 @@ type Logger interface {
     Debug(msg string)
     Errorf(format string, args ...interface{})
     Infof(format string, args ...interface{})
+    Debugf(format string, args ...interface{})
+
+    SetLogLevel(level logging.Level)
 }
 
 func NewLogger(module string) (Logger, error) {

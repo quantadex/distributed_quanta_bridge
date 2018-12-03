@@ -19,4 +19,5 @@ type Config struct {
 	EthereumRpc        string
 	EthereumTrustAddr  string
 	EthereumKeyStore   string
+	LogLevel           string
 }

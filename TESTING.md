@@ -263,3 +263,51 @@ Take note of the block # when it was executed.  so you know which block number t
 
 4. Make a deposit, take a note of amount, and block number
 
+
+
+5. Withdrawal
+
+Send Refund:
+
+http://tomeko.net/online_tools/hex_to_base64.php
+0x0d1d4e623d10f9fba5db95830f7d3839406c6af2 -> DR1OYj0Q+ful25WDD304OUBsavI=
+quanta-cli pay 0.15 KETH --from xc_demo --to xc_signer --memotext "DR1OYj0Q+ful25WDD304OUBsavI="
+
+
+Check trust:
+
+```
+geth attach ./geth/data/geth.ipc
+web3.fromWei(eth.getBalance('0xa4392264a2d8c998901d10c154c91725b1bf0158'),'ether')
+
+eth.sendTransaction({from:eth.accounts[0], to:"0xa4392264a2d8c998901d10c154c91725b1bf0158", value: web3.toWei(10, "ether")})
+
+```
+
+Check refund:
+
+```
+> eth.accounts[4]
+"0x0d1d4e623d10f9fba5db95830f7d3839406c6af2"
+web3.fromWei(eth.getBalance(eth.accounts[4]),'ether')
+```
+
+
+Leader node:
+
+```
+2018/11/30 23:48:59 I [5000] Start new round bda75e3a4c3cfd5822c512dd6f0e9408c680e8b2b5188b98e62a61be458029c2 ETH to=0x0d1d4e623D10F9FBA5Db95830F7d3839406C6AF2 amount=15000000000000000
+2018/11/30 23:48:59 I [cosi] Start new round leader=true nodes=3 threshold=3
+2018/11/30 23:48:59 I [cosi] Got commitment 2/3
+2018/11/30 23:48:59 I [cosi] Got commitment 3/3
+2018/11/30 23:48:59 I [cosi] Got total of 3 commitments, moving forward
+2018/11/30 23:48:59 I [5000] Sign msg 6f53681a1d6e2c1a9d3200efe771f4e16c2974c46adf2475c57766539500134d425e001d9c244471ba0a91699c57fac7f2a5c69fa62d72c0be8276da3a33219e00
+2018/11/30 23:48:59 I [cosi] Got signature 2/3
+2018/11/30 23:48:59 I [cosi] Got signature 3/3
+2018/11/30 23:48:59 I [5000] Great! Cosi successfully signed refund
+Sending from 0x627306090abaB3A6e1400e9345bC60c78a8BEf57
+Submit to contract=0x9FBDa871d559710256a2502A2517b794B482Db40 erc20=0x0000000000000000000000000000000000000000 to=0x0d1d4e623D10F9FBA5Db95830F7d3839406C6AF2 amount=15000000000000000
+signatures (3) [6f53681a1d6e2c1a9d3200efe771f4e16c2974c46adf2475c57766539500134d425e001d9c244471ba0a91699c57fac7f2a5c69fa62d72c0be8276da3a33219e00 b27a23339259ff2df83e3f33f69094778bd6fe508602aceb926e069414fdc4397fbabda0e33fde87f3e32ad00d52b95db01800d46e9b28f9b4c5fc1551b2880400 7c451aa8541380161b07e7210dd9dc5ec221fac6b840da8dbcda7edc72adcb214ed91d4728e05e7149e7528e5f5eb187fae98aca1a13e326d82108e2ef170acc01]
+prepare to send to contract
+2018/11/30 23:48:59 I [5000] Submitted withdrawal in tx=0x7e22ddcdd66b23247de1c0c4c7c6db3bc6ca7da7f31c7f2a9e41e5a3f74fb1ee
+```

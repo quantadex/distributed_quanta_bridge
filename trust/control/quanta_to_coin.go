@@ -127,7 +127,7 @@ func NewQuantaToCoin(log logger.Logger,
 		}
 
 		encodedSig, err := res.coinkM.SignTransaction(msg.Message)
-		log.Infof("Sign msg %s", encodedSig)
+		log.Infof("Sign msg %s -> %s", msg.Message, encodedSig)
 
 		if err != nil {
 			log.Error("Unable to Sign/encode refund msg")
@@ -168,7 +168,9 @@ func (c *QuantaToCoin) DispatchWithdrawal() {
 				for _, tx := range txs {
 					w := &coin.Withdrawal{
 						Tx: tx.Tx,
+						TxId: tx.TxId,
 						CoinName: tx.Coin,
+						SourceAddress: tx.From,
 						DestinationAddress: tx.To,
 						QuantaBlockID: tx.BlockId,
 						Amount: uint64(tx.Amount),
@@ -222,17 +224,17 @@ func (c *QuantaToCoin) StartConsensus(w *coin.Withdrawal) (string, error) {
 		tx, err := c.coinChannel.SendWithdrawal(common.HexToAddress(c.coinContractAddress), c.coinkM.GetPrivateKey(), w)
 
 		if err != nil {
-			c.logger.Error(err.Error())
+			c.logger.Errorf("Error submission: %s", err.Error())
 			if strings.Contains(err.Error(), "connect: connection refused") {
 				db.ChangeSubmitState(c.rDb, w.Tx, db.SUBMIT_RECOVERABLE)
 			} else if strings.Contains(err.Error(), "insufficient funds for gas * price + value") {
 				db.ChangeSubmitState(c.rDb, w.Tx, db.SUBMIT_RECOVERABLE)
 			}
+		} else {
+			db.ChangeSubmitState(c.rDb, w.Tx, db.SUBMIT_SUCCESS)
+			c.logger.Infof("Submitted withdrawal in tx=%s SUCCESS", tx)
 		}
 
-		db.ChangeSubmitState(c.rDb, w.Tx, db.SUBMIT_SUCCESS)
-
-		c.logger.Infof("Submitted withdrawal in tx=%s", tx)
 		txResult = tx
 		errResult = err
 
@@ -260,7 +262,7 @@ func (c *QuantaToCoin) DoLoop(cursor int64) ([]quanta.Refund, error) {
 
 	errResult := error(nil)
 
-	c.logger.Infof("QuantaToCoin refunds %v", refunds)
+	c.logger.Debugf("QuantaToCoin refunds %v", refunds)
 
 	// separate confirm, and sign as two different stages
 	for _, refund := range refunds {
@@ -269,15 +271,18 @@ func (c *QuantaToCoin) DoLoop(cursor int64) ([]quanta.Refund, error) {
 		w := &coin.Withdrawal{
 			Tx: 				refund.TransactionId,
 			CoinName:           refund.CoinName,
+			SourceAddress:      refund.SourceAddress,
 			DestinationAddress: refund.DestinationAddress,
 			QuantaBlockID:      refund.OperationID,
 			Amount:             coin.StellarToWei(refund.Amount),
 		}
+
 		db.ConfirmWithdrawal(c.rDb, w)
 		cursor = refund.PageTokenID
 
 		if w.DestinationAddress == "" {
 			c.logger.Error("Refund is missing destination address, skipping.")
+
 		} else if w.Amount == uint64(0) {
 			c.logger.Error("Amount is too small")
 		} else if c.nodeID == 0 {
@@ -291,7 +296,7 @@ func (c *QuantaToCoin) DoLoop(cursor int64) ([]quanta.Refund, error) {
 		}
 	}
 
-	c.logger.Infof("Next cursor is = %d, numRefunds=%d", cursor, len(refunds))
+	c.logger.Debugf("Next cursor is = %d, numRefunds=%d", cursor, len(refunds))
 
 	return refunds, errResult
 }
