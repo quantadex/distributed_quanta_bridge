@@ -375,7 +375,7 @@ func (l *Listener) SendWithdrawal(conn bind.ContractBackend,
 	toAddr := common.HexToAddress(w.DestinationAddress)
 	amount := big.NewInt(int64(w.Amount))
 	fmt.Printf("Sending from %s\n", auth.From.Hex())
-	fmt.Printf("Submit to contract=%s erc20=%s to=%s amount=%d\n", trustAddress.Hex(), smartAddress.Hex(), toAddr.Hex(), amount.Uint64())
+	fmt.Printf("Submit to contract=%s txId=%d erc20=%s to=%s amount=%d\n", trustAddress.Hex(), w.TxId, smartAddress.Hex(), toAddr.Hex(), amount.Uint64())
 
 	var r [][32]byte
 	var s [][32]byte
@@ -389,6 +389,7 @@ func (l *Listener) SendWithdrawal(conn bind.ContractBackend,
 			fmt.Println("Signature is not correct length " + string(len(data)))
 			continue
 		}
+
 		var r1 [32]byte
 		copy(r1[0:32], data[0:32])
 		r = append(r, r1)
@@ -400,7 +401,6 @@ func (l *Listener) SendWithdrawal(conn bind.ContractBackend,
 		v = append(v, data[64]+27)
 	}
 
-	fmt.Println("prepare to send to contract")
 	tx, err := contract.PaymentTx(auth, w.TxId, smartAddress, toAddr, amount, v, r, s)
 	if err != nil {
 		return "", err

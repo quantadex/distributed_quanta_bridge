@@ -31,6 +31,7 @@ type Withdrawal struct {
     Tx string
     TxId uint64 // The Node authorizing this
     CoinName string // The type of coin (e.g. ETH)
+    SourceAddress string
     DestinationAddress string // Where this money is going
     QuantaBlockID int64 // Which block this transaction was processed in quanta
     Amount uint64 // The withdrawal size

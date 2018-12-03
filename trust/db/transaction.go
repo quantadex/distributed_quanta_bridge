@@ -34,6 +34,7 @@ const SUBMIT_SUCCESS="success"
 type Transaction struct {
 	Type   string // deposit | withdrawal
 	Tx     string		`sql:",pk"`
+	TxId   uint64
 	Coin   string
 	Created time.Time
 	Amount int64
@@ -94,11 +95,12 @@ func ConfirmWithdrawal(db *DB, dep *coin.Withdrawal) error {
 	tx := &Transaction{
 		Type: WITHDRAWAL,
 		Tx: dep.Tx,
+		TxId: dep.TxId,
 		Coin: dep.CoinName,
 		Created: time.Now(),
 		Amount: int64(dep.Amount),
 		BlockId: dep.QuantaBlockID,
-		From: "",
+		From: dep.SourceAddress,
 		To: dep.DestinationAddress,
 		Signed: false,
 	}

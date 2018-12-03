@@ -296,7 +296,7 @@ func (c *CoinToQuanta) processSubmissions() {
 		if err != nil {
 			msg := quanta.ErrorString(err, false)
 			c.logger.Error("could not submit transaction " + msg)
-			if strings.Contains(msg, "tx_bad_seq") {
+			if strings.Contains(msg, "tx_bad_seq") || strings.Contains(msg, "op_malformed") {
 				db.ChangeSubmitState(c.rDb, v.Tx, db.SUBMIT_FATAL)
 			}
 		} else {
@@ -391,7 +391,7 @@ func (c *CoinToQuanta) Stop() {
  * returns allDeposits []*coin.Deposit
  */
 func (c *CoinToQuanta) DoLoop(blockIDs []int64) []*coin.Deposit {
-	c.logger.Info(fmt.Sprintf("***** Start # of blocks=%d man.N=%d,man.Q=%d *** ", len(blockIDs), c.man.N, c.man.Q))
+	c.logger.Debugf("***** Start # of blocks=%d man.N=%d,man.Q=%d *** ", len(blockIDs), c.man.N, c.man.Q)
 
 	allDeposits := make([]*coin.Deposit, 0)
 
@@ -442,7 +442,7 @@ func (c *CoinToQuanta) DoLoop(blockIDs []int64) []*coin.Deposit {
 
 	if len(blockIDs) > 0 {
 		lastBlockId := blockIDs[len(blockIDs)-1]
-		c.logger.Infof("set last block coin=%s height=%d", c.coinName, lastBlockId)
+		c.logger.Debugf("set last block coin=%s height=%d", c.coinName, lastBlockId)
 		setLastBlock(c.db, c.coinName, lastBlockId)
 	}
 
