@@ -64,8 +64,8 @@ type Listener struct {
 	log *log.Entry
 }
 
-func WeiToStellar(valueInWei int64) int64 {
-	valueEth := new(big.Rat).SetInt64(valueInWei)
+func WeiToStellar(valueInWei big.Int) int64 {
+	valueEth := new(big.Rat).SetInt(&valueInWei)
 	powerDelta := new(big.Rat).SetInt(new(big.Int).Exp(ten, big.NewInt(11), nil))
 	result := new(big.Rat)
 	result = result.Quo(valueEth, powerDelta)
@@ -74,13 +74,13 @@ func WeiToStellar(valueInWei int64) int64 {
 	return num.Int64()
 }
 
-func Erc20AmountToStellar(valueInWei int64, dec uint8) int64 {
-	valueEth := new(big.Rat).SetInt64(valueInWei)
+func Erc20AmountToStellar(valueInWei big.Int, dec uint8) int64 {
+	valueEth := new(big.Rat).SetInt(&valueInWei)
 	powerDelta := new(big.Rat).SetInt(new(big.Int).Exp(ten, big.NewInt(18-int64(dec)), nil))
 	result := new(big.Rat)
 	result = result.Mul(valueEth, powerDelta)
 
-	return WeiToStellar(result.Num().Int64())
+	return WeiToStellar(*big.NewInt(result.Num().Int64()))
 }
 
 func StellarToWei(valueInStellar uint64) uint64 {
@@ -95,6 +95,6 @@ type ForwardInput struct {
 	ContractAddress common.Address
 	Trust           common.Address
 	QuantaAddr      string
-	TxHash			string
+	TxHash          string
 	Blockchain      string
 }
