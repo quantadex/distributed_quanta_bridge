@@ -3,6 +3,8 @@
 curl -L -o /usr/local/bin/quanta-cli https://github.com/quantadex/quanta-cli/releases/download/0.5.1/quanta-cli.linux.amd64
 chmod +x /usr/local/bin/quanta-cli
 
+npm i -g ganache-cli@6.2.3
+
 https://github.com/quantadex/quanta_book/wiki/Accessing-testnet
 
 ## Set up the keys
@@ -310,4 +312,24 @@ Submit to contract=0x9FBDa871d559710256a2502A2517b794B482Db40 erc20=0x0000000000
 signatures (3) [6f53681a1d6e2c1a9d3200efe771f4e16c2974c46adf2475c57766539500134d425e001d9c244471ba0a91699c57fac7f2a5c69fa62d72c0be8276da3a33219e00 b27a23339259ff2df83e3f33f69094778bd6fe508602aceb926e069414fdc4397fbabda0e33fde87f3e32ad00d52b95db01800d46e9b28f9b4c5fc1551b2880400 7c451aa8541380161b07e7210dd9dc5ec221fac6b840da8dbcda7edc72adcb214ed91d4728e05e7149e7528e5f5eb187fae98aca1a13e326d82108e2ef170acc01]
 prepare to send to contract
 2018/11/30 23:48:59 I [5000] Submitted withdrawal in tx=0x7e22ddcdd66b23247de1c0c4c7c6db3bc6ca7da7f31c7f2a9e41e5a3f74fb1ee
+```
+
+
+### WHY PRIVATE NET KEEPS FAILING?
+
+We need to bootstrap the precompiled contracts on the testnet by
+sending 1 wei to each contract in 1,2,3,4
+
+https://ethereum.stackexchange.com/questions/15479/list-of-pre-compiled-contracts
+https://ethereum.stackexchange.com/questions/440/whats-a-precompiled-contract-and-how-are-they-different-from-native-opcodes
+https://medium.com/@rbkhmrcr/precompiles-solidity-e5d29bd428c4
+
+```
+
+eth.sendTransaction({from:eth.accounts[0], to:"0x0000000000000000000000000000000000000001", value: 1});
+eth.sendTransaction({from:eth.accounts[0], to:"0x0000000000000000000000000000000000000002", value: 1});
+eth.sendTransaction({from:eth.accounts[0], to:"0x0000000000000000000000000000000000000003", value: 1});
+eth.sendTransaction({from:eth.accounts[0], to:"0x0000000000000000000000000000000000000004", value: 1});
+
+
 ```
