@@ -278,13 +278,28 @@ func (c *QuantaToCoin) DoLoop(cursor int64) ([]quanta.Refund, error) {
 			SourceAddress:      refund.SourceAddress,
 			DestinationAddress: refund.DestinationAddress,
 			QuantaBlockID:      refund.OperationID,
+			// TODO: Potentially losing precision when converting to wei
 			Amount:             coin.StellarToWei(refund.Amount),
 		}
 
 		db.ConfirmWithdrawal(c.rDb, w)
 		cursor = refund.PageTokenID
 
-		if w.DestinationAddress == "" {
+		if w.DestinationAddress == "" || !coin.CheckValidEthereumAddress(w.DestinationAddress) {
+			// create a deposit
+			dep := &coin.Deposit{
+				Tx: refund.TransactionId,
+				CoinName: refund.CoinName,  // coin,issuer
+				SenderAddr: "",
+				QuantaAddr: refund.SourceAddress,
+				Amount: int64(refund.Amount),
+				BlockID: int64(refund.LedgerID),
+			}
+			db.ConfirmDeposit(c.rDb, dep)
+			if c.nodeID == 0 {
+				db.ChangeSubmitState(c.rDb, dep.Tx, db.SUBMIT_CONSENSUS)
+			}
+
 			c.logger.Error("Refund is missing destination address, skipping.")
 
 		} else if w.Amount == uint64(0) {

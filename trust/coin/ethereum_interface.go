@@ -91,6 +91,10 @@ func StellarToWei(valueInStellar uint64) uint64 {
 	return valueWei.Mul(stellar, powerDelta).Num().Uint64()
 }
 
+func CheckValidEthereumAddress(address string) bool {
+	return true
+}
+
 type ForwardInput struct {
 	ContractAddress common.Address
 	Trust           common.Address
