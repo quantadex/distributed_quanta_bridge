@@ -277,6 +277,7 @@ func (l *Listener) FilterTransferEvent(blockNumber int64, toAddress map[string]s
 					Amount:     Erc20AmountToStellar(*transferEvent.Tokens, dec),
 					Tx:         vLog.TxHash.Hex(),
 				})
+				fmt.Println("erc20 amount = ", events[0].Amount)
 			}
 
 		}
@@ -371,11 +372,11 @@ func (l *Listener) SendWithdrawal(conn bind.ContractBackend,
 	if len(parts) > 1 {
 		smartAddress = common.HexToAddress(parts[1])
 	}
-
+	//smartAddress = common.HexToAddress(w.CoinName)
 	toAddr := common.HexToAddress(w.DestinationAddress)
-	amount := big.NewInt(int64(w.Amount))
+	amount := StellarToWei(w.Amount)
 	fmt.Printf("Sending from %s\n", auth.From.Hex())
-	fmt.Printf("Submit to contract=%s txId=%d erc20=%s to=%s amount=%d\n", trustAddress.Hex(), w.TxId, smartAddress.Hex(), toAddr.Hex(), amount.Uint64())
+	fmt.Printf("Submit to contract=%s txId=%d erc20=%s to=%s amount=%s\n", trustAddress.Hex(), w.TxId, smartAddress.Hex(), toAddr.Hex(), amount.String())
 
 	var r [][32]byte
 	var s [][32]byte
@@ -400,7 +401,6 @@ func (l *Listener) SendWithdrawal(conn bind.ContractBackend,
 
 		v = append(v, data[64]+27)
 	}
-
 	tx, err := contract.PaymentTx(auth, w.TxId, smartAddress, toAddr, amount, v, r, s)
 	if err != nil {
 		return "", err

@@ -69,7 +69,6 @@ func WeiToStellar(valueInWei big.Int) int64 {
 	powerDelta := new(big.Rat).SetInt(new(big.Int).Exp(ten, big.NewInt(11), nil))
 	result := new(big.Rat)
 	result = result.Quo(valueEth, powerDelta)
-
 	num, _ := new(big.Int).SetString(result.FloatString(0), 10)
 	return num.Int64()
 }
@@ -80,17 +79,16 @@ func Erc20AmountToStellar(valueInWei big.Int, dec uint8) int64 {
 	result := new(big.Rat)
 	result = result.Mul(valueEth, powerDelta)
 
-	return WeiToStellar(*big.NewInt(result.Num().Int64()))
+	return WeiToStellar(*result.Num())
 }
 
-func StellarToWei(valueInStellar uint64) uint64 {
+func StellarToWei(valueInStellar uint64) *big.Int {
 	valueWei := new(big.Rat)
 	stellar := new(big.Rat).SetInt(big.NewInt(int64(valueInStellar)))
 	powerDelta := new(big.Rat).SetInt(new(big.Int).Exp(ten, big.NewInt(11), nil))
 
-	return valueWei.Mul(stellar, powerDelta).Num().Uint64()
+	return valueWei.Mul(stellar, powerDelta).Num()
 }
-
 func CheckValidEthereumAddress(address string) bool {
 	return true
 }

@@ -277,7 +277,6 @@ func (c *CoinToQuanta) processDeposits() {
 			SenderAddr: txs[0].From,
 			Amount:     txs[0].Amount,
 		}
-
 		c.StartConsensus(w)
 	}
 }
@@ -297,12 +296,13 @@ func (c *CoinToQuanta) processSubmissions() {
 			msg := quanta.ErrorString(err, false)
 			c.logger.Error("could not submit transaction " + msg)
 			if strings.Contains(msg, "tx_bad_seq") || strings.Contains(msg, "op_malformed") {
-				db.ChangeSubmitState(c.rDb, v.Tx, db.SUBMIT_FATAL)
+				db.ChangeSubmitState(c.rDb, v.Tx, db.SUBMIT_FATAL, db.DEPOSIT)
 			}
 		} else {
 			c.logger.Infof("Successful tx submission %s,remove %s", res.Hash, k)
-			err = db.ChangeSubmitState(c.rDb, v.Tx, db.SUBMIT_SUCCESS)
+			err = db.ChangeSubmitState(c.rDb, v.Tx, db.SUBMIT_SUCCESS, db.DEPOSIT)
 			if err != nil {
+				fmt.Println("error = ", err)
 				c.logger.Error("Error removing key=" + v.Tx)
 			}
 		}
@@ -364,7 +364,7 @@ func (c *CoinToQuanta) StartConsensus(tx *coin.Deposit) (string, error) {
 		c.logger.Infof("Great! Cosi successfully signed deposit")
 
 		txe, err := quanta.PostProcessTransaction(c.quantaOptions.Network, encoded, tx.Signatures)
-		db.ChangeSubmitQueue(c.rDb, tx.Tx, txe)
+		db.ChangeSubmitQueue(c.rDb, tx.Tx, txe, db.DEPOSIT)
 		//c.quantaChannel.ProcessDeposit(tx, encoded)
 
 		txResult = ""
@@ -417,7 +417,7 @@ func (c *CoinToQuanta) DoLoop(blockIDs []int64) []*coin.Deposit {
 					allDeposits = append(allDeposits, dep)
 
 					if c.nodeID == 0 {
-						db.ChangeSubmitState(c.rDb, dep.Tx, db.SUBMIT_CONSENSUS)
+						db.ChangeSubmitState(c.rDb, dep.Tx, db.SUBMIT_CONSENSUS, db.DEPOSIT)
 					}
 				}
 			}

@@ -5,7 +5,6 @@ import (
 	"github.com/quantadex/distributed_quanta_bridge/trust/coin"
 	"github.com/stellar/go/build"
 
-	"github.com/stellar/go/clients/horizon"
 	"encoding/base64"
 	"encoding/json"
 	"errors"
@@ -13,19 +12,20 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/quantadex/distributed_quanta_bridge/common/logger"
 	"github.com/quantadex/distributed_quanta_bridge/common/queue"
+	"github.com/quantadex/distributed_quanta_bridge/trust/db"
 	"github.com/stellar/go/amount"
+	"github.com/stellar/go/clients/horizon"
 	"github.com/stellar/go/xdr"
+	"log"
 	"net/http"
 	"strconv"
 	"strings"
 	"time"
-	"github.com/quantadex/distributed_quanta_bridge/trust/db"
-	"log"
 )
 
 type QuantaClientOptions struct {
 	Logger     logger.Logger
-	Db		   *db.DB
+	Db         *db.DB
 	Network    string
 	Issuer     string // pub key
 	HorizonUrl string
@@ -265,6 +265,7 @@ func (q *QuantaClient) GetRefundsInBlock(cursor int64, trustAddress string) ([]R
 					//TODO: Add ledger
 					// it's a refund
 					newRefund := Refund{
+						SourceAddress:      op.From,
 						CoinName:           op.AssetCode,
 						DestinationAddress: op.To, // TODO: handle bad address properly
 						OperationID:        num,
@@ -322,7 +323,7 @@ func PostProcessTransaction(network string, base64 string, sigs []string) (strin
 }
 
 func (q *QuantaClient) ProcessDeposit(deposit *coin.Deposit, proposed string) error {
-	txe , err := PostProcessTransaction(q.QuantaClientOptions.Network, proposed, deposit.Signatures)
+	txe, err := PostProcessTransaction(q.QuantaClientOptions.Network, proposed, deposit.Signatures)
 	println(txe, err)
-	return db.ChangeSubmitQueue(q.Db, deposit.Tx, txe)
+	return db.ChangeSubmitQueue(q.Db, deposit.Tx, txe, "")
 }

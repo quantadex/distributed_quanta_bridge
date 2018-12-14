@@ -1,9 +1,10 @@
 package db
 
 import (
-	"time"
-	"github.com/quantadex/distributed_quanta_bridge/trust/coin"
+	"fmt"
 	"github.com/go-errors/errors"
+	"github.com/quantadex/distributed_quanta_bridge/trust/coin"
+	"time"
 )
 
 /*
@@ -20,48 +21,47 @@ import (
   submit_signers string
   submit_confirm int // keep scanning for confirm
   submit_date  datetime
- */
+*/
 
-const DEPOSIT="deposit"
-const WITHDRAWAL="withdrawal"
+const DEPOSIT = "deposit"
+const WITHDRAWAL = "withdrawal"
 
-const SUBMIT_CONSENSUS="consensus"
-const SUBMIT_QUEUE="queue"
-const SUBMIT_RECOVERABLE="recoverable"
-const SUBMIT_FATAL="fatal"
-const SUBMIT_SUCCESS="success"
+const SUBMIT_CONSENSUS = "consensus"
+const SUBMIT_QUEUE = "queue"
+const SUBMIT_RECOVERABLE = "recoverable"
+const SUBMIT_FATAL = "fatal"
+const SUBMIT_SUCCESS = "success"
 
 type Transaction struct {
-	Type   string // deposit | withdrawal
-	Tx     string		`sql:",pk"`
-	TxId   uint64
-	Coin   string
-	Created time.Time
-	Amount int64
-	BlockId int64
-	From string
-	To string
-	Signed bool 		`sql:",notnull"`
-	SubmitState string
-	SubmitTx string
-	SubmitSigners string
+	Type                string `sql:"unique:type_tx"`
+	Tx                  string `sql:"unique:type_tx"`
+	TxId                uint64
+	Coin                string
+	Created             time.Time
+	Amount              int64
+	BlockId             int64
+	From                string
+	To                  string
+	Signed              bool `sql:",notnull"`
+	SubmitState         string
+	SubmitTx            string
+	SubmitSigners       string
 	SubmitConfirm_block int
-	SubmitDate time.Time
+	SubmitDate          time.Time
 }
 
 func ConfirmDeposit(db *DB, dep *coin.Deposit) error {
 	tx := &Transaction{
-		Type: DEPOSIT,
-		Tx: dep.Tx,
-		Coin: dep.CoinName,
+		Type:    DEPOSIT,
+		Tx:      dep.Tx,
+		Coin:    dep.CoinName,
 		Created: time.Now(),
-		Amount: dep.Amount,
+		Amount:  dep.Amount,
 		BlockId: dep.BlockID,
-		From: dep.SenderAddr,
-		To: dep.QuantaAddr,
-		Signed: false,
+		From:    dep.SenderAddr,
+		To:      dep.QuantaAddr,
+		Signed:  false,
 	}
-
 	return db.Insert(tx)
 }
 
@@ -69,50 +69,50 @@ func SignDeposit(db *DB, dep *coin.Deposit) error {
 	tx := &Transaction{Type: DEPOSIT, Tx: dep.Tx}
 	tx.SubmitDate = time.Now()
 	tx.Signed = true
-	_, err := db.Model(tx).Column("signed").Where("Tx=?",dep.Tx).Update()
+	_, err := db.Model(tx).Column("signed").Where("Tx=?", dep.Tx).Update()
 	return err
 }
 
-func ChangeSubmitQueue(db *DB, id string, submitTx string) error {
+func ChangeSubmitQueue(db *DB, id string, submitTx string, typeStr string) error {
 	tx := &Transaction{Tx: id}
 	tx.SubmitDate = time.Now()
 	tx.SubmitState = SUBMIT_QUEUE
 	tx.SubmitTx = submitTx
-	_, err := db.Model(tx).Column("submit_state","submit_date","submit_tx").Where("Tx=?",id).Returning("*").Update()
+	_, err := db.Model(tx).Column("submit_state", "submit_date", "submit_tx").Where("Tx=? and Type=?", id, typeStr).Returning("*").Update()
 	return err
 }
 
-func ChangeSubmitState(db *DB, id string, state string) error {
+func ChangeSubmitState(db *DB, id string, state string, typeStr string) error {
 	tx := &Transaction{Tx: id}
 	tx.SubmitDate = time.Now()
 	tx.SubmitState = state
-	_, err := db.Model(tx).Column("submit_state","submit_date").Where("Tx=?",id).Returning("*").Update()
+	_, err := db.Model(tx).Column("submit_state", "submit_date").Where("Tx=? and Type=?", id, typeStr).Returning("*").Update()
 	return err
 }
 
-
 func ConfirmWithdrawal(db *DB, dep *coin.Withdrawal) error {
 	tx := &Transaction{
-		Type: WITHDRAWAL,
-		Tx: dep.Tx,
-		TxId: dep.TxId,
-		Coin: dep.CoinName,
+		Type:    WITHDRAWAL,
+		Tx:      dep.Tx,
+		TxId:    dep.TxId,
+		Coin:    dep.CoinName,
 		Created: time.Now(),
-		Amount: int64(dep.Amount),
+		Amount:  int64(dep.Amount),
 		BlockId: dep.QuantaBlockID,
-		From: dep.SourceAddress,
-		To: dep.DestinationAddress,
-		Signed: false,
+		From:    dep.SourceAddress,
+		To:      dep.DestinationAddress,
+		Signed:  false,
 	}
 
 	return db.Insert(tx)
 }
 
 func SignWithdrawal(db *DB, dep *coin.Withdrawal) error {
+	fmt.Println("Submitting withdrawal to", dep.DestinationAddress)
 	tx := &Transaction{Type: WITHDRAWAL, Tx: dep.Tx}
 	tx.SubmitDate = time.Now()
 	tx.Signed = true
-	_, err := db.Model(tx).Column("signed").Where("Tx=?",dep.Tx).Update()
+	_, err := db.Model(tx).Column("signed").Where("Tx=? and Type=?", dep.Tx, WITHDRAWAL).Update()
 	return err
 }
 
@@ -126,7 +126,7 @@ func MigrateTx(db *DB) error {
 
 func GetTransaction(db *DB, txID string) (*Transaction, error) {
 	var txs []Transaction
-	err := db.Model(&txs).Where("Tx=?", txID ).Limit(1).Select()
+	err := db.Model(&txs).Where("Tx=?", txID).Limit(1).Select()
 	if err != nil {
 		println("unable to get tx: " + err.Error())
 		return nil, err
