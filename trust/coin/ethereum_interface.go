@@ -7,6 +7,7 @@ import (
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/stellar/go/support/log"
 	"math/big"
+	"regexp"
 )
 
 type LogTransfer struct {
@@ -89,8 +90,13 @@ func StellarToWei(valueInStellar uint64) *big.Int {
 
 	return valueWei.Mul(stellar, powerDelta).Num()
 }
+
 func CheckValidEthereumAddress(address string) bool {
-	return true
+	var add [20]byte
+	copy(add[:], address)
+	Ma := common.NewMixedcaseAddress(add)
+	var validAddress = regexp.MustCompile(`^[0x]+[0-9a-fA-F]{40}$`)
+	return Ma.ValidChecksum() && validAddress.MatchString(address)
 }
 
 type ForwardInput struct {

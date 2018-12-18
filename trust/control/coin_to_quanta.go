@@ -250,6 +250,7 @@ func (c *CoinToQuanta) GetNewCoinBlockIDs() []int64 {
  *
  * Returns deposits made to the coin trust account in this block
  */
+
 func (c *CoinToQuanta) getDepositsInBlock(blockID int64) ([]*coin.Deposit, error) {
 	watchAddresses := db.GetCrosschainByBlockchain(c.rDb, c.coinName)
 	watchMap := make(map[string]string)
@@ -407,16 +408,26 @@ func (c *CoinToQuanta) DoLoop(blockIDs []int64) []*coin.Deposit {
 				if len(deposits) > 0 {
 					c.logger.Info(fmt.Sprintf("Block %d Got deposits %d %v", blockID, len(deposits), deposits))
 				}
+				Horizon := &horizon.Client{
+					URL:  "http://testnet-02.quantachain.io:8000",
+					HTTP: http.DefaultClient,
+				}
 
 				for _, dep := range deposits {
+
 					err = db.ConfirmDeposit(c.rDb, dep)
 					if err != nil {
 						c.logger.Error("Cannot insert into db:" + err.Error())
 					}
-
 					allDeposits = append(allDeposits, dep)
 
-					if c.nodeID == 0 {
+					url := fmt.Sprintf("%s/accounts/%s", Horizon.URL, dep.QuantaAddr)
+					w, _ := Horizon.HTTP.Get(url)
+					if w.StatusCode != 200 {
+
+					} else if dep.Amount == 0 {
+						c.logger.Error("Amount is too small")
+					} else if c.nodeID == 0 {
 						db.ChangeSubmitState(c.rDb, dep.Tx, db.SUBMIT_CONSENSUS, db.DEPOSIT)
 					}
 				}
