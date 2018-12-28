@@ -72,6 +72,7 @@ type Quanta interface {
 	GetAllBalances(quantaAddress string) (map[string]float64, error)
 	CreateProposeTransaction(*coin.Deposit) (string, error) // base64 tx envelope
 	DecodeTransaction(base64 string) (*coin.Deposit, error)
+	Broadcast(stx string) error
 }
 
 func NewQuanta(options QuantaClientOptions) (Quanta, error) {
@@ -90,5 +91,5 @@ type SubmitWorker interface {
 }
 
 func NewSubmitWorker(options QuantaClientOptions) SubmitWorker {
-	return &SubmitWorkerImpl{QuantaClientOptions:options}
+	return &SubmitWorkerImpl{QuantaClientOptions: options}
 }

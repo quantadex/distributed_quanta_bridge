@@ -3,27 +3,9 @@ package quanta
 import (
 	"fmt"
 	"github.com/quantadex/distributed_quanta_bridge/trust/coin"
-	"github.com/scorum/bitshares-go/apis/database"
-	"github.com/scorum/bitshares-go/apis/login"
-	"github.com/scorum/bitshares-go/transport/websocket"
-	"github.com/stretchr/testify/require"
+	"github.com/quantadex/distributed_quanta_bridge/trust/key_manager"
 	"testing"
 )
-
-const url = "ws://testnet-01.quantachain.io:8090"
-
-func getAPI(t *testing.T) *database.API {
-	transport, err := websocket.NewTransport(url)
-	require.NoError(t, err)
-
-	// request access to the database api
-	databaseAPIID, err := login.NewAPI(transport).Database()
-	require.NoError(t, err)
-	fmt.Println(databaseAPIID)
-	api := database.NewAPI(databaseAPIID, transport)
-	fmt.Println(api)
-	return api
-}
 
 func TestDynamicGlobalProperties(t *testing.T) {
 	api := QuantaGraphene{}
@@ -31,18 +13,6 @@ func TestDynamicGlobalProperties(t *testing.T) {
 	block, _ := api.GetTopBlockID("pooja")
 	fmt.Println("TopBlock = ", block)
 
-	//decoded, err := api.DecodeTransaction("c4cbaa5b1127ac692e23c04566196f3c858f0bec")
-	//fmt.Println(decoded, err)
-
-}
-
-func TestGetRecentTransactionByID(t *testing.T) {
-	databaseAPI := getAPI(t)
-	//trx, err := databaseAPI.GetRecentTransactionByID(0)
-	trx, err := databaseAPI.GetTransaction(29105, 0)
-	fmt.Println("trx = ", trx)
-	require.NoError(t, err)
-	require.NotNil(t, trx)
 }
 
 func TestGetBalances(t *testing.T) {
@@ -52,7 +22,7 @@ func TestGetBalances(t *testing.T) {
 	balance, _ := api.GetBalance("QDEX", "pooja")
 	fmt.Println("pooja balance = ", balance)
 
-	balances, _ := api.GetAllBalances("quanta_foundation", "QDEX", "ETH", "USD")
+	balances, _ := api.GetAllBalances("quanta_foundation")
 	fmt.Println("quanta_foundation balance = ", balances)
 
 }
@@ -72,12 +42,27 @@ func TestCreateTransaction(t *testing.T) {
 	dep := &coin.Deposit{
 		SenderAddr: "pooja",
 		QuantaAddr: "quanta_foundation",
-		Amount:     6000,
+		Amount:     1,
 		CoinName:   "QDEX",
 	}
-	result, err := api.CreateProposeTransaction(dep)
+	proposed, err := api.CreateProposeTransaction(dep)
 	if err != nil {
 		fmt.Println(err)
 	}
-	fmt.Println(result)
+	chainID, err := api.Database.GetChainID()
+	if err != nil {
+		fmt.Println(err)
+	}
+
+	// sign it with keymanager
+	km, err := key_manager.NewGrapheneKeyManager(*chainID)
+	km.LoadNodeKeys("5JyYu5DCXbUznQRSx3XT2ZkjFxQyLtMuJ3y6bGLKC3TZWPHMDxj")
+	sig, err := km.SignTransaction(proposed)
+	submitTx, err := ProcessGrapheneTransaction(proposed, []string{sig})
+
+	// ready to submit to network
+	err = api.Broadcast(submitTx)
+
+	decoded, err := api.DecodeTransaction(proposed)
+	fmt.Println(decoded, err)
 }

@@ -7,10 +7,6 @@ https://github.com/scorum/bitshares-go/blob/master/apis/database/api_test.go
 */
 import (
 	"encoding/json"
-	"strconv"
-
-	//"encoding/json"
-	"fmt"
 	"github.com/quantadex/distributed_quanta_bridge/common/kv_store"
 	"github.com/quantadex/distributed_quanta_bridge/common/logger"
 	"github.com/quantadex/distributed_quanta_bridge/trust/coin"
@@ -23,7 +19,7 @@ import (
 	"github.com/scorum/bitshares-go/types"
 	"log"
 	"math"
-	//"strconv"
+	"strconv"
 	"time"
 )
 
@@ -48,10 +44,10 @@ type Object struct {
 	Name string
 }
 
-const url1 = "ws://testnet-01.quantachain.io:8090"
+const url = "ws://testnet-01.quantachain.io:8090"
 
 func (q *QuantaGraphene) Attach() error {
-	transport, err := websocket.NewTransport(url1)
+	transport, err := websocket.NewTransport(url)
 	if err != nil {
 		return err
 	}
@@ -65,15 +61,28 @@ func (q *QuantaGraphene) Attach() error {
 	return nil
 }
 
+func (q *QuantaGraphene) Broadcast(stx string) error {
+	// broadcast here
+	var tx sign.SignedTransaction
+	json.Unmarshal([]byte(stx), &tx)
+
+	_, err := q.NetworkBroadcast.BroadcastTransactionSynchronous(tx.Transaction)
+	return err
+}
+
+func (q *QuantaGraphene) AttachQueue(kv kv_store.KVStore) error {
+	panic("implement me")
+}
+
 // get_dynamics
-func (q *QuantaGraphene) GetTopBlockID(accountId string) (uint32, error) {
+func (q *QuantaGraphene) GetTopBlockID(accountId string) (int64, error) {
 	res, err := q.Database.GetDynamicGlobalProperties()
 	if err != nil {
 		return 0, err
 	}
 	blockId := res.HeadBlockNumber
 
-	return blockId, nil
+	return int64(blockId), nil
 }
 
 // get block , transfer
@@ -120,8 +129,9 @@ func (q *QuantaGraphene) GetRefundsInBlock(blockID int64, trustAddress string) (
 						Amount:             op.Amount.Amount,
 						CoinName:           result.Symbol,
 						TransactionId:      txid,
+						PageTokenID:        blockID,
+						LedgerID:           int32(blockID),
 					}
-					fmt.Println("transaction id = ", txid)
 					refunds = append(refunds, newRefund)
 				}
 			}
@@ -141,37 +151,27 @@ func (q *QuantaGraphene) GetBalance(assetName string, quantaAddress string) (flo
 	return float64(balance[0].Amount) / precision, nil
 }
 
-func (q *QuantaGraphene) GetAllBalances(quantaAddress string, assets ...string) ([]float64, error) {
-	id, err := q.Database.LookupAssetSymbols(assets...)
-	fmt.Println("id = ", id)
-	ids := make([]types.ObjectID, len(id))
-	var i = 0
-	fmt.Println(len(ids), len(id))
-	for i = 0; i < len(id); i++ {
-		ids[i] = id[i].ID
-	}
-	var balance []*types.AssetAmount
-	balance, err = q.Database.GetNamedAccountBalances(quantaAddress, ids...)
+func (q *QuantaGraphene) GetAllBalances(quantaAddress string) (map[string]float64, error) {
+	balance, err := q.Database.GetNamedAccountBalances(quantaAddress)
 	if err != nil {
 		return nil, err
 	}
-	result := make([]float64, len(balance))
+	balances := make(map[string]float64, len(balance))
+	var i int
 	for i = 0; i < len(balance); i++ {
-		precision := math.Pow(10, float64(id[i].Precision))
-		result[i] = float64(balance[i].Amount) / precision
+		balances[string(i)] = float64(balance[i].Amount)
 	}
-	return result[:], nil
+	return balances, nil
 }
 
 // https://github.com/scorum/bitshares-go/blob/bbfc9bedaa1b2ddaead3eafe47237efcd9b8496d/client.go
-func (q *QuantaGraphene) CreateProposeTransaction(dep *coin.Deposit) ([]string, error) {
-	var s []string
+func (q *QuantaGraphene) CreateProposeTransaction(dep *coin.Deposit) (string, error) {
 	var fee types.AssetAmount
 	var amount types.AssetAmount
 
 	id, err := q.Database.LookupAssetSymbols(dep.CoinName)
 	if err != nil {
-		return s, err
+		return "", err
 	}
 	amount.Amount = uint64(dep.Amount)
 	amount.AssetID = id[0].ID
@@ -181,87 +181,41 @@ func (q *QuantaGraphene) CreateProposeTransaction(dep *coin.Deposit) ([]string, 
 
 	userIdSender, err := q.Database.LookupAccounts(dep.SenderAddr, 1)
 	if err != nil {
-		return s, err
+		return "", err
 	}
 	userIdReceiver, err := q.Database.LookupAccounts(dep.QuantaAddr, 1)
 	if err != nil {
-		return s, err
+		return "", err
 	}
-
-	fmt.Println("something = ", userIdSender[dep.SenderAddr], userIdReceiver[dep.QuantaAddr])
 
 	op := types.NewTransferOperation(userIdSender[dep.SenderAddr], userIdReceiver[dep.QuantaAddr], amount, fee)
-	fmt.Println("transaction created = ", op)
 
 	fees, err := q.Database.GetRequiredFee([]types.Operation{op}, fee.AssetID.String())
 	if err != nil {
 		log.Println(err)
-		return s, err
+		return "", err
 
 	}
 	op.Fee.Amount = fees[0].Amount
 
-	wifs := make([]string, 1)
-	wifs[0] = "5JyYu5DCXbUznQRSx3XT2ZkjFxQyLtMuJ3y6bGLKC3TZWPHMDxj"
-
-	stx, txe, err := q.SignFunc(wifs, op)
-	if err != nil {
-		fmt.Println("error in signFunc")
-		return nil, err
-	}
-
-	fmt.Println("signed transaction = ", stx.RefBlockNum)
-	fmt.Println("txe = ", txe)
-
-	err = q.NetworkBroadcast.BroadcastTransaction(stx.Transaction)
-	if err != nil {
-		fmt.Println("error in broadcast")
-		return nil, err
-	}
-	return txe, nil
+	return q.PrepareTX(op)
 }
 
-func (q *QuantaGraphene) LimitOrderCreate(key string, feePayingAccount, order types.ObjectID, fee types.AssetAmount) ([]string, error) {
-	op := &types.LimitOrderCancelOperation{
-		Fee:              fee,
-		FeePayingAccount: feePayingAccount,
-		Order:            order,
-		Extensions:       []json.RawMessage{},
-	}
-	var s []string
-
-	fees, err := q.Database.GetRequiredFee([]types.Operation{op}, fee.AssetID.String())
-	if err != nil {
-		log.Println(err)
-		return s, err
-	}
-	op.Fee.Amount = fees[0].Amount
-
-	stx, txe, err := q.SignFunc([]string{key}, op)
-	if err != nil {
-		return s, err
-	}
-	return txe, q.NetworkBroadcast.BroadcastTransaction(stx.Transaction)
-}
-
-func (q *QuantaGraphene) SignFunc(wifs []string, operations ...types.Operation) (*sign.SignedTransaction, []string, error) {
-	var s []string
+func (q *QuantaGraphene) PrepareTX(operations ...types.Operation) (string, error) {
 	props, err := q.Database.GetDynamicGlobalProperties()
 	if err != nil {
-		return nil, s, err
+		return "", err
 	}
 
 	block, err := q.Database.GetBlock(props.LastIrreversibleBlockNum)
 	if err != nil {
-		return nil, s, err
+		return "", err
 	}
 
 	refBlockPrefix, err := sign.RefBlockPrefix(block.Previous)
 	if err != nil {
-		return nil, s, err
+		return "", err
 	}
-
-	chainId, err := q.Database.GetChainID()
 
 	expiration := props.Time.Add(10 * time.Minute)
 	stx := sign.NewSignedTransaction(&types.Transaction{
@@ -273,68 +227,61 @@ func (q *QuantaGraphene) SignFunc(wifs []string, operations ...types.Operation) 
 	for _, op := range operations {
 		stx.PushOperation(op)
 	}
-	txe, err := stx.Sign(wifs, *chainId)
-	if err != nil {
-		return nil, nil, err
-	}
-	return stx, txe, nil
+
+	data, err := json.Marshal(stx)
+
+	return string(data), err
 }
 
-/*
 func (q *QuantaGraphene) DecodeTransaction(base64 string) (*coin.Deposit, error) {
-    txe := types.Transaction{}
-    //err := xdr.SafeUnmarshalBase64(base64, txe)
+	var tx sign.SignedTransaction
+	json.Unmarshal([]byte(base64), &tx)
 
-    ops := txe.Operations
-    if len(ops) != 1 {
-        return nil, errors.New("no operations found")
-    }
+	op := tx.Operations[0]
+	if op.Type() == types.TransferOpType {
+		op := op.(*types.TransferOperation)
 
-    paymentOp:= ops[0].Details()
-    coinName, err := q.Bitshare.GetObjects(paymentOp.Amount.AssetID)
-    result := &Asset{}
-    err = json.Unmarshal(coinName[0], &result)
-    if err != nil {
-        return nil, err
-    }
+		receiver, err := q.Database.GetObjects(op.To)
+		to := &Object{}
+		err = json.Unmarshal(receiver[0], &to)
+		if err != nil {
+			return nil, err
+		}
 
-    sender, err := q.Bitshare.GetObjects(paymentOp.From)
-    from := &Object{}
-    err = json.Unmarshal(sender[0], &from)
-    if err != nil {
-        return nil, err
-    }
+		coinName, err := q.Database.GetObjects(op.Amount.AssetID)
+		asset := &Asset{}
+		err = json.Unmarshal(coinName[0], &asset)
+		if err != nil {
+			return nil, err
+		}
 
-    receiver, err := q.Bitshare.GetObjects(paymentOp.To)
-    to := &Object{}
-    err = json.Unmarshal(receiver[0], &to)
-    if err != nil {
-        return nil, err
-    }
+		sender, err := q.Database.GetObjects(op.From)
+		from := &Object{}
+		err = json.Unmarshal(sender[0], &from)
+		if err != nil {
+			return nil, err
+		}
 
-    return &coin.Deposit{CoinName: result.Symbol,
-        QuantaAddr: to.Name,
-        Amount:     int64(paymentOp.Amount.Amount),
-        BlockID:    0,
-    }, nil
-
+		return &coin.Deposit{CoinName: asset.Symbol,
+			QuantaAddr: to.Name,
+			Amount:     int64(op.Amount.Amount),
+			BlockID:    0,
+		}, nil
+	}
+	return nil, nil
 }
 
-func ProcessTransaction(network string, base64 string, sigs []string) (string, error) {
-    return "", nil
-}
+func ProcessGrapheneTransaction(proposed string, sigs []string) (string, error) {
+	var tx sign.SignedTransaction
+	json.Unmarshal([]byte(proposed), &tx)
 
+	tx.Transaction.Signatures = sigs
+	signed, err := json.Marshal(tx)
+	return string(signed), err
+}
 
 func (q *QuantaGraphene) ProcessDeposit(deposit *coin.Deposit, proposed string) error {
-    txe, err := ProcessTransaction("", proposed, deposit.Signatures)
-    println(txe, err)
-    return db.ChangeSubmitQueue(q.Db, deposit.Tx, txe, "")
+	txe, err := ProcessGrapheneTransaction(proposed, deposit.Signatures)
+	println(txe, err)
+	return db.ChangeSubmitQueue(q.Db, deposit.Tx, txe, db.DEPOSIT)
 }
-
-/*
-func (q *QuantaGraphene) AttachQueue(kv kv_store.KVStore) error {
-    panic("implement me")
-}
-
-
-*/

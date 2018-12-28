@@ -3,45 +3,49 @@ package key_manager
 import (
 	"bytes"
 	"crypto/ecdsa"
-	"encoding/base64"
+	"crypto/sha256"
+	"encoding/hex"
 	"encoding/json"
-	"github.com/agl/ed25519"
-	"github.com/scorum/bitshares-go/types"
+	"github.com/btcsuite/btcd/btcec"
+	"github.com/btcsuite/btcutil"
+	"github.com/scorum/bitshares-go/sign"
 )
 
 type QuantaKeyGraphene struct {
-	seed    string
-	network string
+	chain      string
+	privateKey *btcec.PrivateKey
 }
 
-func (k *QuantaKeyGraphene) LoadNodeKeys(privkey string) error {
-	var err error
-	k.seed = privkey
+func (k *QuantaKeyGraphene) LoadNodeKeys(wif string) error {
+	w, err := btcutil.DecodeWIF(wif)
+	if err != nil {
+		return err
+	}
+
+	k.privateKey = w.PrivKey
+
 	return err
 }
 
 func (k *QuantaKeyGraphene) SignTransaction(encoded string) (string, error) {
-	txe := &types.Transaction{}
-	encodedBytes := make([]byte, len(encoded))
-	copy(encodedBytes, encoded)
+	var tx sign.SignedTransaction
+	json.Unmarshal([]byte(encoded), &tx)
 
-	err := json.Unmarshal(encodedBytes, txe)
+	digest, err := tx.Digest(k.chain)
 	if err != nil {
 		return "", err
 	}
-	result, err := json.Marshal(txe.Signatures[0])
-	if err != nil {
-		return "", err
-	}
-	return string(result), nil
+
+	sig := sign.SignBufferSha256(digest, k.privateKey.ToECDSA())
+	sigHex := hex.EncodeToString(sig)
+
+	return sigHex, nil
 }
 
 func (k *QuantaKeyGraphene) VerifyTransaction(encoded string) (bool, error) {
-	txe := &types.Transaction{}
-	encodedBytes := make([]byte, len(encoded))
-	copy(encodedBytes, encoded)
+	var tx sign.SignedTransaction
+	err := json.Unmarshal([]byte(encoded), &tx)
 
-	err := json.Unmarshal(encodedBytes, txe)
 	if err != nil {
 		println("ERROR!", err)
 		return false, err
@@ -53,10 +57,12 @@ func (k *QuantaKeyGraphene) SignMessageObj(msg interface{}) *string {
 	bData := new(bytes.Buffer)
 	json.NewEncoder(bData).Encode(msg)
 
-	var privKeys *[64]byte
-	signed := ed25519.Sign(privKeys, bData.Bytes())
-	signedbase64 := base64.StdEncoding.EncodeToString(signed[:])
-	return &signedbase64
+	digest := sha256.Sum256(bData.Bytes())
+
+	sig := sign.SignBufferSha256(digest[:], k.privateKey.ToECDSA())
+	sigHex := hex.EncodeToString(sig)
+
+	return &sigHex
 }
 
 func (k *QuantaKeyGraphene) CreateNodeKeys() error {
@@ -77,5 +83,8 @@ func (k *QuantaKeyGraphene) VerifySignatureObj(msg interface{}, signature string
 }
 
 func (k *QuantaKeyGraphene) SignMessage(original []byte) ([]byte, error) {
-	panic("Implement me")
+	digest := sha256.Sum256(original)
+
+	sig := sign.SignBufferSha256(digest[:], k.privateKey.ToECDSA())
+	return sig, nil
 }
