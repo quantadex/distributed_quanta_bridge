@@ -85,6 +85,8 @@ func (q *QuantaGraphene) GetTopBlockID(accountId string) (int64, error) {
 	return int64(blockId), nil
 }
 
+
+
 // get block , transfer
 func (q *QuantaGraphene) GetRefundsInBlock(blockID int64, trustAddress string) ([]Refund, int64, error) {
 	var refunds []Refund
