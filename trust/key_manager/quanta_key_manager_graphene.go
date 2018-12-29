@@ -6,6 +6,7 @@ import (
 	"crypto/sha256"
 	"encoding/hex"
 	"encoding/json"
+	"fmt"
 	"github.com/btcsuite/btcd/btcec"
 	"github.com/btcsuite/btcutil"
 	"github.com/scorum/bitshares-go/sign"
@@ -13,7 +14,7 @@ import (
 
 type QuantaKeyGraphene struct {
 	chain      string
-	privateKey *btcec.PrivateKey
+	privateKey []btcec.PrivateKey
 }
 
 func (k *QuantaKeyGraphene) LoadNodeKeys(wif string) error {
@@ -21,9 +22,9 @@ func (k *QuantaKeyGraphene) LoadNodeKeys(wif string) error {
 	if err != nil {
 		return err
 	}
+	k.privateKey = append(k.privateKey, *w.PrivKey)
 
-	k.privateKey = w.PrivKey
-
+	fmt.Println(k.privateKey)
 	return err
 }
 
@@ -35,10 +36,13 @@ func (k *QuantaKeyGraphene) SignTransaction(encoded string) (string, error) {
 	if err != nil {
 		return "", err
 	}
-
-	sig := sign.SignBufferSha256(digest, k.privateKey.ToECDSA())
-	sigHex := hex.EncodeToString(sig)
-
+	var i int
+	var sigHex string
+	for i = 0; i < len(k.privateKey); i++ {
+		sig := sign.SignBufferSha256(digest, k.privateKey[i].ToECDSA())
+		sigHex = hex.EncodeToString(sig) + sigHex
+	}
+	fmt.Println(sigHex)
 	return sigHex, nil
 }
 
@@ -59,8 +63,12 @@ func (k *QuantaKeyGraphene) SignMessageObj(msg interface{}) *string {
 
 	digest := sha256.Sum256(bData.Bytes())
 
-	sig := sign.SignBufferSha256(digest[:], k.privateKey.ToECDSA())
-	sigHex := hex.EncodeToString(sig)
+	var i int
+	var sigHex string
+	for i = 0; i < len(k.privateKey); i++ {
+		sig := sign.SignBufferSha256(digest[:], k.privateKey[i].ToECDSA())
+		sigHex = hex.EncodeToString(sig) + sigHex
+	}
 
 	return &sigHex
 }
@@ -85,6 +93,11 @@ func (k *QuantaKeyGraphene) VerifySignatureObj(msg interface{}, signature string
 func (k *QuantaKeyGraphene) SignMessage(original []byte) ([]byte, error) {
 	digest := sha256.Sum256(original)
 
-	sig := sign.SignBufferSha256(digest[:], k.privateKey.ToECDSA())
+	var i int
+	var sig []byte
+	for i = 0; i < len(k.privateKey); i++ {
+		s := sign.SignBufferSha256(digest[:], k.privateKey[i].ToECDSA())
+		sig = append(sig, s...)
+	}
 	return sig, nil
 }

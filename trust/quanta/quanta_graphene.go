@@ -85,8 +85,6 @@ func (q *QuantaGraphene) GetTopBlockID(accountId string) (int64, error) {
 	return int64(blockId), nil
 }
 
-
-
 // get block , transfer
 func (q *QuantaGraphene) GetRefundsInBlock(blockID int64, trustAddress string) ([]Refund, int64, error) {
 	var refunds []Refund
@@ -233,6 +231,50 @@ func (q *QuantaGraphene) PrepareTX(operations ...types.Operation) (string, error
 	data, err := json.Marshal(stx)
 
 	return string(data), err
+}
+
+func (q *QuantaGraphene) LimitOrderCancel(key string, feePayingAccount, order types.ObjectID, fee types.AssetAmount) (string, error) {
+	op := &types.LimitOrderCancelOperation{
+		Fee:              fee,
+		FeePayingAccount: feePayingAccount,
+		Order:            order,
+		Extensions:       []json.RawMessage{},
+	}
+
+	fees, err := q.Database.GetRequiredFee([]types.Operation{op}, fee.AssetID.String())
+	if err != nil {
+		log.Println(err)
+		return "", err
+	}
+	op.Fee.Amount = fees[0].Amount
+
+	return q.PrepareTX(op)
+}
+
+func (q *QuantaGraphene) LimitOrderCreate(key string, seller types.ObjectID, fee, amToSell, minToRecive types.AssetAmount, expiration time.Duration, fillOrKill bool) (string, error) {
+	props, err := q.Database.GetDynamicGlobalProperties()
+	if err != nil {
+		return "", err
+	}
+
+	op := &types.LimitOrderCreateOperation{
+		Fee:          fee,
+		Seller:       seller,
+		AmountToSell: amToSell,
+		MinToReceive: minToRecive,
+		Expiration:   types.NewTime(props.Time.Add(expiration)),
+		FillOrKill:   fillOrKill,
+		Extensions:   []json.RawMessage{},
+	}
+
+	fees, err := q.Database.GetRequiredFee([]types.Operation{op}, fee.AssetID.String())
+	if err != nil {
+		log.Println(err)
+		return "", err
+	}
+	op.Fee.Amount = fees[0].Amount
+
+	return q.PrepareTX(op)
 }
 
 func (q *QuantaGraphene) DecodeTransaction(base64 string) (*coin.Deposit, error) {
