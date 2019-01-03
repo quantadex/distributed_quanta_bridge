@@ -7,6 +7,7 @@ https://github.com/scorum/bitshares-go/blob/master/apis/database/api_test.go
 */
 import (
 	"encoding/json"
+	"fmt"
 	"github.com/quantadex/distributed_quanta_bridge/common/kv_store"
 	"github.com/quantadex/distributed_quanta_bridge/common/logger"
 	"github.com/quantadex/distributed_quanta_bridge/trust/coin"
@@ -63,10 +64,13 @@ func (q *QuantaGraphene) Attach() error {
 
 func (q *QuantaGraphene) Broadcast(stx string) error {
 	// broadcast here
+	var err error
 	var tx sign.SignedTransaction
 	json.Unmarshal([]byte(stx), &tx)
+	//q.NetworkBroadcast.BroadcastTransaction(tx.Transaction)
 
-	_, err := q.NetworkBroadcast.BroadcastTransactionSynchronous(tx.Transaction)
+	resp, err := q.NetworkBroadcast.BroadcastTransactionSynchronous(tx.Transaction)
+	fmt.Println("response = ", resp)
 	return err
 }
 
@@ -201,7 +205,97 @@ func (q *QuantaGraphene) CreateProposeTransaction(dep *coin.Deposit) (string, er
 	return q.PrepareTX(op)
 }
 
+func (q *QuantaGraphene) AssetProposeTransaction() (string, error) {
+	var d = make([]types.ObjectID, 0)
+
+	var issuer, baseObject, quoteObject types.ObjectID
+	issuer.Space = 1
+	issuer.Type = 2
+	issuer.ID = 23
+
+	baseObject.Space = 1
+	baseObject.Type = 3
+	baseObject.ID = 0
+
+	quoteObject.Space = 1
+	quoteObject.Type = 3
+	quoteObject.ID = 1
+
+	var base, quote types.AssetAmount
+	base.Amount = 1
+	base.AssetID = baseObject
+
+	quote.Amount = 1
+	quote.AssetID = quoteObject
+
+	var fee types.AssetAmount
+	fee.Amount = 0
+	fee.AssetID = base.AssetID
+	fmt.Println(base.AssetID, fee.AssetID)
+
+	p := &types.Price{
+		Base:  base,
+		Quote: quote,
+	}
+	var u = make([]json.RawMessage, 0)
+	s := &types.AssetOptions{
+		MaxSupply:            1000000000000000,
+		MarketFeePercent:     0,
+		MaxMarketFee:         1000,
+		IssuerPermissions:    79,
+		Flags:                0,
+		CoreExchangeRate:     *p,
+		WhiteListAuthorities: d,
+		BlackListAuthorities: d,
+		WhiteListMarkets:     d,
+		BlackListMarkets:     d,
+		Description:          "My fancy description",
+		Extensions:           u,
+	}
+	w := &types.CreateAsset{
+		Issuer:             issuer,
+		Symbol:             "TOKENXA",
+		Precision:          5,
+		CommonOptions:      *s,
+		IsPredictionMarket: false,
+		Extensions:         u,
+	}
+	w.Fee.AssetID = baseObject
+	fees, _ := q.Database.GetRequiredFee([]types.Operation{w}, fee.AssetID.String())
+	//fmt.Println("error = ", err)
+	w.Fee.Amount = fees[0].Amount
+
+	//fmt.Println("type = ", w.Type())
+	fmt.Println("AssetId = ", w.Fee.AssetID)
+	return q.PrepareTX(w)
+}
+
+func (q *QuantaGraphene) IssueAssetPropose() (string, error) {
+	var e, f types.ObjectID
+	e.Space = 1
+	e.Type = 2
+	e.ID = 16
+
+	f.Space = 1
+	f.Type = 3
+	f.ID = 0
+
+	var a types.AssetAmount
+	a.Amount = 1
+	a.AssetID = f
+
+	w := &types.IssueAsset{
+		To:        e,
+		Amount:    a,
+		Memo:      "",
+		Broadcast: false,
+	}
+	return q.PrepareTX(w)
+
+}
+
 func (q *QuantaGraphene) PrepareTX(operations ...types.Operation) (string, error) {
+	//fmt.Println("operation = ", operations[0].(*types.CreateAsset).Fee.AssetID)
 	props, err := q.Database.GetDynamicGlobalProperties()
 	if err != nil {
 		return "", err
@@ -229,6 +323,9 @@ func (q *QuantaGraphene) PrepareTX(operations ...types.Operation) (string, error
 	}
 
 	data, err := json.Marshal(stx)
+	fmt.Println("stx = ", stx.Transaction.Operations[0])
+	fmt.Println("data = ", string(data))
+	fmt.Println(err)
 
 	return string(data), err
 }
