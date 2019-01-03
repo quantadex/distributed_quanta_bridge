@@ -193,9 +193,9 @@ func (l *Listener) GetNativeDeposits(blockNumber int64, toAddress map[string]str
 					QuantaAddr: quantaAddr,
 					CoinName:   "ETH",
 					SenderAddr: tx.To().Hex(),
-					Amount:     WeiToStellar(tx.Value().Int64()),
+					Amount:     WeiToStellar(*tx.Value()),
 					BlockID:    blockNumber,
-					Tx: tx.Hash().Hex(),
+					Tx:         tx.Hash().Hex(),
 				})
 			}
 		}
@@ -274,9 +274,10 @@ func (l *Listener) FilterTransferEvent(blockNumber int64, toAddress map[string]s
 					QuantaAddr: quantaAddr,
 					CoinName:   vLog.Address.Hex(),
 					SenderAddr: transferEvent.To.Hex(),
-					Amount:     Erc20AmountToStellar(transferEvent.Tokens.Int64(), dec),
-					Tx: vLog.TxHash.Hex(),
+					Amount:     Erc20AmountToStellar(*transferEvent.Tokens, dec),
+					Tx:         vLog.TxHash.Hex(),
 				})
+				fmt.Println("erc20 amount = ", events[0].Amount)
 			}
 
 		}
@@ -310,7 +311,7 @@ func (l *Listener) GetForwardContract(blockNumber int64) ([]*ForwardInput, error
 			var remain string
 			if strings.HasPrefix(data, Forwarder.ForwarderBin) {
 				remain = strings.TrimPrefix(data, Forwarder.ForwarderBin)
-			} else if strings.HasPrefix(data, Forwarder.ForwarderBinV2)  {
+			} else if strings.HasPrefix(data, Forwarder.ForwarderBinV2) {
 				remain = strings.TrimPrefix(data, Forwarder.ForwarderBinV2)
 			} else {
 				remain = strings.TrimPrefix(data, Forwarder.ForwarderBinV3)
@@ -371,11 +372,11 @@ func (l *Listener) SendWithdrawal(conn bind.ContractBackend,
 	if len(parts) > 1 {
 		smartAddress = common.HexToAddress(parts[1])
 	}
-
+	//smartAddress = common.HexToAddress(w.CoinName)
 	toAddr := common.HexToAddress(w.DestinationAddress)
-	amount := big.NewInt(int64(w.Amount))
+	amount := StellarToWei(w.Amount)
 	fmt.Printf("Sending from %s\n", auth.From.Hex())
-	fmt.Printf("Submit to contract=%s txId=%d erc20=%s to=%s amount=%d\n", trustAddress.Hex(), w.TxId, smartAddress.Hex(), toAddr.Hex(), amount.Uint64())
+	fmt.Printf("Submit to contract=%s txId=%d erc20=%s to=%s amount=%s\n", trustAddress.Hex(), w.TxId, smartAddress.Hex(), toAddr.Hex(), amount.String())
 
 	var r [][32]byte
 	var s [][32]byte
@@ -400,7 +401,6 @@ func (l *Listener) SendWithdrawal(conn bind.ContractBackend,
 
 		v = append(v, data[64]+27)
 	}
-
 	tx, err := contract.PaymentTx(auth, w.TxId, smartAddress, toAddr, amount, v, r, s)
 	if err != nil {
 		return "", err

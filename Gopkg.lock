@@ -51,9 +51,26 @@
   branch = "master"
   digest = "1:74e6390b521e5f68be220af535e4122b246401bbd118a08a36cac84818bae4ad"
   name = "github.com/btcsuite/btcd"
-  packages = ["btcec"]
+  packages = [
+    "btcec",
+    "chaincfg",
+    "chaincfg/chainhash",
+    "wire",
+  ]
   pruneopts = "T"
   revision = "7d2daa5bfef28c5e282571bc06416516936115ee"
+
+[[projects]]
+  branch = "master"
+  digest = "1:4b2262fd5a250400e8fd6aa3fde325dc6d547929c375636ad9b2c9cc352c7054"
+  name = "github.com/btcsuite/btcutil"
+  packages = [
+    ".",
+    "base58",
+    "bech32",
+  ]
+  pruneopts = "T"
+  revision = "ab6388e0c60ae4834a1f57511e20c17b5f78be4b"
 
 [[projects]]
   digest = "1:fed1f537c2f1269fe475a8556c393fe466641682d73ef8fd0491cd3aa1e47bad"
@@ -388,6 +405,31 @@
   version = "v1.6.0"
 
 [[projects]]
+  branch = "master"
+  digest = "1:d61e892db1e4f4dfdea79f31d4511d422ce75e20bab74b73b91f9302bc717790"
+  name = "github.com/scorum/bitshares-go"
+  packages = [
+    "apis/database",
+    "apis/login",
+    "caller",
+    "encoding/transaction",
+    "sign",
+    "sign/rfc6979",
+    "transport/websocket",
+    "types",
+  ]
+  pruneopts = "T"
+  revision = "bbfc9bedaa1b2ddaead3eafe47237efcd9b8496d"
+
+[[projects]]
+  digest = "1:6376756ce78143b44d16549590d5bbb2ea5f8202083c3c8e548ac8757616fcfb"
+  name = "github.com/scorum/scorum-go"
+  packages = ["transport"]
+  pruneopts = "T"
+  revision = "e6a9ae1b628f0164acc403fa9bc1cfd6bd6f8499"
+  version = "v0.2.1"
+
+[[projects]]
   digest = "1:54bd573538ca13ccf85d18c99249d934f17957f17263256b42565a11c854c1de"
   name = "github.com/segmentio/go-loggly"
   packages = ["."]
@@ -486,6 +528,7 @@
   packages = [
     "assert",
     "mock",
+    "require",
   ]
   pruneopts = "T"
   revision = "f35b8ab0b5a2cef36673838d662e249dd9c94686"
@@ -590,6 +633,8 @@
   analyzer-version = 1
   input-imports = [
     "github.com/boltdb/bolt",
+    "github.com/btcsuite/btcd/btcec",
+    "github.com/btcsuite/btcutil",
     "github.com/emirpasic/gods/lists/doublylinkedlist",
     "github.com/ethereum/go-ethereum",
     "github.com/ethereum/go-ethereum/accounts/abi",
@@ -612,6 +657,11 @@
     "github.com/quantadex/quanta_book/common",
     "github.com/quantadex/quanta_book/consensus",
     "github.com/quantadex/quanta_book/consensus/cosi",
+    "github.com/scorum/bitshares-go/apis/database",
+    "github.com/scorum/bitshares-go/apis/login",
+    "github.com/scorum/bitshares-go/sign",
+    "github.com/scorum/bitshares-go/transport/websocket",
+    "github.com/scorum/bitshares-go/types",
     "github.com/spf13/viper",
     "github.com/stellar/go/amount",
     "github.com/stellar/go/build",
@@ -621,6 +671,7 @@
     "github.com/stellar/go/support/log",
     "github.com/stellar/go/xdr",
     "github.com/stretchr/testify/assert",
+    "github.com/stretchr/testify/require",
   ]
   solver-name = "gps-cdcl"
   solver-version = 1

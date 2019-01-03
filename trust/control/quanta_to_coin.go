@@ -10,23 +10,24 @@ import (
 	"github.com/quantadex/distributed_quanta_bridge/common/manifest"
 	"github.com/quantadex/distributed_quanta_bridge/common/queue"
 	"github.com/quantadex/distributed_quanta_bridge/trust/coin"
+	"github.com/quantadex/distributed_quanta_bridge/trust/db"
 	"github.com/quantadex/distributed_quanta_bridge/trust/key_manager"
 	"github.com/quantadex/distributed_quanta_bridge/trust/peer_contact"
 	"github.com/quantadex/distributed_quanta_bridge/trust/quanta"
 	"github.com/quantadex/quanta_book/consensus/cosi"
 	"strings"
 	"time"
-	"github.com/quantadex/distributed_quanta_bridge/trust/db"
 )
 
 const QUANTA = "QUANTA"
 const DQ_QUANTA2COIN = "DQ_QUANTA2COIN"
 
 type WithdrawalResult struct {
-	W *coin.Withdrawal
+	W   *coin.Withdrawal
 	Err error
-	Tx string
+	Tx  string
 }
+
 /**
  * QuantaToCoin
  *
@@ -35,8 +36,8 @@ type WithdrawalResult struct {
  */
 type QuantaToCoin struct {
 	logger              logger.Logger
-	db					kv_store.KVStore
-	rDb					*db.DB
+	db                  kv_store.KVStore
+	rDb                 *db.DB
 	coinChannel         coin.Coin
 	quantaChannel       quanta.Quanta
 	quantaTrustAddress  string
@@ -47,8 +48,8 @@ type QuantaToCoin struct {
 	rr                  *RoundRobinSigner
 	cosi                *cosi.Cosi
 	trustPeer           *peer_contact.TrustPeerNode
-	doneChan			chan bool
-	SuccessCb			func(WithdrawalResult)
+	doneChan            chan bool
+	SuccessCb           func(WithdrawalResult)
 }
 
 /**
@@ -113,7 +114,7 @@ func NewQuantaToCoin(log logger.Logger,
 		err = db.SignWithdrawal(rDb, withdrawal)
 		if err != nil {
 			res.logger.Error("Failed to confirm transaction: " + err.Error())
-			return errors.New("Failed to confirm transaction: "+ err.Error())
+			return errors.New("Failed to confirm transaction: " + err.Error())
 		}
 		return nil
 	}
@@ -159,27 +160,38 @@ func NewQuantaToCoin(log logger.Logger,
 	return res
 }
 
-
 func (c *QuantaToCoin) DispatchWithdrawal() {
+	var lastBlock int64 = 0
 	for {
 		select {
-			case <-time.After(time.Second):
-				txs := db.QueryWithdrawalByAge(c.rDb, time.Now().Add(-time.Second*5), []string{db.SUBMIT_CONSENSUS})
-				for _, tx := range txs {
-					w := &coin.Withdrawal{
-						Tx: tx.Tx,
-						TxId: tx.TxId,
-						CoinName: tx.Coin,
-						SourceAddress: tx.From,
-						DestinationAddress: tx.To,
-						QuantaBlockID: tx.BlockId,
-						Amount: uint64(tx.Amount),
+		case <-time.After(time.Second * 10):
+			txs := db.QueryWithdrawalByAge(c.rDb, time.Now().Add(-time.Second*5), []string{db.SUBMIT_CONSENSUS})
+
+			if len(txs) > 0 {
+				currentBlock, err := c.coinChannel.GetTopBlockID()
+				if err != nil {
+					c.logger.Error(err.Error())
+
+				} else {
+					//to avoid multiple transactions in one block
+					if currentBlock > lastBlock+1 {
+						lastBlock = currentBlock
+						w := &coin.Withdrawal{
+							Tx:                 txs[0].Tx,
+							TxId:               txs[0].TxId,
+							CoinName:           txs[0].Coin,
+							SourceAddress:      txs[0].From,
+							DestinationAddress: txs[0].To,
+							QuantaBlockID:      txs[0].BlockId,
+							Amount:             uint64(txs[0].Amount),
+						}
+						c.StartConsensus(w)
 					}
-					c.StartConsensus(w)
 				}
-			case <- c.doneChan:
-				c.logger.Infof("Exiting.")
-				break
+			}
+		case <-c.doneChan:
+			c.logger.Infof("Exiting.")
+			break
 		}
 	}
 }
@@ -198,7 +210,6 @@ func (c *QuantaToCoin) StartConsensus(w *coin.Withdrawal) (string, error) {
 		//TODO: How to handle this?
 	}
 	w.TxId = txId + 1
-
 	c.logger.Infof("Start new round %s %s to=%s amount=%d", w.Tx, w.CoinName, w.DestinationAddress, w.Amount)
 	encoded, err := c.coinChannel.EncodeRefund(*w)
 
@@ -226,16 +237,16 @@ func (c *QuantaToCoin) StartConsensus(w *coin.Withdrawal) (string, error) {
 		if err != nil {
 			c.logger.Errorf("Error submission: %s", err.Error())
 			if strings.Contains(err.Error(), "known transaction") {
-				db.ChangeSubmitState(c.rDb, w.Tx, db.SUBMIT_FATAL)
+				db.ChangeSubmitState(c.rDb, w.Tx, db.SUBMIT_FATAL, db.WITHDRAWAL)
 			} else if strings.Contains(err.Error(), "replacement transaction underpriced") {
-				db.ChangeSubmitState(c.rDb, w.Tx, db.SUBMIT_FATAL)
+				db.ChangeSubmitState(c.rDb, w.Tx, db.SUBMIT_FATAL, db.WITHDRAWAL)
 			} else if strings.Contains(err.Error(), "connect: connection refused") {
-				db.ChangeSubmitState(c.rDb, w.Tx, db.SUBMIT_RECOVERABLE)
+				db.ChangeSubmitState(c.rDb, w.Tx, db.SUBMIT_RECOVERABLE, db.WITHDRAWAL)
 			} else if strings.Contains(err.Error(), "insufficient funds for gas * price + value") {
-				db.ChangeSubmitState(c.rDb, w.Tx, db.SUBMIT_RECOVERABLE)
+				db.ChangeSubmitState(c.rDb, w.Tx, db.SUBMIT_RECOVERABLE, db.WITHDRAWAL)
 			}
 		} else {
-			db.ChangeSubmitState(c.rDb, w.Tx, db.SUBMIT_SUCCESS)
+			db.ChangeSubmitState(c.rDb, w.Tx, db.SUBMIT_SUCCESS, db.WITHDRAWAL)
 			c.logger.Infof("Submitted withdrawal in tx=%s SUCCESS", tx)
 		}
 
@@ -243,7 +254,7 @@ func (c *QuantaToCoin) StartConsensus(w *coin.Withdrawal) (string, error) {
 		errResult = err
 
 		if c.SuccessCb != nil {
-			c.SuccessCb(WithdrawalResult{ w, errResult, tx})
+			c.SuccessCb(WithdrawalResult{w, errResult, tx})
 		}
 	}
 	return txResult, errResult
@@ -263,6 +274,7 @@ func (c *QuantaToCoin) DoLoop(cursor int64) ([]quanta.Refund, error) {
 		c.logger.Error(err.Error())
 		return refunds, err
 	}
+	//coin.StellarToWei()
 
 	errResult := error(nil)
 
@@ -271,41 +283,45 @@ func (c *QuantaToCoin) DoLoop(cursor int64) ([]quanta.Refund, error) {
 	// separate confirm, and sign as two different stages
 	for _, refund := range refunds {
 		c.logger.Infof("Confirm Refund tx=%s pt=%d", refund.TransactionId, refund.PageTokenID)
-
 		w := &coin.Withdrawal{
-			Tx: 				refund.TransactionId,
+			Tx:                 refund.TransactionId,
 			CoinName:           refund.CoinName,
 			SourceAddress:      refund.SourceAddress,
 			DestinationAddress: refund.DestinationAddress,
 			QuantaBlockID:      refund.OperationID,
 			// TODO: Potentially losing precision when converting to wei
-			Amount:             coin.StellarToWei(refund.Amount),
+			Amount: refund.Amount,
 		}
 
 		db.ConfirmWithdrawal(c.rDb, w)
 		cursor = refund.PageTokenID
 
-		if w.DestinationAddress == "" || !coin.CheckValidEthereumAddress(w.DestinationAddress) {
+		if w.DestinationAddress == "0x0000000000000000000000000000000000000000" || !coin.CheckValidEthereumAddress(w.DestinationAddress) {
 			// create a deposit
 			dep := &coin.Deposit{
-				Tx: refund.TransactionId,
-				CoinName: refund.CoinName,  // coin,issuer
+				Tx:         refund.TransactionId,
+				CoinName:   refund.CoinName, // coin,issuer
 				SenderAddr: "",
 				QuantaAddr: refund.SourceAddress,
-				Amount: int64(refund.Amount),
-				BlockID: int64(refund.LedgerID),
+				Amount:     int64(refund.Amount),
+				BlockID:    int64(refund.LedgerID),
 			}
-			db.ConfirmDeposit(c.rDb, dep)
-			if c.nodeID == 0 {
-				db.ChangeSubmitState(c.rDb, dep.Tx, db.SUBMIT_CONSENSUS)
+			err := db.ConfirmDeposit(c.rDb, dep)
+			if err != nil {
+				c.logger.Error("Cannot insert into db:" + err.Error())
+			} else if c.nodeID == 0 {
+				err = db.ChangeSubmitState(c.rDb, dep.Tx, db.SUBMIT_CONSENSUS, db.DEPOSIT)
+				if err != nil {
+					c.logger.Error("Cannot change submit state:" + err.Error())
+				}
 			}
 
 			c.logger.Error("Refund is missing destination address, skipping.")
 
-		} else if w.Amount == uint64(0) {
+		} else if w.Amount == 0 {
 			c.logger.Error("Amount is too small")
 		} else if c.nodeID == 0 {
-			db.ChangeSubmitState(c.rDb, w.Tx, db.SUBMIT_CONSENSUS)
+			db.ChangeSubmitState(c.rDb, w.Tx, db.SUBMIT_CONSENSUS, db.WITHDRAWAL)
 		}
 
 		success := setLastBlock(c.db, QUANTA, refund.PageTokenID)

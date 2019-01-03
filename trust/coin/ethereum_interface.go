@@ -7,6 +7,7 @@ import (
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/stellar/go/support/log"
 	"math/big"
+	"regexp"
 )
 
 type LogTransfer struct {
@@ -64,41 +65,44 @@ type Listener struct {
 	log *log.Entry
 }
 
-func WeiToStellar(valueInWei int64) int64 {
-	valueEth := new(big.Rat).SetInt64(valueInWei)
+func WeiToStellar(valueInWei big.Int) int64 {
+	valueEth := new(big.Rat).SetInt(&valueInWei)
 	powerDelta := new(big.Rat).SetInt(new(big.Int).Exp(ten, big.NewInt(11), nil))
 	result := new(big.Rat)
 	result = result.Quo(valueEth, powerDelta)
-
 	num, _ := new(big.Int).SetString(result.FloatString(0), 10)
 	return num.Int64()
 }
 
-func Erc20AmountToStellar(valueInWei int64, dec uint8) int64 {
-	valueEth := new(big.Rat).SetInt64(valueInWei)
+func Erc20AmountToStellar(valueInWei big.Int, dec uint8) int64 {
+	valueEth := new(big.Rat).SetInt(&valueInWei)
 	powerDelta := new(big.Rat).SetInt(new(big.Int).Exp(ten, big.NewInt(18-int64(dec)), nil))
 	result := new(big.Rat)
 	result = result.Mul(valueEth, powerDelta)
 
-	return WeiToStellar(result.Num().Int64())
+	return WeiToStellar(*result.Num())
 }
 
-func StellarToWei(valueInStellar uint64) uint64 {
+func StellarToWei(valueInStellar uint64) *big.Int {
 	valueWei := new(big.Rat)
 	stellar := new(big.Rat).SetInt(big.NewInt(int64(valueInStellar)))
 	powerDelta := new(big.Rat).SetInt(new(big.Int).Exp(ten, big.NewInt(11), nil))
 
-	return valueWei.Mul(stellar, powerDelta).Num().Uint64()
+	return valueWei.Mul(stellar, powerDelta).Num()
 }
 
 func CheckValidEthereumAddress(address string) bool {
-	return true
+	var add [20]byte
+	copy(add[:], address)
+	Ma := common.NewMixedcaseAddress(add)
+	var validAddress = regexp.MustCompile(`^[0x]+[0-9a-fA-F]{40}$`)
+	return Ma.ValidChecksum() && validAddress.MatchString(address)
 }
 
 type ForwardInput struct {
 	ContractAddress common.Address
 	Trust           common.Address
 	QuantaAddr      string
-	TxHash			string
+	TxHash          string
 	Blockchain      string
 }

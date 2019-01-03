@@ -4,13 +4,13 @@ import (
 	"bytes"
 	"crypto/ecdsa"
 	"encoding/binary"
+	"encoding/json"
+	"github.com/ethereum/go-ethereum/accounts/abi"
 	common2 "github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/ethclient"
 	"github.com/quantadex/distributed_quanta_bridge/common"
 	"math/big"
 	"strings"
-	"github.com/ethereum/go-ethereum/accounts/abi"
-	"encoding/json"
 )
 
 const sign_prefix = "\x19Ethereum Signed Message:\n"
@@ -23,8 +23,8 @@ type EthereumCoin struct {
 }
 
 type EncodedMsg struct {
-	Message string
-	Tx string
+	Message     string
+	Tx          string
 	BlockNumber int64
 }
 
@@ -88,25 +88,25 @@ func (c *EthereumCoin) SendWithdrawal(trustAddress common2.Address,
 func (c *EthereumCoin) EncodeRefund(w Withdrawal) (string, error) {
 	var encoded bytes.Buffer
 	var smartAddress string
-	parts := strings.Split(w.CoinName, ",")
 
+	parts := strings.Split(w.CoinName, ",")
 	if len(parts) == 2 {
 		smartAddress = parts[1]
 	} else {
 		smartAddress = ""
 	}
+	//smartAddress = w.CoinName
 
-	var number = common2.Big256
-	number.SetUint64(w.Amount)
 	//encoded.WriteString(sign_prefix + "80")
 	binary.Write(&encoded, binary.BigEndian, uint64(w.TxId))
 	encoded.Write(common2.HexToAddress(strings.ToLower(smartAddress)).Bytes())
 	encoded.Write(common2.HexToAddress(strings.ToLower(w.DestinationAddress)).Bytes())
-	encoded.Write(abi.U256(new(big.Int).SetUint64(uint64(w.Amount))))
+	//encoded.Write(abi.U256(new(big.Int).SetUint64(uint64(w.Amount))))
+	encoded.Write(abi.U256(StellarToWei(w.Amount)))
 	//binary.Write(&encoded, binary.BigEndian, abi.U256(new(big.Int).SetUint64(uint64(w.Amount))))
 
 	//println("# of bytes " , encoded.Len(), common2.Bytes2Hex(encoded.Bytes()))
-	data, err := json.Marshal(&EncodedMsg{ common2.Bytes2Hex(encoded.Bytes()),  w.Tx, w.QuantaBlockID})
+	data, err := json.Marshal(&EncodedMsg{common2.Bytes2Hex(encoded.Bytes()), w.Tx, w.QuantaBlockID})
 	return common2.Bytes2Hex(data), err
 }
 
