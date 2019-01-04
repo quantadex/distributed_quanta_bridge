@@ -63,17 +63,7 @@ func (op *operationTuple) MarshalJSON() ([]byte, error) {
 func (ops Operations) MarshalJSON() ([]byte, error) {
 	tuples := make([]*operationTuple, 0, len(ops))
 	for _, op := range ops {
-		if op.Type() == TransferOpType {
-			tuples = append(tuples, &operationTuple{
-				Type: op.Type(),
-				Data: op,
-			})
-		} else if op.Type() == CreateAssetOpType {
-			tuples = append(tuples, &operationTuple{
-				Type: op.Type(),
-				Data: op,
-			})
-		} else if op.Type() == IssueAssetOpType {
+		if op.Type() == TransferOpType || op.Type() == CreateAssetOpType || op.Type() == IssueAssetOpType {
 			tuples = append(tuples, &operationTuple{
 				Type: op.Type(),
 				Data: op,
@@ -107,7 +97,7 @@ var knownOperations = map[OpType]reflect.Type{
 	LimitOrderCreateOpType: reflect.TypeOf(LimitOrderCreateOperation{}),
 	LimitOrderCancelOpType: reflect.TypeOf(LimitOrderCancelOperation{}),
 	CreateAssetOpType:      reflect.TypeOf(CreateAsset{}),
-	//IssueAssetOpType:       reflect.TypeOf(IssueAsset{}),
+	IssueAssetOpType:       reflect.TypeOf(IssueAsset{}),
 }
 
 // UnknownOperation
@@ -190,6 +180,15 @@ type AssetOptions struct {
 	Extensions           []json.RawMessage `json:"extensions"`
 }
 
+type BitAssetOptions struct {
+	FeedLifeTimeSec              uint32   `json:"feed_lifetime_sec"`
+	MinimumFeeds                 uint8    `json:"minimum_feeds"`
+	ForceSettlementDelaySec      uint32   `json:"force_settlement_delay_sec"`
+	ForceSettlementOffsetPercent uint16   `json:"force_settlement_offset_percent"`
+	MaximumForceSettlementVolume uint16   `json:"maximum_force_settlement_volume"`
+	ShortBackingAsset            ObjectID `json:"short_backing_asset"`
+}
+
 func (op *CreateAsset) Type() OpType { return CreateAssetOpType }
 
 func (op *CreateAsset) MarshalTransaction(encoder *transaction.Encoder) error {
@@ -228,10 +227,12 @@ func (op *CreateAsset) MarshalTransaction(encoder *transaction.Encoder) error {
 }
 
 type IssueAsset struct {
-	To        ObjectID    `json:"to"`
-	Amount    AssetAmount `json:"amount"`
-	Memo      string      `json:"memo"`
-	Broadcast bool        `json:"broadcast"`
+	Fee            AssetAmount       `json:"fee"`
+	Issuer         ObjectID          `json:"issuer"`
+	AssetToIssue   AssetAmount       `json:"asset_to_issue"`
+	IssueToAccount ObjectID          `json:"issue_to_account"`
+	Memo           *Memo             `json:"memo,omitempty"`
+	Extensions     []json.RawMessage `json:"extensions"`
 }
 
 type MemoData struct {
@@ -244,9 +245,14 @@ func (op *IssueAsset) Type() OpType { return IssueAssetOpType }
 func (op *IssueAsset) MarshalTransaction(encoder *transaction.Encoder) error {
 	enc := transaction.NewRollingEncoder(encoder)
 	enc.EncodeUVarint(uint64(op.Type()))
-	enc.Encode(op.To)
+	enc.Encode(op.Fee)
+	enc.Encode(op.Issuer)
+	enc.Encode(op.AssetToIssue)
+	enc.Encode(op.IssueToAccount)
 
 	//Memo?
+	enc.EncodeUVarint(0)
+
 	enc.EncodeUVarint(0)
 	return enc.Err()
 }

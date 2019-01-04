@@ -7,7 +7,7 @@ https://github.com/scorum/bitshares-go/blob/master/apis/database/api_test.go
 */
 import (
 	"encoding/json"
-	"fmt"
+	"errors"
 	"github.com/quantadex/distributed_quanta_bridge/common/kv_store"
 	"github.com/quantadex/distributed_quanta_bridge/common/logger"
 	"github.com/quantadex/distributed_quanta_bridge/trust/coin"
@@ -69,8 +69,7 @@ func (q *QuantaGraphene) Broadcast(stx string) error {
 	json.Unmarshal([]byte(stx), &tx)
 	//q.NetworkBroadcast.BroadcastTransaction(tx.Transaction)
 
-	resp, err := q.NetworkBroadcast.BroadcastTransactionSynchronous(tx.Transaction)
-	fmt.Println("response = ", resp)
+	_, err = q.NetworkBroadcast.BroadcastTransactionSynchronous(tx.Transaction)
 	return err
 }
 
@@ -124,7 +123,7 @@ func (q *QuantaGraphene) GetRefundsInBlock(blockID int64, trustAddress string) (
 						return refunds, 0, err
 					}
 
-					txid := strconv.Itoa(int(blockID)) + "_" + strconv.Itoa(int(op.Type()))
+					txId := strconv.Itoa(int(blockID)) + "_" + strconv.Itoa(int(op.Type()))
 
 					newRefund := Refund{
 						OperationID:        int64(op.Type()),
@@ -132,7 +131,7 @@ func (q *QuantaGraphene) GetRefundsInBlock(blockID int64, trustAddress string) (
 						DestinationAddress: to.Name,
 						Amount:             op.Amount.Amount,
 						CoinName:           result.Symbol,
-						TransactionId:      txid,
+						TransactionId:      txId,
 						PageTokenID:        blockID,
 						LedgerID:           int32(blockID),
 					}
@@ -205,14 +204,33 @@ func (q *QuantaGraphene) CreateProposeTransaction(dep *coin.Deposit) (string, er
 	return q.PrepareTX(op)
 }
 
-func (q *QuantaGraphene) AssetProposeTransaction() (string, error) {
-	var d = make([]types.ObjectID, 0)
+func (q *QuantaGraphene) GetIssuer(assetName string) (types.ObjectID, error) {
+	var issuer types.ObjectID
+	asset, err := q.Database.LookupAssetSymbols(assetName)
+	if err != nil {
+		return issuer, err
+	}
+	return types.MustParseObjectID(asset[0].Issuer), nil
+}
 
-	var issuer, baseObject, quoteObject types.ObjectID
-	issuer.Space = 1
-	issuer.Type = 2
-	issuer.ID = 23
+func (q *QuantaGraphene) AssetExists(assetName string) bool {
+	asset, err := q.Database.LookupAssetSymbols(assetName)
+	if err != nil {
+		return false
+	}
+	return len(asset) > 0
+}
 
+func (q *QuantaGraphene) AssetProposeTransaction(issuer string, symbol string, precision uint8) (string, error) {
+	if q.AssetExists(symbol) {
+		return "", errors.New("asset already exists")
+	}
+	issuerId, err := q.Database.LookupAccounts(issuer, 1)
+	if err != nil {
+		return "", err
+	}
+
+	var baseObject, quoteObject types.ObjectID
 	baseObject.Space = 1
 	baseObject.Type = 3
 	baseObject.ID = 0
@@ -231,14 +249,14 @@ func (q *QuantaGraphene) AssetProposeTransaction() (string, error) {
 	var fee types.AssetAmount
 	fee.Amount = 0
 	fee.AssetID = base.AssetID
-	fmt.Println(base.AssetID, fee.AssetID)
 
 	p := &types.Price{
 		Base:  base,
 		Quote: quote,
 	}
-	var u = make([]json.RawMessage, 0)
-	s := &types.AssetOptions{
+	var d = make([]types.ObjectID, 0)
+	var extensions = make([]json.RawMessage, 0)
+	assetOptions := &types.AssetOptions{
 		MaxSupply:            1000000000000000,
 		MarketFeePercent:     0,
 		MaxMarketFee:         1000,
@@ -250,52 +268,68 @@ func (q *QuantaGraphene) AssetProposeTransaction() (string, error) {
 		WhiteListMarkets:     d,
 		BlackListMarkets:     d,
 		Description:          "My fancy description",
-		Extensions:           u,
+		Extensions:           extensions,
 	}
 	w := &types.CreateAsset{
-		Issuer:             issuer,
-		Symbol:             "TOKENXA",
-		Precision:          5,
-		CommonOptions:      *s,
+		Issuer:             issuerId[issuer],
+		Symbol:             symbol,
+		Precision:          precision,
+		CommonOptions:      *assetOptions,
 		IsPredictionMarket: false,
-		Extensions:         u,
+		Extensions:         extensions,
 	}
 	w.Fee.AssetID = baseObject
 	fees, _ := q.Database.GetRequiredFee([]types.Operation{w}, fee.AssetID.String())
-	//fmt.Println("error = ", err)
 	w.Fee.Amount = fees[0].Amount
 
-	//fmt.Println("type = ", w.Type())
-	fmt.Println("AssetId = ", w.Fee.AssetID)
 	return q.PrepareTX(w)
 }
 
-func (q *QuantaGraphene) IssueAssetPropose() (string, error) {
-	var e, f types.ObjectID
-	e.Space = 1
-	e.Type = 2
-	e.ID = 16
+func (q *QuantaGraphene) IssueAssetPropose(to string, symbol string, amount uint64) (string, error) {
+	issuer, err := q.GetIssuer(symbol)
+	if err != nil {
+		return "", err
+	}
 
-	f.Space = 1
-	f.Type = 3
-	f.ID = 0
+	accountId, err := q.Database.LookupAccounts(to, 1)
+	if err != nil {
+		return "", err
+	}
 
-	var a types.AssetAmount
-	a.Amount = 1
-	a.AssetID = f
+	assetId, err := q.Database.LookupAssetSymbols(symbol)
+
+	var asset types.AssetAmount
+	asset.Amount = amount
+	asset.AssetID = assetId[0].ID
+
+	var QDEX types.ObjectID
+	QDEX.Space = 1
+	QDEX.Type = 3
+	QDEX.ID = 0
+
+	var fee types.AssetAmount
+	fee.Amount = 0
+	fee.AssetID = QDEX
 
 	w := &types.IssueAsset{
-		To:        e,
-		Amount:    a,
-		Memo:      "",
-		Broadcast: false,
+		Fee:            fee,
+		Issuer:         issuer,
+		AssetToIssue:   asset,
+		IssueToAccount: accountId[to],
+		Extensions:     []json.RawMessage{},
 	}
+
+	w.Fee.AssetID = QDEX
+	fees, err := q.Database.GetRequiredFee([]types.Operation{w}, fee.AssetID.String())
+	if err != nil {
+		return "", err
+	}
+	w.Fee.Amount = fees[0].Amount
 	return q.PrepareTX(w)
 
 }
 
 func (q *QuantaGraphene) PrepareTX(operations ...types.Operation) (string, error) {
-	//fmt.Println("operation = ", operations[0].(*types.CreateAsset).Fee.AssetID)
 	props, err := q.Database.GetDynamicGlobalProperties()
 	if err != nil {
 		return "", err
@@ -323,9 +357,6 @@ func (q *QuantaGraphene) PrepareTX(operations ...types.Operation) (string, error
 	}
 
 	data, err := json.Marshal(stx)
-	fmt.Println("stx = ", stx.Transaction.Operations[0])
-	fmt.Println("data = ", string(data))
-	fmt.Println(err)
 
 	return string(data), err
 }

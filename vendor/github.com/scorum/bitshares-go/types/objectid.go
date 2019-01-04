@@ -41,9 +41,7 @@ func (o *ObjectID) UnmarshalJSON(s []byte) error {
 }
 
 func (o ObjectID) MarshalTransaction(encoder *transaction.Encoder) error {
-	var result uint64
-	result = (uint64(o.Space) << 56) | (uint64(o.Type) << 48) | uint64(o.ID)
-	encoder.EncodeVarint(int64(result))
+	encoder.EncodeVarint(int64(o.ID))
 	return nil
 }
 
