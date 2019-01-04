@@ -30,7 +30,6 @@ func (k *QuantaKeyGraphene) SignTransaction(encoded string) (string, error) {
 	var tx sign.SignedTransaction
 	json.Unmarshal([]byte(encoded), &tx)
 
-	println("signing with ", k.privateKey)
 	digest, err := tx.Digest(k.chain)
 	if err != nil {
 		return "", err
