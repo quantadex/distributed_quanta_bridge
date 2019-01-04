@@ -149,12 +149,12 @@ func initNode(config common.Config, targetCoin coin.Coin) (*TrustNode, bool) {
 		return nil, false
 	}
 
-	node.q, err = quanta.NewQuanta(quanta.QuantaClientOptions{
+	node.q, err = quanta.NewQuantaGraphene(quanta.QuantaClientOptions{
 		node.log,
 		node.rDb,
 		config.NetworkPassphrase,
 		config.IssuerAddress,
-		config.HorizonUrl,
+		config.NetworkUrl,
 	})
 
 	node.q.AttachQueue(node.db)
@@ -295,7 +295,7 @@ func (n *TrustNode) initTrust(config common.Config) {
 			config.EthereumBlockStart,
 		},
 		quanta.QuantaClientOptions{
-			HorizonUrl: config.HorizonUrl,
+			NetworkUrl: config.NetworkUrl,
 			Network: config.NetworkPassphrase,
 		})
 }
@@ -317,7 +317,7 @@ func (n *TrustNode) run() {
 			n.cTQ.DoLoop(blockIDs)
 
 			cursor, _ := control.GetLastBlock(n.db, control.QUANTA)
-			n.qTC.DoLoop(cursor)
+			n.qTC.DoLoop(cursor+1)
 
 			// scale up time
 			if len(blockIDs) == control.MAX_PROCESS_BLOCKS {

@@ -294,7 +294,7 @@ func (c *QuantaToCoin) DoLoop(cursor int64) ([]quanta.Refund, error) {
 		}
 
 		db.ConfirmWithdrawal(c.rDb, w)
-		cursor = refund.PageTokenID
+		//cursor = refund.PageTokenID
 
 		if w.DestinationAddress == "0x0000000000000000000000000000000000000000" || !coin.CheckValidEthereumAddress(w.DestinationAddress) {
 			// create a deposit
@@ -324,11 +324,13 @@ func (c *QuantaToCoin) DoLoop(cursor int64) ([]quanta.Refund, error) {
 			db.ChangeSubmitState(c.rDb, w.Tx, db.SUBMIT_CONSENSUS, db.WITHDRAWAL)
 		}
 
-		success := setLastBlock(c.db, QUANTA, refund.PageTokenID)
-		if !success {
-			c.logger.Error("Failed to mark block as signed")
-			return refunds, errors.New("Failed to mark block as signed")
-		}
+	}
+
+	// mark the block for the next loop through
+	success := setLastBlock(c.db, QUANTA, cursor)
+	if !success {
+		c.logger.Error("Failed to mark block as signed")
+		return refunds, errors.New("Failed to mark block as signed")
 	}
 
 	c.logger.Debugf("Next cursor is = %d, numRefunds=%d", cursor, len(refunds))

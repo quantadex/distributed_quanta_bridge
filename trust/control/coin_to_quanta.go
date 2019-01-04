@@ -36,8 +36,8 @@ type DepositResult struct {
  */
 type CoinToQuanta struct {
 	logger        logger.Logger
-	coinChannel   coin.Coin
-	quantaChannel quanta.Quanta
+	coinChannel   coin.Coin  // ethereum
+	quantaChannel quanta.Quanta // stellar -> graphene
 	db            kv_store.KVStore
 	rDb           *db.DB
 	man           *manifest.Manifest
@@ -46,7 +46,6 @@ type CoinToQuanta struct {
 	trustAddress  common.Address
 	trustPeer     *peer_contact.TrustPeerNode
 	cosi          *cosi.Cosi
-	horizonClient *horizon.Client
 
 	readyChan chan bool
 	doneChan  chan bool
@@ -98,11 +97,6 @@ func NewCoinToQuanta(log logger.Logger,
 	res.quantaOptions = quantaOptions
 
 	res.trustPeer = peer_contact.NewTrustPeerNode(man, peer, nodeID, queue_, queue.PEERMSG_QUEUE, "/node/api/peer")
-	res.horizonClient = &horizon.Client{
-		URL:  quantaOptions.HorizonUrl,
-		HTTP: http.DefaultClient,
-	}
-
 	res.cosi = cosi.NewProtocol(res.trustPeer, nodeID == 0, time.Second*3)
 
 	res.cosi.Verify = func(encoded string) error {
@@ -259,6 +253,11 @@ func (c *CoinToQuanta) getDepositsInBlock(blockID int64) ([]*coin.Deposit, error
 		watchMap[strings.ToLower(w.Address)] = w.QuantaAddr
 	}
 	deposits, err := c.coinChannel.GetDepositsInBlock(blockID, watchMap)
+	for _, dep := range deposits {
+		if dep.CoinName == "ETH" {
+			dep.CoinName = "testETH"
+		}
+	}
 
 	if err != nil {
 		return nil, err
@@ -278,6 +277,12 @@ func (c *CoinToQuanta) processDeposits() {
 			SenderAddr: txs[0].From,
 			Amount:     txs[0].Amount,
 		}
+
+		// check if asset exists
+		// if not, then propose new asset
+		// c.StartConsensus(w, CREATE_ASSET)
+		// c.StartConsensus(w, ISSUE_ASSET)
+
 		c.StartConsensus(w)
 	}
 }
@@ -292,7 +297,7 @@ func (c *CoinToQuanta) processSubmissions() {
 
 		c.logger.Infof("Submit TX: %s signed=%v %v", v.Tx, v.Signed, v.SubmitTx)
 
-		res, err := c.horizonClient.SubmitTransaction(v.SubmitTx)
+		err := c.quantaChannel.Broadcast(v.SubmitTx)
 		if err != nil {
 			msg := quanta.ErrorString(err, false)
 			c.logger.Error("could not submit transaction " + msg)
@@ -336,7 +341,7 @@ func (c *CoinToQuanta) StartConsensus(tx *coin.Deposit) (string, error) {
 
 	c.logger.Infof("Start new round %s %s to=%s amount=%d", tx.Tx, tx.CoinName, tx.QuantaAddr, tx.Amount)
 
-	encoded, err := c.quantaChannel.CreateProposeTransaction(tx)
+	encoded, err := c.quantaChannel.CreateIssueAssetProposal(tx)
 
 	if err != nil {
 		c.logger.Error("Failed to encode refund 1" + err.Error())
@@ -408,10 +413,6 @@ func (c *CoinToQuanta) DoLoop(blockIDs []int64) []*coin.Deposit {
 				if len(deposits) > 0 {
 					c.logger.Info(fmt.Sprintf("Block %d Got deposits %d %v", blockID, len(deposits), deposits))
 				}
-				Horizon := &horizon.Client{
-					URL:  "http://testnet-02.quantachain.io:8000",
-					HTTP: http.DefaultClient,
-				}
 
 				for _, dep := range deposits {
 
@@ -421,9 +422,7 @@ func (c *CoinToQuanta) DoLoop(blockIDs []int64) []*coin.Deposit {
 					}
 					allDeposits = append(allDeposits, dep)
 
-					url := fmt.Sprintf("%s/accounts/%s", Horizon.URL, dep.QuantaAddr)
-					w, _ := Horizon.HTTP.Get(url)
-					if w.StatusCode != 200 {
+					if c.quantaChannel.accountExist(dep.QuantaAddr) {
 
 					} else if dep.Amount == 0 {
 						c.logger.Error("Amount is too small")

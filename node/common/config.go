@@ -10,7 +10,7 @@ type Config struct {
 	CoinName           string
 	IssuerAddress      string
 	NodeKey            string
-	HorizonUrl         string
+	NetworkUrl         string
 	NetworkPassphrase  string
 	RegistrarIp        string
 	RegistrarPort      int

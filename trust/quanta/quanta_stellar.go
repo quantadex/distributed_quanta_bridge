@@ -28,7 +28,7 @@ type QuantaClientOptions struct {
 	Db         *db.DB
 	Network    string
 	Issuer     string // pub key
-	HorizonUrl string
+	NetworkUrl string
 }
 
 type QuantaClient struct {
@@ -86,8 +86,17 @@ func (q *QuantaClient) Broadcast(stx string) error {
 	return err
 }
 
+
+func (q *QuantaClient) CreateNewAssetProposal(issuer string, symbol string, precision uint8) (string, error) {
+	panic("Not implemented")
+}
+
+func (q *QuantaClient) CreateIssueAssetProposal(to string, symbol string, amount uint64) (string, error) {
+	panic("Not implemented")
+}
+
 // remember to test coins < 10^7
-func (q *QuantaClient) CreateProposeTransaction(deposit *coin.Deposit) (string, error) {
+func (q *QuantaClient) CreateTransferProposal(deposit *coin.Deposit) (string, error) {
 	amount := fmt.Sprintf("%.7f", float64(deposit.Amount)/10000000)
 	println("Propose TX: ", deposit.CoinName, q.Issuer, amount, deposit.QuantaAddr)
 

@@ -9,7 +9,6 @@ import (
 	"encoding/json"
 	"errors"
 	"github.com/quantadex/distributed_quanta_bridge/common/kv_store"
-	"github.com/quantadex/distributed_quanta_bridge/common/logger"
 	"github.com/quantadex/distributed_quanta_bridge/trust/coin"
 	"github.com/quantadex/distributed_quanta_bridge/trust/db"
 	"github.com/scorum/bitshares-go/apis/database"
@@ -25,10 +24,9 @@ import (
 )
 
 type QuantaGraphene struct {
+	QuantaClientOptions
+
 	Database         *database.API
-	kv               kv_store.KVStore
-	Logger           logger.Logger
-	Db               *db.DB
 	NetworkBroadcast *networkbroadcast.API
 }
 
@@ -168,7 +166,7 @@ func (q *QuantaGraphene) GetAllBalances(quantaAddress string) (map[string]float6
 }
 
 // https://github.com/scorum/bitshares-go/blob/bbfc9bedaa1b2ddaead3eafe47237efcd9b8496d/client.go
-func (q *QuantaGraphene) CreateProposeTransaction(dep *coin.Deposit) (string, error) {
+func (q *QuantaGraphene) CreateTransferProposal(dep *coin.Deposit) (string, error) {
 	var fee types.AssetAmount
 	var amount types.AssetAmount
 
@@ -221,7 +219,7 @@ func (q *QuantaGraphene) AssetExists(assetName string) bool {
 	return len(asset) > 0
 }
 
-func (q *QuantaGraphene) AssetProposeTransaction(issuer string, symbol string, precision uint8) (string, error) {
+func (q *QuantaGraphene) CreateNewAssetProposal(issuer string, symbol string, precision uint8) (string, error) {
 	if q.AssetExists(symbol) {
 		return "", errors.New("asset already exists")
 	}
@@ -285,7 +283,7 @@ func (q *QuantaGraphene) AssetProposeTransaction(issuer string, symbol string, p
 	return q.PrepareTX(w)
 }
 
-func (q *QuantaGraphene) IssueAssetPropose(to string, symbol string, amount uint64) (string, error) {
+func (q *QuantaGraphene) CreateIssueAssetProposal(to string, symbol string, amount uint64) (string, error) {
 	issuer, err := q.GetIssuer(symbol)
 	if err != nil {
 		return "", err

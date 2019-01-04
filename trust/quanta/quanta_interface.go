@@ -70,13 +70,20 @@ type Quanta interface {
 
 	GetBalance(assetName string, quantaAddress string) (float64, error)
 	GetAllBalances(quantaAddress string) (map[string]float64, error)
-	CreateProposeTransaction(*coin.Deposit) (string, error) // base64 tx envelope
 	DecodeTransaction(base64 string) (*coin.Deposit, error)
 	Broadcast(stx string) error
+
+	CreateTransferProposal(dep *coin.Deposit) (string, error)
+	CreateNewAssetProposal(issuer string, symbol string, precision uint8) (string, error)
+	CreateIssueAssetProposal(dep *coin.Deposit) (string, error)
 }
 
 func NewQuanta(options QuantaClientOptions) (Quanta, error) {
 	return &QuantaClient{QuantaClientOptions: options}, nil
+}
+
+func NewQuantaGraphene(options QuantaClientOptions) (Quanta, error) {
+	return &QuantaGraphene{QuantaClientOptions: options}, nil
 }
 
 /**
