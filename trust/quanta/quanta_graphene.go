@@ -25,7 +25,6 @@ import (
 
 type QuantaGraphene struct {
 	QuantaClientOptions
-
 	Database         *database.API
 	NetworkBroadcast *networkbroadcast.API
 }
@@ -43,10 +42,10 @@ type Object struct {
 	Name string
 }
 
-const url = "ws://testnet-01.quantachain.io:8090"
+//const url = "ws://testnet-01.quantachain.io:8090"
 
 func (q *QuantaGraphene) Attach() error {
-	transport, err := websocket.NewTransport(url)
+	transport, err := websocket.NewTransport(q.QuantaClientOptions.NetworkUrl)
 	if err != nil {
 		return err
 	}
@@ -72,7 +71,7 @@ func (q *QuantaGraphene) Broadcast(stx string) error {
 }
 
 func (q *QuantaGraphene) AttachQueue(kv kv_store.KVStore) error {
-	panic("implement me")
+	return nil
 }
 
 // get_dynamics
@@ -219,6 +218,14 @@ func (q *QuantaGraphene) AssetExists(assetName string) bool {
 	return len(asset) > 0
 }
 
+func (q *QuantaGraphene) AccountExist(quantaAddr string) bool {
+	id, err := q.Database.LookupAccounts(quantaAddr, 1)
+	if err != nil {
+		return false
+	}
+	return len(id) > 0
+}
+
 func (q *QuantaGraphene) CreateNewAssetProposal(issuer string, symbol string, precision uint8) (string, error) {
 	if q.AssetExists(symbol) {
 		return "", errors.New("asset already exists")
@@ -283,21 +290,21 @@ func (q *QuantaGraphene) CreateNewAssetProposal(issuer string, symbol string, pr
 	return q.PrepareTX(w)
 }
 
-func (q *QuantaGraphene) CreateIssueAssetProposal(to string, symbol string, amount uint64) (string, error) {
-	issuer, err := q.GetIssuer(symbol)
+func (q *QuantaGraphene) CreateIssueAssetProposal(dep *coin.Deposit) (string, error) {
+	issuer, err := q.GetIssuer(dep.SenderAddr)
 	if err != nil {
 		return "", err
 	}
 
-	accountId, err := q.Database.LookupAccounts(to, 1)
+	accountId, err := q.Database.LookupAccounts(dep.QuantaAddr, 1)
 	if err != nil {
 		return "", err
 	}
 
-	assetId, err := q.Database.LookupAssetSymbols(symbol)
+	assetId, err := q.Database.LookupAssetSymbols(dep.CoinName)
 
 	var asset types.AssetAmount
-	asset.Amount = amount
+	asset.Amount = uint64(dep.Amount)
 	asset.AssetID = assetId[0].ID
 
 	var QDEX types.ObjectID
@@ -313,7 +320,7 @@ func (q *QuantaGraphene) CreateIssueAssetProposal(to string, symbol string, amou
 		Fee:            fee,
 		Issuer:         issuer,
 		AssetToIssue:   asset,
-		IssueToAccount: accountId[to],
+		IssueToAccount: accountId[dep.QuantaAddr],
 		Extensions:     []json.RawMessage{},
 	}
 

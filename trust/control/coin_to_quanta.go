@@ -16,8 +16,6 @@ import (
 	"github.com/quantadex/distributed_quanta_bridge/trust/peer_contact"
 	"github.com/quantadex/distributed_quanta_bridge/trust/quanta"
 	"github.com/quantadex/quanta_book/consensus/cosi"
-	"github.com/stellar/go/clients/horizon"
-	"net/http"
 	"strings"
 	"time"
 )
@@ -36,7 +34,7 @@ type DepositResult struct {
  */
 type CoinToQuanta struct {
 	logger        logger.Logger
-	coinChannel   coin.Coin  // ethereum
+	coinChannel   coin.Coin     // ethereum
 	quantaChannel quanta.Quanta // stellar -> graphene
 	db            kv_store.KVStore
 	rDb           *db.DB
@@ -305,7 +303,7 @@ func (c *CoinToQuanta) processSubmissions() {
 				db.ChangeSubmitState(c.rDb, v.Tx, db.SUBMIT_FATAL, db.DEPOSIT)
 			}
 		} else {
-			c.logger.Infof("Successful tx submission %s,remove %s", res.Hash, k)
+			c.logger.Infof("Successful tx submission %s,remove %s", "", k)
 			err = db.ChangeSubmitState(c.rDb, v.Tx, db.SUBMIT_SUCCESS, db.DEPOSIT)
 			if err != nil {
 				fmt.Println("error = ", err)
@@ -369,7 +367,7 @@ func (c *CoinToQuanta) StartConsensus(tx *coin.Deposit) (string, error) {
 		// save in eth_tx_log_signed (kvstore) [S=signed,X=submitted,F=failed(uncoverable), R=retry(connection failed)] ; recoverable=RPC not available
 		c.logger.Infof("Great! Cosi successfully signed deposit")
 
-		txe, err := quanta.PostProcessTransaction(c.quantaOptions.Network, encoded, tx.Signatures)
+		txe, err := quanta.ProcessGrapheneTransaction(encoded, tx.Signatures)
 		db.ChangeSubmitQueue(c.rDb, tx.Tx, txe, db.DEPOSIT)
 		//c.quantaChannel.ProcessDeposit(tx, encoded)
 
@@ -422,7 +420,7 @@ func (c *CoinToQuanta) DoLoop(blockIDs []int64) []*coin.Deposit {
 					}
 					allDeposits = append(allDeposits, dep)
 
-					if c.quantaChannel.accountExist(dep.QuantaAddr) {
+					if !c.quantaChannel.AccountExist(dep.QuantaAddr) {
 
 					} else if dep.Amount == 0 {
 						c.logger.Error("Amount is too small")

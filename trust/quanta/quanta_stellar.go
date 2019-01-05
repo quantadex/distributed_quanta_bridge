@@ -86,12 +86,15 @@ func (q *QuantaClient) Broadcast(stx string) error {
 	return err
 }
 
+func (q *QuantaClient) AccountExist(quantaAddr string) bool {
+	panic("Not implemented")
+}
 
 func (q *QuantaClient) CreateNewAssetProposal(issuer string, symbol string, precision uint8) (string, error) {
 	panic("Not implemented")
 }
 
-func (q *QuantaClient) CreateIssueAssetProposal(to string, symbol string, amount uint64) (string, error) {
+func (q *QuantaClient) CreateIssueAssetProposal(dep *coin.Deposit) (string, error) {
 	panic("Not implemented")
 }
 
@@ -150,7 +153,7 @@ func (k *QuantaClient) DecodeTransaction(base64 string) (*coin.Deposit, error) {
 
 func (q *QuantaClient) Attach() error {
 	q.horizonClient = &horizon.Client{
-		URL:  q.HorizonUrl,
+		//URL:  q.HorizonUrl,
 		HTTP: http.DefaultClient,
 	}
 

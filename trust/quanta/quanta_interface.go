@@ -76,6 +76,7 @@ type Quanta interface {
 	CreateTransferProposal(dep *coin.Deposit) (string, error)
 	CreateNewAssetProposal(issuer string, symbol string, precision uint8) (string, error)
 	CreateIssueAssetProposal(dep *coin.Deposit) (string, error)
+	AccountExist(quantaAddr string) bool
 }
 
 func NewQuanta(options QuantaClientOptions) (Quanta, error) {

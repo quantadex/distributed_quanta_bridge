@@ -6,12 +6,12 @@ type Config struct {
 	ListenPort         int
 	UsePrevKeys        bool
 	KvDbName           string
-	DatabaseUrl		   string
+	DatabaseUrl        string
 	CoinName           string
 	IssuerAddress      string
 	NodeKey            string
 	NetworkUrl         string
-	NetworkPassphrase  string
+	ChainId            string
 	RegistrarIp        string
 	RegistrarPort      int
 	EthereumNetworkId  string
