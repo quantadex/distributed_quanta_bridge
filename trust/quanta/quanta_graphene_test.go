@@ -56,6 +56,7 @@ func TestMultipleSignatures(t *testing.T) {
 	}
 	fmt.Println(dep)
 	proposed, err := api.CreateTransferProposal(dep)
+	//proposed, err := api.CreateNewAssetProposal("crosschain2", "TESTISSUE2", 5)
 	assert.NoError(t, err)
 
 	chainID, err := api.Database.GetChainID()
@@ -132,6 +133,25 @@ func TestCreateTransaction(t *testing.T) {
 	//decoded, err := api.DecodeTransaction(proposed)
 	//assert.NoError(t, err)
 	//fmt.Println(decoded, err)
+}
+
+func TestDecodeTransaction(t *testing.T) {
+	api := QuantaGraphene{}
+	api.Attach()
+
+	dep := &coin.Deposit{
+		SenderAddr: "pooja",
+		QuantaAddr: "crosschain2",
+		Amount:     6000,
+		CoinName:   "QDEX",
+	}
+	fmt.Println(dep)
+	proposed, err := api.CreateTransferProposal(dep)
+	assert.NoError(t, err)
+
+	decoded, err := api.DecodeTransaction(proposed)
+	assert.NoError(t, err)
+	fmt.Println(decoded, err)
 }
 
 func TestCreateAsset(t *testing.T) {

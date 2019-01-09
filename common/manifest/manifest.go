@@ -94,7 +94,9 @@ func (m *Manifest) AddNode(ip string, port string, pubKey string) error {
  * Returns true if the Mnaifest has exactly N nodes. False otherwise.
  */
 func (m *Manifest) ManifestComplete() bool {
-	return m.N >= m.Q
+	//for running two nodes
+	return m.N >= 2
+	//return m.N >= m.Q
 }
 
 /**

@@ -81,7 +81,6 @@ func initNode(config common.Config, targetCoin coin.Coin) (*TrustNode, bool) {
 	node.log.SetLogLevel(level)
 
 	node.quantakM, err = key_manager.NewGrapheneKeyManager(config.ChainId)
-	fmt.Println("chainId = ", config.ChainId)
 	if err != nil {
 		node.log.Error("Failed to create key manager")
 		return nil, false
@@ -211,7 +210,6 @@ func initNode(config common.Config, targetCoin coin.Coin) (*TrustNode, bool) {
  * will send it the manifest. Upon receiving a manifest this function returns
  */
 func (n *TrustNode) registerNode(config common.Config) bool {
-	fmt.Println("in registerNode in trustNode")
 	nodeIP := config.ListenIp
 	nodePort := config.ListenPort
 	if nodeIP == "" {
@@ -299,6 +297,7 @@ func (n *TrustNode) initTrust(config common.Config) {
 		quanta.QuantaClientOptions{
 			NetworkUrl: config.NetworkUrl,
 			Network:    config.ChainId,
+			Issuer:     config.IssuerAddress,
 		})
 }
 
@@ -309,6 +308,7 @@ func (n *TrustNode) initTrust(config common.Config) {
  */
 func (n *TrustNode) run() {
 	delayTime := time.Second
+	init := false
 	for true {
 		select {
 		case <-time.After(delayTime):
@@ -319,6 +319,10 @@ func (n *TrustNode) run() {
 			n.cTQ.DoLoop(blockIDs)
 
 			cursor, _ := control.GetLastBlock(n.db, control.QUANTA)
+			if init == false {
+				cursor = 1911002
+				init = true
+			}
 			n.qTC.DoLoop(cursor + 1)
 
 			// scale up time

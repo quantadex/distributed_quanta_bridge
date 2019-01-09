@@ -253,7 +253,7 @@ func (c *CoinToQuanta) getDepositsInBlock(blockID int64) ([]*coin.Deposit, error
 	deposits, err := c.coinChannel.GetDepositsInBlock(blockID, watchMap)
 	for _, dep := range deposits {
 		if dep.CoinName == "ETH" {
-			dep.CoinName = "testETH"
+			dep.CoinName = "TESTISSUE2"
 		}
 	}
 
@@ -339,7 +339,7 @@ func (c *CoinToQuanta) StartConsensus(tx *coin.Deposit) (string, error) {
 
 	c.logger.Infof("Start new round %s %s to=%s amount=%d", tx.Tx, tx.CoinName, tx.QuantaAddr, tx.Amount)
 
-	encoded, err := c.quantaChannel.CreateIssueAssetProposal(tx)
+	encoded, err := c.quantaChannel.CreateTransferProposal(tx)
 
 	if err != nil {
 		c.logger.Error("Failed to encode refund 1" + err.Error())
