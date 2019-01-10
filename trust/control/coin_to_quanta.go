@@ -299,7 +299,11 @@ func (c *CoinToQuanta) processDeposits() {
 		//}
 		// c.StartConsensus(w, ISSUE_ASSET)
 
-		c.StartConsensus(w, ISSUE_CONSENSUS)
+		if tx.IsBounced {
+			c.StartConsensus(w, TRANSFER_CONSENSUS)
+		} else {
+			c.StartConsensus(w, ISSUE_CONSENSUS)
+		}
 	}
 }
 
@@ -444,7 +448,7 @@ func (c *CoinToQuanta) DoLoop(blockIDs []int64) []*coin.Deposit {
 
 				for _, dep := range deposits {
 
-					err = db.ConfirmDeposit(c.rDb, dep)
+					err = db.ConfirmDeposit(c.rDb, dep, false)
 					if err != nil {
 						c.logger.Error("Cannot insert into db:" + err.Error())
 					}
