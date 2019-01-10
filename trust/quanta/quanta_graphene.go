@@ -60,6 +60,10 @@ func (q *QuantaGraphene) Attach() error {
 	return nil
 }
 
+func (q *QuantaGraphene)  AssetExist(issuer string, symbol string) (bool, error) {
+	panic("Not implemented")
+}
+
 func (q *QuantaGraphene) Broadcast(stx string) error {
 	// broadcast here
 	var err error

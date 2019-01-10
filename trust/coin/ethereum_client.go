@@ -265,6 +265,9 @@ func (l *Listener) FilterTransferEvent(blockNumber int64, toAddress map[string]s
 				if err != nil {
 
 				}
+
+				name, err := erc20.Name(nil)
+
 				dec, err := erc20.Decimals(nil)
 				if err != nil {
 					dec = 0
@@ -272,7 +275,7 @@ func (l *Listener) FilterTransferEvent(blockNumber int64, toAddress map[string]s
 
 				events = append(events, &Deposit{
 					QuantaAddr: quantaAddr,
-					CoinName:   vLog.Address.Hex(),
+					CoinName:   name + vLog.Address.Hex(),
 					SenderAddr: transferEvent.To.Hex(),
 					Amount:     Erc20AmountToStellar(*transferEvent.Tokens, dec),
 					Tx:         vLog.TxHash.Hex(),

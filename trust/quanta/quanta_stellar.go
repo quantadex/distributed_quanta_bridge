@@ -90,6 +90,10 @@ func (q *QuantaClient) AccountExist(quantaAddr string) bool {
 	panic("Not implemented")
 }
 
+func (q *QuantaClient)  AssetExist(issuer string, symbol string) (bool, error) {
+	panic("Not implemented")
+}
+
 func (q *QuantaClient) CreateNewAssetProposal(issuer string, symbol string, precision uint8) (string, error) {
 	panic("Not implemented")
 }

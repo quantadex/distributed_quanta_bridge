@@ -76,6 +76,7 @@ type Quanta interface {
 	CreateTransferProposal(dep *coin.Deposit) (string, error)
 	CreateNewAssetProposal(issuer string, symbol string, precision uint8) (string, error)
 	CreateIssueAssetProposal(dep *coin.Deposit) (string, error)
+	AssetExist(issuer string, symbol string) (bool, error)
 	AccountExist(quantaAddr string) bool
 }
 
