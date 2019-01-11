@@ -60,8 +60,23 @@ func (q *QuantaGraphene) Attach() error {
 	return nil
 }
 
-func (q *QuantaGraphene)  AssetExist(issuer string, symbol string) (bool, error) {
-	panic("Not implemented")
+func (q *QuantaGraphene) AssetExist(issuer string, symbol string) (bool, error) {
+	var asset []*database.Asset
+	asset, err := q.Database.LookupAssetSymbols(symbol)
+	if asset[0] == nil || len(asset) == 0 {
+		return false, nil
+	}
+	if err != nil {
+		return false, err
+	}
+	accountMap, _ := q.Database.LookupAccounts(issuer, 1)
+	issuerId := accountMap[issuer]
+	for i := range asset {
+		if types.MustParseObjectID(asset[i].Issuer) == issuerId {
+			return true, nil
+		}
+	}
+	return false, nil
 }
 
 func (q *QuantaGraphene) Broadcast(stx string) error {
@@ -187,7 +202,7 @@ func (q *QuantaGraphene) AssetExists(assetName string) bool {
 	if err != nil {
 		return false
 	}
-	return len(asset) > 0
+	return !(asset[0] == nil)
 }
 
 func (q *QuantaGraphene) AccountExist(quantaAddr string) bool {
@@ -482,6 +497,10 @@ func (q *QuantaGraphene) DecodeTransaction(base64 string) (*coin.Deposit, error)
 			Amount:     int64(op.AssetToIssue.Amount),
 			BlockID:    0,
 		}, nil
+	} else if op.Type() == types.CreateAssetOpType {
+		op := op.(*types.CreateAsset)
+
+		return &coin.Deposit{CoinName: op.Symbol}, nil
 	}
 	return nil, nil
 }

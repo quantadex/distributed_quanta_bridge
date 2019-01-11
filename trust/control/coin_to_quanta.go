@@ -86,6 +86,7 @@ func NewCoinToQuanta(log logger.Logger,
 	peer peer_contact.PeerContact,
 	queue_ queue.Queue,
 	options C2QOptions,
+
 	quantaOptions quanta.QuantaClientOptions) *CoinToQuanta {
 	res := &CoinToQuanta{C2QOptions: options}
 	res.logger = log
@@ -201,7 +202,9 @@ func NewCoinToQuanta(log logger.Logger,
 		}
 	}()
 
-	go res.dispatchIssuance()
+	if nodeID == 0 {
+		go res.dispatchIssuance()
+	}
 
 	return res
 }
@@ -261,7 +264,7 @@ func (c *CoinToQuanta) getDepositsInBlock(blockID int64) ([]*coin.Deposit, error
 	deposits, err := c.coinChannel.GetDepositsInBlock(blockID, watchMap)
 	for _, dep := range deposits {
 		if dep.CoinName == "ETH" {
-			dep.CoinName = "TESTISSUE2"
+			dep.CoinName = "TESTISSUE6"
 		}
 		// Need to convert to uppercase, which graphene requires
 		dep.CoinName = strings.ToUpper(dep.CoinName)
@@ -288,18 +291,23 @@ func (c *CoinToQuanta) processDeposits() {
 		}
 
 		// check if asset exists
-		// if not, then propose new asset
-		//exist, error := c.quantaChannel.AssetExist(c.quantaOptions.Issuer, tx.Coin)
-		//if error != nil {
-		//	c.logger.Error(error.Error())
-		//}
+		//if not, then propose new asset
+		exist, error := c.quantaChannel.AssetExist(c.quantaOptions.Issuer, tx.Coin)
+		if error != nil {
+			c.logger.Error(error.Error())
+		}
 
-		//if !exist {
-		//	c.StartConsensus(w, CREATE_ASSET)
-		//}
-		// c.StartConsensus(w, ISSUE_ASSET)
+		if !exist {
+			_, err := c.StartConsensus(w, NEWASSET_CONSENSUS)
+			if err != nil {
+				c.logger.Error(err.Error())
+			} else {
+				time.Sleep(20 * time.Second)
+				// c.StartConsensus(w, ISSUE_ASSET)
+				c.StartConsensus(w, ISSUE_CONSENSUS)
+			}
+		}
 
-		c.StartConsensus(w, ISSUE_CONSENSUS)
 	}
 }
 
@@ -352,6 +360,7 @@ func (c *CoinToQuanta) dispatchIssuance() {
 }
 
 func (c *CoinToQuanta) StartConsensus(tx *coin.Deposit, consensus ConsensusType) (string, error) {
+	fmt.Println("Starting consensus for ", consensus)
 	txResult := HEX_NULL
 	errResult := error(nil)
 
@@ -360,12 +369,12 @@ func (c *CoinToQuanta) StartConsensus(tx *coin.Deposit, consensus ConsensusType)
 	var err error
 
 	switch consensus {
-		case NEWASSET_CONSENSUS:
-			encoded, err = c.quantaChannel.CreateNewAssetProposal(c.quantaOptions.Issuer, tx.CoinName, 5)
-		case ISSUE_CONSENSUS:
-			encoded, err = c.quantaChannel.CreateIssueAssetProposal(tx)
-		case TRANSFER_CONSENSUS:
-			encoded, err = c.quantaChannel.CreateTransferProposal(tx)
+	case NEWASSET_CONSENSUS:
+		encoded, err = c.quantaChannel.CreateNewAssetProposal(c.quantaOptions.Issuer, tx.CoinName, 5)
+	case ISSUE_CONSENSUS:
+		encoded, err = c.quantaChannel.CreateIssueAssetProposal(tx)
+	case TRANSFER_CONSENSUS:
+		encoded, err = c.quantaChannel.CreateTransferProposal(tx)
 
 	}
 
@@ -397,7 +406,13 @@ func (c *CoinToQuanta) StartConsensus(tx *coin.Deposit, consensus ConsensusType)
 
 		txe, err := quanta.ProcessGrapheneTransaction(encoded, tx.Signatures)
 
-		if consensus != NEWASSET_CONSENSUS {
+		if consensus == NEWASSET_CONSENSUS {
+			err = c.quantaChannel.Broadcast(txe)
+			if err != nil {
+				return HEX_NULL, err
+			}
+			fmt.Println("Asset Created")
+		} else {
 			db.ChangeSubmitQueue(c.rDb, tx.Tx, txe, db.DEPOSIT)
 		}
 
