@@ -18,6 +18,7 @@ import (
 	"github.com/quantadex/quanta_book/consensus/cosi"
 	"strings"
 	"time"
+	"github.com/scorum/bitshares-go/types"
 )
 
 type DepositResult struct {
@@ -158,10 +159,15 @@ func NewCoinToQuanta(log logger.Logger,
 			return err
 		}
 
-		err = db.SignDeposit(rDb, deposit)
-		if err != nil {
-			return errors.New("Failed to confirm transaction: " + err.Error())
+		// if it is create, don't bother marking it, because it's okay to sign multiple time since
+		// asset can only be created once.
+		if deposit.Type != types.CreateAssetOpType {
+			err = db.SignDeposit(rDb, deposit)
+			if err != nil {
+				return errors.New("Failed to confirm transaction: " + err.Error())
+			}
 		}
+
 		return nil
 	}
 

@@ -4,6 +4,7 @@ import (
     "github.com/quantadex/distributed_quanta_bridge/common"
     common2 "github.com/ethereum/go-ethereum/common"
     "crypto/ecdsa"
+    "github.com/scorum/bitshares-go/types"
 )
 
 const BLOCKCHAIN_ETH = "ETH"
@@ -14,6 +15,7 @@ const BLOCKCHAIN_ETH = "ETH"
  */
 type Deposit struct {
     Tx string
+    Type types.OpType
     CoinName string // Type of coin (e.g. ETH)
     SenderAddr string
     QuantaAddr string // Destination quanta acount

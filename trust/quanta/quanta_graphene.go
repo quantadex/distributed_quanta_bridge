@@ -452,6 +452,7 @@ func (q *QuantaGraphene) DecodeTransaction(base64 string) (*coin.Deposit, error)
 			QuantaAddr: to.Name,
 			Amount:     int64(op.Amount.Amount),
 			BlockID:    0,
+			Type: types.TransferOpType,
 		}, nil
 	} else if op.Type() == types.IssueAssetOpType {
 		op := op.(*types.IssueAsset)
@@ -481,7 +482,15 @@ func (q *QuantaGraphene) DecodeTransaction(base64 string) (*coin.Deposit, error)
 			QuantaAddr: to.Name,
 			Amount:     int64(op.AssetToIssue.Amount),
 			BlockID:    0,
+			Type: types.IssueAssetOpType,
 		}, nil
+	} else if op.Type() == types.CreateAssetOpType {
+		op := op.(*types.CreateAsset)
+
+		return &coin.Deposit{CoinName: op.Symbol,
+			Type: types.IssueAssetOpType,
+		}, nil
+
 	}
 	return nil, nil
 }
