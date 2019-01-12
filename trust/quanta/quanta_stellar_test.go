@@ -1,20 +1,19 @@
 package quanta
 
 import (
-	"testing"
-	"github.com/quantadex/distributed_quanta_bridge/common/logger"
 	"fmt"
+	"github.com/quantadex/distributed_quanta_bridge/common/logger"
+	"testing"
 )
 
 func TestGetTopID(t *testing.T) {
 	client, err := NewQuanta(QuantaClientOptions{
-		Logger: logger.NewGoLogger("test"),
+		Logger:  logger.NewGoLogger("test"),
 		Network: "QUANTA Test Network ; September 2018",
-		Issuer: "QAHXFPFJ33VV4C4BTXECIQCNI7CXRKA6KKG5FP3TJFNWGE7YUC4MBNFB",
-		HorizonUrl: "http://testnet-02.quantachain.io:8000/",
+		Issuer:  "QAHXFPFJ33VV4C4BTXECIQCNI7CXRKA6KKG5FP3TJFNWGE7YUC4MBNFB",
+		//HorizonUrl: "http://testnet-02.quantachain.io:8000/",
 	})
 	client.Attach()
-
 
 	if err != nil {
 		t.Error(err)
@@ -35,4 +34,3 @@ func TestGetTopID(t *testing.T) {
 	refunds, _, _ := client.GetRefundsInBlock(0, accountId)
 	fmt.Printf("Refunds = %v\n", refunds)
 }
-

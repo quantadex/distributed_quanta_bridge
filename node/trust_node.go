@@ -3,6 +3,8 @@ package main
 import (
 	"fmt"
 	"github.com/go-errors/errors"
+	"github.com/go-pg/pg"
+	"github.com/op/go-logging"
 	"github.com/quantadex/distributed_quanta_bridge/common/kv_store"
 	"github.com/quantadex/distributed_quanta_bridge/common/listener"
 	"github.com/quantadex/distributed_quanta_bridge/common/logger"
@@ -11,15 +13,13 @@ import (
 	"github.com/quantadex/distributed_quanta_bridge/node/common"
 	"github.com/quantadex/distributed_quanta_bridge/trust/coin"
 	"github.com/quantadex/distributed_quanta_bridge/trust/control"
+	"github.com/quantadex/distributed_quanta_bridge/trust/db"
 	"github.com/quantadex/distributed_quanta_bridge/trust/key_manager"
 	"github.com/quantadex/distributed_quanta_bridge/trust/peer_contact"
 	"github.com/quantadex/distributed_quanta_bridge/trust/quanta"
 	"github.com/quantadex/distributed_quanta_bridge/trust/registrar_client"
 	"strconv"
 	"time"
-	"github.com/quantadex/distributed_quanta_bridge/trust/db"
-	"github.com/go-pg/pg"
-	"github.com/op/go-logging"
 )
 
 const (
@@ -43,7 +43,7 @@ type TrustNode struct {
 	q        quanta.Quanta
 	c        coin.Coin
 	db       kv_store.KVStore
-	rDb		 *db.DB
+	rDb      *db.DB
 	peer     peer_contact.PeerContact
 	reg      registrar_client.RegistrarContact
 	cTQ      *control.CoinToQuanta
@@ -80,7 +80,7 @@ func initNode(config common.Config, targetCoin coin.Coin) (*TrustNode, bool) {
 	}
 	node.log.SetLogLevel(level)
 
-	node.quantakM, err = key_manager.NewKeyManager(config.NetworkPassphrase)
+	node.quantakM, err = key_manager.NewGrapheneKeyManager(config.ChainId)
 	if err != nil {
 		node.log.Error("Failed to create key manager")
 		return nil, false
@@ -152,7 +152,7 @@ func initNode(config common.Config, targetCoin coin.Coin) (*TrustNode, bool) {
 	node.q, err = quanta.NewQuantaGraphene(quanta.QuantaClientOptions{
 		node.log,
 		node.rDb,
-		config.NetworkPassphrase,
+		config.ChainId,
 		config.IssuerAddress,
 		config.NetworkUrl,
 	})
@@ -296,7 +296,8 @@ func (n *TrustNode) initTrust(config common.Config) {
 		},
 		quanta.QuantaClientOptions{
 			NetworkUrl: config.NetworkUrl,
-			Network: config.NetworkPassphrase,
+			Network:    config.ChainId,
+			Issuer:     config.IssuerAddress,
 		})
 }
 
@@ -307,6 +308,7 @@ func (n *TrustNode) initTrust(config common.Config) {
  */
 func (n *TrustNode) run() {
 	delayTime := time.Second
+	init := false
 	for true {
 		select {
 		case <-time.After(delayTime):
@@ -317,7 +319,11 @@ func (n *TrustNode) run() {
 			n.cTQ.DoLoop(blockIDs)
 
 			cursor, _ := control.GetLastBlock(n.db, control.QUANTA)
-			n.qTC.DoLoop(cursor+1)
+			if init == false {
+				cursor = 1911002
+				init = true
+			}
+			n.qTC.DoLoop(cursor + 1)
 
 			// scale up time
 			if len(blockIDs) == control.MAX_PROCESS_BLOCKS {

@@ -91,6 +91,14 @@ func StellarToWei(valueInStellar uint64) *big.Int {
 	return valueWei.Mul(stellar, powerDelta).Num()
 }
 
+func GrapheneToWei(valueInGraphene uint64) *big.Int {
+	valueWei := new(big.Rat)
+	stellar := new(big.Rat).SetInt(big.NewInt(int64(valueInGraphene)))
+	powerDelta := new(big.Rat).SetInt(new(big.Int).Exp(ten, big.NewInt(13), nil))
+
+	return valueWei.Mul(stellar, powerDelta).Num()
+}
+
 func CheckValidEthereumAddress(address string) bool {
 	var add [20]byte
 	copy(add[:], address)

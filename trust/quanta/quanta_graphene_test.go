@@ -55,7 +55,8 @@ func TestMultipleSignatures(t *testing.T) {
 		CoinName:   "QDEX",
 	}
 	fmt.Println(dep)
-	proposed, err := api.CreateProposeTransaction(dep)
+	proposed, err := api.CreateTransferProposal(dep)
+	//proposed, err := api.CreateNewAssetProposal("crosschain2", "TESTISSUE2", 5)
 	assert.NoError(t, err)
 
 	chainID, err := api.Database.GetChainID()
@@ -99,13 +100,13 @@ func TestCreateTransaction(t *testing.T) {
 	//assert.Equal(t, balance, 99687.10431)
 
 	dep := &coin.Deposit{
-		SenderAddr: "crosschain2",
-		QuantaAddr: "pooja",
-		Amount:     5000,
+		SenderAddr: "pooja",
+		QuantaAddr: "crosschain2",
+		Amount:     6000,
 		CoinName:   "QDEX",
 	}
 	fmt.Println(dep)
-	proposed, err := api.CreateProposeTransaction(dep)
+	proposed, err := api.CreateTransferProposal(dep)
 	assert.NoError(t, err)
 
 	chainID, err := api.Database.GetChainID()
@@ -134,11 +135,30 @@ func TestCreateTransaction(t *testing.T) {
 	//fmt.Println(decoded, err)
 }
 
+func TestDecodeTransaction(t *testing.T) {
+	api := QuantaGraphene{}
+	api.Attach()
+
+	dep := &coin.Deposit{
+		SenderAddr: "pooja",
+		QuantaAddr: "crosschain2",
+		Amount:     6000,
+		CoinName:   "QDEX",
+	}
+	fmt.Println(dep)
+	proposed, err := api.CreateTransferProposal(dep)
+	assert.NoError(t, err)
+
+	decoded, err := api.DecodeTransaction(proposed)
+	assert.NoError(t, err)
+	fmt.Println(decoded, err)
+}
+
 func TestCreateAsset(t *testing.T) {
 	api := QuantaGraphene{}
 	api.Attach()
 
-	proposed, err := api.AssetProposeTransaction("pooja", "ETHERTEST5", 5)
+	proposed, err := api.CreateNewAssetProposal("pooja", "ETHERTEST5", 5)
 	assert.NoError(t, err)
 
 	chainID, err := api.Database.GetChainID()
@@ -165,7 +185,14 @@ func TestIssueAsset(t *testing.T) {
 	api := QuantaGraphene{}
 	api.Attach()
 
-	proposed, err := api.IssueAssetPropose("pooja", "ETHERTEST5", uint64(11))
+	dep := &coin.Deposit{
+		SenderAddr: "pooja",
+		QuantaAddr: "pooja",
+		Amount:     5,
+		CoinName:   "ETHERTEST%",
+	}
+
+	proposed, err := api.CreateIssueAssetProposal(dep)
 	assert.NoError(t, err)
 
 	chainID, err := api.Database.GetChainID()

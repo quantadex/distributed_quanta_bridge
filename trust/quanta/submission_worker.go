@@ -73,7 +73,7 @@ func (s *SubmitWorkerImpl) Dispatch() {
 
 func (s *SubmitWorkerImpl) AttachQueue(kv kv_store.KVStore) error {
 	s.horizonClient = &horizon.Client{
-		URL:  s.HorizonUrl,
+		//URL:  s.HorizonUrl,
 		HTTP: http.DefaultClient,
 	}
 

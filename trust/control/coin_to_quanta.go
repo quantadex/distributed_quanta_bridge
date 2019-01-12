@@ -16,10 +16,9 @@ import (
 	"github.com/quantadex/distributed_quanta_bridge/trust/peer_contact"
 	"github.com/quantadex/distributed_quanta_bridge/trust/quanta"
 	"github.com/quantadex/quanta_book/consensus/cosi"
-	"github.com/stellar/go/clients/horizon"
-	"net/http"
 	"strings"
 	"time"
+	"github.com/scorum/bitshares-go/types"
 )
 
 type DepositResult struct {
@@ -27,6 +26,14 @@ type DepositResult struct {
 	Err error
 	Tx  string
 }
+
+type ConsensusType int
+
+const (
+	NEWASSET_CONSENSUS = iota
+	TRANSFER_CONSENSUS
+	ISSUE_CONSENSUS
+)
 
 /**
  * CoinToQuanta
@@ -36,7 +43,7 @@ type DepositResult struct {
  */
 type CoinToQuanta struct {
 	logger        logger.Logger
-	coinChannel   coin.Coin  // ethereum
+	coinChannel   coin.Coin     // ethereum
 	quantaChannel quanta.Quanta // stellar -> graphene
 	db            kv_store.KVStore
 	rDb           *db.DB
@@ -152,10 +159,15 @@ func NewCoinToQuanta(log logger.Logger,
 			return err
 		}
 
-		err = db.SignDeposit(rDb, deposit)
-		if err != nil {
-			return errors.New("Failed to confirm transaction: " + err.Error())
+		// if it is create, don't bother marking it, because it's okay to sign multiple time since
+		// asset can only be created once.
+		if deposit.Type != types.CreateAssetOpType {
+			err = db.SignDeposit(rDb, deposit)
+			if err != nil {
+				return errors.New("Failed to confirm transaction: " + err.Error())
+			}
 		}
+
 		return nil
 	}
 
@@ -255,8 +267,10 @@ func (c *CoinToQuanta) getDepositsInBlock(blockID int64) ([]*coin.Deposit, error
 	deposits, err := c.coinChannel.GetDepositsInBlock(blockID, watchMap)
 	for _, dep := range deposits {
 		if dep.CoinName == "ETH" {
-			dep.CoinName = "testETH"
+			dep.CoinName = "TESTISSUE2"
 		}
+		// Need to convert to uppercase, which graphene requires
+		dep.CoinName = strings.ToUpper(dep.CoinName)
 	}
 
 	if err != nil {
@@ -269,21 +283,33 @@ func (c *CoinToQuanta) getDepositsInBlock(blockID int64) ([]*coin.Deposit, error
 func (c *CoinToQuanta) processDeposits() {
 	txs := db.QueryDepositByAge(c.rDb, time.Now().Add(-time.Second*5), []string{db.SUBMIT_CONSENSUS})
 	if len(txs) > 0 {
+		tx := txs[0]
 		w := &coin.Deposit{
-			Tx:         txs[0].Tx,
-			CoinName:   txs[0].Coin,
-			QuantaAddr: txs[0].To,
-			BlockID:    txs[0].BlockId,
-			SenderAddr: txs[0].From,
-			Amount:     txs[0].Amount,
+			Tx:         tx.Tx,
+			CoinName:   tx.Coin,
+			QuantaAddr: tx.To,
+			BlockID:    tx.BlockId,
+			SenderAddr: tx.From,
+			Amount:     tx.Amount,
 		}
 
 		// check if asset exists
 		// if not, then propose new asset
-		// c.StartConsensus(w, CREATE_ASSET)
+		//exist, error := c.quantaChannel.AssetExist(c.quantaOptions.Issuer, tx.Coin)
+		//if error != nil {
+		//	c.logger.Error(error.Error())
+		//}
+
+		//if !exist {
+		//	c.StartConsensus(w, CREATE_ASSET)
+		//}
 		// c.StartConsensus(w, ISSUE_ASSET)
 
-		c.StartConsensus(w)
+		if tx.IsBounced {
+			c.StartConsensus(w, TRANSFER_CONSENSUS)
+		} else {
+			c.StartConsensus(w, ISSUE_CONSENSUS)
+		}
 	}
 }
 
@@ -305,7 +331,7 @@ func (c *CoinToQuanta) processSubmissions() {
 				db.ChangeSubmitState(c.rDb, v.Tx, db.SUBMIT_FATAL, db.DEPOSIT)
 			}
 		} else {
-			c.logger.Infof("Successful tx submission %s,remove %s", res.Hash, k)
+			c.logger.Infof("Successful tx submission %s,remove %s", "", k)
 			err = db.ChangeSubmitState(c.rDb, v.Tx, db.SUBMIT_SUCCESS, db.DEPOSIT)
 			if err != nil {
 				fmt.Println("error = ", err)
@@ -335,13 +361,23 @@ func (c *CoinToQuanta) dispatchIssuance() {
 	}
 }
 
-func (c *CoinToQuanta) StartConsensus(tx *coin.Deposit) (string, error) {
+func (c *CoinToQuanta) StartConsensus(tx *coin.Deposit, consensus ConsensusType) (string, error) {
 	txResult := HEX_NULL
 	errResult := error(nil)
 
 	c.logger.Infof("Start new round %s %s to=%s amount=%d", tx.Tx, tx.CoinName, tx.QuantaAddr, tx.Amount)
+	var encoded string
+	var err error
 
-	encoded, err := c.quantaChannel.CreateIssueAssetProposal(tx)
+	switch consensus {
+		case NEWASSET_CONSENSUS:
+			encoded, err = c.quantaChannel.CreateNewAssetProposal(c.quantaOptions.Issuer, tx.CoinName, 5)
+		case ISSUE_CONSENSUS:
+			encoded, err = c.quantaChannel.CreateIssueAssetProposal(tx)
+		case TRANSFER_CONSENSUS:
+			encoded, err = c.quantaChannel.CreateTransferProposal(tx)
+
+	}
 
 	if err != nil {
 		c.logger.Error("Failed to encode refund 1" + err.Error())
@@ -369,9 +405,11 @@ func (c *CoinToQuanta) StartConsensus(tx *coin.Deposit) (string, error) {
 		// save in eth_tx_log_signed (kvstore) [S=signed,X=submitted,F=failed(uncoverable), R=retry(connection failed)] ; recoverable=RPC not available
 		c.logger.Infof("Great! Cosi successfully signed deposit")
 
-		txe, err := quanta.PostProcessTransaction(c.quantaOptions.Network, encoded, tx.Signatures)
-		db.ChangeSubmitQueue(c.rDb, tx.Tx, txe, db.DEPOSIT)
-		//c.quantaChannel.ProcessDeposit(tx, encoded)
+		txe, err := quanta.ProcessGrapheneTransaction(encoded, tx.Signatures)
+
+		if consensus != NEWASSET_CONSENSUS {
+			db.ChangeSubmitQueue(c.rDb, tx.Tx, txe, db.DEPOSIT)
+		}
 
 		txResult = ""
 		errResult = err
@@ -416,13 +454,13 @@ func (c *CoinToQuanta) DoLoop(blockIDs []int64) []*coin.Deposit {
 
 				for _, dep := range deposits {
 
-					err = db.ConfirmDeposit(c.rDb, dep)
+					err = db.ConfirmDeposit(c.rDb, dep, false)
 					if err != nil {
 						c.logger.Error("Cannot insert into db:" + err.Error())
 					}
 					allDeposits = append(allDeposits, dep)
 
-					if c.quantaChannel.accountExist(dep.QuantaAddr) {
+					if !c.quantaChannel.AccountExist(dep.QuantaAddr) {
 
 					} else if dep.Amount == 0 {
 						c.logger.Error("Amount is too small")

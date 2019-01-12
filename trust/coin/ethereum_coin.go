@@ -102,7 +102,7 @@ func (c *EthereumCoin) EncodeRefund(w Withdrawal) (string, error) {
 	encoded.Write(common2.HexToAddress(strings.ToLower(smartAddress)).Bytes())
 	encoded.Write(common2.HexToAddress(strings.ToLower(w.DestinationAddress)).Bytes())
 	//encoded.Write(abi.U256(new(big.Int).SetUint64(uint64(w.Amount))))
-	encoded.Write(abi.U256(StellarToWei(w.Amount)))
+	encoded.Write(abi.U256(GrapheneToWei(w.Amount)))
 	//binary.Write(&encoded, binary.BigEndian, abi.U256(new(big.Int).SetUint64(uint64(w.Amount))))
 
 	//println("# of bytes " , encoded.Len(), common2.Bytes2Hex(encoded.Bytes()))

@@ -265,6 +265,9 @@ func (l *Listener) FilterTransferEvent(blockNumber int64, toAddress map[string]s
 				if err != nil {
 
 				}
+
+				name, err := erc20.Name(nil)
+
 				dec, err := erc20.Decimals(nil)
 				if err != nil {
 					dec = 0
@@ -272,7 +275,7 @@ func (l *Listener) FilterTransferEvent(blockNumber int64, toAddress map[string]s
 
 				events = append(events, &Deposit{
 					QuantaAddr: quantaAddr,
-					CoinName:   vLog.Address.Hex(),
+					CoinName:   name + vLog.Address.Hex(),
 					SenderAddr: transferEvent.To.Hex(),
 					Amount:     Erc20AmountToStellar(*transferEvent.Tokens, dec),
 					Tx:         vLog.TxHash.Hex(),
@@ -374,7 +377,7 @@ func (l *Listener) SendWithdrawal(conn bind.ContractBackend,
 	}
 	//smartAddress = common.HexToAddress(w.CoinName)
 	toAddr := common.HexToAddress(w.DestinationAddress)
-	amount := StellarToWei(w.Amount)
+	amount := GrapheneToWei(w.Amount)
 	fmt.Printf("Sending from %s\n", auth.From.Hex())
 	fmt.Printf("Submit to contract=%s txId=%d erc20=%s to=%s amount=%s\n", trustAddress.Hex(), w.TxId, smartAddress.Hex(), toAddr.Hex(), amount.String())
 

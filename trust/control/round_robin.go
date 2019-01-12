@@ -136,7 +136,7 @@ func (r *RoundRobinSigner) createNewPeerMsg(deposit *coin.Deposit, missedNodes i
 	msg.SignedBy = make([]int, 0)
 	msg.NodesMissed = missedNodes
 	var err error
-	msg.MSG, err = r.quanta.CreateProposeTransaction(deposit)
+	msg.MSG, err = r.quanta.CreateTransferProposal(deposit)
 	if err != nil {
 		r.log.Error("error creating tx " + err.Error())
 	}

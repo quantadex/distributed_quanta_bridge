@@ -4,10 +4,12 @@ import (
 	"bytes"
 	"crypto/ecdsa"
 	"crypto/sha256"
+	"encoding/base32"
 	"encoding/hex"
 	"encoding/json"
 	"github.com/btcsuite/btcd/btcec"
 	"github.com/btcsuite/btcutil"
+	crypto2 "github.com/ethereum/go-ethereum/crypto"
 	"github.com/quantadex/distributed_quanta_bridge/common/crypto"
 	"github.com/scorum/bitshares-go/sign"
 )
@@ -39,13 +41,13 @@ func (k *QuantaKeyGraphene) SignTransaction(encoded string) (string, error) {
 }
 
 func (k *QuantaKeyGraphene) VerifyTransaction(encoded string) (bool, error) {
-	var tx sign.SignedTransaction
-	err := json.Unmarshal([]byte(encoded), &tx)
+	//var tx sign.SignedTransaction
+	//err := json.Unmarshal([]byte(encoded), &tx)
 
-	if err != nil {
-		println("ERROR!", err)
-		return false, err
-	}
+	//if err != nil {
+	//	println("ERROR!", err)
+	//	return false, err
+	//}
 	return true, nil
 }
 
@@ -65,7 +67,11 @@ func (k *QuantaKeyGraphene) CreateNodeKeys() error {
 }
 
 func (k *QuantaKeyGraphene) GetPublicKey() (string, error) {
-	panic("Implement me")
+	keyBytes := crypto2.FromECDSAPub(k.privateKey.PubKey().ToECDSA())
+
+	return base32.StdEncoding.EncodeToString(keyBytes), nil
+
+	//return k.privateKey.PublicKey, nil
 }
 
 func (k *QuantaKeyGraphene) GetPrivateKey() *ecdsa.PrivateKey {
