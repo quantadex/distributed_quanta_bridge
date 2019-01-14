@@ -215,6 +215,7 @@ func (c *QuantaToCoin) StartConsensus(w *coin.Withdrawal) (string, error) {
 
 	if err != nil {
 		c.logger.Error("Failed to encode refund " + err.Error())
+		db.ChangeSubmitState(c.rDb, w.Tx, db.ENCODE_FAILURE, db.WITHDRAWAL)
 		return HEX_NULL, err
 	}
 

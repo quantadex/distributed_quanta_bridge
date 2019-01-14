@@ -381,6 +381,7 @@ func (c *CoinToQuanta) StartConsensus(tx *coin.Deposit, consensus ConsensusType)
 
 	if err != nil {
 		c.logger.Error("Failed to encode refund 1" + err.Error())
+		db.ChangeSubmitState(c.rDb, tx.Tx, db.ENCODE_FAILURE, db.DEPOSIT)
 		return HEX_NULL, err
 	}
 
