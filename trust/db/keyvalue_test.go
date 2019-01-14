@@ -13,7 +13,8 @@ func TestKeyValue(t *testing.T) {
 	if err != nil {
 		t.Error(err)
 	}
-	rDb.Connect(info.Network, info.User, info.Password, info.Database)
+	println(info.Network, info.Addr)
+	rDb.Connect(info.Addr, info.User, info.Password, info.Database)
 	rDb.Debug()
 
 	err = UpdateValue(rDb, "key", "val1")
