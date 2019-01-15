@@ -5,7 +5,6 @@ import (
 	"crypto/ecdsa"
 	"encoding/binary"
 	"encoding/json"
-	"fmt"
 	"github.com/ethereum/go-ethereum/accounts/abi"
 	common2 "github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/ethclient"
@@ -139,7 +138,6 @@ func (c *EthereumCoin) DecodeRefund(encoded string) (*Withdrawal, error) {
 
 	pl += 8
 	smartAddress := decoded[pl : pl+20]
-	fmt.Println("smart address = ", smartAddress)
 
 	pl += 20
 	destAddress := decoded[pl : pl+20]

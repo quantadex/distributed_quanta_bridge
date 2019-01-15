@@ -10,7 +10,7 @@ import (
 )
 
 func TestTransactionQuery(t *testing.T) {
-	DatabaseUrl := fmt.Sprintf("postgres://postgres:@localhost/crosschain_%d", 0)
+	DatabaseUrl := fmt.Sprintf("postgres://postgres:@localhost/crosschain_%d", 1)
 	rDb := &DB{}
 	info, err := pg.ParseURL(DatabaseUrl)
 	if err != nil {
@@ -41,7 +41,7 @@ func TestTransactionQuery(t *testing.T) {
 	}
 
 	// updated at time 0
-	err = ChangeSubmitState(rDb, w.Tx, SUBMIT_QUEUE, "")
+	err = ChangeSubmitState(rDb, w.Tx, SUBMIT_QUEUE, WITHDRAWAL)
 	if err != nil {
 		t.Error(err)
 	}
