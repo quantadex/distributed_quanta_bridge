@@ -325,7 +325,7 @@ func (n *TrustNode) run() {
 			//	init = true
 			//}
 			for _, cursor := range blockIDs{
-				n.qTC.DoLoop(cursor + 1)
+				n.qTC.DoLoop(cursor)
 			}
 
 			// scale up time
