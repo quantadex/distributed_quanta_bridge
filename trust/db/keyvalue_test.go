@@ -14,7 +14,7 @@ func TestKeyValue(t *testing.T) {
 		t.Error(err)
 	}
 	println(info.Network, info.Addr)
-	defer rDb.Close()
+	//defer rDb.Close()
 	rDb.Debug()
 	rDb.Connect(info.Addr, info.User, info.Password, info.Database)
 	MigrateKv(rDb)
