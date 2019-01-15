@@ -246,7 +246,7 @@ func (c *CoinToQuanta) GetNewCoinBlockIDs() []int64 {
 			break
 		}
 	}
-	c.logger.Info(fmt.Sprintf("Got blocks %v", blocks))
+	c.logger.Info(fmt.Sprintf("Coin2Quanta: Got blocks %v", blocks))
 
 	return blocks
 }
