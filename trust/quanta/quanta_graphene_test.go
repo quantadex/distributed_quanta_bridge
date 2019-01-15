@@ -11,7 +11,7 @@ import (
 func TestDynamicGlobalProperties(t *testing.T) {
 	api := QuantaGraphene{}
 	api.Attach()
-	block, err := api.GetTopBlockID("pooja")
+	block, err := api.GetTopBlockID()
 	assert.NoError(t, err)
 	api.GetIssuer("ETHERTEST5")
 	fmt.Println("TopBlock = ", block)

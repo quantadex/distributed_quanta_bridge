@@ -50,7 +50,7 @@ type Quanta interface {
 	 *
 	 * Returns the id of the latest quanta block.
 	 */
-	GetTopBlockID(accountId string) (int64, error)
+	GetTopBlockID() (int64, error)
 
 	/**
 	 * GetRefundsInBlock

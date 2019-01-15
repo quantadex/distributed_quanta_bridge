@@ -22,7 +22,7 @@ func TestGetTopID(t *testing.T) {
 
 	// quoc1 account
 	accountId := "QB3WOAL55IVT6E7BVUNRW6TUVCAOPH5RJYPUUL643YMKMJSZFZGWDJU3"
-	maxId, err := client.GetTopBlockID(accountId)
+	maxId, err := client.GetTopBlockID()
 
 	if err != nil {
 		t.Error(err)

@@ -79,12 +79,12 @@ func (q *QuantaGraphene) AttachQueue(kv kv_store.KVStore) error {
 }
 
 // get_dynamics
-func (q *QuantaGraphene) GetTopBlockID(accountId string) (int64, error) {
+func (q *QuantaGraphene) GetTopBlockID() (int64, error) {
 	res, err := q.Database.GetDynamicGlobalProperties()
 	if err != nil {
 		return 0, err
 	}
-	blockId := res.HeadBlockNumber
+	blockId := res.LastIrreversibleBlockNum
 
 	return int64(blockId), nil
 }

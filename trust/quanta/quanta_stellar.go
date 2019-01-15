@@ -171,7 +171,9 @@ func (q *QuantaClient) AttachQueue(kv kv_store.KVStore) error {
 	return nil
 }
 
-func (q *QuantaClient) GetTopBlockID(accountId string) (int64, error) {
+func (q *QuantaClient) GetTopBlockID() (int64, error) {
+	//TODO: accountId string
+	accountId := ""
 	url := fmt.Sprintf("%s/accounts/%s/operations?order=desc&limit=1", q.horizonClient.URL, accountId)
 
 	resp, err := q.horizonClient.HTTP.Get(url)

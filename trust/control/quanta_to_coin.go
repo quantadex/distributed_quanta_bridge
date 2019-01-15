@@ -163,13 +163,13 @@ func NewQuantaToCoin(log logger.Logger,
 }
 
 func (c *QuantaToCoin) GetNewCoinBlockIDs() []int64  {
-	lastProcessed, valid := GetLastBlock(c.db, c.coinName)
+	lastProcessed, valid := GetLastBlock(c.db, QUANTA)
 	if !valid {
 		c.logger.Error("Failed to get last processed ID")
 		return nil
 	}
 
-	currentTop, err := c.coinChannel.GetTopBlockID()
+	currentTop, err := c.quantaChannel.GetTopBlockID()
 	if err != nil {
 		c.logger.Error("Failed to get current top block")
 		return nil
