@@ -43,6 +43,7 @@ type Transaction struct {
 	From                string
 	To                  string
 	Signed              bool `sql:",notnull"`
+	IsBounced           bool `sql:",notnull"`
 	SubmitState         string
 	SubmitTx            string
 	SubmitSigners       string
@@ -50,17 +51,18 @@ type Transaction struct {
 	SubmitDate          time.Time
 }
 
-func ConfirmDeposit(db *DB, dep *coin.Deposit) error {
+func ConfirmDeposit(db *DB, dep *coin.Deposit, isBounced bool) error {
 	tx := &Transaction{
-		Type:    DEPOSIT,
-		Tx:      dep.Tx,
-		Coin:    dep.CoinName,
-		Created: time.Now(),
-		Amount:  dep.Amount,
-		BlockId: dep.BlockID,
-		From:    dep.SenderAddr,
-		To:      dep.QuantaAddr,
-		Signed:  false,
+		Type:      DEPOSIT,
+		Tx:        dep.Tx,
+		Coin:      dep.CoinName,
+		Created:   time.Now(),
+		Amount:    dep.Amount,
+		BlockId:   dep.BlockID,
+		From:      dep.SenderAddr,
+		To:        dep.QuantaAddr,
+		IsBounced: isBounced,
+		Signed:    false,
 	}
 	return db.Insert(tx)
 }

@@ -306,7 +306,8 @@ func (c *QuantaToCoin) DoLoop(cursor int64) ([]quanta.Refund, error) {
 				Amount:     int64(refund.Amount),
 				BlockID:    int64(refund.LedgerID),
 			}
-			err := db.ConfirmDeposit(c.rDb, dep)
+			// mark as a bounced transaction
+			err := db.ConfirmDeposit(c.rDb, dep, true)
 			if err != nil {
 				c.logger.Error("Cannot insert into db:" + err.Error())
 			} else if c.nodeID == 0 {

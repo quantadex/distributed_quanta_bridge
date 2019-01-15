@@ -74,13 +74,22 @@ func WeiToStellar(valueInWei big.Int) int64 {
 	return num.Int64()
 }
 
-func Erc20AmountToStellar(valueInWei big.Int, dec uint8) int64 {
+func WeiToGraphene(valueInWei big.Int) int64 {
+	valueEth := new(big.Rat).SetInt(&valueInWei)
+	powerDelta := new(big.Rat).SetInt(new(big.Int).Exp(ten, big.NewInt(13), nil))
+	result := new(big.Rat)
+	result = result.Quo(valueEth, powerDelta)
+	num, _ := new(big.Int).SetString(result.FloatString(0), 10)
+	return num.Int64()
+}
+
+func Erc20AmountToGraphene(valueInWei big.Int, dec uint8) int64 {
 	valueEth := new(big.Rat).SetInt(&valueInWei)
 	powerDelta := new(big.Rat).SetInt(new(big.Int).Exp(ten, big.NewInt(18-int64(dec)), nil))
 	result := new(big.Rat)
 	result = result.Mul(valueEth, powerDelta)
 
-	return WeiToStellar(*result.Num())
+	return WeiToGraphene(*result.Num())
 }
 
 func StellarToWei(valueInStellar uint64) *big.Int {

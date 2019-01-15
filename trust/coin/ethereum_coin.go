@@ -5,6 +5,7 @@ import (
 	"crypto/ecdsa"
 	"encoding/binary"
 	"encoding/json"
+	"fmt"
 	"github.com/ethereum/go-ethereum/accounts/abi"
 	common2 "github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/ethclient"
@@ -89,13 +90,14 @@ func (c *EthereumCoin) EncodeRefund(w Withdrawal) (string, error) {
 	var encoded bytes.Buffer
 	var smartAddress string
 
-	parts := strings.Split(w.CoinName, ",")
+	parts := strings.Split(w.CoinName, "0X")
 	if len(parts) == 2 {
 		smartAddress = parts[1]
 	} else {
 		smartAddress = ""
 	}
-	//smartAddress = w.CoinName
+	//smartAddress = w.CoinName[11:]
+	//fmt.Println("Smart address = ", smartAddress)
 
 	//encoded.WriteString(sign_prefix + "80")
 	binary.Write(&encoded, binary.BigEndian, uint64(w.TxId))
@@ -137,6 +139,7 @@ func (c *EthereumCoin) DecodeRefund(encoded string) (*Withdrawal, error) {
 
 	pl += 8
 	smartAddress := decoded[pl : pl+20]
+	fmt.Println("smart address = ", smartAddress)
 
 	pl += 20
 	destAddress := decoded[pl : pl+20]

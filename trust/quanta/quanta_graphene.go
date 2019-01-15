@@ -7,6 +7,7 @@ https://github.com/scorum/bitshares-go/blob/master/apis/database/api_test.go
 */
 import (
 	"encoding/json"
+	"fmt"
 	"github.com/ethereum/go-ethereum/common/hexutil"
 	"github.com/go-errors/errors"
 	"github.com/quantadex/distributed_quanta_bridge/common/kv_store"
@@ -43,7 +44,7 @@ type Object struct {
 	Name string
 }
 
-//const url = "ws://testnet-01.quantachain.io:8090"
+const url = "ws://testnet-01.quantachain.io:8090"
 
 func (q *QuantaGraphene) Attach() error {
 	transport, err := websocket.NewTransport(q.QuantaClientOptions.NetworkUrl)
@@ -467,6 +468,7 @@ func (q *QuantaGraphene) DecodeTransaction(base64 string) (*coin.Deposit, error)
 			QuantaAddr: to.Name,
 			Amount:     int64(op.Amount.Amount),
 			BlockID:    0,
+			Type:       types.TransferOpType,
 		}, nil
 	} else if op.Type() == types.IssueAssetOpType {
 		op := op.(*types.IssueAsset)
@@ -496,11 +498,15 @@ func (q *QuantaGraphene) DecodeTransaction(base64 string) (*coin.Deposit, error)
 			QuantaAddr: to.Name,
 			Amount:     int64(op.AssetToIssue.Amount),
 			BlockID:    0,
+			Type:       types.IssueAssetOpType,
 		}, nil
 	} else if op.Type() == types.CreateAssetOpType {
 		op := op.(*types.CreateAsset)
 
-		return &coin.Deposit{CoinName: op.Symbol}, nil
+		return &coin.Deposit{CoinName: op.Symbol,
+			Type: types.CreateAssetOpType,
+		}, nil
+
 	}
 	return nil, nil
 }
