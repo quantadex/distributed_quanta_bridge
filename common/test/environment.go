@@ -24,6 +24,14 @@ var QUANTA_ISSUER = &QuantaNodeSecrets{
 	SourceAccount: "QCISRUJ73RQBHB3C4LA6X537LPGSFZF3YUZ6MOPUOUJR5A63I5TLJML4",
 }
 
+var GRAPHENE_ISSUER = &QuantaNodeSecrets{
+	NodeSecrets: []string{
+		"5Jd9vxNwWXvMnBpcVm58gwXkJ4smzWDv9ChiBXwSRkvCTtekUrx",
+		"5KFJnRn38wuXnpKGvkxmsyiWUuUkPXKZGvdG8aTzHCTvJMUQ4sA",
+	},
+	SourceAccount: "crosschain2",
+}
+
 var ROPSTEN_TRUST = &EthereumTrustSecrets{
 	NodeSecrets: []string{
 		// 0xba420ef5d725361d8fdc58cb1e4fa62eda9ec990
@@ -34,6 +42,16 @@ var ROPSTEN_TRUST = &EthereumTrustSecrets{
 		"2E563A40747FA56419FB168ADF507C596E1A604D073D0F9E646B803DFA5BE94C",
 	},
 	TrustContract: "0xBD770336fF47A3B61D4f54cc0Fb541Ea7baAE92d",
+}
+
+var GRAPHENE_TRUST = &EthereumTrustSecrets{
+	NodeSecrets: []string{
+		// 0xba420ef5d725361d8fdc58cb1e4fa62eda9ec990
+		"c87509a1c067bbde78beb793e6fa76530b6382a4c0241e5e4a9ec0a0f44dc0d3",
+		// 0xe0006458963c3773b051e767c5c63fee24cd7ff9
+		"ae6ae8e5ccbfb04590405997ee2d52d2b330726137b875053c36d94e974d162f",
+	},
+	TrustContract: "0x01eaf1ccd7503a819bd9df5878223f5e9773c119",
 }
 
 const ROPSTEN = "ROPSTEN"

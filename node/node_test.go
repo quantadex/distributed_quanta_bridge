@@ -7,12 +7,12 @@ import (
 	"github.com/quantadex/distributed_quanta_bridge/node/common"
 	"github.com/quantadex/distributed_quanta_bridge/registrar/service"
 	"github.com/quantadex/distributed_quanta_bridge/trust/coin"
+	"github.com/quantadex/distributed_quanta_bridge/trust/db"
 	"github.com/stretchr/testify/assert"
 	"os"
 	"sync"
 	"testing"
 	"time"
-	"github.com/quantadex/distributed_quanta_bridge/trust/db"
 )
 
 func generateConfig(quanta *test.QuantaNodeSecrets, ethereum *test.EthereumTrustSecrets,
@@ -26,8 +26,8 @@ func generateConfig(quanta *test.QuantaNodeSecrets, ethereum *test.EthereumTrust
 		CoinName:           "ETH",
 		IssuerAddress:      quanta.SourceAccount,
 		NodeKey:            quanta.NodeSecrets[index],
-		HorizonUrl:         "http://testnet-02.quantachain.io:8000/",
-		NetworkPassphrase:  "QUANTA Test Network ; September 2018",
+		NetworkUrl:         "ws://testnet-01.quantachain.io:8090",
+		ChainId:            "bb2aeb9eebaaa29d79ed81699ee49a912c19c59b9350f8f8d3d81b12fa178495",
 		RegistrarIp:        "localhost",
 		RegistrarPort:      5001,
 		EthereumNetworkId:  etherNet.NetworkId,
@@ -35,7 +35,7 @@ func generateConfig(quanta *test.QuantaNodeSecrets, ethereum *test.EthereumTrust
 		EthereumRpc:        etherNet.Rpc,
 		EthereumKeyStore:   ethereum.NodeSecrets[index],
 		EthereumTrustAddr:  ethereum.TrustContract,
-		DatabaseUrl:		fmt.Sprintf("postgres://postgres:@localhost/crosschain_%d",index),
+		DatabaseUrl:        fmt.Sprintf("postgres://postgres:@localhost/crosschain_%d", index),
 	}
 }
 
@@ -53,7 +53,7 @@ func StartNodesWithIndexes(quanta *test.QuantaNodeSecrets, ethereum *test.Ethere
 	etherEnv test.EthereumEnv, removePrevDB bool, indexesToStart []int, nodesIn []*TrustNode) []*TrustNode {
 	println("Starting nodes")
 
-	nodes := make([]*TrustNode, 3)
+	nodes := make([]*TrustNode, 2)
 	copy(nodes, nodesIn)
 
 	mutex := sync.Mutex{}
@@ -92,7 +92,7 @@ func StartNodesWithIndexes(quanta *test.QuantaNodeSecrets, ethereum *test.Ethere
 			registerNode(config, node)
 
 			// ensure they start on time
-			time.Sleep(time.Millisecond*250)
+			time.Sleep(time.Millisecond * 250)
 		}(*config, currentIndex)
 
 		time.Sleep(time.Second)
@@ -103,8 +103,8 @@ func StartNodesWithIndexes(quanta *test.QuantaNodeSecrets, ethereum *test.Ethere
 
 func StartNodes(quanta *test.QuantaNodeSecrets, ethereum *test.EthereumTrustSecrets,
 	etherEnv test.EthereumEnv) []*TrustNode {
-	nodes := make([]*TrustNode, 3)
-	return StartNodesWithIndexes(quanta, ethereum, etherEnv, true, []int{0, 1, 2}, nodes)
+	nodes := make([]*TrustNode, 2)
+	return StartNodesWithIndexes(quanta, ethereum, etherEnv, true, []int{0, 1}, nodes)
 }
 
 func StartNodeListener(quanta *test.QuantaNodeSecrets, ethereum *test.EthereumTrustSecrets,

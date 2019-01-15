@@ -1,29 +1,40 @@
 package coin
 
 import (
+	"fmt"
 	"github.com/magiconair/properties/assert"
-	"math"
+	"math/big"
 	"testing"
 )
 
 func TestWeiToStellar(t *testing.T) {
-	val := WeiToStellar(12344)
+	i := new(big.Int)
+	fmt.Sscan("12344", i)
+
+	val := WeiToStellar(*i)
 	assert.Equal(t, val, int64(0))
 
-	val = WeiToStellar(1000000000000000000)
+	fmt.Sscan("1000000000000000000", i)
+
+	val = WeiToStellar(*i)
 	assert.Equal(t, val, int64(10000000)) // equal to 1 stellar
 }
 
 func TestErc20AmountToStellar(t *testing.T) {
-	val := Erc20AmountToStellar(int64(math.Pow10(9)), 9)
+	i := new(big.Int)
+	fmt.Sscan("100000000000", i)
+	val := Erc20AmountToGraphene(*i, 9)
 	assert.Equal(t, val, int64(10000000))
 
-	val = Erc20AmountToStellar(int64(math.Pow10(18)), 18)
+	fmt.Sscan("100000000000000000000", i)
+	val = Erc20AmountToGraphene(*i, 18)
 	assert.Equal(t, val, int64(10000000))
 
-	val = Erc20AmountToStellar(1234000, 9)
+	fmt.Sscan("123400000", i)
+	val = Erc20AmountToGraphene(*i, 9)
 	assert.Equal(t, val, int64(12340))
 
-	val = Erc20AmountToStellar(10000000, 7)
+	fmt.Sscan("1000000000", i)
+	val = Erc20AmountToGraphene(*i, 7)
 	assert.Equal(t, val, int64(10000000))
 }
