@@ -198,6 +198,14 @@ func (q *QuantaGraphene) AccountExist(quantaAddr string) bool {
 	return len(id) > 0
 }
 
+func (q *QuantaGraphene) GetAsset(assetName string) (*database.Asset,error) {
+	asset, err := q.Database.LookupAssetSymbols(assetName)
+	if err != nil {
+		return nil, err
+	}
+	return asset[0], nil
+}
+
 // https://github.com/scorum/bitshares-go/blob/bbfc9bedaa1b2ddaead3eafe47237efcd9b8496d/client.go
 func (q *QuantaGraphene) CreateTransferProposal(dep *coin.Deposit) (string, error) {
 	var fee types.AssetAmount
@@ -282,7 +290,7 @@ func (q *QuantaGraphene) CreateNewAssetProposal(issuer string, symbol string, pr
 		BlackListAuthorities: d,
 		WhiteListMarkets:     d,
 		BlackListMarkets:     d,
-		Description:          "My fancy description",
+		Description:          "QUANTA crosschain for " + symbol,
 		Extensions:           extensions,
 	}
 	w := &types.CreateAsset{

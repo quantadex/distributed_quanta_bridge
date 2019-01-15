@@ -19,6 +19,7 @@ import (
 	"strings"
 	"time"
 	"github.com/scorum/bitshares-go/types"
+	"github.com/scorum/bitshares-go/apis/database"
 )
 
 type DepositResult struct {
@@ -53,6 +54,7 @@ type CoinToQuanta struct {
 	trustAddress  common.Address
 	trustPeer     *peer_contact.TrustPeerNode
 	cosi          *cosi.Cosi
+	coinInfo	  *database.Asset
 
 	readyChan chan bool
 	doneChan  chan bool
@@ -102,6 +104,7 @@ func NewCoinToQuanta(log logger.Logger,
 	res.doneChan = make(chan bool, 1)
 	res.readyChan = make(chan bool, 1)
 	res.quantaOptions = quantaOptions
+	res.coinInfo,_ = q.GetAsset(coinName)
 
 	res.trustPeer = peer_contact.NewTrustPeerNode(man, peer, nodeID, queue_, queue.PEERMSG_QUEUE, "/node/api/peer")
 	res.cosi = cosi.NewProtocol(res.trustPeer, nodeID == 0, time.Second*3)
@@ -462,7 +465,7 @@ func (c *CoinToQuanta) DoLoop(blockIDs []int64) []*coin.Deposit {
 					allDeposits = append(allDeposits, dep)
 
 					if !c.quantaChannel.AccountExist(dep.QuantaAddr) {
-
+						// if not exist, let's bounce money back
 					} else if dep.Amount == 0 {
 						c.logger.Error("Amount is too small")
 					} else if c.nodeID == 0 {

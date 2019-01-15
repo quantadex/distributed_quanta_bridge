@@ -21,6 +21,7 @@ import (
 	"strconv"
 	"strings"
 	"time"
+	"github.com/scorum/bitshares-go/apis/database"
 )
 
 type QuantaClientOptions struct {
@@ -349,4 +350,8 @@ func (q *QuantaClient) ProcessDeposit(deposit *coin.Deposit, proposed string) er
 	txe, err := PostProcessTransaction(q.QuantaClientOptions.Network, proposed, deposit.Signatures)
 	println(txe, err)
 	return db.ChangeSubmitQueue(q.Db, deposit.Tx, txe, "")
+}
+
+func (q *QuantaClient) GetAsset(assetName string) (*database.Asset,error) {
+	panic("Not implemented")
 }

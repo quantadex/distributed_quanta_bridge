@@ -3,9 +3,8 @@ package quanta
 import (
 	"github.com/quantadex/distributed_quanta_bridge/common/kv_store"
 	"github.com/quantadex/distributed_quanta_bridge/trust/coin"
+	"github.com/scorum/bitshares-go/apis/database"
 )
-
-const QUANTA_PRECISION = 10000000
 
 /**
  * Refund
@@ -78,6 +77,7 @@ type Quanta interface {
 	CreateIssueAssetProposal(dep *coin.Deposit) (string, error)
 	AssetExist(issuer string, symbol string) (bool, error)
 	AccountExist(quantaAddr string) bool
+	GetAsset(assetName string) (*database.Asset,error);
 }
 
 func NewQuanta(options QuantaClientOptions) (Quanta, error) {
