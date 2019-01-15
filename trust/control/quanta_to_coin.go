@@ -19,6 +19,8 @@ import (
 	"strings"
 	"time"
 	"fmt"
+	"math/big"
+	"github.com/scorum/bitshares-go/apis/database"
 )
 
 const QUANTA = "QUANTA"
@@ -47,6 +49,8 @@ type QuantaToCoin struct {
 	coinkM              key_manager.KeyManager
 	coinName            string
 	nodeID              int
+	coinInfo			*database.Asset
+
 	rr                  *RoundRobinSigner
 	cosi                *cosi.Cosi
 	trustPeer           *peer_contact.TrustPeerNode
@@ -87,6 +91,7 @@ func NewQuantaToCoin(log logger.Logger,
 	res.doneChan = make(chan bool, 1)
 	res.trustPeer = peer_contact.NewTrustPeerNode(man, peer, nodeID, queue_, queue.REFUNDMSG_QUEUE, "/node/api/refund")
 	res.cosi = cosi.NewProtocol(res.trustPeer, nodeID == 0, time.Second*3)
+	res.coinInfo,_ = q.GetAsset(coinName)
 
 	res.cosi.Verify = func(msg string) error {
 		withdrawal, err := res.coinChannel.DecodeRefund(msg)
@@ -297,11 +302,20 @@ func (c *QuantaToCoin) StartConsensus(w *coin.Withdrawal) (string, error) {
 	return txResult, errResult
 }
 
+func (c *QuantaToCoin) ComputeAmountToGraphene(coinName string, amount uint64) uint64 {
+	// this is ETH, so we have to convert from system precision standard precision (5)
+	if coinName == c.coinName {
+		return uint64(coin.PowerDelta(*big.NewInt(int64(amount)), int(c.coinInfo.Precision), 5))
+	}
+
+	return amount
+}
+
 /**
  * DoLoop
  *
  * Does one complete loop. Pulling all new quanta blocks and processing any refunds in them
- * returns []Refund, txId string, error
+ * returns []RefunTestTransactionQueryTestTransactionQueryd, txId string, error
  *     txId is the transaction id hex string if the withdrawal was a success, otherwise 0x0
  */
 func (c *QuantaToCoin) DoLoop(cursor int64) ([]quanta.Refund, error) {
@@ -327,7 +341,7 @@ func (c *QuantaToCoin) DoLoop(cursor int64) ([]quanta.Refund, error) {
 			DestinationAddress: refund.DestinationAddress,
 			QuantaBlockID:      refund.OperationID,
 			// TODO: Potentially losing precision when converting to wei
-			Amount: refund.Amount,
+			Amount: c.ComputeAmountToGraphene(refund.CoinName, refund.Amount),
 		}
 
 		db.ConfirmWithdrawal(c.rDb, w)

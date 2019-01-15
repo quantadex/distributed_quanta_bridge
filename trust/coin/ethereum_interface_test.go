@@ -38,3 +38,10 @@ func TestErc20AmountToStellar(t *testing.T) {
 	val = Erc20AmountToGraphene(*i, 7)
 	assert.Equal(t, val, int64(10000000))
 }
+
+func TestPowerdelta(t *testing.T) {
+	result := PowerDelta(*big.NewInt(1000), 3, 2)
+	assert.Equal(t, result, int64(100))
+	result = PowerDelta(*big.NewInt(1000), 3, 5)
+	assert.Equal(t, result, int64(100000))
+}

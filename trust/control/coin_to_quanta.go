@@ -21,6 +21,7 @@ import (
 	"time"
 	"github.com/scorum/bitshares-go/types"
 	"github.com/scorum/bitshares-go/apis/database"
+	"math/big"
 )
 
 type DepositResult struct {
@@ -275,7 +276,13 @@ func (c *CoinToQuanta) getDepositsInBlock(blockID int64) ([]*coin.Deposit, error
 	for _, dep := range deposits {
 		if dep.CoinName == "ETH" {
 			dep.CoinName = c.coinName
+
+			// ethereum converts to precision 5, now we need to convert to precision of the asset
+			dep.Amount = coin.PowerDelta(*big.NewInt(dep.Amount), 5, int(c.coinInfo.Precision))
+		} else {
+			// we assume precision is always 5
 		}
+
 		// Need to convert to uppercase, which graphene requires
 		dep.CoinName = strings.ToUpper(dep.CoinName)
 	}

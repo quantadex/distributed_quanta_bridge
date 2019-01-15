@@ -30,7 +30,7 @@ func (db *DB) Connect(addr, user, pass, database string) {
 			Addr:     addr,
 			User:     user,
 			Password: pass,
-			Database: database,
+			Database: "postgres",
 		})
 
 		_, err := db.Exec("DROP DATABASE IF EXISTS " + database)

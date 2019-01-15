@@ -7,7 +7,6 @@ https://github.com/scorum/bitshares-go/blob/master/apis/database/api_test.go
 */
 import (
 	"encoding/json"
-	"fmt"
 	"github.com/ethereum/go-ethereum/common/hexutil"
 	"github.com/go-errors/errors"
 	"github.com/quantadex/distributed_quanta_bridge/common/kv_store"
