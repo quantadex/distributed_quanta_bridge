@@ -20,4 +20,5 @@ type Config struct {
 	EthereumTrustAddr  string
 	EthereumKeyStore   string
 	LogLevel           string
+	MinNodes           int
 }

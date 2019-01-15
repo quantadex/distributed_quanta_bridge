@@ -16,7 +16,7 @@ func main() {
 	}
 
 	logger, _ := logger.NewLogger("registrar")
-	s := service.NewServer(service.NewRegistry(), viper.GetString("server_url"), logger)
+	s := service.NewServer(service.NewRegistry(3), viper.GetString("server_url"), logger)
 	s.DoHealthCheck(5)
 	s.Start()
 }
