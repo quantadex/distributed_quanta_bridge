@@ -3,7 +3,7 @@ package db
 import (
 	"github.com/go-pg/pg"
 	"github.com/go-pg/pg/orm"
-	"log"
+	//"log"
 )
 
 type DB struct {
@@ -17,11 +17,11 @@ func (db *DB) Debug() {
 	db.DebugSQL = true
 	db.Drop = true
 
-	if db.DebugSQL {
-		db.db.OnQueryProcessed(func(event *pg.QueryProcessedEvent) {
-			log.Println(event.FormattedQuery())
-		})
-	}
+	//if db.DebugSQL {
+	//	db.db.OnQueryProcessed(func(event *pg.QueryProcessedEvent) {
+	//		log.Println(event.FormattedQuery())
+	//	})
+	//}
 }
 
 func (db *DB) Connect(addr, user, pass, database string) {
@@ -30,7 +30,7 @@ func (db *DB) Connect(addr, user, pass, database string) {
 			Addr:     addr,
 			User:     user,
 			Password: pass,
-			Database: "postgres",
+			Database: database,
 		})
 
 		_, err := db.Exec("DROP DATABASE IF EXISTS " + database)

@@ -13,7 +13,7 @@ func TestDynamicGlobalProperties(t *testing.T) {
 	api.Issuer = "crosschain2"
 	api.NetworkUrl = url
 	api.Attach()
-	block, err := api.GetTopBlockID("pooja")
+	block, err := api.GetTopBlockID()
 	assert.NoError(t, err)
 	api.GetIssuer("ETHERTEST5")
 	fmt.Println("TopBlock = ", block)

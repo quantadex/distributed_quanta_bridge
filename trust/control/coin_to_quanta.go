@@ -87,7 +87,6 @@ func NewCoinToQuanta(log logger.Logger,
 	peer peer_contact.PeerContact,
 	queue_ queue.Queue,
 	options C2QOptions,
-
 	quantaOptions quanta.QuantaClientOptions) *CoinToQuanta {
 	res := &CoinToQuanta{C2QOptions: options}
 	res.logger = log
@@ -249,7 +248,7 @@ func (c *CoinToQuanta) GetNewCoinBlockIDs() []int64 {
 			break
 		}
 	}
-	c.logger.Info(fmt.Sprintf("Got blocks %v", blocks))
+	c.logger.Info(fmt.Sprintf("Coin2Quanta: Got blocks %v", blocks))
 
 	return blocks
 }
@@ -269,8 +268,8 @@ func (c *CoinToQuanta) getDepositsInBlock(blockID int64) ([]*coin.Deposit, error
 	}
 	deposits, err := c.coinChannel.GetDepositsInBlock(blockID, watchMap)
 	for _, dep := range deposits {
-		if strings.Contains(dep.CoinName, "ETH") {
-			dep.CoinName = "TESTISSUE2"
+		if dep.CoinName == "ETH" {
+			dep.CoinName = c.coinName
 		}
 		// Need to convert to uppercase, which graphene requires
 		dep.CoinName = strings.ToUpper(dep.CoinName)
@@ -345,7 +344,6 @@ func (c *CoinToQuanta) processSubmissions() {
 
 		err := c.quantaChannel.Broadcast(v.SubmitTx)
 		if err != nil {
-			db.ChangeSubmitState(c.rDb, v.Tx, db.SUBMIT_FATAL, db.DEPOSIT)
 			msg := quanta.ErrorString(err, false)
 			c.logger.Error("could not submit transaction " + msg)
 			if strings.Contains(msg, "tx_bad_seq") || strings.Contains(msg, "op_malformed") {
@@ -401,6 +399,7 @@ func (c *CoinToQuanta) StartConsensus(tx *coin.Deposit, consensus ConsensusType)
 
 	if err != nil {
 		c.logger.Error("Failed to encode refund 1" + err.Error())
+		db.ChangeSubmitState(c.rDb, tx.Tx, db.ENCODE_FAILURE, db.DEPOSIT)
 		return HEX_NULL, err
 	}
 
@@ -479,6 +478,7 @@ func (c *CoinToQuanta) DoLoop(blockIDs []int64) []*coin.Deposit {
 				}
 
 				for _, dep := range deposits {
+
 					err = db.ConfirmDeposit(c.rDb, dep, false)
 					if err != nil {
 						c.logger.Error("Cannot insert into db:" + err.Error())

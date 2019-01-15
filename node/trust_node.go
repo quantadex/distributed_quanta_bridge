@@ -135,7 +135,7 @@ func initNode(config common.Config, targetCoin coin.Coin) (*TrustNode, bool) {
 		node.log.Error(err.Error())
 	}
 	//node.rDb.Debug()
-	node.rDb.Connect(info.Network, info.User, info.Password, info.Database)
+	node.rDb.Connect(info.Addr, info.User, info.Password, info.Database)
 	db.MigrateTx(node.rDb)
 	db.MigrateKv(node.rDb)
 	db.MigrateXC(node.rDb)
@@ -308,7 +308,7 @@ func (n *TrustNode) initTrust(config common.Config) {
  */
 func (n *TrustNode) run() {
 	delayTime := time.Second
-	init := false
+	//init := false
 	for true {
 		select {
 		case <-time.After(delayTime):
@@ -318,12 +318,15 @@ func (n *TrustNode) run() {
 			blockIDs := n.cTQ.GetNewCoinBlockIDs()
 			n.cTQ.DoLoop(blockIDs)
 
-			cursor, _ := control.GetLastBlock(n.db, control.QUANTA)
-			if init == false {
-				cursor = 1911002
-				init = true
+
+			blockIDs = n.qTC.GetNewCoinBlockIDs()
+			//if init == false {
+			//	cursor = 1911002
+			//	init = true
+			//}
+			for _, cursor := range blockIDs{
+				n.qTC.DoLoop(cursor + 1)
 			}
-			n.qTC.DoLoop(cursor + 1)
 
 			// scale up time
 			if len(blockIDs) == control.MAX_PROCESS_BLOCKS {

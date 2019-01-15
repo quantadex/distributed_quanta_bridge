@@ -95,8 +95,9 @@ func (m *Manifest) AddNode(ip string, port string, pubKey string) error {
  */
 func (m *Manifest) ManifestComplete() bool {
 	//for running two nodes
-	return m.N >= 2
-	//return m.N >= m.Q
+	//return m.N >= 2
+
+	return m.N >= m.Q
 }
 
 /**

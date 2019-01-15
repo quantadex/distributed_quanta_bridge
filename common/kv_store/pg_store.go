@@ -17,7 +17,7 @@ func (p *PostgresKVStore) Connect(name string) error {
 	if err != nil {
 		return err
 	}
-	p.db.Connect(info.Network, info.User, info.Password, info.Database)
+	p.db.Connect(info.Addr, info.User, info.Password, info.Database)
 	return nil
 }
 

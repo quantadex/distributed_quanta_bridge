@@ -15,8 +15,10 @@ import (
 	"github.com/quantadex/distributed_quanta_bridge/trust/peer_contact"
 	"github.com/quantadex/distributed_quanta_bridge/trust/quanta"
 	"github.com/quantadex/quanta_book/consensus/cosi"
+	common2 "github.com/quantadex/distributed_quanta_bridge/common"
 	"strings"
 	"time"
+	"fmt"
 )
 
 const QUANTA = "QUANTA"
@@ -160,6 +162,40 @@ func NewQuantaToCoin(log logger.Logger,
 	return res
 }
 
+func (c *QuantaToCoin) GetNewCoinBlockIDs() []int64  {
+	lastProcessed, valid := GetLastBlock(c.db, QUANTA)
+	if !valid {
+		c.logger.Error("Failed to get last processed ID")
+		return nil
+	}
+
+	currentTop, err := c.quantaChannel.GetTopBlockID()
+	if err != nil {
+		c.logger.Error("Failed to get current top block")
+		return nil
+	}
+
+	if lastProcessed > currentTop {
+		c.logger.Error("Coin top block smaller than last processed")
+		return nil
+	}
+
+	if lastProcessed == currentTop {
+		c.logger.Debug(fmt.Sprintf("Quanta2Coin: No new block last=%d top=%d", lastProcessed, currentTop))
+		return nil
+	}
+
+	blocks := make([]int64, 0)
+	for i := common2.MaxInt64(0, lastProcessed+1); i <= currentTop; i++ {
+		blocks = append(blocks, i)
+		if len(blocks) == 3*MAX_PROCESS_BLOCKS {
+			break
+		}
+	}
+	c.logger.Info(fmt.Sprintf("Quanta2Coin: Got blocks %v", blocks))
+
+	return blocks
+}
 func (c *QuantaToCoin) DispatchWithdrawal() {
 	var lastBlock int64 = 0
 	for {
@@ -215,6 +251,7 @@ func (c *QuantaToCoin) StartConsensus(w *coin.Withdrawal) (string, error) {
 
 	if err != nil {
 		c.logger.Error("Failed to encode refund " + err.Error())
+		db.ChangeSubmitState(c.rDb, w.Tx, db.ENCODE_FAILURE, db.WITHDRAWAL)
 		return HEX_NULL, err
 	}
 

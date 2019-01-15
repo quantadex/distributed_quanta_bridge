@@ -31,6 +31,7 @@ const SUBMIT_QUEUE = "queue"
 const SUBMIT_RECOVERABLE = "recoverable"
 const SUBMIT_FATAL = "fatal"
 const SUBMIT_SUCCESS = "success"
+const ENCODE_FAILURE = "encode_fatal"
 
 type Transaction struct {
 	Type                string `sql:"unique:type_tx"`
