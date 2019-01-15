@@ -16,7 +16,6 @@ import (
 	"github.com/quantadex/distributed_quanta_bridge/trust/peer_contact"
 	"github.com/quantadex/distributed_quanta_bridge/trust/quanta"
 	"github.com/quantadex/quanta_book/consensus/cosi"
-	"github.com/scorum/bitshares-go/types"
 	"strings"
 	"time"
 	"github.com/scorum/bitshares-go/types"
