@@ -7,6 +7,7 @@ https://github.com/scorum/bitshares-go/blob/master/apis/database/api_test.go
 */
 import (
 	"encoding/json"
+	"fmt"
 	"github.com/ethereum/go-ethereum/common/hexutil"
 	"github.com/go-errors/errors"
 	"github.com/quantadex/distributed_quanta_bridge/common/kv_store"
@@ -43,7 +44,7 @@ type Object struct {
 	Name string
 }
 
-//const url = "ws://testnet-01.quantachain.io:8090"
+const url = "ws://testnet-01.quantachain.io:8090"
 
 func (q *QuantaGraphene) Attach() error {
 	transport, err := websocket.NewTransport(q.QuantaClientOptions.NetworkUrl)
@@ -60,8 +61,23 @@ func (q *QuantaGraphene) Attach() error {
 	return nil
 }
 
-func (q *QuantaGraphene)  AssetExist(issuer string, symbol string) (bool, error) {
-	panic("Not implemented")
+func (q *QuantaGraphene) AssetExist(issuer string, symbol string) (bool, error) {
+	var asset []*database.Asset
+	asset, err := q.Database.LookupAssetSymbols(symbol)
+	if asset[0] == nil || len(asset) == 0 {
+		return false, nil
+	}
+	if err != nil {
+		return false, err
+	}
+	accountMap, _ := q.Database.LookupAccounts(issuer, 1)
+	issuerId := accountMap[issuer]
+	for i := range asset {
+		if types.MustParseObjectID(asset[i].Issuer) == issuerId {
+			return true, nil
+		}
+	}
+	return false, nil
 }
 
 func (q *QuantaGraphene) Broadcast(stx string) error {
@@ -187,7 +203,7 @@ func (q *QuantaGraphene) AssetExists(assetName string) bool {
 	if err != nil {
 		return false
 	}
-	return len(asset) > 0
+	return !(asset[0] == nil)
 }
 
 func (q *QuantaGraphene) AccountExist(quantaAddr string) bool {
@@ -460,7 +476,7 @@ func (q *QuantaGraphene) DecodeTransaction(base64 string) (*coin.Deposit, error)
 			QuantaAddr: to.Name,
 			Amount:     int64(op.Amount.Amount),
 			BlockID:    0,
-			Type: types.TransferOpType,
+			Type:       types.TransferOpType,
 		}, nil
 	} else if op.Type() == types.IssueAssetOpType {
 		op := op.(*types.IssueAsset)
@@ -490,13 +506,13 @@ func (q *QuantaGraphene) DecodeTransaction(base64 string) (*coin.Deposit, error)
 			QuantaAddr: to.Name,
 			Amount:     int64(op.AssetToIssue.Amount),
 			BlockID:    0,
-			Type: types.IssueAssetOpType,
+			Type:       types.IssueAssetOpType,
 		}, nil
 	} else if op.Type() == types.CreateAssetOpType {
 		op := op.(*types.CreateAsset)
 
 		return &coin.Deposit{CoinName: op.Symbol,
-			Type: types.IssueAssetOpType,
+			Type: types.CreateAssetOpType,
 		}, nil
 
 	}

@@ -159,6 +159,13 @@ func MinUint(a, b uint) uint {
 	return b
 }
 
+func AbsInt(a int) int {
+	if a < 0 {
+		return -a
+	}
+	return a
+}
+
 //-----------------------------------------------------------------------------
 
 func ExpUint64(a, b uint64) uint64 {

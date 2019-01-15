@@ -193,7 +193,7 @@ func (l *Listener) GetNativeDeposits(blockNumber int64, toAddress map[string]str
 					QuantaAddr: quantaAddr,
 					CoinName:   "ETH",
 					SenderAddr: tx.To().Hex(),
-					Amount:     WeiToStellar(*tx.Value()),
+					Amount:     WeiToGraphene(*tx.Value()),
 					BlockID:    blockNumber,
 					Tx:         tx.Hash().Hex(),
 				})
@@ -277,7 +277,7 @@ func (l *Listener) FilterTransferEvent(blockNumber int64, toAddress map[string]s
 					QuantaAddr: quantaAddr,
 					CoinName:   name + vLog.Address.Hex(),
 					SenderAddr: transferEvent.To.Hex(),
-					Amount:     Erc20AmountToStellar(*transferEvent.Tokens, dec),
+					Amount:     Erc20AmountToGraphene(*transferEvent.Tokens, dec),
 					Tx:         vLog.TxHash.Hex(),
 				})
 				fmt.Println("erc20 amount = ", events[0].Amount)
@@ -371,11 +371,11 @@ func (l *Listener) SendWithdrawal(conn bind.ContractBackend,
 	}
 
 	var smartAddress common.Address
-	parts := strings.Split(w.CoinName, ",")
+	parts := strings.Split(w.CoinName, "0X")
 	if len(parts) > 1 {
 		smartAddress = common.HexToAddress(parts[1])
 	}
-	//smartAddress = common.HexToAddress(w.CoinName)
+	//smartAddress = common.HexToAddress(w.CoinName[11:])
 	toAddr := common.HexToAddress(w.DestinationAddress)
 	amount := GrapheneToWei(w.Amount)
 	fmt.Printf("Sending from %s\n", auth.From.Hex())
@@ -404,6 +404,7 @@ func (l *Listener) SendWithdrawal(conn bind.ContractBackend,
 
 		v = append(v, data[64]+27)
 	}
+	fmt.Println("smart address = ", smartAddress)
 	tx, err := contract.PaymentTx(auth, w.TxId, smartAddress, toAddr, amount, v, r, s)
 	if err != nil {
 		return "", err

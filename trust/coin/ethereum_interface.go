@@ -7,6 +7,7 @@ import (
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/stellar/go/support/log"
 	"math/big"
+	common2 "github.com/quantadex/distributed_quanta_bridge/common"
 	"regexp"
 )
 
@@ -74,13 +75,35 @@ func WeiToStellar(valueInWei big.Int) int64 {
 	return num.Int64()
 }
 
-func Erc20AmountToStellar(valueInWei big.Int, dec uint8) int64 {
+func WeiToGraphene(valueInWei big.Int) int64 {
+	valueEth := new(big.Rat).SetInt(&valueInWei)
+	powerDelta := new(big.Rat).SetInt(new(big.Int).Exp(ten, big.NewInt(13), nil))
+	result := new(big.Rat)
+	result = result.Quo(valueEth, powerDelta)
+	num, _ := new(big.Int).SetString(result.FloatString(0), 10)
+	return num.Int64()
+}
+
+func PowerDelta(value big.Int, curPrecision int, targetPrecision int) int64 {
+	valueEth := new(big.Rat).SetInt(&value)
+	powerDelta := new(big.Rat).SetInt(new(big.Int).Exp(ten, big.NewInt(int64(common2.AbsInt(curPrecision - targetPrecision))), nil))
+	result := new(big.Rat)
+	if targetPrecision < curPrecision {
+		result = result.Quo(valueEth, powerDelta)
+	} else {
+		result = result.Mul(valueEth, powerDelta)
+	}
+	num, _ := new(big.Int).SetString(result.FloatString(0), 10)
+	return num.Int64()
+}
+
+func Erc20AmountToGraphene(valueInWei big.Int, dec uint8) int64 {
 	valueEth := new(big.Rat).SetInt(&valueInWei)
 	powerDelta := new(big.Rat).SetInt(new(big.Int).Exp(ten, big.NewInt(18-int64(dec)), nil))
 	result := new(big.Rat)
 	result = result.Mul(valueEth, powerDelta)
 
-	return WeiToStellar(*result.Num())
+	return WeiToGraphene(*result.Num())
 }
 
 func StellarToWei(valueInStellar uint64) *big.Int {
