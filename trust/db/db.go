@@ -4,6 +4,7 @@ import (
 	"github.com/go-pg/pg"
 	"github.com/go-pg/pg/orm"
 	//"log"
+	"fmt"
 )
 
 type DB struct {
@@ -33,7 +34,12 @@ func (db *DB) Connect(addr, user, pass, database string) {
 			Database: "postgres",
 		})
 
-		_, err := db.Exec("DROP DATABASE IF EXISTS " + database)
+		_, err := db.Exec(fmt.Sprintf("SELECT pg_terminate_backend(pid) FROM pg_stat_activity WHERE datname = '%s'", database))
+		if err != nil {
+			panic(err)
+		}
+
+		_, err = db.Exec("DROP DATABASE IF EXISTS " + database)
 		if err != nil {
 			panic(err)
 		}
