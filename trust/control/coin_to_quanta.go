@@ -311,27 +311,29 @@ func (c *CoinToQuanta) processDeposits() {
 		// check if asset exists
 		//if not, then propose new asset
 
-		exist, error := c.quantaChannel.AssetExist(c.quantaOptions.Issuer, tx.Coin)
-		if error != nil {
-			c.logger.Error(error.Error())
+		exist, err := c.quantaChannel.AssetExist(c.quantaOptions.Issuer, tx.Coin)
+		if err != nil {
+			c.logger.Error(err.Error())
 		}
 
 		if !exist {
-			_, err := c.StartConsensus(w, NEWASSET_CONSENSUS)
+			_, err = c.StartConsensus(w, NEWASSET_CONSENSUS)
 			if err != nil {
-				fmt.Println("error = ", err)
-				c.logger.Error(err.Error())
+				c.logger.Error("failed to create asset, error = " + err.Error())
 			}
 		} else{
 			fmt.Println("asset exists")
 		}
 
-		time.Sleep(3 * time.Second)
+		// if newasset was created successfully
+		if err != nil {
+			time.Sleep(3 * time.Second)
 
-		if tx.IsBounced {
-			c.StartConsensus(w, TRANSFER_CONSENSUS)
-		} else {
-			c.StartConsensus(w, ISSUE_CONSENSUS)
+			if tx.IsBounced {
+				c.StartConsensus(w, TRANSFER_CONSENSUS)
+			} else {
+				c.StartConsensus(w, ISSUE_CONSENSUS)
+			}
 		}
 	}
 }
@@ -437,6 +439,7 @@ func (c *CoinToQuanta) StartConsensus(tx *coin.Deposit, consensus ConsensusType)
 				return HEX_NULL, err
 			}
 			fmt.Println("Asset Created")
+			return HEX_NULL, nil
 		} else {
 			db.ChangeSubmitQueue(c.rDb, tx.Tx, txe, db.DEPOSIT)
 		}
