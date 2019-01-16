@@ -274,6 +274,7 @@ func (c *CoinToQuanta) getDepositsInBlock(blockID int64) ([]*coin.Deposit, error
 	deposits, err := c.coinChannel.GetDepositsInBlock(blockID, watchMap)
 
 	if err != nil {
+		c.logger.Info("getDepositsInBlock failed " + err.Error())
 		return nil, err
 	}
 
