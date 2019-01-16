@@ -194,6 +194,11 @@ func (q *QuantaGraphene) GetIssuer(assetName string) (types.ObjectID, error) {
 	if err != nil {
 		return issuer, err
 	}
+
+	if len(asset) < 1 {
+		return issuer, errors.New("issuer not found for " + assetName)
+	}
+
 	return types.MustParseObjectID(asset[0].Issuer), nil
 }
 

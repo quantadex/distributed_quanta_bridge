@@ -326,7 +326,7 @@ func (c *CoinToQuanta) processDeposits() {
 		}
 
 		// if newasset was created successfully
-		if err != nil {
+		if err == nil {
 			time.Sleep(3 * time.Second)
 
 			if tx.IsBounced {
