@@ -40,9 +40,9 @@ func (r *Registry) GetAddress(quantaAddr string) (string, error) {
 	return Forwarder.SubmitContract(r.listener.Client.(bind.ContractBackend), r.ownerEthereumKey, r.trustEthereumAddress, quantaAddr)
 }
 
-func NewRegistry() *Registry {
+func NewRegistry(minNodes int) *Registry {
 	r := &Registry{}
-	r.manifest = manifest.CreateNewManifest(3)
+	r.manifest = manifest.CreateNewManifest(minNodes)
 	r.listener = &coin.Listener{}
 	//r.ownerEthereumKey = viper.GetString("CREATOR_ETHEREUM_KEY")
 	r.trustEthereumAddress = common.HexToAddress(viper.GetString("TRUST_ETHEREUM_ADDRESS"))

@@ -44,7 +44,7 @@ func main() {
 		// start registrar if we need to
 		logger, _ := logger.NewLogger("registrar")
 		registrarUrl := fmt.Sprintf(":%d", config.RegistrarPort)
-		s := service.NewServer(service.NewRegistry(), registrarUrl, logger)
+		s := service.NewServer(service.NewRegistry(config.MinNodes), registrarUrl, logger)
 		s.DoHealthCheck(5)
 		go s.Start()
 	}

@@ -36,6 +36,7 @@ func generateConfig(quanta *test.QuantaNodeSecrets, ethereum *test.EthereumTrust
 		EthereumKeyStore:   ethereum.NodeSecrets[index],
 		EthereumTrustAddr:  ethereum.TrustContract,
 		DatabaseUrl:        fmt.Sprintf("postgres://postgres:@localhost/crosschain_%d", index),
+		MinNodes:           2,
 	}
 }
 
@@ -129,9 +130,9 @@ func StopNodes(nodes []*TrustNode, indexesToStart []int) {
 	}
 }
 
-func StartRegistry() *service.Server {
+func StartRegistry(minNodes int) *service.Server {
 	logger, _ := logger.NewLogger("registrar")
-	s := service.NewServer(service.NewRegistry(), "localhost:5001", logger)
+	s := service.NewServer(service.NewRegistry(minNodes), "localhost:5001", logger)
 	s.DoHealthCheck(5)
 	go s.Start()
 	return s
