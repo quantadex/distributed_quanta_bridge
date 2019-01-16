@@ -272,6 +272,11 @@ func (c *CoinToQuanta) getDepositsInBlock(blockID int64) ([]*coin.Deposit, error
 		watchMap[strings.ToLower(w.Address)] = w.QuantaAddr
 	}
 	deposits, err := c.coinChannel.GetDepositsInBlock(blockID, watchMap)
+
+	if err != nil {
+		return nil, err
+	}
+
 	for _, dep := range deposits {
 		if dep.CoinName == "ETH" {
 			dep.CoinName = c.coinName
@@ -284,10 +289,6 @@ func (c *CoinToQuanta) getDepositsInBlock(blockID int64) ([]*coin.Deposit, error
 
 		// Need to convert to uppercase, which graphene requires
 		dep.CoinName = strings.ToUpper(dep.CoinName)
-	}
-
-	if err != nil {
-		return nil, err
 	}
 
 	return deposits, nil
