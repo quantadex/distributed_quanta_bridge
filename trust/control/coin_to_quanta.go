@@ -306,40 +306,33 @@ func (c *CoinToQuanta) processDeposits() {
 			Amount:     tx.Amount,
 		}
 		//fmt.Println(w)
-		c.StartConsensus(w, TRANSFER_CONSENSUS)
+		//c.StartConsensus(w, TRANSFER_CONSENSUS)
 
 		// check if asset exists
 		//if not, then propose new asset
-		/*
-			exist, error := c.quantaChannel.AssetExist(c.quantaOptions.Issuer, tx.Coin)
-			if error != nil {
-				c.logger.Error(error.Error())
-			}
 
-			if !exist {
-				_, err := c.StartConsensus(w, NEWASSET_CONSENSUS)
-				if err != nil {
-					fmt.Println("error = ", err)
-					c.logger.Error(err.Error())
-				}
-			} else{
-				fmt.Println("asset exists")
-			}
+		exist, error := c.quantaChannel.AssetExist(c.quantaOptions.Issuer, tx.Coin)
+		if error != nil {
+			c.logger.Error(error.Error())
+		}
 
-			time.Sleep(10 * time.Second)
-			// c.StartConsensus(w, ISSUE_ASSET)
+		if !exist {
+			_, err := c.StartConsensus(w, NEWASSET_CONSENSUS)
+			if err != nil {
+				fmt.Println("error = ", err)
+				c.logger.Error(err.Error())
+			}
+		} else{
+			fmt.Println("asset exists")
+		}
+
+		time.Sleep(3 * time.Second)
+
+		if tx.IsBounced {
+			c.StartConsensus(w, TRANSFER_CONSENSUS)
+		} else {
 			c.StartConsensus(w, ISSUE_CONSENSUS)
-		*/
-		//if !exist {
-		//	c.StartConsensus(w, CREATE_ASSET)
-		//}
-		// c.StartConsensus(w, ISSUE_ASSET)
-
-		//if tx.IsBounced {
-		//	c.StartConsensus(w, TRANSFER_CONSENSUS)
-		//} else {
-		//	c.StartConsensus(w, ISSUE_CONSENSUS)
-		//}
+		}
 	}
 }
 

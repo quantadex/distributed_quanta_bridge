@@ -230,6 +230,7 @@ func (q *QuantaGraphene) CreateTransferProposal(dep *coin.Deposit) (string, erro
 	if err != nil {
 		return "", err
 	}
+	// CRASH
 	amount.Amount = uint64(dep.Amount)
 	amount.AssetID = id[0].ID
 

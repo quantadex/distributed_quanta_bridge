@@ -259,10 +259,8 @@ func TestRandomMissRefund(t *testing.T) {
 		if err != nil {
 			fmt.Println("error ", err)
 		} else {
-			if j == 43 {
-				fmt.Printf("Number of refunds # %d r=%d ms\n", len(refunds), r)
-				assert.Equal(t, 1, len(refunds))
-			}
+			fmt.Printf("Number of refunds # %d r=%d ms\n", len(refunds), r)
+			assert.Equal(t, 1, len(refunds))
 		}
 
 		time.Sleep(time.Millisecond * time.Duration(r))
