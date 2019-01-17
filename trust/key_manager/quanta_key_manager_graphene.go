@@ -12,7 +12,6 @@ import (
 	"github.com/scorum/bitshares-go/sign"
 )
 
-
 type QuantaKeyGraphene struct {
 	chain      string
 	privateKey *btcec.PrivateKey

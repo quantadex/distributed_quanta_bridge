@@ -11,13 +11,6 @@ type Price struct {
 	Quote AssetAmount `json:"quote"`
 }
 
-func (p Price) MarshalTransaction(encoder *transaction.Encoder) error {
-	enc := transaction.NewRollingEncoder(encoder)
-	enc.Encode(p.Base)
-	enc.Encode(p.Quote)
-	return enc.Err()
-}
-
 type AssetAmount struct {
 	Amount  uint64   `json:"amount"`
 	AssetID ObjectID `json:"asset_id"`

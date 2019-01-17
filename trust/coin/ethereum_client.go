@@ -120,7 +120,7 @@ func (l *Listener) GetBlock(blockNumber int64) (*types.Block, error) {
 	block, err := l.Client.BlockByNumber(ctx, big.NewInt(blockNumber))
 	if err != nil {
 		if err.Error() == "not found" {
-			return nil, nil
+			return nil, err
 		}
 		err = errors.Wrap(err, "Error getting block from geth")
 		l.log.WithField("block", blockNumber).Error(err)
@@ -275,7 +275,7 @@ func (l *Listener) FilterTransferEvent(blockNumber int64, toAddress map[string]s
 
 				events = append(events, &Deposit{
 					QuantaAddr: quantaAddr,
-					BlockID: int64(vLog.BlockNumber),
+					BlockID:    int64(vLog.BlockNumber),
 					CoinName:   name + vLog.Address.Hex(),
 					SenderAddr: transferEvent.To.Hex(),
 					Amount:     Erc20AmountToGraphene(*transferEvent.Tokens, dec),

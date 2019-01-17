@@ -5,9 +5,9 @@ import (
 	"github.com/quantadex/distributed_quanta_bridge/trust/coin"
 	"github.com/quantadex/distributed_quanta_bridge/trust/key_manager"
 	"github.com/stretchr/testify/assert"
+	"math/rand"
 	"testing"
 	"time"
-	"math/rand"
 )
 
 func TestDynamicGlobalProperties(t *testing.T) {
@@ -17,9 +17,8 @@ func TestDynamicGlobalProperties(t *testing.T) {
 	api.Attach()
 	block, err := api.GetTopBlockID()
 	assert.NoError(t, err)
-	api.GetIssuer("ETHERTEST5")
-	fmt.Println("TopBlock = ", block)
 
+	fmt.Println("TopBlock = ", block)
 }
 
 func TestGetBalances(t *testing.T) {
@@ -163,10 +162,12 @@ func TestDecodeTransaction(t *testing.T) {
 	fmt.Println(dep)
 	proposed, err := api.CreateTransferProposal(dep)
 	assert.NoError(t, err)
+	fmt.Println(proposed)
 
 	decoded, err := api.DecodeTransaction(proposed)
 	assert.NoError(t, err)
 	fmt.Println(decoded, err)
+
 }
 
 func TestCreateAsset(t *testing.T) {
@@ -252,10 +253,10 @@ func TestRandomMissRefund(t *testing.T) {
 	api.NetworkUrl = url
 	api.Attach()
 
-	for i := 0; i < 2; i ++ {
+	for i := 0; i < 2; i++ {
 		// call 100 within 100 random time
 		r := rand.Intn(100)
-		refunds, _, err := api.GetRefundsInBlock(int64(2351843),"tokensale")
+		refunds, _, err := api.GetRefundsInBlock(int64(2351843), "tokensale")
 		if err != nil {
 			fmt.Println("error ", err)
 		} else {

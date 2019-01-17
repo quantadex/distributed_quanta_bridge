@@ -1,19 +1,19 @@
 package quanta
 
 import (
-	"github.com/quantadex/distributed_quanta_bridge/common/kv_store"
-	"github.com/quantadex/distributed_quanta_bridge/trust/coin"
-	"github.com/stellar/go/build"
-
 	"encoding/base64"
 	"encoding/json"
 	"errors"
 	"fmt"
 	"github.com/ethereum/go-ethereum/common"
+	"github.com/quantadex/distributed_quanta_bridge/common/kv_store"
 	"github.com/quantadex/distributed_quanta_bridge/common/logger"
 	"github.com/quantadex/distributed_quanta_bridge/common/queue"
+	"github.com/quantadex/distributed_quanta_bridge/trust/coin"
 	"github.com/quantadex/distributed_quanta_bridge/trust/db"
+	"github.com/scorum/bitshares-go/apis/database"
 	"github.com/stellar/go/amount"
+	"github.com/stellar/go/build"
 	"github.com/stellar/go/clients/horizon"
 	"github.com/stellar/go/xdr"
 	"log"
@@ -21,7 +21,6 @@ import (
 	"strconv"
 	"strings"
 	"time"
-	"github.com/scorum/bitshares-go/apis/database"
 )
 
 type QuantaClientOptions struct {
@@ -91,7 +90,7 @@ func (q *QuantaClient) AccountExist(quantaAddr string) bool {
 	panic("Not implemented")
 }
 
-func (q *QuantaClient)  AssetExist(issuer string, symbol string) (bool, error) {
+func (q *QuantaClient) AssetExist(issuer string, symbol string) (bool, error) {
 	panic("Not implemented")
 }
 
@@ -352,6 +351,6 @@ func (q *QuantaClient) ProcessDeposit(deposit *coin.Deposit, proposed string) er
 	return db.ChangeSubmitQueue(q.Db, deposit.Tx, txe, "")
 }
 
-func (q *QuantaClient) GetAsset(assetName string) (*database.Asset,error) {
+func (q *QuantaClient) GetAsset(assetName string) (*database.Asset, error) {
 	panic("Not implemented")
 }

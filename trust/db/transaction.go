@@ -52,7 +52,7 @@ type Transaction struct {
 	SubmitDate          time.Time
 }
 
-func QueryAllTX(db *DB) ([]Transaction,error) {
+func QueryAllTX(db *DB) ([]Transaction, error) {
 	var txs []Transaction
 	err := db.Model(&txs).Order("created desc").Select()
 	return txs, err

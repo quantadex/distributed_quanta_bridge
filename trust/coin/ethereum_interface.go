@@ -5,9 +5,9 @@ import (
 	"github.com/ethereum/go-ethereum"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
+	common2 "github.com/quantadex/distributed_quanta_bridge/common"
 	"github.com/stellar/go/support/log"
 	"math/big"
-	common2 "github.com/quantadex/distributed_quanta_bridge/common"
 	"regexp"
 )
 
@@ -86,7 +86,7 @@ func WeiToGraphene(valueInWei big.Int) int64 {
 
 func PowerDelta(value big.Int, curPrecision int, targetPrecision int) int64 {
 	valueEth := new(big.Rat).SetInt(&value)
-	powerDelta := new(big.Rat).SetInt(new(big.Int).Exp(ten, big.NewInt(int64(common2.AbsInt(curPrecision - targetPrecision))), nil))
+	powerDelta := new(big.Rat).SetInt(new(big.Int).Exp(ten, big.NewInt(int64(common2.AbsInt(curPrecision-targetPrecision))), nil))
 	result := new(big.Rat)
 	if targetPrecision < curPrecision {
 		result = result.Quo(valueEth, powerDelta)

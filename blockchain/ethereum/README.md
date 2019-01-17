@@ -160,6 +160,10 @@ It would also help to add revert, assert and require statements in the code to t
 
   Solution: Make sure `ganache-cli` is running.
 
+* Problem: See logs when running truffle exec
+
+  Solution: truffle exec scripts/new_erc20.js  --network ropsten  --verbose-rpc
+
 # References
 
 * [Truffle Framework Configuration](http://truffleframework.com/docs/advanced/configuration>)

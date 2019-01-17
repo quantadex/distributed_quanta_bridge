@@ -1,11 +1,11 @@
 package crypto
 
 import (
-"crypto/sha512"
+	"crypto/sha512"
 
-"golang.org/x/crypto/ripemd160"
+	"golang.org/x/crypto/ripemd160"
 
-"github.com/juju/errors"
+	"github.com/juju/errors"
 )
 
 // Decode can be used to turn WIF into a raw private key (32 bytes).

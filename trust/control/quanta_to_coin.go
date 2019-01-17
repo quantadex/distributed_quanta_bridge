@@ -3,8 +3,10 @@ package control
 import "C"
 import (
 	"encoding/json"
+	"fmt"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/pkg/errors"
+	common2 "github.com/quantadex/distributed_quanta_bridge/common"
 	"github.com/quantadex/distributed_quanta_bridge/common/kv_store"
 	"github.com/quantadex/distributed_quanta_bridge/common/logger"
 	"github.com/quantadex/distributed_quanta_bridge/common/manifest"
@@ -15,12 +17,10 @@ import (
 	"github.com/quantadex/distributed_quanta_bridge/trust/peer_contact"
 	"github.com/quantadex/distributed_quanta_bridge/trust/quanta"
 	"github.com/quantadex/quanta_book/consensus/cosi"
-	common2 "github.com/quantadex/distributed_quanta_bridge/common"
+	"github.com/scorum/bitshares-go/apis/database"
+	"math/big"
 	"strings"
 	"time"
-	"fmt"
-	"math/big"
-	"github.com/scorum/bitshares-go/apis/database"
 )
 
 const QUANTA = "QUANTA"
@@ -49,13 +49,13 @@ type QuantaToCoin struct {
 	coinkM              key_manager.KeyManager
 	coinName            string
 	nodeID              int
-	coinInfo			*database.Asset
+	coinInfo            *database.Asset
 
-	rr                  *RoundRobinSigner
-	cosi                *cosi.Cosi
-	trustPeer           *peer_contact.TrustPeerNode
-	doneChan            chan bool
-	SuccessCb           func(WithdrawalResult)
+	rr        *RoundRobinSigner
+	cosi      *cosi.Cosi
+	trustPeer *peer_contact.TrustPeerNode
+	doneChan  chan bool
+	SuccessCb func(WithdrawalResult)
 }
 
 /**
@@ -91,7 +91,7 @@ func NewQuantaToCoin(log logger.Logger,
 	res.doneChan = make(chan bool, 1)
 	res.trustPeer = peer_contact.NewTrustPeerNode(man, peer, nodeID, queue_, queue.REFUNDMSG_QUEUE, "/node/api/refund")
 	res.cosi = cosi.NewProtocol(res.trustPeer, nodeID == 0, time.Second*3)
-	res.coinInfo,_ = q.GetAsset(coinName)
+	res.coinInfo, _ = q.GetAsset(coinName)
 
 	res.cosi.Verify = func(msg string) error {
 		withdrawal, err := res.coinChannel.DecodeRefund(msg)
@@ -167,7 +167,7 @@ func NewQuantaToCoin(log logger.Logger,
 	return res
 }
 
-func (c *QuantaToCoin) GetNewCoinBlockIDs() []int64  {
+func (c *QuantaToCoin) GetNewCoinBlockIDs() []int64 {
 	lastProcessed, valid := GetLastBlock(c.db, QUANTA)
 	if !valid {
 		c.logger.Error("Failed to get last processed ID")
