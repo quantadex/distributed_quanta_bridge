@@ -6,6 +6,8 @@ import (
 	"github.com/quantadex/distributed_quanta_bridge/trust/key_manager"
 	"github.com/stretchr/testify/assert"
 	"testing"
+	"time"
+	"math/rand"
 )
 
 func TestDynamicGlobalProperties(t *testing.T) {
@@ -242,4 +244,25 @@ func TestIssueAsset(t *testing.T) {
 	err = api.Broadcast(submitTx)
 	assert.NoError(t, err)
 	fmt.Println("broadcast error = ", err)
+}
+
+func TestRandomMissRefund(t *testing.T) {
+	api := QuantaGraphene{}
+	api.Issuer = "tokensale"
+	api.NetworkUrl = url
+	api.Attach()
+
+	for i := 0; i < 2; i ++ {
+		// call 100 within 100 random time
+		r := rand.Intn(100)
+		refunds, _, err := api.GetRefundsInBlock(int64(2351843),"tokensale")
+		if err != nil {
+			fmt.Println("error ", err)
+		} else {
+			fmt.Printf("Number of refunds # %d r=%d ms\n", len(refunds), r)
+			assert.Equal(t, 1, len(refunds))
+		}
+
+		time.Sleep(time.Millisecond * time.Duration(r))
+	}
 }

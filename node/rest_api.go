@@ -10,6 +10,7 @@ import (
 	"github.com/quantadex/distributed_quanta_bridge/trust/control"
 	"net/http"
 	"strings"
+	"github.com/quantadex/distributed_quanta_bridge/trust/db"
 )
 
 type Server struct {
@@ -18,10 +19,11 @@ type Server struct {
 	logger      logger.Logger
 	httpService *http.Server
 	kv          kv_store.KVStore
+	db			*db.DB
 }
 
-func NewApiServer(kv kv_store.KVStore, url string, logger logger.Logger) *Server {
-	return &Server{url: url, logger: logger, kv: kv, httpService: &http.Server{Addr: url}}
+func NewApiServer(kv kv_store.KVStore, db *db.DB, url string, logger logger.Logger) *Server {
+	return &Server{url: url, logger: logger, kv: kv, db: db, httpService: &http.Server{Addr: url}}
 }
 
 func (server *Server) Stop() {
@@ -41,6 +43,7 @@ func (server *Server) Start() {
 func (server *Server) setRoute() {
 	server.handlers = mux.NewRouter()
 	server.handlers.HandleFunc("/api/address/eth/{quanta}", server.addressHandler)
+	server.handlers.HandleFunc("/api/history", server.historyHandler)
 	server.httpService.Handler = server.handlers
 }
 
@@ -64,4 +67,15 @@ func (server *Server) addressHandler(w http.ResponseWriter, r *http.Request) {
 	data, _ := json.Marshal(addresses)
 
 	w.Write(data)
+}
+
+func (server *Server) historyHandler(w http.ResponseWriter, r *http.Request) {
+	txs, err := db.QueryAllTX(server.db)
+	if err != nil {
+		w.WriteHeader(500)
+		w.Write([]byte(err.Error()))
+	} else {
+		data, _ := json.Marshal(txs)
+		w.Write(data)
+	}
 }

@@ -16,8 +16,9 @@ func TestTransactionQuery(t *testing.T) {
 	if err != nil {
 		t.Error(err)
 	}
-	rDb.Connect(info.Network, info.User, info.Password, info.Database)
+	//defer rDb.Close()
 	rDb.Debug()
+	rDb.Connect(info.Network, info.User, info.Password, info.Database)
 	MigrateTx(rDb)
 	EmptyTable(rDb)
 

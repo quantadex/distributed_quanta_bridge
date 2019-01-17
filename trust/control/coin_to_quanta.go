@@ -16,9 +16,11 @@ import (
 	"github.com/quantadex/distributed_quanta_bridge/trust/peer_contact"
 	"github.com/quantadex/distributed_quanta_bridge/trust/quanta"
 	"github.com/quantadex/quanta_book/consensus/cosi"
-	"github.com/scorum/bitshares-go/types"
 	"strings"
 	"time"
+	"github.com/scorum/bitshares-go/types"
+	"github.com/scorum/bitshares-go/apis/database"
+	"math/big"
 )
 
 type DepositResult struct {
@@ -53,6 +55,7 @@ type CoinToQuanta struct {
 	trustAddress  common.Address
 	trustPeer     *peer_contact.TrustPeerNode
 	cosi          *cosi.Cosi
+	coinInfo	  *database.Asset
 
 	readyChan chan bool
 	doneChan  chan bool
@@ -87,6 +90,7 @@ func NewCoinToQuanta(log logger.Logger,
 	peer peer_contact.PeerContact,
 	queue_ queue.Queue,
 	options C2QOptions,
+
 	quantaOptions quanta.QuantaClientOptions) *CoinToQuanta {
 	res := &CoinToQuanta{C2QOptions: options}
 	res.logger = log
@@ -102,6 +106,7 @@ func NewCoinToQuanta(log logger.Logger,
 	res.doneChan = make(chan bool, 1)
 	res.readyChan = make(chan bool, 1)
 	res.quantaOptions = quantaOptions
+	res.coinInfo,_ = q.GetAsset(coinName)
 
 	res.trustPeer = peer_contact.NewTrustPeerNode(man, peer, nodeID, queue_, queue.PEERMSG_QUEUE, "/node/api/peer")
 	res.cosi = cosi.NewProtocol(res.trustPeer, nodeID == 0, time.Second*3)
@@ -206,6 +211,7 @@ func NewCoinToQuanta(log logger.Logger,
 			time.Sleep(100 * time.Millisecond)
 		}
 	}()
+
 	if nodeID == 0 {
 		go res.dispatchIssuance()
 	}
@@ -232,7 +238,6 @@ func (c *CoinToQuanta) GetNewCoinBlockIDs() []int64 {
 	}
 
 	if lastProcessed > currentTop {
-		fmt.Println(lastProcessed, currentTop)
 		c.logger.Error("Coin top block smaller than last processed")
 		return nil
 	}
@@ -267,16 +272,24 @@ func (c *CoinToQuanta) getDepositsInBlock(blockID int64) ([]*coin.Deposit, error
 		watchMap[strings.ToLower(w.Address)] = w.QuantaAddr
 	}
 	deposits, err := c.coinChannel.GetDepositsInBlock(blockID, watchMap)
+
+	if err != nil {
+		c.logger.Info("getDepositsInBlock failed " + err.Error())
+		return nil, err
+	}
+
 	for _, dep := range deposits {
 		if dep.CoinName == "ETH" {
 			dep.CoinName = c.coinName
+
+			// ethereum converts to precision 5, now we need to convert to precision of the asset
+			dep.Amount = coin.PowerDelta(*big.NewInt(dep.Amount), 5, int(c.coinInfo.Precision))
+		} else {
+			// we assume precision is always 5
 		}
+
 		// Need to convert to uppercase, which graphene requires
 		dep.CoinName = strings.ToUpper(dep.CoinName)
-	}
-
-	if err != nil {
-		return nil, err
 	}
 
 	return deposits, nil
@@ -300,28 +313,29 @@ func (c *CoinToQuanta) processDeposits() {
 		// check if asset exists
 		//if not, then propose new asset
 
-		exist, error := c.quantaChannel.AssetExist(c.quantaOptions.Issuer, tx.Coin)
-		if error != nil {
-			c.logger.Error(error.Error())
+		exist, err := c.quantaChannel.AssetExist(c.quantaOptions.Issuer, tx.Coin)
+		if err != nil {
+			c.logger.Error(err.Error())
 		}
 
 		if !exist {
-			_, err := c.StartConsensus(w, NEWASSET_CONSENSUS)
+			_, err = c.StartConsensus(w, NEWASSET_CONSENSUS)
 			if err != nil {
-				fmt.Println("error = ", err)
-				c.logger.Error(err.Error())
+				c.logger.Error("failed to create asset, error = " + err.Error())
 			}
-		} else {
+		} else{
 			fmt.Println("asset exists")
 		}
 
-		time.Sleep(5 * time.Second)
-		// c.StartConsensus(w, ISSUE_ASSET)
+		// if newasset was created successfully
+		if err == nil {
+			time.Sleep(3 * time.Second)
 
-		if tx.IsBounced {
-			c.StartConsensus(w, TRANSFER_CONSENSUS)
-		} else {
-			c.StartConsensus(w, ISSUE_CONSENSUS)
+			if tx.IsBounced {
+				c.StartConsensus(w, TRANSFER_CONSENSUS)
+			} else {
+				c.StartConsensus(w, ISSUE_CONSENSUS)
+			}
 		}
 	}
 }
@@ -426,6 +440,7 @@ func (c *CoinToQuanta) StartConsensus(tx *coin.Deposit, consensus ConsensusType)
 				return HEX_NULL, err
 			}
 			fmt.Println("Asset Created")
+			return HEX_NULL, nil
 		} else {
 			db.ChangeSubmitQueue(c.rDb, tx.Tx, txe, db.DEPOSIT)
 		}
@@ -472,7 +487,6 @@ func (c *CoinToQuanta) DoLoop(blockIDs []int64) []*coin.Deposit {
 				}
 
 				for _, dep := range deposits {
-
 					err = db.ConfirmDeposit(c.rDb, dep, false)
 					if err != nil {
 						c.logger.Error("Cannot insert into db:" + err.Error())
@@ -480,7 +494,7 @@ func (c *CoinToQuanta) DoLoop(blockIDs []int64) []*coin.Deposit {
 					allDeposits = append(allDeposits, dep)
 
 					if !c.quantaChannel.AccountExist(dep.QuantaAddr) {
-
+						// if not exist, let's bounce money back
 					} else if dep.Amount == 0 {
 						c.logger.Error("Amount is too small")
 					} else if c.nodeID == 0 {

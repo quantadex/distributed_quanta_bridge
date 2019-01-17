@@ -275,6 +275,7 @@ func (l *Listener) FilterTransferEvent(blockNumber int64, toAddress map[string]s
 
 				events = append(events, &Deposit{
 					QuantaAddr: quantaAddr,
+					BlockID: int64(vLog.BlockNumber),
 					CoinName:   name + vLog.Address.Hex(),
 					SenderAddr: transferEvent.To.Hex(),
 					Amount:     Erc20AmountToGraphene(*transferEvent.Tokens, dec),

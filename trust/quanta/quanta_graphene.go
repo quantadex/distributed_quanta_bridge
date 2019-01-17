@@ -7,7 +7,6 @@ https://github.com/scorum/bitshares-go/blob/master/apis/database/api_test.go
 */
 import (
 	"encoding/json"
-	"fmt"
 	"github.com/ethereum/go-ethereum/common/hexutil"
 	"github.com/go-errors/errors"
 	"github.com/quantadex/distributed_quanta_bridge/common/kv_store"
@@ -19,6 +18,7 @@ import (
 	"github.com/scorum/bitshares-go/sign"
 	"github.com/scorum/bitshares-go/transport/websocket"
 	"github.com/scorum/bitshares-go/types"
+	"log"
 	"math"
 	"strconv"
 	"time"
@@ -123,7 +123,6 @@ func (q *QuantaGraphene) GetRefundsInBlock(blockID int64, trustAddress string) (
 	var i, j int
 	for i = 0; i < len(block.Transactions); i++ {
 		for j = 0; j < len(block.Transactions[i].Operations); j++ {
-
 			op := block.Transactions[i].Operations[j]
 			if op.Type() == types.TransferOpType {
 				op := op.(*types.TransferOperation)
@@ -142,7 +141,6 @@ func (q *QuantaGraphene) GetRefundsInBlock(blockID int64, trustAddress string) (
 				}
 
 				if to.Name == trustAddress {
-					fmt.Println("blockId = ", blockID)
 					coin, err := q.Database.GetObjects(op.Amount.AssetID)
 					if coin == nil {
 						return refunds, 0, errors.New("coin not found")

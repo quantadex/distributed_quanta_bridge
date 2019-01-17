@@ -10,7 +10,23 @@ import (
 	"github.com/btcsuite/btcutil"
 	"github.com/go-errors/errors"
 	"github.com/scorum/bitshares-go/sign"
+	"github.com/btcsuite/btcd/btcec"
+	"github.com/btcsuite/btcutil/base58"
 )
+
+const PREFIX = "QA"
+
+func GetGraphenePublicKey(pubKey *btcec.PublicKey) (string, error){
+	buf := pubKey.SerializeCompressed()
+	chk, err := Ripemd160Checksum(buf)
+	if err != nil {
+		return "", err
+	}
+	b := append(buf, chk...)
+	pubkey := base58.Encode(b)
+	return fmt.Sprintf("%s%s", PREFIX, pubkey), nil
+}
+
 
 func SignMessage(msg interface{}, privateKey string) *string {
 	w, _ := btcutil.DecodeWIF(privateKey)
@@ -26,18 +42,23 @@ func SignMessage(msg interface{}, privateKey string) *string {
 }
 
 func VerifyMessage(msg interface{}, publicKey string, signature string) bool {
-	//bData := new(bytes.Buffer)
-	//json.NewEncoder(bData).Encode(msg)
-	//
-	//sigBytes,_ := hex.DecodeString(signature)
-	//
-	//
-	//if err := Verify(bData.Bytes(), sData, publicKey); err != nil {
-	//	fmt.Println("returning false from verify")
-	//	return false
-	//}
+	bData := new(bytes.Buffer)
+	json.NewEncoder(bData).Encode(msg)
+	digest := sha256.Sum256(bData.Bytes())
 
-	return true
+	sig,_ := hex.DecodeString(signature)
+	p, _, err := btcec.RecoverCompact(btcec.S256(), sig, digest[:])
+
+	if err != nil {
+		return false
+	}
+
+	pub, err := GetGraphenePublicKey(p)
+	if err != nil {
+		return false
+	}
+
+	return pub == publicKey
 }
 
 func Verify(input []byte, sig []byte, publicKey string) error {
