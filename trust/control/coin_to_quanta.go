@@ -307,12 +307,17 @@ func (c *CoinToQuanta) processDeposits() {
 			SenderAddr: tx.From,
 			Amount:     tx.Amount,
 		}
-		//fmt.Println(w)
-		//c.StartConsensus(w, TRANSFER_CONSENSUS)
+		// if not a native token, we need to flush it
+		if tx.Coin != c.coinName {
+			parts := strings.Split(c.coinName, "0X")
+			if len(parts) > 1 {
+				// flush
+				// contract := parts[1]
+			}
+		}
 
 		// check if asset exists
 		//if not, then propose new asset
-
 		exist, err := c.quantaChannel.AssetExist(c.quantaOptions.Issuer, tx.Coin)
 		if err != nil {
 			c.logger.Error(err.Error())
