@@ -225,12 +225,11 @@ func (c *CoinToQuanta) GetNewCoinBlockIDs() []int64 {
 		return nil
 	}
 
-	//currentTop, err := c.coinChannel.GetTopBlockID()
-	currentTop := lastProcessed + 1
-	//if err != nil {
-	//	c.logger.Error("Failed to get current top block")
-	//	return nil
-	//}
+	currentTop, err := c.coinChannel.GetTopBlockID()
+	if err != nil {
+		c.logger.Error("Failed to get current top block")
+		return nil
+	}
 
 	if lastProcessed > currentTop {
 		fmt.Println(lastProcessed, currentTop)
@@ -270,7 +269,7 @@ func (c *CoinToQuanta) getDepositsInBlock(blockID int64) ([]*coin.Deposit, error
 	deposits, err := c.coinChannel.GetDepositsInBlock(blockID, watchMap)
 	for _, dep := range deposits {
 		if dep.CoinName == "ETH" {
-			dep.CoinName = "TESTISSUE2"
+			dep.CoinName = c.coinName
 		}
 		// Need to convert to uppercase, which graphene requires
 		dep.CoinName = strings.ToUpper(dep.CoinName)
