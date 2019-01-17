@@ -4,15 +4,14 @@ import (
 	"bytes"
 	"crypto/ecdsa"
 	"crypto/sha256"
-	"encoding/base32"
 	"encoding/hex"
 	"encoding/json"
 	"github.com/btcsuite/btcd/btcec"
 	"github.com/btcsuite/btcutil"
-	crypto2 "github.com/ethereum/go-ethereum/crypto"
 	"github.com/quantadex/distributed_quanta_bridge/common/crypto"
 	"github.com/scorum/bitshares-go/sign"
 )
+
 
 type QuantaKeyGraphene struct {
 	chain      string
@@ -67,11 +66,7 @@ func (k *QuantaKeyGraphene) CreateNodeKeys() error {
 }
 
 func (k *QuantaKeyGraphene) GetPublicKey() (string, error) {
-	keyBytes := crypto2.FromECDSAPub(k.privateKey.PubKey().ToECDSA())
-
-	return base32.StdEncoding.EncodeToString(keyBytes), nil
-
-	//return k.privateKey.PublicKey, nil
+	return crypto.GetGraphenePublicKey(k.privateKey.PubKey())
 }
 
 func (k *QuantaKeyGraphene) GetPrivateKey() *ecdsa.PrivateKey {

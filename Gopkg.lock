@@ -290,6 +290,14 @@
   revision = "04140366298a54a039076d798123ffa108fff46c"
 
 [[projects]]
+  branch = "master"
+  digest = "1:7d1a655e1f16ccaf1adb026bdeece28499ecb0ead32d32accc6ed6f2c40cacee"
+  name = "github.com/juju/errors"
+  packages = ["."]
+  pruneopts = "T"
+  revision = "089d3ea4e4d597bd98acac068193d341983326a3"
+
+[[projects]]
   digest = "1:2106821001befed6a5783b54950030dd0614257d18bef539e46cae9afd02b89b"
   name = "github.com/lib/pq"
   packages = [
@@ -411,6 +419,7 @@
   packages = [
     "apis/database",
     "apis/login",
+    "apis/networkbroadcast",
     "caller",
     "encoding/transaction",
     "sign",
@@ -528,7 +537,6 @@
   packages = [
     "assert",
     "mock",
-    "require",
   ]
   pruneopts = "T"
   revision = "f35b8ab0b5a2cef36673838d662e249dd9c94686"
@@ -632,9 +640,11 @@
   analyzer-name = "dep"
   analyzer-version = 1
   input-imports = [
+    "github.com/agl/ed25519",
     "github.com/boltdb/bolt",
     "github.com/btcsuite/btcd/btcec",
     "github.com/btcsuite/btcutil",
+    "github.com/btcsuite/btcutil/base58",
     "github.com/emirpasic/gods/lists/doublylinkedlist",
     "github.com/ethereum/go-ethereum",
     "github.com/ethereum/go-ethereum/accounts/abi",
@@ -642,6 +652,7 @@
     "github.com/ethereum/go-ethereum/accounts/abi/bind/backends",
     "github.com/ethereum/go-ethereum/accounts/keystore",
     "github.com/ethereum/go-ethereum/common",
+    "github.com/ethereum/go-ethereum/common/hexutil",
     "github.com/ethereum/go-ethereum/core",
     "github.com/ethereum/go-ethereum/core/types",
     "github.com/ethereum/go-ethereum/crypto",
@@ -651,6 +662,7 @@
     "github.com/go-pg/pg",
     "github.com/go-pg/pg/orm",
     "github.com/gorilla/mux",
+    "github.com/juju/errors",
     "github.com/magiconair/properties/assert",
     "github.com/op/go-logging",
     "github.com/pkg/errors",
@@ -659,6 +671,7 @@
     "github.com/quantadex/quanta_book/consensus/cosi",
     "github.com/scorum/bitshares-go/apis/database",
     "github.com/scorum/bitshares-go/apis/login",
+    "github.com/scorum/bitshares-go/apis/networkbroadcast",
     "github.com/scorum/bitshares-go/sign",
     "github.com/scorum/bitshares-go/transport/websocket",
     "github.com/scorum/bitshares-go/types",
@@ -671,7 +684,7 @@
     "github.com/stellar/go/support/log",
     "github.com/stellar/go/xdr",
     "github.com/stretchr/testify/assert",
-    "github.com/stretchr/testify/require",
+    "golang.org/x/crypto/ripemd160",
   ]
   solver-name = "gps-cdcl"
   solver-version = 1
