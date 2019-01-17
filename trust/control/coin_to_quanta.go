@@ -206,7 +206,6 @@ func NewCoinToQuanta(log logger.Logger,
 			time.Sleep(100 * time.Millisecond)
 		}
 	}()
-
 	if nodeID == 0 {
 		go res.dispatchIssuance()
 	}
@@ -226,13 +225,15 @@ func (c *CoinToQuanta) GetNewCoinBlockIDs() []int64 {
 		return nil
 	}
 
-	currentTop, err := c.coinChannel.GetTopBlockID()
-	if err != nil {
-		c.logger.Error("Failed to get current top block")
-		return nil
-	}
+	//currentTop, err := c.coinChannel.GetTopBlockID()
+	currentTop := lastProcessed + 1
+	//if err != nil {
+	//	c.logger.Error("Failed to get current top block")
+	//	return nil
+	//}
 
 	if lastProcessed > currentTop {
+		fmt.Println(lastProcessed, currentTop)
 		c.logger.Error("Coin top block smaller than last processed")
 		return nil
 	}
@@ -269,7 +270,7 @@ func (c *CoinToQuanta) getDepositsInBlock(blockID int64) ([]*coin.Deposit, error
 	deposits, err := c.coinChannel.GetDepositsInBlock(blockID, watchMap)
 	for _, dep := range deposits {
 		if dep.CoinName == "ETH" {
-			dep.CoinName = c.coinName
+			dep.CoinName = "TESTISSUE2"
 		}
 		// Need to convert to uppercase, which graphene requires
 		dep.CoinName = strings.ToUpper(dep.CoinName)
@@ -295,40 +296,34 @@ func (c *CoinToQuanta) processDeposits() {
 			Amount:     tx.Amount,
 		}
 		//fmt.Println(w)
-		c.StartConsensus(w, TRANSFER_CONSENSUS)
+		//c.StartConsensus(w, TRANSFER_CONSENSUS)
 
 		// check if asset exists
 		//if not, then propose new asset
-		/*
-			exist, error := c.quantaChannel.AssetExist(c.quantaOptions.Issuer, tx.Coin)
-			if error != nil {
-				c.logger.Error(error.Error())
-			}
 
-			if !exist {
-				_, err := c.StartConsensus(w, NEWASSET_CONSENSUS)
-				if err != nil {
-					fmt.Println("error = ", err)
-					c.logger.Error(err.Error())
-				}
-			} else{
-				fmt.Println("asset exists")
-			}
+		exist, error := c.quantaChannel.AssetExist(c.quantaOptions.Issuer, tx.Coin)
+		if error != nil {
+			c.logger.Error(error.Error())
+		}
 
-			time.Sleep(10 * time.Second)
-			// c.StartConsensus(w, ISSUE_ASSET)
-			c.StartConsensus(w, ISSUE_CONSENSUS)
-		*/
-		//if !exist {
-		//	c.StartConsensus(w, CREATE_ASSET)
-		//}
+		if !exist {
+			_, err := c.StartConsensus(w, NEWASSET_CONSENSUS)
+			if err != nil {
+				fmt.Println("error = ", err)
+				c.logger.Error(err.Error())
+			}
+		} else {
+			fmt.Println("asset exists")
+		}
+
+		time.Sleep(5 * time.Second)
 		// c.StartConsensus(w, ISSUE_ASSET)
 
-		//if tx.IsBounced {
-		//	c.StartConsensus(w, TRANSFER_CONSENSUS)
-		//} else {
-		//	c.StartConsensus(w, ISSUE_CONSENSUS)
-		//}
+		if tx.IsBounced {
+			c.StartConsensus(w, TRANSFER_CONSENSUS)
+		} else {
+			c.StartConsensus(w, ISSUE_CONSENSUS)
+		}
 	}
 }
 

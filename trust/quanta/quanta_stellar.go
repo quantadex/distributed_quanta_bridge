@@ -3,6 +3,7 @@ package quanta
 import (
 	"github.com/quantadex/distributed_quanta_bridge/common/kv_store"
 	"github.com/quantadex/distributed_quanta_bridge/trust/coin"
+	"github.com/scorum/bitshares-go/apis/database"
 	"github.com/stellar/go/build"
 
 	"encoding/base64"
@@ -90,7 +91,11 @@ func (q *QuantaClient) AccountExist(quantaAddr string) bool {
 	panic("Not implemented")
 }
 
-func (q *QuantaClient)  AssetExist(issuer string, symbol string) (bool, error) {
+func (q *QuantaClient) AssetExist(issuer string, symbol string) (bool, error) {
+	panic("Not implemented")
+}
+
+func (q *QuantaClient) GetAsset(assetName string) (*database.Asset, error) {
 	panic("Not implemented")
 }
 
