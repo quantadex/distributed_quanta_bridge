@@ -8,9 +8,9 @@ import (
 	"github.com/quantadex/distributed_quanta_bridge/common/kv_store"
 	"github.com/quantadex/distributed_quanta_bridge/common/logger"
 	"github.com/quantadex/distributed_quanta_bridge/trust/control"
+	"github.com/quantadex/distributed_quanta_bridge/trust/db"
 	"net/http"
 	"strings"
-	"github.com/quantadex/distributed_quanta_bridge/trust/db"
 )
 
 type Server struct {
@@ -19,7 +19,7 @@ type Server struct {
 	logger      logger.Logger
 	httpService *http.Server
 	kv          kv_store.KVStore
-	db			*db.DB
+	db          *db.DB
 }
 
 func NewApiServer(kv kv_store.KVStore, db *db.DB, url string, logger logger.Logger) *Server {

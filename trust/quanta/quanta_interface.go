@@ -77,7 +77,7 @@ type Quanta interface {
 	CreateIssueAssetProposal(dep *coin.Deposit) (string, error)
 	AssetExist(issuer string, symbol string) (bool, error)
 	AccountExist(quantaAddr string) bool
-	GetAsset(assetName string) (*database.Asset,error);
+	GetAsset(assetName string) (*database.Asset, error)
 }
 
 func NewQuanta(options QuantaClientOptions) (Quanta, error) {

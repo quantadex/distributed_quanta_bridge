@@ -16,11 +16,11 @@ import (
 	"github.com/quantadex/distributed_quanta_bridge/trust/peer_contact"
 	"github.com/quantadex/distributed_quanta_bridge/trust/quanta"
 	"github.com/quantadex/quanta_book/consensus/cosi"
+	"github.com/scorum/bitshares-go/apis/database"
+	"github.com/scorum/bitshares-go/types"
+	"math/big"
 	"strings"
 	"time"
-	"github.com/scorum/bitshares-go/types"
-	"github.com/scorum/bitshares-go/apis/database"
-	"math/big"
 )
 
 type DepositResult struct {
@@ -55,7 +55,7 @@ type CoinToQuanta struct {
 	trustAddress  common.Address
 	trustPeer     *peer_contact.TrustPeerNode
 	cosi          *cosi.Cosi
-	coinInfo	  *database.Asset
+	coinInfo      *database.Asset
 
 	readyChan chan bool
 	doneChan  chan bool
@@ -106,7 +106,7 @@ func NewCoinToQuanta(log logger.Logger,
 	res.doneChan = make(chan bool, 1)
 	res.readyChan = make(chan bool, 1)
 	res.quantaOptions = quantaOptions
-	res.coinInfo,_ = q.GetAsset(coinName)
+	res.coinInfo, _ = q.GetAsset(coinName)
 
 	res.trustPeer = peer_contact.NewTrustPeerNode(man, peer, nodeID, queue_, queue.PEERMSG_QUEUE, "/node/api/peer")
 	res.cosi = cosi.NewProtocol(res.trustPeer, nodeID == 0, time.Second*3)
@@ -323,7 +323,7 @@ func (c *CoinToQuanta) processDeposits() {
 			if err != nil {
 				c.logger.Error("failed to create asset, error = " + err.Error())
 			}
-		} else{
+		} else {
 			fmt.Println("asset exists")
 		}
 
@@ -477,6 +477,11 @@ func (c *CoinToQuanta) DoLoop(blockIDs []int64) []*coin.Deposit {
 		for _, blockID := range blockIDs {
 			deposits, err := c.getDepositsInBlock(blockID)
 			if err != nil {
+				//Retry the block that was not found
+				if err.Error() == "Block not found" {
+					lastBlockId := blockIDs[len(blockIDs)-2]
+					setLastBlock(c.db, c.coinName, lastBlockId)
+				}
 				c.logger.Error("Failed to get deposits from block: " + err.Error())
 				return allDeposits
 			}

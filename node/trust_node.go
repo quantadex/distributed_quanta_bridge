@@ -318,13 +318,12 @@ func (n *TrustNode) run() {
 			blockIDs := n.cTQ.GetNewCoinBlockIDs()
 			n.cTQ.DoLoop(blockIDs)
 
-
 			blockIDs = n.qTC.GetNewCoinBlockIDs()
 			//if init == false {
 			//	cursor = 1911002
 			//	init = true
 			//}
-			for _, cursor := range blockIDs{
+			for _, cursor := range blockIDs {
 				n.qTC.DoLoop(cursor)
 			}
 

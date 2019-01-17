@@ -86,7 +86,6 @@ func MaxUint64(a, b uint64) uint64 {
 	return b
 }
 
-
 func MaxUint(a, b uint) uint {
 	if a > b {
 		return a
