@@ -52,6 +52,12 @@ type Transaction struct {
 	SubmitDate          time.Time
 }
 
+func QueryAllTX(db *DB) ([]Transaction,error) {
+	var txs []Transaction
+	err := db.Model(&txs).Order("created desc").Select()
+	return txs, err
+}
+
 func ConfirmDeposit(db *DB, dep *coin.Deposit, isBounced bool) error {
 	tx := &Transaction{
 		Type:      DEPOSIT,
