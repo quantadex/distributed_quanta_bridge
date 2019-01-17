@@ -18,7 +18,6 @@ import (
 	"github.com/scorum/bitshares-go/sign"
 	"github.com/scorum/bitshares-go/transport/websocket"
 	"github.com/scorum/bitshares-go/types"
-	"log"
 	"math"
 	"strconv"
 	"time"
@@ -68,11 +67,11 @@ func (q *QuantaGraphene) Attach() error {
 
 func (q *QuantaGraphene) AssetExist(issuer string, symbol string) (bool, error) {
 	asset, err := q.Database.LookupAssetSymbols(symbol)
-	if len(asset) == 0 || asset[0] == nil {
-		return false, nil
-	}
 	if err != nil {
 		return false, err
+	}
+	if len(asset) == 0 || asset[0] == nil {
+		return false, nil
 	}
 
 	issuerId, err := q.LookupAccount(issuer)
@@ -128,12 +127,13 @@ func (q *QuantaGraphene) GetRefundsInBlock(blockID int64, trustAddress string) (
 				op := op.(*types.TransferOperation)
 
 				receiver, err := q.Database.GetObjects(op.To)
-				if receiver == nil {
-					return refunds, 0, errors.New("receiver not found")
-				}
 				if err != nil {
 					return refunds, 0, err
 				}
+				if receiver == nil {
+					return refunds, 0, errors.New("receiver not found")
+				}
+
 				to := &Object{}
 				err = json.Unmarshal(receiver[0], &to)
 				if err != nil {
@@ -142,12 +142,13 @@ func (q *QuantaGraphene) GetRefundsInBlock(blockID int64, trustAddress string) (
 
 				if to.Name == trustAddress {
 					coin, err := q.Database.GetObjects(op.Amount.AssetID)
-					if coin == nil {
-						return refunds, 0, errors.New("coin not found")
-					}
 					if err != nil {
 						return refunds, 0, err
 					}
+					if coin == nil {
+						return refunds, 0, errors.New("coin not found")
+					}
+
 					coinName := &Asset{}
 					err = json.Unmarshal(coin[0], &coinName)
 					if err != nil {
@@ -155,12 +156,13 @@ func (q *QuantaGraphene) GetRefundsInBlock(blockID int64, trustAddress string) (
 					}
 
 					sender, err := q.Database.GetObjects(op.From)
-					if sender == nil {
-						return refunds, 0, errors.New("sender not found")
-					}
 					if err != nil {
 						return refunds, 0, err
 					}
+					if sender == nil {
+						return refunds, 0, errors.New("sender not found")
+					}
+
 					from := &Object{}
 					err = json.Unmarshal(sender[0], &from)
 					if err != nil {
@@ -171,7 +173,6 @@ func (q *QuantaGraphene) GetRefundsInBlock(blockID int64, trustAddress string) (
 
 					var str string
 					if op.Memo != nil {
-						fmt.Println("Memo = ", op.Memo)
 						op.Memo.Message = "0x" + op.Memo.Message
 						byt, err := hexutil.Decode(op.Memo.Message)
 						if err != nil {
@@ -199,33 +200,32 @@ func (q *QuantaGraphene) GetRefundsInBlock(blockID int64, trustAddress string) (
 }
 
 func (q *QuantaGraphene) GetBalance(assetName string, quantaAddress string) (float64, error) {
-	id, err := q.Database.LookupAssetSymbols(assetName)
-	if len(id) == 0 || id[0] == nil {
-		return 0, nil
-	}
+	id, err := q.GetAsset(assetName)
 	if err != nil {
 		return 0, err
 	}
 
-	balance, err := q.Database.GetNamedAccountBalances(quantaAddress, id[0].ID)
-	if len(balance) == 0 || balance[0] == nil {
-		return 0, errors.New("balance not found")
-	}
+	balance, err := q.Database.GetNamedAccountBalances(quantaAddress, id.ID)
 	if err != nil {
 		return 0, err
 	}
-	precision := math.Pow(10, float64(id[0].Precision))
+	if len(balance) == 0 || balance[0] == nil {
+		return 0, errors.New("balance not found")
+	}
+
+	precision := math.Pow(10, float64(id.Precision))
 	return float64(balance[0].Amount) / precision, nil
 }
 
 func (q *QuantaGraphene) GetAllBalances(quantaAddress string) (map[string]float64, error) {
 	balance, err := q.Database.GetNamedAccountBalances(quantaAddress)
-	if len(balance) == 0 || balance[0] == nil {
-		return nil, errors.New("balance not found")
-	}
 	if err != nil {
 		return nil, err
 	}
+	if len(balance) == 0 || balance[0] == nil {
+		return nil, errors.New("balance not found")
+	}
+
 	balances := make(map[string]float64, len(balance))
 	var i int
 	for i = 0; i < len(balance); i++ {
@@ -236,34 +236,36 @@ func (q *QuantaGraphene) GetAllBalances(quantaAddress string) (map[string]float6
 
 func (q *QuantaGraphene) GetAsset(assetName string) (*database.Asset, error) {
 	asset, err := q.Database.LookupAssetSymbols(assetName)
-	if len(asset) == 0 || asset[0] == nil {
-		return nil, errors.New("asset does not exist")
-	}
 	if err != nil {
 		return nil, err
 	}
+	if len(asset) == 0 || asset[0] == nil {
+		return nil, errors.New("asset does not exist")
+	}
+
 	return asset[0], nil
 }
 
 func (q *QuantaGraphene) AccountExist(quantaAddr string) bool {
 	accountMap, err := q.Database.LookupAccounts(quantaAddr, 1)
-	if accountMap[quantaAddr].Space == 0 && accountMap[quantaAddr].Type == 0 {
-		return false
-	}
 	if err != nil {
 		return false
 	}
+	if accountMap[quantaAddr].Space == 0 && accountMap[quantaAddr].Type == 0 {
+		return false
+	}
+
 	return true
 }
 
 func (q *QuantaGraphene) LookupAccount(account string) (types.ObjectID, error) {
 	var accountId types.ObjectID
 	accountMap, err := q.Database.LookupAccounts(account, 1)
-	if accountMap[account].Space == 0 && accountMap[account].Type == 0 {
-		return accountId, errors.New("account not found")
-	}
 	if err != nil {
 		return accountId, err
+	}
+	if accountMap[account].Space == 0 && accountMap[account].Type == 0 {
+		return accountId, errors.New("account not found")
 	}
 	return accountMap[account], nil
 }
@@ -296,14 +298,13 @@ func (q *QuantaGraphene) CreateTransferProposal(dep *coin.Deposit) (string, erro
 	op := types.NewTransferOperation(userIdSender, userIdReceiver, amount, fee)
 
 	fees, err := q.Database.GetRequiredFee([]types.Operation{op}, fee.AssetID.String())
-	fmt.Println("Fees = ", fees)
+	if err != nil {
+		return "", err
+	}
 	if fees == nil {
 		return "", errors.New("cannot calculate the fees")
 	}
-	if err != nil {
-		return "", err
 
-	}
 	op.Fee.Amount = fees[0].Amount
 
 	return q.PrepareTX(op)
@@ -365,6 +366,9 @@ func (q *QuantaGraphene) CreateNewAssetProposal(issuer string, symbol string, pr
 	}
 	w.Fee.AssetID = baseObject
 	fees, err := q.Database.GetRequiredFee([]types.Operation{w}, fee.AssetID.String())
+	if err != nil {
+		return "", err
+	}
 	if fees == nil {
 		return "", errors.New("cannot calculate fees")
 	}
@@ -411,15 +415,15 @@ func (q *QuantaGraphene) CreateIssueAssetProposal(dep *coin.Deposit) (string, er
 
 	w.Fee.AssetID = QDEX
 	fees, err := q.Database.GetRequiredFee([]types.Operation{w}, fee.AssetID.String())
-	if fees == nil {
-		return "", errors.New("cannot calculate fees")
-	}
 	if err != nil {
 		return "", err
 	}
+	if fees == nil {
+		return "", errors.New("cannot calculate fees")
+	}
+
 	w.Fee.Amount = fees[0].Amount
 	return q.PrepareTX(w)
-
 }
 
 func (q *QuantaGraphene) PrepareTX(operations ...types.Operation) (string, error) {
@@ -466,12 +470,13 @@ func (q *QuantaGraphene) LimitOrderCancel(key string, feePayingAccount, order ty
 	}
 
 	fees, err := q.Database.GetRequiredFee([]types.Operation{op}, fee.AssetID.String())
-	if fees == nil {
-		return "", errors.New("cannot calculate fees")
-	}
 	if err != nil {
 		return "", err
 	}
+	if fees == nil {
+		return "", errors.New("cannot calculate fees")
+	}
+
 	op.Fee.Amount = fees[0].Amount
 
 	return q.PrepareTX(op)
@@ -494,11 +499,11 @@ func (q *QuantaGraphene) LimitOrderCreate(key string, seller types.ObjectID, fee
 	}
 
 	fees, err := q.Database.GetRequiredFee([]types.Operation{op}, fee.AssetID.String())
-	if fees == nil {
-		return "", errors.New("cannot calculate fees")
-	}
 	if err != nil {
 		return "", err
+	}
+	if fees == nil {
+		return "", errors.New("cannot calculate fees")
 	}
 	op.Fee.Amount = fees[0].Amount
 
@@ -514,12 +519,13 @@ func (q *QuantaGraphene) DecodeTransaction(base64 string) (*coin.Deposit, error)
 		op := op.(*types.TransferOperation)
 
 		receiver, err := q.Database.GetObjects(op.To)
-		if receiver == nil {
-			return nil, errors.New("error in decoding, receiver not found")
-		}
 		if err != nil {
 			return nil, err
 		}
+		if receiver == nil {
+			return nil, errors.New("error in decoding, receiver not found")
+		}
+
 		to := &Object{}
 		err = json.Unmarshal(receiver[0], &to)
 		if err != nil {
@@ -527,12 +533,13 @@ func (q *QuantaGraphene) DecodeTransaction(base64 string) (*coin.Deposit, error)
 		}
 
 		coinName, err := q.Database.GetObjects(op.Amount.AssetID)
-		if coinName == nil {
-			return nil, errors.New("error in decoding, coinName not found")
-		}
 		if err != nil {
 			return nil, err
 		}
+		if coinName == nil {
+			return nil, errors.New("error in decoding, coinName not found")
+		}
+
 		asset := &Asset{}
 		err = json.Unmarshal(coinName[0], &asset)
 		if err != nil {
@@ -540,12 +547,13 @@ func (q *QuantaGraphene) DecodeTransaction(base64 string) (*coin.Deposit, error)
 		}
 
 		sender, err := q.Database.GetObjects(op.From)
-		if sender == nil {
-			return nil, errors.New("error in decoding, sender not found")
-		}
 		if err != nil {
 			return nil, err
 		}
+		if sender == nil {
+			return nil, errors.New("error in decoding, sender not found")
+		}
+
 		from := &Object{}
 		err = json.Unmarshal(sender[0], &from)
 		if err != nil {
@@ -562,12 +570,13 @@ func (q *QuantaGraphene) DecodeTransaction(base64 string) (*coin.Deposit, error)
 		op := op.(*types.IssueAsset)
 
 		receiver, err := q.Database.GetObjects(op.IssueToAccount)
-		if receiver == nil {
-			return nil, errors.New("error in decoding, receiver not found")
-		}
 		if err != nil {
 			return nil, err
 		}
+		if receiver == nil {
+			return nil, errors.New("error in decoding, receiver not found")
+		}
+
 		to := &Object{}
 		err = json.Unmarshal(receiver[0], &to)
 		if err != nil {
@@ -575,12 +584,13 @@ func (q *QuantaGraphene) DecodeTransaction(base64 string) (*coin.Deposit, error)
 		}
 
 		coinName, err := q.Database.GetObjects(op.AssetToIssue.AssetID)
-		if coinName == nil {
-			return nil, errors.New("error in decoding, coinName not found")
-		}
 		if err != nil {
 			return nil, err
 		}
+		if coinName == nil {
+			return nil, errors.New("error in decoding, coinName not found")
+		}
+
 		asset := &Asset{}
 		err = json.Unmarshal(coinName[0], &asset)
 		if err != nil {
@@ -588,12 +598,13 @@ func (q *QuantaGraphene) DecodeTransaction(base64 string) (*coin.Deposit, error)
 		}
 
 		sender, err := q.Database.GetObjects(op.Issuer)
-		if sender == nil {
-			return nil, errors.New("error in decoding, sender not found")
-		}
 		if err != nil {
 			return nil, err
 		}
+		if sender == nil {
+			return nil, errors.New("error in decoding, sender not found")
+		}
+
 		from := &Object{}
 		err = json.Unmarshal(sender[0], &from)
 		if err != nil {
