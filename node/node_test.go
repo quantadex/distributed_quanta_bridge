@@ -29,7 +29,7 @@ func generateConfig(quanta *test.QuantaNodeSecrets, ethereum *test.EthereumTrust
 		NetworkUrl:         "ws://testnet-01.quantachain.io:8090",
 		ChainId:            "bb2aeb9eebaaa29d79ed81699ee49a912c19c59b9350f8f8d3d81b12fa178495",
 		RegistrarIp:        "localhost",
-		RegistrarPort:      5001,
+		RegistrarPort:      6000,
 		EthereumNetworkId:  etherNet.NetworkId,
 		EthereumBlockStart: 0,
 		EthereumRpc:        etherNet.Rpc,
@@ -130,9 +130,9 @@ func StopNodes(nodes []*TrustNode, indexesToStart []int) {
 	}
 }
 
-func StartRegistry(minNodes int) *service.Server {
+func StartRegistry(minNodes int, url string) *service.Server {
 	logger, _ := logger.NewLogger("registrar")
-	s := service.NewServer(service.NewRegistry(minNodes), "localhost:5001", logger)
+	s := service.NewServer(service.NewRegistry(minNodes), url, logger)
 	s.DoHealthCheck(5)
 	go s.Start()
 	return s
