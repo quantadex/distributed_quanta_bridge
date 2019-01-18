@@ -131,7 +131,12 @@ func NewCoinToQuanta(log logger.Logger,
 			log.Error("Unable to decode quanta tx")
 			return err
 		}
+
 		tx, err := db.GetTransaction(rDb, deposit.Tx)
+		if err != nil {
+			return err
+		}
+
 		if tx != nil {
 			// we're not going to sign again
 			if tx.Signed == false {
@@ -140,7 +145,7 @@ func NewCoinToQuanta(log logger.Logger,
 			log.Error("Unable to verify refund " + tx.Tx)
 		}
 
-		return errors.New("Unable to verify: " + deposit.Tx + " " + err.Error())
+		return errors.New("Unable to verify: " + deposit.Tx)
 	}
 
 	res.cosi.Persist = func(encoded string) error {
