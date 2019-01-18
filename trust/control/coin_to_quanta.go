@@ -315,6 +315,9 @@ func (c *CoinToQuanta) processDeposits() {
 
 		exist, err := c.quantaChannel.AssetExist(c.quantaOptions.Issuer, tx.Coin)
 		if err != nil {
+			if err.Error() == "duplicate asset" {
+				db.ChangeSubmitState(c.rDb, tx.Tx, db.DUPLICATE_ASSET, db.DEPOSIT)
+			}
 			c.logger.Error(err.Error())
 		}
 

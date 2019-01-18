@@ -83,7 +83,7 @@ func (q *QuantaGraphene) AssetExist(issuer string, symbol string) (bool, error) 
 			return true, nil
 		}
 	}
-	return false, nil
+	return false, errors.New("duplicate asset")
 }
 
 func (q *QuantaGraphene) Broadcast(stx string) error {
