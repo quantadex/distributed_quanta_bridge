@@ -15,6 +15,8 @@ import (
 
 type Server struct {
 	url         string
+	publicKey   string
+	listenIp	string
 	handlers    *mux.Router
 	logger      logger.Logger
 	httpService *http.Server
@@ -23,8 +25,8 @@ type Server struct {
 	coinNames    []string
 }
 
-func NewApiServer(coinNames []string, kv kv_store.KVStore, db *db.DB, url string, logger logger.Logger) *Server {
-	return &Server{coinNames: coinNames, url: url, logger: logger, kv: kv, db: db, httpService: &http.Server{Addr: url}}
+func NewApiServer(coinNames []string, publicKey string, listenIp string, kv kv_store.KVStore, db *db.DB, url string, logger logger.Logger) *Server {
+	return &Server{coinNames: coinNames, publicKey: publicKey, listenIp: listenIp, url: url, logger: logger, kv: kv, db: db, httpService: &http.Server{Addr: url}}
 }
 
 func (server *Server) Stop() {
@@ -88,6 +90,8 @@ func (server *Server) statusHandler(w http.ResponseWriter, r *http.Request) {
 	status["VERSION"] = Version
 	status["BUILDTIME"] = BuildStamp
 	status["GITHASH"] = GitHash
+	status["LISTEN_IP"] = server.listenIp
+	status["PUBLIC_KEY"] = server.publicKey
 
 	for _, coinName := range server.coinNames {
 		lastProcessed, valid := control.GetLastBlock(server.kv, coinName)
