@@ -142,7 +142,9 @@ func initNode(config common.Config, targetCoin coin.Coin) (*TrustNode, bool) {
 
 	node.c = targetCoin
 
-	node.coinName = coin.BLOCKCHAIN_ETH
+	//node.coinName = coin.BLOCKCHAIN_ETH
+	node.coinName = config.CoinName
+	fmt.Println("node name in config = ", config.CoinName, node.coinName)
 	err = node.c.Attach()
 	if err != nil {
 		node.log.Error("Failed to attach to coin " + err.Error())
@@ -197,7 +199,7 @@ func initNode(config common.Config, targetCoin coin.Coin) (*TrustNode, bool) {
 	}
 
 	pubKey, _ := node.quantakM.GetPublicKey()
-	node.restApi = NewApiServer([]string{ control.QUANTA, config.CoinName }, pubKey, config.ListenIp, node.db, node.rDb, fmt.Sprintf(":%d", config.ExternalListenPort), node.log)
+	node.restApi = NewApiServer([]string{control.QUANTA, config.CoinName}, pubKey, config.ListenIp, node.db, node.rDb, fmt.Sprintf(":%d", config.ExternalListenPort), node.log)
 
 	return node, true
 }

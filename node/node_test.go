@@ -23,7 +23,7 @@ func generateConfig(quanta *test.QuantaNodeSecrets, ethereum *test.EthereumTrust
 		ListenPort:         5100 + index,
 		UsePrevKeys:        true,
 		KvDbName:           fmt.Sprintf("kv_db_%d", 5100+index),
-		CoinName:           "ETH",
+		CoinName:           "TESTISSUE2",
 		IssuerAddress:      quanta.SourceAccount,
 		NodeKey:            quanta.NodeSecrets[index],
 		NetworkUrl:         "ws://testnet-01.quantachain.io:8090",
