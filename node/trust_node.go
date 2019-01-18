@@ -144,7 +144,6 @@ func initNode(config common.Config, targetCoin coin.Coin) (*TrustNode, bool) {
 
 	//node.coinName = coin.BLOCKCHAIN_ETH
 	node.coinName = config.CoinName
-	fmt.Println("node name in config = ", config.CoinName, node.coinName)
 	err = node.c.Attach()
 	if err != nil {
 		node.log.Error("Failed to attach to coin " + err.Error())
