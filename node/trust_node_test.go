@@ -58,6 +58,8 @@ func TestRopstenNativeETH(t *testing.T) {
 	}
 	fmt.Printf("[BLOCK %d] END\n=======================\n\n", block)
 
+	time.Sleep(time.Second * 5)
+
 	var w *control.DepositResult
 	select {
 	case <-time.After(time.Second * 8):
