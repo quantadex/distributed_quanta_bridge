@@ -22,7 +22,7 @@ import (
  */
 func TestRopstenNativeETH(t *testing.T) {
 	r := StartRegistry(2)
-	nodes := StartNodes(test.GRAPHENE_ISSUER, test.GRAPHENE_TRUST, test.ETHER_NETWORKS[test.LOCAL])
+	nodes := StartNodes(test.GRAPHENE_ISSUER, test.GRAPHENE_TRUST, test.ETHER_NETWORKS[test.ROPSTEN])
 	time.Sleep(time.Millisecond * 250)
 
 	depositResult := make(chan control.DepositResult)
@@ -34,7 +34,7 @@ func TestRopstenNativeETH(t *testing.T) {
 	// DEPOSIT to TEST2
 	// 0xba7573C0e805ef71ACB7f1c4a55E7b0af416E96A transfers 0.01 ETH to forward address: 0xb59e4b94e4ed7331ee0520e9377967614ca2dc98 on block 4327101
 	// Foward contract 0xb59e4b94e4ed7331ee0520e9377967614ca2dc98 created on 4327057
-	block := int64(27555)
+	block := int64(4833984)
 	fmt.Printf("=======================\n[BLOCK %d] BEGIN\n\n", block)
 	for i, node := range nodes {
 		fmt.Printf("[BLOCK %d] Node[#%d/%d id=%d] calling doLoop...\n", block, i+1, len(nodes), node.nodeID)
@@ -46,7 +46,7 @@ func TestRopstenNativeETH(t *testing.T) {
 	fmt.Printf("[BLOCK %d] END\n=======================\n\n", block)
 
 	// Check for the deposit
-	block = int64(27612)
+	block = int64(4835122)
 	fmt.Printf("=======================\n[BLOCK %d] BEGIN\n\n", block)
 	for i, node := range nodes {
 		fmt.Printf("[BLOCK %d] Node[#%d/%d id=%d] calling doLoop...\n", block, i+1, len(nodes), node.nodeID)
@@ -89,19 +89,19 @@ func TestRopstenNativeETH(t *testing.T) {
 func TestRopstenERC20Token(t *testing.T) {
 	r := StartRegistry(2)
 	//ercContract := "0x541d973a7168dbbf413eab6993a5e504ec5accb0"
-	nodes := StartNodes(test.GRAPHENE_ISSUER, test.GRAPHENE_TRUST, test.ETHER_NETWORKS[test.LOCAL])
-	initialBalance, err := nodes[0].q.GetBalance("SIMPLETOKEN0X2BA10A77D89D42A92497FF545434625EC5535494", "pooja")
+	nodes := StartNodes(test.GRAPHENE_ISSUER, test.GRAPHENE_TRUST, test.ETHER_NETWORKS[test.ROPSTEN])
+	initialBalance, err := nodes[0].q.GetBalance("SIMPLETOKEN0XDFE1002C2E1AE5E8F4F34BF481900DAAE5351992", "pooja")
 	assert.NoError(t, err)
 
-	fmt.Printf("[ASSET %s] [ACCOUNT %s] initial_balance = %.9f\n", "SIMPLETOKEN0X2BA10A77D89D42A92497FF545434625EC5535494", "pooja", initialBalance)
+	fmt.Printf("[ASSET %s] [ACCOUNT %s] initial_balance = %.9f\n", "SIMPLETOKEN0XDFE1002C2E1AE5E8F4F34BF481900DAAE5351992", "pooja", initialBalance)
 
 	time.Sleep(time.Millisecond * 250)
-	DoLoopDeposit(nodes, []int64{27555}) // forward address
-	DoLoopDeposit(nodes, []int64{27907}) // we make deposit
-	DoLoopDeposit(nodes, []int64{27908}) // no-op
+	DoLoopDeposit(nodes, []int64{4833984}) // forward address
+	DoLoopDeposit(nodes, []int64{4840525}) // we make deposit
+	DoLoopDeposit(nodes, []int64{4840526}) // no-op
 
 	time.Sleep(time.Second * 6)
-	newBalance, err := nodes[0].q.GetBalance("SIMPLETOKEN0X2BA10A77D89D42A92497FF545434625EC5535494", "pooja")
+	newBalance, err := nodes[0].q.GetBalance("SIMPLETOKEN0XDFE1002C2E1AE5E8F4F34BF481900DAAE5351992", "pooja")
 	assert.NoError(t, err)
 	//assert.Equal(t, initialBalance+float64(0.1), newBalance)
 	fmt.Printf("Initial balance=%f , expecting final balance = %f\n", initialBalance, newBalance)
@@ -239,7 +239,7 @@ func TestRopstenERC20Token(t *testing.T) {
 //}
 
 func TestWithdrawal(t *testing.T) {
-	ethereumClient, err := ethclient.Dial(test.ETHER_NETWORKS[test.LOCAL].Rpc)
+	ethereumClient, err := ethclient.Dial(test.ETHER_NETWORKS[test.ROPSTEN].Rpc)
 	assert.Nil(t, err)
 
 	trustAddress := common.HexToAddress(test.GRAPHENE_TRUST.TrustContract)
@@ -260,7 +260,7 @@ func TestWithdrawal(t *testing.T) {
 		withdrawResult <- c
 	}
 
-	cursor := int64(2349772)
+	cursor := int64(2499302)
 	fmt.Printf("=======================\n[CURSOR %d] BEGIN\n\n", cursor)
 	for i, node := range nodes {
 		refunds, err := node.qTC.DoLoop(cursor)

@@ -47,11 +47,11 @@ var ROPSTEN_TRUST = &EthereumTrustSecrets{
 var GRAPHENE_TRUST = &EthereumTrustSecrets{
 	NodeSecrets: []string{
 		// 0xba420ef5d725361d8fdc58cb1e4fa62eda9ec990
-		"c87509a1c067bbde78beb793e6fa76530b6382a4c0241e5e4a9ec0a0f44dc0d3",
+		"84d6b0af365017053af910682ebfccc36c34a1d5fff749471f1b532f86e144dd",
 		// 0xe0006458963c3773b051e767c5c63fee24cd7ff9
-		"ae6ae8e5ccbfb04590405997ee2d52d2b330726137b875053c36d94e974d162f",
+		"5bebda860b34d4693f25af2da82332b2c89268e28566a9e0612c496002740d0c",
 	},
-	TrustContract: "0x01eaf1ccd7503a819bd9df5878223f5e9773c119",
+	TrustContract: "0xBD770336fF47A3B61D4f54cc0Fb541Ea7baAE92d",
 }
 
 const ROPSTEN = "ROPSTEN"
