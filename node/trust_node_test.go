@@ -21,7 +21,7 @@ import (
  * DATA DEPENDENT on ROPSTEN
  */
 func TestRopstenNativeETH(t *testing.T) {
-	r := StartRegistry(2)
+	r := StartRegistry(2, ":6000")
 	nodes := StartNodes(test.GRAPHENE_ISSUER, test.GRAPHENE_TRUST, test.ETHER_NETWORKS[test.ROPSTEN])
 	time.Sleep(time.Millisecond * 250)
 
@@ -87,7 +87,7 @@ func TestRopstenNativeETH(t *testing.T) {
 // Block 4356004 ERC-20 0x541d973a7168dbbf413eab6993a5e504ec5accb0
 // Block 4356013 sent .0001234  precision 9  tx=https://ropsten.etherscan.io/tx/0x51a1018c6b2afd7bffb52d05178c3b66c9336e8c2dfeca0110f405cc41613492
 func TestRopstenERC20Token(t *testing.T) {
-	r := StartRegistry(2)
+	r := StartRegistry(2, ":6000")
 	//ercContract := "0x541d973a7168dbbf413eab6993a5e504ec5accb0"
 	nodes := StartNodes(test.GRAPHENE_ISSUER, test.GRAPHENE_TRUST, test.ETHER_NETWORKS[test.ROPSTEN])
 	initialBalance, err := nodes[0].q.GetBalance("SIMPLETOKEN0XDFE1002C2E1AE5E8F4F34BF481900DAAE5351992", "pooja")
@@ -246,7 +246,7 @@ func TestWithdrawal(t *testing.T) {
 	contract, err := contracts.NewTrustContract(trustAddress, ethereumClient)
 	assert.NoError(t, err)
 
-	r := StartRegistry(2)
+	r := StartRegistry(2, ":6000")
 
 	txId, err := contract.TxIdLast(nil)
 	assert.NoError(t, err)

@@ -196,7 +196,8 @@ func initNode(config common.Config, targetCoin coin.Coin) (*TrustNode, bool) {
 		return nil, false
 	}
 
-	node.restApi = NewApiServer(node.db, node.rDb, fmt.Sprintf(":%d", config.ExternalListenPort), node.log)
+	pubKey, _ := node.quantakM.GetPublicKey()
+	node.restApi = NewApiServer([]string{ control.QUANTA, config.CoinName }, pubKey, config.ListenIp, node.db, node.rDb, fmt.Sprintf(":%d", config.ExternalListenPort), node.log)
 
 	return node, true
 }

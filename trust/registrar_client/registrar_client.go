@@ -49,8 +49,8 @@ func (r *RegistrarClient) RegisterNode(nodeIP string, nodePort string, km key_ma
 		if err != nil {
 			return errors.New("unable to marshall")
 		}
-		http.Post(r.url+"/registry/api/register", "application/json", bytes.NewReader(data))
-		return nil
+		_, err = http.Post(r.url+"/registry/api/register", "application/json", bytes.NewReader(data))
+		return err
 	}
 	return errors.New("unable to sign message")
 }
