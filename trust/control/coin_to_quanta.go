@@ -322,6 +322,7 @@ func (c *CoinToQuanta) processDeposits() {
 		if err != nil {
 			if err.Error() == "issuer do not match" {
 				db.ChangeSubmitState(c.rDb, tx.Tx, db.DUPLICATE_ASSET, db.DEPOSIT)
+				return
 			}
 			c.logger.Error(err.Error())
 		}
