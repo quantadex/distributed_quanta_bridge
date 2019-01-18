@@ -196,7 +196,7 @@ func initNode(config common.Config, targetCoin coin.Coin) (*TrustNode, bool) {
 		return nil, false
 	}
 
-	node.restApi = NewApiServer(node.db, node.rDb, fmt.Sprintf(":%d", config.ExternalListenPort), node.log)
+	node.restApi = NewApiServer([]string{ control.QUANTA, config.CoinName } , node.db, node.rDb, fmt.Sprintf(":%d", config.ExternalListenPort), node.log)
 
 	return node, true
 }
