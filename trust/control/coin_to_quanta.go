@@ -265,7 +265,7 @@ func (c *CoinToQuanta) GetNewCoinBlockIDs() []int64 {
  */
 
 func (c *CoinToQuanta) getDepositsInBlock(blockID int64) ([]*coin.Deposit, error) {
-	watchAddresses := db.GetCrosschainByBlockchain(c.rDb, c.coinName)
+	watchAddresses := db.GetCrosschainByBlockchain(c.rDb, coin.BLOCKCHAIN_ETH)
 	watchMap := make(map[string]string)
 
 	for _, w := range watchAddresses {
