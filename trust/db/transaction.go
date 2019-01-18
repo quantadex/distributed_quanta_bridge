@@ -32,6 +32,7 @@ const SUBMIT_RECOVERABLE = "recoverable"
 const SUBMIT_FATAL = "fatal"
 const SUBMIT_SUCCESS = "success"
 const ENCODE_FAILURE = "encode_fatal"
+const DUPLICATE_ASSET = "duplicate_asset"
 
 type Transaction struct {
 	Type                string `sql:"unique:type_tx"`

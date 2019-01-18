@@ -320,6 +320,9 @@ func (c *CoinToQuanta) processDeposits() {
 		//if not, then propose new asset
 		exist, err := c.quantaChannel.AssetExist(c.quantaOptions.Issuer, tx.Coin)
 		if err != nil {
+			if err.Error() == "issuer do not match" {
+				db.ChangeSubmitState(c.rDb, tx.Tx, db.DUPLICATE_ASSET, db.DEPOSIT)
+			}
 			c.logger.Error(err.Error())
 		}
 
