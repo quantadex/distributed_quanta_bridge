@@ -399,7 +399,7 @@ func (c *CoinToQuanta) StartConsensus(tx *coin.Deposit, consensus ConsensusType)
 	txResult := HEX_NULL
 	errResult := error(nil)
 
-	c.logger.Infof("Start new round %s %s to=%s amount=%d", tx.Tx, tx.CoinName, tx.QuantaAddr, tx.Amount)
+	c.logger.Infof("Start new round %s %s to=%s amount=%d type =%d", tx.Tx, tx.CoinName, tx.QuantaAddr, tx.Amount, consensus)
 	var encoded string
 	var err error
 
