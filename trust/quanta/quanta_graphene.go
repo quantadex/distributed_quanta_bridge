@@ -282,8 +282,13 @@ func (q *QuantaGraphene) CreateTransferProposal(dep *coin.Deposit) (string, erro
 	amount.Amount = uint64(dep.Amount)
 	amount.AssetID = id.ID
 
+	var QDEX types.ObjectID
+	QDEX.Space = 1
+	QDEX.Type = 3
+	QDEX.ID = 0
+
 	fee.Amount = 0
-	fee.AssetID = id.ID
+	fee.AssetID = QDEX
 
 	userIdSender, err := q.LookupAccount(q.QuantaClientOptions.Issuer)
 	if err != nil {
