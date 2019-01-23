@@ -437,7 +437,7 @@ func (q *QuantaGraphene) PrepareTX(operations ...types.Operation) (string, error
 		return "", err
 	}
 
-	block, err := q.Database.GetBlock(props.LastIrreversibleBlockNum)
+	block, err := q.Database.GetBlock(props.HeadBlockNumber)
 	if err != nil {
 		return "", err
 	}
@@ -449,7 +449,7 @@ func (q *QuantaGraphene) PrepareTX(operations ...types.Operation) (string, error
 
 	expiration := props.Time.Add(10 * time.Minute)
 	stx := sign.NewSignedTransaction(&types.Transaction{
-		RefBlockNum:    sign.RefBlockNum(props.LastIrreversibleBlockNum - 1&0xffff),
+		RefBlockNum:    sign.RefBlockNum(props.HeadBlockNumber - 1&0xffff),
 		RefBlockPrefix: refBlockPrefix,
 		Expiration:     types.Time{Time: &expiration},
 	})
