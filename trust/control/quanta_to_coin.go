@@ -357,12 +357,12 @@ func (c *QuantaToCoin) DoLoop(cursor int64) ([]quanta.Refund, error) {
 				Amount:     int64(refund.Amount),
 				BlockID:    int64(refund.LedgerID),
 			}
+			err = db.ChangeSubmitState(c.rDb, dep.Tx, db.BAD_ADDRESS, db.WITHDRAWAL)
 			// mark as a bounced transaction
 			err := db.ConfirmDeposit(c.rDb, dep, true)
 			if err != nil {
 				c.logger.Error("Cannot insert into db:" + err.Error())
 			} else if c.nodeID == 0 {
-				err = db.ChangeSubmitState(c.rDb, dep.Tx, db.BAD_ADDRESS, db.WITHDRAWAL)
 				err = db.ChangeSubmitState(c.rDb, dep.Tx, db.SUBMIT_CONSENSUS, db.DEPOSIT)
 				if err != nil {
 					c.logger.Error("Cannot change submit state:" + err.Error())
