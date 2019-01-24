@@ -19,6 +19,7 @@ import (
 	"github.com/scorum/bitshares-go/apis/database"
 	"github.com/scorum/bitshares-go/types"
 	"math/big"
+	"strconv"
 	"strings"
 	"time"
 )
@@ -276,8 +277,8 @@ func (c *CoinToQuanta) getDepositsInBlock(blockID int64) ([]*coin.Deposit, error
 	for _, w := range watchAddresses {
 		watchMap[strings.ToLower(w.Address)] = w.QuantaAddr
 	}
-	deposits, err := c.coinChannel.GetDepositsInBlock(blockID, watchMap)
 
+	deposits, err := c.coinChannel.GetDepositsInBlock(blockID, watchMap)
 	if err != nil {
 		c.logger.Info("getDepositsInBlock failed " + err.Error())
 		return nil, err
@@ -364,7 +365,7 @@ func (c *CoinToQuanta) processSubmissions() {
 
 		c.logger.Infof("Submit TX: %s signed=%v %v", v.Tx, v.Signed, v.SubmitTx)
 
-		err := c.quantaChannel.Broadcast(v.SubmitTx)
+		resp, err := c.quantaChannel.Broadcast(v.SubmitTx)
 		if err != nil {
 			msg := quanta.ErrorString(err, false)
 			c.logger.Error("could not submit transaction " + msg)
@@ -373,7 +374,10 @@ func (c *CoinToQuanta) processSubmissions() {
 			}
 		} else {
 			c.logger.Infof("Successful tx submission %s,remove %s", "", k)
-			err = db.ChangeSubmitState(c.rDb, v.Tx, db.SUBMIT_SUCCESS, db.DEPOSIT)
+
+			txHash := strconv.Itoa(int(resp.BlockNum)) + "_" + strconv.Itoa(int(resp.TrxNum))
+			err = db.ChangeDepositSubmitState(c.rDb, v.Tx, db.SUBMIT_SUCCESS, int(resp.BlockNum), txHash)
+			//err = db.ChangeSubmitState(c.rDb, v.Tx, db.SUBMIT_SUCCESS, db.DEPOSIT)
 			if err != nil {
 				c.logger.Error("Error removing key=" + v.Tx)
 			}
@@ -405,7 +409,7 @@ func (c *CoinToQuanta) StartConsensus(tx *coin.Deposit, consensus ConsensusType)
 	txResult := HEX_NULL
 	errResult := error(nil)
 
-	c.logger.Infof("Start new round %s %s to=%s amount=%d", tx.Tx, tx.CoinName, tx.QuantaAddr, tx.Amount)
+	c.logger.Infof("Start new round %s %s to=%s amount=%d type =%d", tx.Tx, tx.CoinName, tx.QuantaAddr, tx.Amount, consensus)
 	var encoded string
 	var err error
 
@@ -449,7 +453,7 @@ func (c *CoinToQuanta) StartConsensus(tx *coin.Deposit, consensus ConsensusType)
 		txe, err := quanta.ProcessGrapheneTransaction(encoded, tx.Signatures)
 
 		if consensus == NEWASSET_CONSENSUS {
-			err = c.quantaChannel.Broadcast(txe)
+			_, err = c.quantaChannel.Broadcast(txe)
 			if err != nil {
 				return HEX_NULL, err
 			}

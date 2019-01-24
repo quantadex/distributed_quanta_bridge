@@ -12,6 +12,7 @@ import (
 	"github.com/quantadex/distributed_quanta_bridge/trust/coin"
 	"github.com/quantadex/distributed_quanta_bridge/trust/db"
 	"github.com/scorum/bitshares-go/apis/database"
+	"github.com/scorum/bitshares-go/apis/networkbroadcast"
 	"github.com/stellar/go/amount"
 	"github.com/stellar/go/build"
 	"github.com/stellar/go/clients/horizon"
@@ -80,10 +81,9 @@ type Balance struct {
 	AssetIssuer string `json:"asset_issuer"`
 }
 
-func (q *QuantaClient) Broadcast(stx string) error {
+func (q *QuantaClient) Broadcast(stx string) (*networkbroadcast.BroadcastResponse, error) {
 	// broadcast here
-	var err error
-	return err
+	panic("Not implemented")
 }
 
 func (q *QuantaClient) AccountExist(quantaAddr string) bool {
@@ -91,6 +91,10 @@ func (q *QuantaClient) AccountExist(quantaAddr string) bool {
 }
 
 func (q *QuantaClient) AssetExist(issuer string, symbol string) (bool, error) {
+	panic("Not implemented")
+}
+
+func (q *QuantaClient) GetIssuer() string {
 	panic("Not implemented")
 }
 

@@ -188,6 +188,12 @@ func (l *Listener) GetNativeDeposits(blockNumber int64, toAddress map[string]str
 		}
 
 		if quantaAddr, ok := toAddress[strings.ToLower(tx.To().Hex())]; ok {
+			receipt, err := l.Client.TransactionReceipt(context.Background(), tx.Hash())
+			if err != nil {
+				println("Cannot get Receipt ", err.Error())
+			} else if receipt.Status == types.ReceiptStatusFailed {
+				continue
+			}
 			if tx.Value().Cmp(big.NewInt(0)) != 0 {
 				events = append(events, &Deposit{
 					QuantaAddr: quantaAddr,
@@ -281,7 +287,6 @@ func (l *Listener) FilterTransferEvent(blockNumber int64, toAddress map[string]s
 					Amount:     Erc20AmountToGraphene(*transferEvent.Tokens, dec),
 					Tx:         vLog.TxHash.Hex(),
 				})
-				fmt.Println("erc20 amount = ", events[0].Amount)
 			}
 
 		}

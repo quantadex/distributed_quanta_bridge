@@ -33,6 +33,7 @@ const SUBMIT_FATAL = "fatal"
 const SUBMIT_SUCCESS = "success"
 const ENCODE_FAILURE = "encode_fatal"
 const DUPLICATE_ASSET = "duplicate_asset"
+const BAD_ADDRESS = "bad_address"
 
 type Transaction struct {
 	Type                string `sql:"unique:type_tx"`
@@ -51,6 +52,7 @@ type Transaction struct {
 	SubmitSigners       string
 	SubmitConfirm_block int
 	SubmitDate          time.Time
+	SubmitTxHash        string
 }
 
 func QueryAllTX(db *DB) ([]Transaction, error) {
@@ -97,6 +99,26 @@ func ChangeSubmitState(db *DB, id string, state string, typeStr string) error {
 	tx.SubmitDate = time.Now()
 	tx.SubmitState = state
 	_, err := db.Model(tx).Column("submit_state", "submit_date").Where("Tx=? and Type=?", id, typeStr).Returning("*").Update()
+	return err
+}
+
+func ChangeDepositSubmitState(db *DB, id string, state string, blocknumber int, txhash string) error {
+	tx := &Transaction{Tx: id}
+	tx.SubmitDate = time.Now()
+	tx.SubmitState = state
+	tx.SubmitConfirm_block = blocknumber
+	tx.SubmitTxHash = txhash
+	_, err := db.Model(tx).Column("submit_state", "submit_date").Where("Tx=? and Type=?", id, DEPOSIT).Returning("*").Update()
+	return err
+}
+
+func ChangeWithdrawalSubmitState(db *DB, id string, state string, txid uint64, txhash string) error {
+	tx := &Transaction{Tx: id}
+	tx.SubmitDate = time.Now()
+	tx.SubmitState = state
+	tx.TxId = txid
+	tx.SubmitTxHash = txhash
+	_, err := db.Model(tx).Column("submit_state", "submit_date").Where("Tx=? and Type=?", id, WITHDRAWAL).Returning("*").Update()
 	return err
 }
 
