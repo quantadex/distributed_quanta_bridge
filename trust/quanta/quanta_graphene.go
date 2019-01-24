@@ -86,14 +86,14 @@ func (q *QuantaGraphene) AssetExist(issuer string, symbol string) (bool, error) 
 	return false, errors.New("issuer do not match")
 }
 
-func (q *QuantaGraphene) Broadcast(stx string) error {
+func (q *QuantaGraphene) Broadcast(stx string) (*networkbroadcast.BroadcastResponse, error) {
 	// broadcast here
 	var err error
 	var tx sign.SignedTransaction
 	json.Unmarshal([]byte(stx), &tx)
 
-	_, err = q.NetworkBroadcast.BroadcastTransactionSynchronous(tx.Transaction)
-	return err
+	resp, err := q.NetworkBroadcast.BroadcastTransactionSynchronous(tx.Transaction)
+	return resp, err
 }
 
 func (q *QuantaGraphene) AttachQueue(kv kv_store.KVStore) error {

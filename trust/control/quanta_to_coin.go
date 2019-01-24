@@ -287,7 +287,8 @@ func (c *QuantaToCoin) StartConsensus(w *coin.Withdrawal) (string, error) {
 				db.ChangeSubmitState(c.rDb, w.Tx, db.SUBMIT_RECOVERABLE, db.WITHDRAWAL)
 			}
 		} else {
-			db.ChangeSubmitState(c.rDb, w.Tx, db.SUBMIT_SUCCESS, db.WITHDRAWAL)
+			db.ChangeWithdrawalSubmitState(c.rDb, w.Tx, db.SUBMIT_SUCCESS, w.TxId, tx)
+			//db.ChangeSubmitState(c.rDb, w.Tx, db.SUBMIT_SUCCESS, db.WITHDRAWAL)
 			c.logger.Infof("Submitted withdrawal in tx=%s SUCCESS", tx)
 		}
 
