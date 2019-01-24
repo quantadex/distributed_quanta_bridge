@@ -246,6 +246,10 @@ func (q *QuantaGraphene) GetAsset(assetName string) (*database.Asset, error) {
 	return asset[0], nil
 }
 
+func (q *QuantaGraphene) GetIssuer() string {
+	return q.QuantaClientOptions.Issuer
+}
+
 func (q *QuantaGraphene) AccountExist(quantaAddr string) bool {
 	accountMap, err := q.Database.LookupAccounts(quantaAddr, 1)
 	if err != nil {
@@ -378,7 +382,6 @@ func (q *QuantaGraphene) CreateNewAssetProposal(issuer string, symbol string, pr
 		return "", errors.New("cannot calculate fees")
 	}
 	w.Fee.Amount = fees[0].Amount
-
 	return q.PrepareTX(w)
 }
 
@@ -462,7 +465,6 @@ func (q *QuantaGraphene) PrepareTX(operations ...types.Operation) (string, error
 	if err != nil {
 		return "", err
 	}
-
 	return string(data), err
 }
 
@@ -517,7 +519,10 @@ func (q *QuantaGraphene) LimitOrderCreate(key string, seller types.ObjectID, fee
 
 func (q *QuantaGraphene) DecodeTransaction(base64 string) (*coin.Deposit, error) {
 	var tx sign.SignedTransaction
-	json.Unmarshal([]byte(base64), &tx)
+	err := json.Unmarshal([]byte(base64), &tx)
+	if err != nil {
+		return nil, err
+	}
 
 	op := tx.Operations[0]
 	if op.Type() == types.TransferOpType {
@@ -615,7 +620,6 @@ func (q *QuantaGraphene) DecodeTransaction(base64 string) (*coin.Deposit, error)
 		if err != nil {
 			return nil, err
 		}
-
 		return &coin.Deposit{CoinName: asset.Symbol,
 			QuantaAddr: to.Name,
 			Amount:     int64(op.AssetToIssue.Amount),
@@ -624,26 +628,33 @@ func (q *QuantaGraphene) DecodeTransaction(base64 string) (*coin.Deposit, error)
 		}, nil
 	} else if op.Type() == types.CreateAssetOpType {
 		op := op.(*types.CreateAsset)
-
 		return &coin.Deposit{CoinName: op.Symbol,
 			Type: types.CreateAssetOpType,
 		}, nil
 
 	}
+
 	return nil, nil
 }
 
 func ProcessGrapheneTransaction(proposed string, sigs []string) (string, error) {
 	var tx sign.SignedTransaction
-	json.Unmarshal([]byte(proposed), &tx)
-
+	err := json.Unmarshal([]byte(proposed), &tx)
+	if err != nil {
+		return "", err
+	}
 	tx.Transaction.Signatures = sigs
 	signed, err := json.Marshal(tx)
+	if err != nil {
+		return "", err
+	}
 	return string(signed), err
 }
 
 func (q *QuantaGraphene) ProcessDeposit(deposit *coin.Deposit, proposed string) error {
 	txe, err := ProcessGrapheneTransaction(proposed, deposit.Signatures)
-	println(txe, err)
+	if err != nil {
+		return err
+	}
 	return db.ChangeSubmitQueue(q.Db, deposit.Tx, txe, db.DEPOSIT)
 }

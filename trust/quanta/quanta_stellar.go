@@ -82,8 +82,7 @@ type Balance struct {
 
 func (q *QuantaClient) Broadcast(stx string) error {
 	// broadcast here
-	var err error
-	return err
+	panic("Not implemented")
 }
 
 func (q *QuantaClient) AccountExist(quantaAddr string) bool {
@@ -91,6 +90,10 @@ func (q *QuantaClient) AccountExist(quantaAddr string) bool {
 }
 
 func (q *QuantaClient) AssetExist(issuer string, symbol string) (bool, error) {
+	panic("Not implemented")
+}
+
+func (q *QuantaClient) GetIssuer() string {
 	panic("Not implemented")
 }
 

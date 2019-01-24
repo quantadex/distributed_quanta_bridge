@@ -78,6 +78,7 @@ type Quanta interface {
 	AssetExist(issuer string, symbol string) (bool, error)
 	AccountExist(quantaAddr string) bool
 	GetAsset(assetName string) (*database.Asset, error)
+	GetIssuer() string
 }
 
 func NewQuanta(options QuantaClientOptions) (Quanta, error) {
