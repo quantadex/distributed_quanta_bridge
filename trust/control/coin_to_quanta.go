@@ -368,12 +368,8 @@ func (c *CoinToQuanta) processSubmissions() {
 			}
 		} else {
 			c.logger.Infof("Successful tx submission %s,remove %s", "", k)
-			var txHash string
-			if v.IsBounced == true {
-				txHash = v.Tx
-			} else {
-				txHash = strconv.Itoa(int(resp.BlockNum)) + "_" + strconv.Itoa(14)
-			}
+
+			txHash := strconv.Itoa(int(resp.BlockNum)) + "_" + strconv.Itoa(int(resp.TrxNum))
 			err = db.ChangeDepositSubmitState(c.rDb, v.Tx, db.SUBMIT_SUCCESS, int(resp.BlockNum), txHash)
 			//err = db.ChangeSubmitState(c.rDb, v.Tx, db.SUBMIT_SUCCESS, db.DEPOSIT)
 			if err != nil {
