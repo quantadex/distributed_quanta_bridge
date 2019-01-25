@@ -108,7 +108,7 @@ func ChangeDepositSubmitState(db *DB, id string, state string, blocknumber int, 
 	tx.SubmitState = state
 	tx.SubmitConfirm_block = blocknumber
 	tx.SubmitTxHash = txhash
-	_, err := db.Model(tx).Column("submit_state", "submit_date").Where("Tx=? and Type=?", id, DEPOSIT).Returning("*").Update()
+	_, err := db.Model(tx).Column("submit_state", "submit_date", "submit_confirm_block", "submit_tx_hash").Where("Tx=? and Type=?", id, DEPOSIT).Returning("*").Update()
 	return err
 }
 
@@ -118,7 +118,7 @@ func ChangeWithdrawalSubmitState(db *DB, id string, state string, txid uint64, t
 	tx.SubmitState = state
 	tx.TxId = txid
 	tx.SubmitTxHash = txhash
-	_, err := db.Model(tx).Column("submit_state", "submit_date").Where("Tx=? and Type=?", id, WITHDRAWAL).Returning("*").Update()
+	_, err := db.Model(tx).Column("submit_state", "submit_date", "tx_id", "submit_tx_hash").Where("Tx=? and Type=?", id, WITHDRAWAL).Returning("*").Update()
 	return err
 }
 
