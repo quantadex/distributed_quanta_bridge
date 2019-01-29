@@ -34,6 +34,7 @@ const SUBMIT_SUCCESS = "success"
 const ENCODE_FAILURE = "encode_fatal"
 const DUPLICATE_ASSET = "duplicate_asset"
 const BAD_ADDRESS = "bad_address"
+const SUBMIT_FAILURE = "submit_failure"
 
 type Transaction struct {
 	Type                string `sql:"unique:type_tx"`

@@ -285,6 +285,8 @@ func (c *QuantaToCoin) StartConsensus(w *coin.Withdrawal) (string, error) {
 				db.ChangeSubmitState(c.rDb, w.Tx, db.SUBMIT_RECOVERABLE, db.WITHDRAWAL)
 			} else if strings.Contains(err.Error(), "insufficient funds for gas * price + value") {
 				db.ChangeSubmitState(c.rDb, w.Tx, db.SUBMIT_RECOVERABLE, db.WITHDRAWAL)
+			} else if strings.Contains(err.Error(), "transaction failed") || strings.Contains(err.Error(), "could not find receipt") {
+				db.ChangeSubmitState(c.rDb, w.Tx, db.SUBMIT_FAILURE, db.WITHDRAWAL)
 			}
 		} else {
 			db.ChangeWithdrawalSubmitState(c.rDb, w.Tx, db.SUBMIT_SUCCESS, w.TxId, tx)

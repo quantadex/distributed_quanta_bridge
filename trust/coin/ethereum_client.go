@@ -415,6 +415,16 @@ func (l *Listener) SendWithdrawal(conn bind.ContractBackend,
 		return "", err
 	}
 
+	var receipt *types.Receipt
+	for receipt == nil {
+		receipt, err = l.Client.TransactionReceipt(context.Background(), tx.Hash())
+	}
+	if err != nil {
+		return tx.Hash().Hex(), errors.New("could not find receipt")
+	}
+	if receipt.Status == types.ReceiptStatusFailed {
+		return tx.Hash().Hex(), errors.New("transaction failed")
+	}
 	return tx.Hash().Hex(), nil
 }
 
