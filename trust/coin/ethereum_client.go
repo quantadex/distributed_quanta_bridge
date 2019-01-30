@@ -416,12 +416,16 @@ func (l *Listener) SendWithdrawal(conn bind.ContractBackend,
 	}
 
 	var receipt *types.Receipt
+	timeBefore := time.Now()
 	for receipt == nil {
 		receipt, err = l.Client.TransactionReceipt(context.Background(), tx.Hash())
 	}
 	if err != nil {
 		return tx.Hash().Hex(), errors.New("could not find receipt")
 	}
+	timeTaken := time.Since(timeBefore)
+	fmt.Printf("Successfully submitted transaction %s, receipt status = %d, took %s sec", tx.Hash().Hex(), receipt.Status, timeTaken.String())
+	fmt.Println()
 	if receipt.Status == types.ReceiptStatusFailed {
 		return tx.Hash().Hex(), errors.New("transaction failed")
 	}
