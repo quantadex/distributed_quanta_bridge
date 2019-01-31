@@ -2,6 +2,9 @@
 
 ## For linux
 
+sudo apt-add-repository ppa:bitcoin/bitcoin
+sudo apt-get install bitcoin-qt bitcoind
+
 mkdir ~/.bitcoin
 cp data/bitcoin.conf ~/.bitcoin
 
