@@ -205,10 +205,17 @@ var cmd *exec.Cmd
 func setupEthereum() {
 	fmt.Println("Spinning up GETH")
 	cmd = exec.Command("./run_ethereum.sh")
-	cmd.Start()
+	err := cmd.Start()
+	if err != nil {
+		fmt.Println("trouble with spinning up geth", err.Error())
+		cmd = nil
+	}
 }
 
 func teardownEthereum() {
+	if cmd == nil {
+		return
+	}
 	if err := cmd.Process.Kill(); err != nil {
 		fmt.Printf("failed to kill process: %v", err)
 	}

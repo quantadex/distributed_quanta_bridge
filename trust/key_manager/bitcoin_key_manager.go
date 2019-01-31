@@ -5,6 +5,11 @@ import (
 	"github.com/btcsuite/btcutil"
 	"github.com/btcsuite/btcd/rpcclient"
 	"github.com/btcsuite/btcd/chaincfg"
+	"encoding/hex"
+	"github.com/btcsuite/btcd/wire"
+	"bytes"
+	"encoding/json"
+	"github.com/quantadex/distributed_quanta_bridge/common"
 )
 
 type BitcoinKeyManager struct {
@@ -18,7 +23,20 @@ func (b *BitcoinKeyManager) CreateNodeKeys() error {
 }
 
 func (b *BitcoinKeyManager) LoadNodeKeys(privKey string) error {
-	panic("implement me")
+	var err error
+	b.client, err = rpcclient.New(&rpcclient.ConnConfig{ Host: "localhost:18332",
+		User: "user",
+		Pass: "123",
+		DisableTLS: true,
+		HTTPPostMode: true,
+	}, nil)
+
+	if err != nil {
+		return err
+	}
+
+	b.privateKey, err = btcutil.DecodeWIF(privKey)
+	return err
 }
 
 func (b *BitcoinKeyManager) GetPublicKey() (string, error) {
@@ -34,21 +52,54 @@ func (b *BitcoinKeyManager) GetPrivateKey() (*ecdsa.PrivateKey) {
 }
 
 func (b *BitcoinKeyManager) SignMessage(original []byte) ([]byte, error) {
-
+	panic("not required")
 }
 
 func (b *BitcoinKeyManager) SignMessageObj(original interface{}) (*string) {
-	panic("implement me")
+	panic("not required")
 }
 
 func (b *BitcoinKeyManager) VerifySignatureObj(original interface{}, key string) bool {
 	panic("implement me")
 }
 
+
 func (b *BitcoinKeyManager) SignTransaction(encoded string) (string, error) {
-	panic("implement me")
+	var res common.TransactionBitcoin
+
+	err := json.Unmarshal([]byte(encoded), &res)
+	if err != nil {
+		return "", err
+	}
+
+	dataBytes, err := hex.DecodeString(res.Tx)
+	if err != nil {
+		return "", err
+	}
+	tx := wire.NewMsgTx(wire.TxVersion)
+	err = tx.Deserialize(bytes.NewBuffer(dataBytes))
+
+	if err != nil {
+		return "", err
+	}
+
+	txSigned, _, err := b.client.SignRawTransaction3(tx, res.RawInput, []string{b.privateKey.String()})
+	if err != nil {
+		return "", err
+	}
+
+	var buf bytes.Buffer
+	err = txSigned.Serialize(&buf)
+
+	if err != nil {
+		return "", err
+	}
+
+	return hex.EncodeToString(buf.Bytes()), err
 }
 
 func (b *BitcoinKeyManager) VerifyTransaction(encoded string) (bool, error) {
 	panic("implement me")
 }
+
+

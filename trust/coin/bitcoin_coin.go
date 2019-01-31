@@ -2,19 +2,68 @@ package coin
 
 import (
 	"github.com/ethereum/go-ethereum/common"
+	common2 "github.com/quantadex/distributed_quanta_bridge/common"
 	"crypto/ecdsa"
+	"github.com/btcsuite/btcd/rpcclient"
+	"github.com/btcsuite/btcd/chaincfg"
+	"github.com/btcsuite/btcd/btcjson"
+	"github.com/btcsuite/btcutil"
+	"bytes"
+	"encoding/hex"
+	"fmt"
+	"encoding/json"
+	"github.com/btcsuite/btcd/wire"
+	"os/exec"
+	"github.com/pkg/errors"
+	"strings"
 )
 
 type BitcoinCoin struct {
-	
+	Client *rpcclient.Client
+	chaincfg *chaincfg.Params
+	command string
 }
 
 func (b *BitcoinCoin) Attach() error {
-	panic("implement me")
+	b.command = "-datadir=blockchain/bitcoin/data/"
+	var  err error
+	b.Client, err = rpcclient.New(&rpcclient.ConnConfig{ Host: "localhost:18332",
+															Endpoint:"http",
+																User: "user",
+																Pass: "123",
+																DisableTLS: true,
+																HTTPPostMode: true,
+																	}, nil)
+	return err
 }
 
 func (b *BitcoinCoin) GetTopBlockID() (int64, error) {
+//	b.client.GetBestBlock()
 	panic("implement me")
+
+}
+
+func (b *BitcoinCoin) GenerateMultisig(addresses []btcutil.Address) (string, error){
+	addr := []string{}
+	for _, a := range addresses {
+		addr = append(addr, a.String())
+	}
+
+	addrx, err := b.Client.AddMultisigAddress(2, addresses, "")
+	fmt.Println("result ", addrx)
+
+	scriptBytes, err := hex.DecodeString(addrx.RedeemScript)
+	if err != nil {
+		return "", err
+	}
+
+	res,err := b.Client.DecodeScript(scriptBytes)
+
+	if err != nil {
+		return "", err
+	}
+
+	return res.P2sh, err
 }
 
 func (b *BitcoinCoin) GetTxID(trustAddress common.Address) (uint64, error) {
@@ -29,14 +78,132 @@ func (b *BitcoinCoin) GetForwardersInBlock(blockID int64) ([]*ForwardInput, erro
 	panic("implement me")
 }
 
+func (b *BitcoinCoin) CombineSignatures(signs []string) (string, error) {
+	sigsByte,err := json.Marshal(signs)
+	args := []string {
+		"-datadir=blockchain/bitcoin/data/",
+		"combinerawtransaction",
+		string(sigsByte),
+	}
+
+	cmd := exec.Command("bitcoin-cli", args...)
+	var out bytes.Buffer
+	var stderr bytes.Buffer
+	cmd.Stdout = &out
+	cmd.Stderr = &stderr
+
+	err = cmd.Run()
+
+	if err != nil {
+		println("err", err.Error(), stderr.String())
+	}
+
+	return out.String(), err
+}
+
 func (b *BitcoinCoin) SendWithdrawal(trustAddress common.Address,
 	ownerKey *ecdsa.PrivateKey,
 	w *Withdrawal) (string, error) {
-	panic("implement me")
+
+	combined, err := b.CombineSignatures(w.Signatures)
+	if err != nil {
+		return "", errors.Wrap(err, "Could not combined sigs")
+	}
+
+	println("combined",combined)
+
+	dataBytes, err := hex.DecodeString(strings.TrimSpace(combined))
+	if err != nil {
+		return "", errors.Wrap(err, "Could not decode combined sig")
+	}
+
+	tx := wire.NewMsgTx(wire.TxVersion)
+	err = tx.Deserialize(bytes.NewBuffer(dataBytes))
+
+	if err != nil {
+		return "", errors.Wrap(err, "Could not deserialize combined")
+	}
+
+	hash, err := b.Client.SendRawTransaction(tx, false)
+	if hash == nil {
+		return "", err
+	}
+
+	return hash.String(), err
 }
 
 func (b *BitcoinCoin) EncodeRefund(w Withdrawal) (string, error) {
-	panic("implement me")
+	fmt.Printf("Encode refund %v\n", w)
+
+	sourceAddr, err := btcutil.DecodeAddress(w.SourceAddress, b.chaincfg)
+	if err != nil {
+		return "", err
+	}
+
+	addr, err := btcutil.DecodeAddress(w.DestinationAddress, b.chaincfg)
+	if err != nil {
+		return "", err
+	}
+	amount, err := btcutil.NewAmount(float64(w.Amount)/1e5)
+	println(amount.ToBTC())
+	if err != nil {
+		return "", err
+	}
+
+	// get latest hash
+	unspent, err := b.Client.ListUnspent()
+	if err != nil {
+		return "", err
+	}
+
+	inputs := []btcjson.TransactionInput{}
+	unspentFound := []btcjson.ListUnspentResult{}
+	rawInput := []btcjson.RawTxInput{}
+
+	for _, e := range unspent {
+		if e.Address == w.SourceAddress {
+			inputs = append(inputs, btcjson.TransactionInput{ Txid: e.TxID, Vout: e.Vout })
+			unspentFound = append(unspentFound, e)
+			rawInput = append(rawInput, btcjson.RawTxInput{
+				Txid: e.TxID,
+				Vout: e.Vout,
+				RedeemScript: e.RedeemScript,
+				ScriptPubKey: e.ScriptPubKey,
+			})
+		}
+	}
+
+	if len(inputs) == 0 {
+		return "", errors.New("No unspent input found")
+	}
+
+	fee := 0.00001
+	remain, err := btcutil.NewAmount(unspentFound[0].Amount - amount.ToBTC() - fee)
+	tx, err := b.Client.CreateRawTransaction(inputs, map[btcutil.Address]btcutil.Amount {
+		addr : amount,
+		sourceAddr: remain,
+	}, nil)
+
+	println(sourceAddr, remain)
+
+	if err != nil {
+		return "", err
+	}
+
+	var buf bytes.Buffer
+	err = tx.Serialize(&buf)
+
+	if err != nil {
+		return "", err
+	}
+
+	res := common2.TransactionBitcoin {
+		Tx: hex.EncodeToString(buf.Bytes()),
+		RawInput: rawInput,
+	}
+
+	resJson, err := json.Marshal(res)
+	return string(resJson), err
 }
 
 func (b *BitcoinCoin) DecodeRefund(encoded string) (*Withdrawal, error) {

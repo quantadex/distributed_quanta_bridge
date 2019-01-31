@@ -87,3 +87,6 @@ func NewEthKeyManager() (KeyManager, error) {
 func NewGrapheneKeyManager(chain string) (KeyManager, error) {
 	return &QuantaKeyGraphene{chain: chain}, nil
 }
+func NewBitCoinKeyManager() (KeyManager, error) {
+	return &BitcoinKeyManager{}, nil
+}

@@ -302,6 +302,7 @@ func (c *QuantaToCoin) StartConsensus(w *coin.Withdrawal) (string, error) {
 	return txResult, errResult
 }
 
+// VERY IMPORTANT CODE
 func (c *QuantaToCoin) ComputeAmountToGraphene(coinName string, amount uint64) uint64 {
 	// this is ETH, so we have to convert from system precision standard precision (5)
 	if coinName == c.coinName {
