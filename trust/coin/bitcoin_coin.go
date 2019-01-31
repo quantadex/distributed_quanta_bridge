@@ -110,8 +110,6 @@ func (b *BitcoinCoin) SendWithdrawal(trustAddress common.Address,
 		return "", errors.Wrap(err, "Could not combined sigs")
 	}
 
-	println("combined",combined)
-
 	dataBytes, err := hex.DecodeString(strings.TrimSpace(combined))
 	if err != nil {
 		return "", errors.Wrap(err, "Could not decode combined sig")
@@ -179,15 +177,17 @@ func (b *BitcoinCoin) EncodeRefund(w Withdrawal) (string, error) {
 
 	fee := 0.00001
 	remain, err := btcutil.NewAmount(unspentFound[0].Amount - amount.ToBTC() - fee)
+	if err != nil {
+		return "", errors.Wrap(err, "Unable to create new amount")
+	}
+
 	tx, err := b.Client.CreateRawTransaction(inputs, map[btcutil.Address]btcutil.Amount {
 		addr : amount,
 		sourceAddr: remain,
 	}, nil)
 
-	println(sourceAddr, remain)
-
 	if err != nil {
-		return "", err
+		return "", errors.Wrap(err, "Create Raw tx failure")
 	}
 
 	var buf bytes.Buffer
