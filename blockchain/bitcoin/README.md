@@ -2,6 +2,8 @@
 
 ## For linux
 
+https://bitcoin.org/en/full-node#ubuntu-1604
+
 sudo apt-add-repository ppa:bitcoin/bitcoin
 sudo apt-get install bitcoin-qt bitcoind
 
