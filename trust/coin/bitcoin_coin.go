@@ -25,6 +25,7 @@ type BitcoinCoin struct {
 }
 
 func (b *BitcoinCoin) Attach() error {
+	b.chaincfg = &chaincfg.RegressionNetParams
 	b.command = "-datadir=blockchain/bitcoin/data/"
 	var  err error
 	b.Client, err = rpcclient.New(&rpcclient.ConnConfig{ Host: "localhost:18332",
@@ -35,12 +36,6 @@ func (b *BitcoinCoin) Attach() error {
 																HTTPPostMode: true,
 																	}, nil)
 	return err
-}
-
-func (b *BitcoinCoin) GetTopBlockID() (int64, error) {
-//	b.client.GetBestBlock()
-	panic("implement me")
-
 }
 
 func (b *BitcoinCoin) GenerateMultisig(addresses []btcutil.Address) (string, error){
@@ -67,7 +62,13 @@ func (b *BitcoinCoin) GenerateMultisig(addresses []btcutil.Address) (string, err
 }
 
 func (b *BitcoinCoin) GetTxID(trustAddress common.Address) (uint64, error) {
+	panic("not needed for bitcoin")
+}
+
+func (b *BitcoinCoin) GetTopBlockID() (int64, error) {
+	//	b.client.GetBestBlock()
 	panic("implement me")
+
 }
 
 func (b *BitcoinCoin) GetDepositsInBlock(blockID int64, trustAddress map[string]string) ([]*Deposit, error) {
@@ -75,7 +76,7 @@ func (b *BitcoinCoin) GetDepositsInBlock(blockID int64, trustAddress map[string]
 }
 
 func (b *BitcoinCoin) GetForwardersInBlock(blockID int64) ([]*ForwardInput, error) {
-	panic("implement me")
+	panic("not needed for bitcoin")
 }
 
 func (b *BitcoinCoin) CombineSignatures(signs []string) (string, error) {
@@ -130,6 +131,8 @@ func (b *BitcoinCoin) SendWithdrawal(trustAddress common.Address,
 	return hash.String(), err
 }
 
+// TODO: inspect all unspent for addresses that matches the pattern for our multisig
+// gather enough input and create a refund
 func (b *BitcoinCoin) EncodeRefund(w Withdrawal) (string, error) {
 	fmt.Printf("Encode refund %v\n", w)
 
@@ -168,8 +171,35 @@ func (b *BitcoinCoin) EncodeRefund(w Withdrawal) (string, error) {
 				RedeemScript: e.RedeemScript,
 				ScriptPubKey: e.ScriptPubKey,
 			})
+			break
+			//redeemBytes, err := hex.DecodeString(e.RedeemScript)
+			//decoded, err := b.Client.DecodeScript(redeemBytes)
+			//if err != nil {
+			//
+			//}
+			//fmt.Printf("%v\n", decoded)
+			//addr, err = btcutil.DecodeAddress(decoded.Addresses[0], b.chaincfg)
+			//println("ADDR: ", addr.String(), addr.EncodeAddress(), hex.EncodeToString(addr.ScriptAddress()))
+			//addrObj, err := b.Client.ValidateAddress(addr)
+			//fmt.Printf("pub: %s %v\n", addrObj.PubKey, addrObj)
+
+			// TODO: attempt to match the pubkey for 3/4 of all the keys
+
+			//addrBytes, err := hex.DecodeString(addrObj.PubKey)
+			//addr, err = btcutil.NewAddressPubKey(addrBytes, b.chaincfg)
+			//println("ADDR: ", addr.String(), addr.EncodeAddress())
+			//
+			//addr, err = btcutil.DecodeAddress("2NENNHR9Y9fpKzjKYobbdbwap7xno7sbf2E", b.chaincfg)
+			//println("ADDR: ", addr.String(), addr.EncodeAddress(), hex.EncodeToString(addr.ScriptAddress()))
+			//wif, err := btcutil.NewWIF(nil,nil false)
+			//wif.SerializePubKey()
+			//
+			////addrBytes, err = hex.DecodeString("76a9140025fee4b761c245cba21e9993fd7d86261977a188ac")
+			//addr, err = btcutil.NewAddressPubKey(addr.ScriptAddress(), b.chaincfg)
+			//println("ADDR: ", addr.String(), addr.EncodeAddress())
 		}
 	}
+
 
 	if len(inputs) == 0 {
 		return "", errors.New("No unspent input found")

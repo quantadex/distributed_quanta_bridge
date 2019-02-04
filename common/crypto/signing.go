@@ -12,6 +12,7 @@ import (
 	"github.com/btcsuite/btcutil/base58"
 	"github.com/go-errors/errors"
 	"github.com/scorum/bitshares-go/sign"
+	"github.com/btcsuite/btcd/chaincfg"
 )
 
 const PREFIX = "QA"
@@ -25,6 +26,15 @@ func GetGraphenePublicKey(pubKey *btcec.PublicKey) (string, error) {
 	b := append(buf, chk...)
 	pubkey := base58.Encode(b)
 	return fmt.Sprintf("%s%s", PREFIX, pubkey), nil
+}
+
+func GetBitcoinAddressFromGraphene(pubKey *btcec.PublicKey) (string, error) {
+	address, err := btcutil.NewAddressPubKey(pubKey.SerializeUncompressed(), &chaincfg.RegressionNetParams)
+	if err != nil {
+		return "", err
+	}
+	address.SetFormat(btcutil.PKFUncompressed)
+	return address.EncodeAddress(), err
 }
 
 func SignMessage(msg interface{}, privateKey string) *string {

@@ -168,12 +168,23 @@ func QueryWithdrawalByAge(db *DB, age time.Time, states []string) []Transaction 
 
 func EmptyTable(db *DB) error {
 	st, err := db.db.Prepare("TRUNCATE table transactions")
+	if err != nil {
+		return err
+	}
 	_, err = st.Exec()
 
 	st, err = db.db.Prepare("TRUNCATE table crosschain_addresses")
+	if err != nil {
+		return err
+	}
+
 	_, err = st.Exec()
 
 	st, err = db.db.Prepare("TRUNCATE table key_values")
+	if err != nil {
+		return err
+	}
+
 	_, err = st.Exec()
 
 	return err

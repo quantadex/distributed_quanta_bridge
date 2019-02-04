@@ -9,6 +9,7 @@ import (
 	"log"
 	"github.com/quantadex/distributed_quanta_bridge/trust/key_manager"
 	"github.com/ethereum/go-ethereum/common"
+	"encoding/hex"
 )
 
 /*
@@ -20,6 +21,13 @@ cUgyLdmWgiMZcnCgTnmV1ag2evz5Eid6HQVacqfXPpWUbxgJcGt6 2018-10-29T23:34:06Z
 reserve=1 # addr=2NF63kkxcegxtMuTKartK4tsyXsoHxhRvpN hdkeypath=m/0'/0'/13'
 
  */
+
+func TestCheckHash(t *testing.T) {
+	scriptBytes, _ := hex.DecodeString("004730440220304a3f60b7f5510e80b086cee9e88e38672c6031c3c2905b39bf5b180ba463b602205a14fcffee23eda01193e4dd281be474b058cc5d58b523f6bbc882469e05647c01473044022036224d12535cb02d597e1e1d0a6baccca9c27531464935110bab23c7a40f0cdd02206de86e931083484f6c23da41455863e6ff0c6b1359f8edf5f54364b83deea39c0147522103c19460f565d12512ee584685bd8d97eb24d79a2acdf0c5b6af0b24ba29ceba0b210333d415aed3103f49346a3898efa137c42e933bbb16b3e4b56f7751670d2e0b6e52ae")
+	addr, _ := btcutil.NewAddressScriptHash(scriptBytes, &chaincfg.RegressionNetParams)
+	println(addr.EncodeAddress(), addr.String())
+}
+
 func TestBitcoinEncodeRefund(t *testing.T) {
 	client, err := NewBitcoinCoin(&chaincfg.RegressionNetParams)
 	assert.NoError(t, err)
@@ -44,7 +52,7 @@ func TestBitcoinEncodeRefund(t *testing.T) {
 	log.Println("multisig: ", msig, err)
 
 	w := Withdrawal{
-		SourceAddress: msig,
+		SourceAddress: "n2PNkvCSkkSKvgqLsQXAQACFETQwKvc16X",
 		DestinationAddress: "2NGYCnkuo62kL1QpAzV3bRaf747bSM8suQm",
 		Amount: 1000,
 	}

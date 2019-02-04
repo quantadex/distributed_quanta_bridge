@@ -37,10 +37,10 @@ func (r *RegistrarClient) AttachQueue(queue queue.Queue) error {
 	return nil
 }
 
-func (r *RegistrarClient) RegisterNode(nodeIP string, nodePort string, km key_manager.KeyManager) error {
+func (r *RegistrarClient) RegisterNode(nodeIP string, nodePort string, km key_manager.KeyManager, chainaddress map[string]string) error {
 	msg := msgs.RegisterReq{}
 	nodeKey, _ := km.GetPublicKey()
-	msg.Body = msgs.NodeInfo{nodeIP, nodePort, nodeKey}
+	msg.Body = msgs.NodeInfo{nodeIP, nodePort, nodeKey, chainaddress}
 
 	if signature := km.SignMessageObj(msg.Body); signature != nil {
 		msg.Signature = *signature

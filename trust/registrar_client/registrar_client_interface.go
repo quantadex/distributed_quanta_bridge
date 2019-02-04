@@ -44,7 +44,7 @@ type RegistrarContact interface {
      * POST /register
      * Return error if failed to send or did not get status OK
      */
-    RegisterNode(nodeIP string, nodePort string, km key_manager.KeyManager) error
+    RegisterNode(nodeIP string, nodePort string, km key_manager.KeyManager, keys map[string]string) error
 
     /**
      * SendHealth

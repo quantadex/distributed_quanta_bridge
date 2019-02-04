@@ -112,7 +112,7 @@ func NewEthereumCoin(networkId string, ethereumRpc string) (Coin, error) {
 	return &EthereumCoin{maxRange: common.MaxNumberInt64, networkId: networkId, ethereumRpc: ethereumRpc}, nil
 }
 
-func NewBitcoinCoin(params *chaincfg.Params) (Coin, error) {
+func NewBitcoinCoin(params *chaincfg.Params, signers []string) (Coin, error) {
 	return &BitcoinCoin{ chaincfg: params}, nil
 }
 

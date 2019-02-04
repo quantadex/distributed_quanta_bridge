@@ -41,10 +41,16 @@ bitcoin-cli getrawtransaction 8c8aec696c84498574da7104f3ca4d8019147134f7ad0e962e
 
 bitcoin-cli sendtoaddress "2N6VzBTQGFukxwmRcKkQTJR3rK18RNZmBtL" 0.0001
 
+Remember to create a block after the transaction.
+
 ### Bitcoin management in Crosschain
 
 We're going to create crosschain address with the core (3) signatures + 1 raw public key from the Graphene, which
 gives us a deterministic bitcoin address given for a Quanta address.
+
+#### Configuration
+
+Each node is configured with 3 addresses, which will be signing, and 1 private key address used by the node to sign.
 
 #### Discovering Deposits
 

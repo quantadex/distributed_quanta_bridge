@@ -15,6 +15,10 @@ type EthereumEnv struct {
 	NetworkId string
 }
 
+type BtcSecrets struct {
+	NodeSecrets []string
+}
+
 var QUANTA_ISSUER = &QuantaNodeSecrets{
 	NodeSecrets: []string{
 		"ZBHK5VE5ZM5MJI3FM7JOW7MMUF3FIRUMV3BTLUTJWQHDFEN7MG3J4VAV",
@@ -42,6 +46,14 @@ var ROPSTEN_TRUST = &EthereumTrustSecrets{
 		"2E563A40747FA56419FB168ADF507C596E1A604D073D0F9E646B803DFA5BE94C",
 	},
 	TrustContract: "0xBD770336fF47A3B61D4f54cc0Fb541Ea7baAE92d",
+}
+
+var BTCSECRETS = &BtcSecrets{
+	NodeSecrets: []string {
+		"cNxQax7BfpbikeuCebPGCgTefTah5h1XhVDfaotVdFmXtaLCWLd9",
+		"cUixT9PYjTtNzcVjF8sB7iM9JeEf8tLHm9Wjgo972x8opCRNTasS",
+		"cPXngzEsUFpNCJ9DGYWyFLfCuGjzhsuM8N3sUf5z4HqLUUGuGp2h",
+	},
 }
 
 var GRAPHENE_TRUST = &EthereumTrustSecrets{
