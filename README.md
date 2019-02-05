@@ -1,5 +1,14 @@
 # Crosschain Architecture
 
+## Setup
+
+```
+cd cli/ethereum && go build
+./ethereum -config ../../node/ropsten/node1.yml  # run for each node
+
+cd node && go build
+./node -config ropsten/node1.yml # run for each node
+```
 
 ## Configuring Lumen
 

@@ -92,15 +92,17 @@ func (b *BitcoinCoin) GetDepositsInBlock(blockID int64, trustAddress map[string]
 
 	events := []*Deposit{}
 
-	for i := range block.Transactions {
-		tx := block.Transactions[i].TxHash()
-		rawTx, err := b.Client.GetRawTransactionVerbose(&tx)
+	for _, tx := range block.Transactions {
+		tx := tx.TxHash()
+		currentTx, err := b.Client.GetRawTransactionVerbose(&tx)
 		if err != nil {
 			return nil, err
 		}
 
-		if rawTx.Vout[1].Value != 0 {
-			prevTranHash, err := chainhash.NewHashFromStr(rawTx.Vin[0].Txid)
+		vinLookup := map[string]bool{}
+		vinAddresses := []string{}
+		for _, vin := range currentTx.Vin {
+			prevTranHash, err := chainhash.NewHashFromStr(vin.Txid)
 			if err != nil {
 				return events, err
 			}
@@ -108,36 +110,38 @@ func (b *BitcoinCoin) GetDepositsInBlock(blockID int64, trustAddress map[string]
 			if err != nil {
 				return events, err
 			}
-			amount, err := btcutil.NewAmount(rawTx.Vout[1].Value)
+
+			prevVout := prevTran.Vout[vin.Vout]
+			fromAddress := strings.Join(prevVout.ScriptPubKey.Addresses,",")
+			vinLookup[fromAddress] = true
+			vinAddresses = append(vinAddresses, fromAddress)
+		}
+
+		fromAddr := strings.Join(vinAddresses, ",")
+
+		for _, vout := range currentTx.Vout {
+			toAddr := strings.Join(vout.ScriptPubKey.Addresses,",")
+
+			if fromAddr == toAddr {
+				println("Ignoring tx when from and to the same ", toAddr)
+				continue
+			}
+
+			amount, err := btcutil.NewAmount(vout.Value)
 			if err != nil {
 				return nil, errors.Wrap(err, "unable to create new amount")
 			}
 
-			toAddr := strings.Join(rawTx.Vout[1].ScriptPubKey.Addresses, ",")
-			fromAddr := strings.Join(prevTran.Vout[0].ScriptPubKey.Addresses, ",")
-
 			events = append(events, &Deposit{
+				SenderAddr: fromAddr,
 				QuantaAddr: toAddr,
-				SenderAddr: fromAddr,
 				Amount:     int64(amount),
 				BlockID:    blockID,
-				Tx:         rawTx.Hash,
-			})
-
-			amount, err = btcutil.NewAmount(rawTx.Vout[0].Value)
-			if err != nil {
-				return nil, errors.Wrap(err, "unable to create new amount")
-			}
-			events = append(events, &Deposit{
-				QuantaAddr: fromAddr,
-				SenderAddr: fromAddr,
-				Amount:     int64(amount),
-				BlockID:    blockID,
-				Tx:         rawTx.Hash,
+				Tx:         currentTx.Hash,
 			})
 		}
 	}
-	fmt.Println("events =", events[0], events[1])
+	fmt.Printf("events = %v\n", events)
 	return events, nil
 }
 
