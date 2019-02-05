@@ -10,6 +10,7 @@ import (
 )
 
 type DepositSyncInterface interface {
+	Setup()
 	GetDepositsInBlock(blockID int64) ([]*coin.Deposit, error)
 	DoLoop(blockIDs []int64) []*coin.Deposit
 	GetNewCoinBlockIDs() []int64
@@ -36,4 +37,21 @@ func NewEthereumSync(coin coin.Coin,
 	eth.Setup()
 
 	return eth
+}
+
+func NewBitcoinSync(coin coin.Coin,
+	issuingSymbol string,
+	quantaChannel quanta.Quanta,
+	db kv_store.KVStore,
+	rDb *db.DB,
+	logger logger.Logger,
+	blockStartID int64) DepositSyncInterface {
+
+	parent := NewDepositSync(coin, quantaChannel, issuingSymbol, db, rDb, logger, blockStartID)
+	btc := &BitcoinSync{
+		*parent,
+	}
+	btc.Setup()
+
+	return btc
 }
