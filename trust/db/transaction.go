@@ -72,7 +72,9 @@ func ConfirmDeposit(db *DB, dep *coin.Deposit, isBounced bool) error {
 		IsBounced: isBounced,
 		Signed:    false,
 	}
-	return db.Insert(tx)
+	_, err := db.Model(tx).OnConflict("DO NOTHING").Where("Tx=?", dep.Tx).SelectOrInsert()
+
+	return err
 }
 
 func SignDeposit(db *DB, dep *coin.Deposit) error {
