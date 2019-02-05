@@ -1,6 +1,10 @@
 package sync
 
-import "github.com/quantadex/distributed_quanta_bridge/trust/coin"
+import (
+	"github.com/quantadex/distributed_quanta_bridge/trust/coin"
+	"encoding/json"
+	"fmt"
+)
 
 type BitcoinSync struct {
 	DepositSync
@@ -16,6 +20,11 @@ func (c *BitcoinSync) GetDepositsInBlock(blockID int64) ([]*coin.Deposit, error)
 	if err != nil {
 		c.logger.Info("getDepositsInBlock failed " + err.Error())
 		return nil, err
+	}
+
+	if len(deposits) > 0 {
+		msg,_ := json.Marshal(deposits)
+		fmt.Printf("events = %v\n", string(msg))
 	}
 
 	return deposits, err

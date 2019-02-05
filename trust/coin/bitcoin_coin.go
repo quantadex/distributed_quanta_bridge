@@ -25,8 +25,10 @@ type BitcoinCoin struct {
 	command  string
 }
 
+const BLOCKCHAIN_BTC = "BTC"
+
 func (c *BitcoinCoin) Blockchain() string {
-	return "BTC"
+	return BLOCKCHAIN_BTC
 }
 
 func (b *BitcoinCoin) Attach() error {
@@ -88,7 +90,6 @@ func (b *BitcoinCoin) GetDepositsInBlock(blockID int64, trustAddress map[string]
 		return nil, err
 	}
 	block, err := b.Client.GetBlock(blockHash)
-	fmt.Println("blockhash =", blockHash)
 
 	events := []*Deposit{}
 
@@ -98,8 +99,6 @@ func (b *BitcoinCoin) GetDepositsInBlock(blockID int64, trustAddress map[string]
 		if err != nil {
 			return nil, errors.Wrap(err, "failed to getraw for currentTx")
 		}
-
-		println("current tx = ", tx.String())
 
 		vinLookup := map[string]bool{}
 		vinAddresses := []string{}
@@ -128,8 +127,8 @@ func (b *BitcoinCoin) GetDepositsInBlock(blockID int64, trustAddress map[string]
 		for _, vout := range currentTx.Vout {
 			toAddr := strings.Join(vout.ScriptPubKey.Addresses,",")
 
-			if fromAddr == toAddr {
-				println("Ignoring tx when from and to the same ", toAddr)
+			if fromAddr == toAddr || fromAddr == "" {
+				//println("Ignoring tx when from and to the same ", toAddr)
 				continue
 			}
 
@@ -141,14 +140,15 @@ func (b *BitcoinCoin) GetDepositsInBlock(blockID int64, trustAddress map[string]
 			events = append(events, &Deposit{
 				SenderAddr: fromAddr,
 				QuantaAddr: toAddr,
+				CoinName: b.Blockchain(),
 				Amount:     int64(amount),
 				BlockID:    blockID,
-				Tx:         currentTx.Hash,
+				Tx:         fmt.Sprintf("%s_%d", currentTx.Hash, vout.N),
 			})
 		}
 	}
-	msg,_ := json.Marshal(events)
-	fmt.Printf("events = %v\n", string(msg))
+	//msg,_ := json.Marshal(events)
+	//fmt.Printf("events = %v\n", string(msg))
 	return events, nil
 }
 
