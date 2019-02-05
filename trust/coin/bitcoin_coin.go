@@ -20,21 +20,26 @@ import (
 )
 
 type BitcoinCoin struct {
-	Client   *rpcclient.Client
+	Client *rpcclient.Client
 	chaincfg *chaincfg.Params
-	command  string
+	command string
+}
+
+func (c *BitcoinCoin) Blockchain() string {
+	return "BTC"
 }
 
 func (b *BitcoinCoin) Attach() error {
+	b.chaincfg = &chaincfg.RegressionNetParams
 	b.command = "-datadir=blockchain/bitcoin/data/"
-	var err error
-	b.Client, err = rpcclient.New(&rpcclient.ConnConfig{Host: "localhost:18332",
-		Endpoint:     "http",
-		User:         "user",
-		Pass:         "123",
-		DisableTLS:   true,
-		HTTPPostMode: true,
-	}, nil)
+	var  err error
+	b.Client, err = rpcclient.New(&rpcclient.ConnConfig{ Host: "localhost:18332",
+															Endpoint:"http",
+																User: "user",
+																Pass: "123",
+																DisableTLS: true,
+																HTTPPostMode: true,
+																	}, nil)
 	return err
 }
 
@@ -64,7 +69,7 @@ func (b *BitcoinCoin) GenerateMultisig(addresses []btcutil.Address) (string, err
 		return "", err
 	}
 
-	res, err := b.Client.DecodeScript(scriptBytes)
+	res,err := b.Client.DecodeScript(scriptBytes)
 
 	if err != nil {
 		return "", err
@@ -137,12 +142,12 @@ func (b *BitcoinCoin) GetDepositsInBlock(blockID int64, trustAddress map[string]
 }
 
 func (b *BitcoinCoin) GetForwardersInBlock(blockID int64) ([]*ForwardInput, error) {
-	panic("implement me")
+	panic("not needed for bitcoin")
 }
 
 func (b *BitcoinCoin) CombineSignatures(signs []string) (string, error) {
-	sigsByte, err := json.Marshal(signs)
-	args := []string{
+	sigsByte,err := json.Marshal(signs)
+	args := []string {
 		"-datadir=blockchain/bitcoin/data/",
 		"combinerawtransaction",
 		string(sigsByte),
@@ -192,6 +197,8 @@ func (b *BitcoinCoin) SendWithdrawal(trustAddress common.Address,
 	return hash.String(), err
 }
 
+// TODO: inspect all unspent for addresses that matches the pattern for our multisig
+// gather enough input and create a refund
 func (b *BitcoinCoin) EncodeRefund(w Withdrawal) (string, error) {
 	fmt.Printf("Encode refund %v\n", w)
 
@@ -204,7 +211,7 @@ func (b *BitcoinCoin) EncodeRefund(w Withdrawal) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	amount, err := btcutil.NewAmount(float64(w.Amount) / 1e5)
+	amount, err := btcutil.NewAmount(float64(w.Amount)/1e5)
 	println(amount.ToBTC())
 	if err != nil {
 		return "", err
@@ -222,16 +229,43 @@ func (b *BitcoinCoin) EncodeRefund(w Withdrawal) (string, error) {
 
 	for _, e := range unspent {
 		if e.Address == w.SourceAddress {
-			inputs = append(inputs, btcjson.TransactionInput{Txid: e.TxID, Vout: e.Vout})
+			inputs = append(inputs, btcjson.TransactionInput{ Txid: e.TxID, Vout: e.Vout })
 			unspentFound = append(unspentFound, e)
 			rawInput = append(rawInput, btcjson.RawTxInput{
-				Txid:         e.TxID,
-				Vout:         e.Vout,
+				Txid: e.TxID,
+				Vout: e.Vout,
 				RedeemScript: e.RedeemScript,
 				ScriptPubKey: e.ScriptPubKey,
 			})
+			break
+			//redeemBytes, err := hex.DecodeString(e.RedeemScript)
+			//decoded, err := b.Client.DecodeScript(redeemBytes)
+			//if err != nil {
+			//
+			//}
+			//fmt.Printf("%v\n", decoded)
+			//addr, err = btcutil.DecodeAddress(decoded.Addresses[0], b.chaincfg)
+			//println("ADDR: ", addr.String(), addr.EncodeAddress(), hex.EncodeToString(addr.ScriptAddress()))
+			//addrObj, err := b.Client.ValidateAddress(addr)
+			//fmt.Printf("pub: %s %v\n", addrObj.PubKey, addrObj)
+
+			// TODO: attempt to match the pubkey for 3/4 of all the keys
+
+			//addrBytes, err := hex.DecodeString(addrObj.PubKey)
+			//addr, err = btcutil.NewAddressPubKey(addrBytes, b.chaincfg)
+			//println("ADDR: ", addr.String(), addr.EncodeAddress())
+			//
+			//addr, err = btcutil.DecodeAddress("2NENNHR9Y9fpKzjKYobbdbwap7xno7sbf2E", b.chaincfg)
+			//println("ADDR: ", addr.String(), addr.EncodeAddress(), hex.EncodeToString(addr.ScriptAddress()))
+			//wif, err := btcutil.NewWIF(nil,nil false)
+			//wif.SerializePubKey()
+			//
+			////addrBytes, err = hex.DecodeString("76a9140025fee4b761c245cba21e9993fd7d86261977a188ac")
+			//addr, err = btcutil.NewAddressPubKey(addr.ScriptAddress(), b.chaincfg)
+			//println("ADDR: ", addr.String(), addr.EncodeAddress())
 		}
 	}
+
 
 	if len(inputs) == 0 {
 		return "", errors.New("No unspent input found")
@@ -243,8 +277,8 @@ func (b *BitcoinCoin) EncodeRefund(w Withdrawal) (string, error) {
 		return "", errors.Wrap(err, "Unable to create new amount")
 	}
 
-	tx, err := b.Client.CreateRawTransaction(inputs, map[btcutil.Address]btcutil.Amount{
-		addr:       amount,
+	tx, err := b.Client.CreateRawTransaction(inputs, map[btcutil.Address]btcutil.Amount {
+		addr : amount,
 		sourceAddr: remain,
 	}, nil)
 
@@ -259,10 +293,8 @@ func (b *BitcoinCoin) EncodeRefund(w Withdrawal) (string, error) {
 		return "", err
 	}
 
-	fmt.Println("buf = ", buf)
-
-	res := common2.TransactionBitcoin{
-		Tx:       hex.EncodeToString(buf.Bytes()),
+	res := common2.TransactionBitcoin {
+		Tx: hex.EncodeToString(buf.Bytes()),
 		RawInput: rawInput,
 	}
 

@@ -288,3 +288,22 @@ func TestWithdrawal(t *testing.T) {
 	StopNodes(nodes, []int{0, 1})
 	StopRegistry(r)
 }
+
+func TestBTCDeposit(t *testing.T) {
+	r := StartRegistry(3, ":6000")
+	nodes := StartNodes(test.GRAPHENE_ISSUER, test.GRAPHENE_TRUST, test.ETHER_NETWORKS[test.ROPSTEN])
+	time.Sleep(time.Millisecond * 250)
+
+	depositResult := make(chan control.DepositResult)
+
+	nodes[0].cTQ.SuccessCb = func(c control.DepositResult) {
+		depositResult <- c
+	}
+
+
+
+	time.Sleep(5 * time.Second)
+
+	StopNodes(nodes, []int{0, 1})
+	StopRegistry(r)
+}

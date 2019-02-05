@@ -2,10 +2,10 @@ package coin
 
 import (
 	"crypto/ecdsa"
-	"github.com/btcsuite/btcd/chaincfg"
 	common2 "github.com/ethereum/go-ethereum/common"
 	"github.com/quantadex/distributed_quanta_bridge/common"
 	"github.com/scorum/bitshares-go/types"
+	"github.com/btcsuite/btcd/chaincfg"
 )
 
 const BLOCKCHAIN_ETH = "ETH"
@@ -56,6 +56,8 @@ type Coin interface {
 	 * Connect to the specified coin core node. Return error if failed.
 	 */
 	Attach() error
+
+	Blockchain() string
 
 	/**
 	 * GetTopBlockID
@@ -112,8 +114,8 @@ func NewEthereumCoin(networkId string, ethereumRpc string) (Coin, error) {
 	return &EthereumCoin{maxRange: common.MaxNumberInt64, networkId: networkId, ethereumRpc: ethereumRpc}, nil
 }
 
-func NewBitcoinCoin(params *chaincfg.Params) (Coin, error) {
-	return &BitcoinCoin{chaincfg: params}, nil
+func NewBitcoinCoin(params *chaincfg.Params, signers []string) (Coin, error) {
+	return &BitcoinCoin{ chaincfg: params}, nil
 }
 
 /**

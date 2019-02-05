@@ -4,6 +4,7 @@ type NodeInfo struct {
 	NodeIp 		string		`json: "node_ip"`
 	NodePort 	string 		`json: "node_port"`
 	NodeKey 	string		`json: "node_key"`
+	ChainAddress map[string]string `json: "chain_address"`
 }
 
 type RegisterReq struct {

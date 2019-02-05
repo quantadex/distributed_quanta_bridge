@@ -74,12 +74,12 @@ func GetLastBlock(db kv_store.KVStore, coinName string) (int64, bool) {
 }
 
 /**
- * setLastBlock
+ * SetLastBlock
  *
  * Updates the last processed block. Only if new value is greater than previous value.
  * Returns true if succeeded in update.
  */
-func setLastBlock(db kv_store.KVStore, coinName string, newVal int64) bool {
+func SetLastBlock(db kv_store.KVStore, coinName string, newVal int64) bool {
 	prevBlock, valid := GetLastBlock(db, coinName)
 	if !valid {
 		return false

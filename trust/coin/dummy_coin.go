@@ -22,6 +22,10 @@ func GetDummyInstance() *DummyCoin {
 	return instance
 }
 
+func (c *DummyCoin) Blockchain() string {
+	return "DUMMY"
+}
+
 func (c *DummyCoin) AddDeposit(deposit *Deposit) (error) {
 	fmt.Printf("insert deposit into block %d\n", c.index)
 	c.deposits[int(c.index)] = append(c.deposits[int(c.index)], deposit)

@@ -39,9 +39,11 @@ type TrustNode struct {
 	log      logger.Logger
 	quantakM key_manager.KeyManager
 	coinkM   key_manager.KeyManager
+	btcKM    key_manager.KeyManager
 	man      *manifest.Manifest
 	q        quanta.Quanta
-	c        coin.Coin
+	eth       coin.Coin
+	btc		 coin.Coin
 	db       kv_store.KVStore
 	rDb      *db.DB
 	peer     peer_contact.PeerContact
@@ -108,6 +110,17 @@ func initNode(config common.Config, targetCoin coin.Coin) (*TrustNode, bool) {
 		return nil, false
 	}
 
+	node.btcKM, err = key_manager.NewBitCoinKeyManager()
+	if err != nil {
+		node.log.Error("Failed to create BTC key manager")
+		return nil, false
+	}
+	err = node.btcKM.LoadNodeKeys(config.BtcPrivateKey)
+	if err != nil {
+		node.log.Error("Failed to set up btc keys")
+		return nil, false
+	}
+
 	needsInitialize := !kv_store.DbExists(config.KvDbName)
 
 	node.db, err = kv_store.NewKVPGStore()
@@ -140,11 +153,11 @@ func initNode(config common.Config, targetCoin coin.Coin) (*TrustNode, bool) {
 	db.MigrateKv(node.rDb)
 	db.MigrateXC(node.rDb)
 
-	node.c = targetCoin
+	node.eth = targetCoin
 
 	//node.coinName = coin.BLOCKCHAIN_ETH
 	node.coinName = config.CoinName
-	err = node.c.Attach()
+	err = node.eth.Attach()
 	if err != nil {
 		node.log.Error("Failed to attach to coin " + err.Error())
 		return nil, false
@@ -225,7 +238,12 @@ func (n *TrustNode) registerNode(config common.Config) bool {
 		return false
 	}
 
-	err = n.reg.RegisterNode(nodeIP, strconv.Itoa(nodePort), n.quantakM)
+	btcPub, err := n.btcKM.GetPublicKey()
+	chainAddress := map[string]string {
+		"BTC" : btcPub,
+	}
+
+	err = n.reg.RegisterNode(nodeIP, strconv.Itoa(nodePort), n.quantakM, chainAddress)
 	if err != nil {
 		n.log.Error("Failed to send node info to registrar " + err.Error())
 		return false
@@ -270,7 +288,7 @@ func (n *TrustNode) initTrust(config common.Config) {
 	n.qTC = control.NewQuantaToCoin(n.log,
 		n.db,
 		n.rDb,
-		n.c,
+		n.eth,
 		n.q,
 		n.man,
 		config.IssuerAddress,
@@ -284,7 +302,7 @@ func (n *TrustNode) initTrust(config common.Config) {
 	n.cTQ = control.NewCoinToQuanta(n.log,
 		n.db,
 		n.rDb,
-		n.c,
+		n.eth,
 		n.q,
 		n.man,
 		n.quantakM,
@@ -317,10 +335,12 @@ func (n *TrustNode) run() {
 			if n.reg.HealthCheckRequested() {
 				n.reg.SendHealth("RUNNING", n.quantakM)
 			}
-			blockIDs := n.cTQ.GetNewCoinBlockIDs()
-			n.cTQ.DoLoop(blockIDs)
 
-			blockIDs = n.qTC.GetNewCoinBlockIDs()
+			// handled in CLI
+			//blockIDs := n.cTQ.GetNewCoinBlockIDs()
+			//n.cTQ.DoLoop(blockIDs)
+
+			blockIDs := n.qTC.GetNewCoinBlockIDs()
 			//if init == false {
 			//	cursor = 1911002
 			//	init = true

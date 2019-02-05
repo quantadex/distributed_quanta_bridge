@@ -10,6 +10,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"github.com/quantadex/distributed_quanta_bridge/common"
+	"github.com/pkg/errors"
 )
 
 type BitcoinKeyManager struct {
@@ -24,6 +25,8 @@ func (b *BitcoinKeyManager) CreateNodeKeys() error {
 
 func (b *BitcoinKeyManager) LoadNodeKeys(privKey string) error {
 	var err error
+	// TODO: make this configurable
+	b.chaincfg = &chaincfg.RegressionNetParams
 	b.client, err = rpcclient.New(&rpcclient.ConnConfig{ Host: "localhost:18332",
 		User: "user",
 		Pass: "123",
@@ -32,10 +35,12 @@ func (b *BitcoinKeyManager) LoadNodeKeys(privKey string) error {
 	}, nil)
 
 	if err != nil {
-		return err
+		return errors.Wrap(err, "Cannot load BTC key")
 	}
 
 	b.privateKey, err = btcutil.DecodeWIF(privKey)
+	println("loading priv ", privKey)
+
 	return err
 }
 
