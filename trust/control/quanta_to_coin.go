@@ -380,7 +380,7 @@ func (c *QuantaToCoin) DoLoop(cursor int64) ([]quanta.Refund, error) {
 	}
 
 	// mark the block for the next loop through
-	success := setLastBlock(c.db, QUANTA, cursor)
+	success := SetLastBlock(c.db, QUANTA, cursor)
 	if !success {
 		c.logger.Error("Failed to mark block as signed")
 		return refunds, errors.New("Failed to mark block as signed")

@@ -57,6 +57,8 @@ type Coin interface {
 	 */
 	Attach() error
 
+	Blockchain() string
+
 	/**
 	 * GetTopBlockID
 	 *

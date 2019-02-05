@@ -24,6 +24,10 @@ type BitcoinCoin struct {
 	command string
 }
 
+func (c *BitcoinCoin) Blockchain() string {
+	return "BTC"
+}
+
 func (b *BitcoinCoin) Attach() error {
 	b.chaincfg = &chaincfg.RegressionNetParams
 	b.command = "-datadir=blockchain/bitcoin/data/"

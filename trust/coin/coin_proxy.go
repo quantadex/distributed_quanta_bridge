@@ -4,6 +4,10 @@ type CoinProxy struct {
 	coin *DummyCoin
 }
 
+func (c *CoinProxy) Blockchain() string {
+	return "DUMMY"
+}
+
 func (c *CoinProxy) Attach(coinName string) error {
 	c.coin = GetDummyInstance()
 	return nil

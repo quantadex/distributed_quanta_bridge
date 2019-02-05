@@ -28,6 +28,10 @@ type EncodedMsg struct {
 	BlockNumber int64
 }
 
+func (c *EthereumCoin) Blockchain() string {
+	return "ETH"
+}
+
 func (c *EthereumCoin) Attach() error {
 	c.client = &Listener{NetworkID: c.networkId}
 	ethereumClient, err := ethclient.Dial(c.ethereumRpc)
