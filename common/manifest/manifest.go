@@ -12,10 +12,10 @@ import (
  * Describes a trust node. The IP and port on which the node is listening and it's public key.
  */
 type TrustNode struct {
-	IP     string
-	Port   string
-	PubKey string
-	State  string
+	IP           string
+	Port         string
+	PubKey       string
+	State        string
 	ChainAddress map[string]string
 }
 
@@ -81,7 +81,7 @@ func (m *Manifest) AddNode(ip string, port string, pubKey string, chainAddress m
 
 	nodeId, err := m.FindNode(ip, port, pubKey)
 	if err != nil {
-		m.Nodes = append(m.Nodes, &TrustNode{ip, port, pubKey,  "ADDED", chainAddress})
+		m.Nodes = append(m.Nodes, &TrustNode{ip, port, pubKey, "ADDED", chainAddress})
 		m.N++
 		return nil
 	}

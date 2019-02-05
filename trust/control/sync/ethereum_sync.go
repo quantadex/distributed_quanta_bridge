@@ -1,24 +1,25 @@
 package sync
 
 import (
-	"github.com/quantadex/distributed_quanta_bridge/trust/coin"
-	"github.com/quantadex/distributed_quanta_bridge/trust/db"
-	"strings"
-	"math/big"
 	"fmt"
 	"github.com/ethereum/go-ethereum/common"
+	"github.com/quantadex/distributed_quanta_bridge/trust/coin"
+	"github.com/quantadex/distributed_quanta_bridge/trust/db"
+	"math/big"
+	"strings"
 )
 
 type EthereumSync struct {
 	DepositSync
-	trustAddress common.Address
+	trustAddress  common.Address
 	issuingSymbol string
 }
 
 func (c *EthereumSync) Setup() {
-	c.fnDepositInBlock =  c.GetDepositsInBlock
+	c.fnDepositInBlock = c.GetDepositsInBlock
 	c.fnPostProcessBlock = c.PostProcessBlock
 }
+
 /**
  * getDepositsInBlock
  *

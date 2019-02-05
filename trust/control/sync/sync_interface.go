@@ -1,12 +1,12 @@
 package sync
 
 import (
-	"github.com/quantadex/distributed_quanta_bridge/trust/coin"
-	"github.com/quantadex/distributed_quanta_bridge/trust/quanta"
+	"github.com/ethereum/go-ethereum/common"
 	"github.com/quantadex/distributed_quanta_bridge/common/kv_store"
 	"github.com/quantadex/distributed_quanta_bridge/common/logger"
+	"github.com/quantadex/distributed_quanta_bridge/trust/coin"
 	"github.com/quantadex/distributed_quanta_bridge/trust/db"
-	"github.com/ethereum/go-ethereum/common"
+	"github.com/quantadex/distributed_quanta_bridge/trust/quanta"
 )
 
 type DepositSyncInterface interface {

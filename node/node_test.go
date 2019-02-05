@@ -35,7 +35,7 @@ func generateConfig(quanta *test.QuantaNodeSecrets, ethereum *test.EthereumTrust
 		EthereumRpc:        etherNet.Rpc,
 		EthereumKeyStore:   ethereum.NodeSecrets[index],
 		EthereumTrustAddr:  ethereum.TrustContract,
-		BtcPrivateKey:		test.BTCSECRETS.NodeSecrets[index],
+		BtcPrivateKey:      test.BTCSECRETS.NodeSecrets[index],
 		DatabaseUrl:        fmt.Sprintf("postgres://postgres:@localhost/crosschain_%d", index),
 		MinNodes:           2,
 	}

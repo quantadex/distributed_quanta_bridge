@@ -1,22 +1,22 @@
 package key_manager
 
 import (
-	"crypto/ecdsa"
-	"github.com/btcsuite/btcutil"
-	"github.com/btcsuite/btcd/rpcclient"
-	"github.com/btcsuite/btcd/chaincfg"
-	"encoding/hex"
-	"github.com/btcsuite/btcd/wire"
 	"bytes"
+	"crypto/ecdsa"
+	"encoding/hex"
 	"encoding/json"
-	"github.com/quantadex/distributed_quanta_bridge/common"
+	"github.com/btcsuite/btcd/chaincfg"
+	"github.com/btcsuite/btcd/rpcclient"
+	"github.com/btcsuite/btcd/wire"
+	"github.com/btcsuite/btcutil"
 	"github.com/pkg/errors"
+	"github.com/quantadex/distributed_quanta_bridge/common"
 )
 
 type BitcoinKeyManager struct {
 	privateKey *btcutil.WIF
-	client *rpcclient.Client
-	chaincfg *chaincfg.Params
+	client     *rpcclient.Client
+	chaincfg   *chaincfg.Params
 }
 
 func (b *BitcoinKeyManager) CreateNodeKeys() error {
@@ -27,10 +27,10 @@ func (b *BitcoinKeyManager) LoadNodeKeys(privKey string) error {
 	var err error
 	// TODO: make this configurable
 	b.chaincfg = &chaincfg.RegressionNetParams
-	b.client, err = rpcclient.New(&rpcclient.ConnConfig{ Host: "localhost:18332",
-		User: "user",
-		Pass: "123",
-		DisableTLS: true,
+	b.client, err = rpcclient.New(&rpcclient.ConnConfig{Host: "localhost:18332",
+		User:         "user",
+		Pass:         "123",
+		DisableTLS:   true,
 		HTTPPostMode: true,
 	}, nil)
 
@@ -52,7 +52,7 @@ func (b *BitcoinKeyManager) GetPublicKey() (string, error) {
 	return pub.EncodeAddress(), nil
 }
 
-func (b *BitcoinKeyManager) GetPrivateKey() (*ecdsa.PrivateKey) {
+func (b *BitcoinKeyManager) GetPrivateKey() *ecdsa.PrivateKey {
 	return b.privateKey.PrivKey.ToECDSA()
 }
 
@@ -60,14 +60,13 @@ func (b *BitcoinKeyManager) SignMessage(original []byte) ([]byte, error) {
 	panic("not required")
 }
 
-func (b *BitcoinKeyManager) SignMessageObj(original interface{}) (*string) {
+func (b *BitcoinKeyManager) SignMessageObj(original interface{}) *string {
 	panic("not required")
 }
 
 func (b *BitcoinKeyManager) VerifySignatureObj(original interface{}, key string) bool {
 	panic("implement me")
 }
-
 
 func (b *BitcoinKeyManager) SignTransaction(encoded string) (string, error) {
 	var res common.TransactionBitcoin
@@ -106,5 +105,3 @@ func (b *BitcoinKeyManager) SignTransaction(encoded string) (string, error) {
 func (b *BitcoinKeyManager) VerifyTransaction(encoded string) (bool, error) {
 	panic("implement me")
 }
-
-
