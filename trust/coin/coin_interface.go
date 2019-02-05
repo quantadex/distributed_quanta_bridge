@@ -2,10 +2,10 @@ package coin
 
 import (
 	"crypto/ecdsa"
+	"github.com/btcsuite/btcd/chaincfg"
 	common2 "github.com/ethereum/go-ethereum/common"
 	"github.com/quantadex/distributed_quanta_bridge/common"
 	"github.com/scorum/bitshares-go/types"
-	"github.com/btcsuite/btcd/chaincfg"
 )
 
 const BLOCKCHAIN_ETH = "ETH"
@@ -113,7 +113,7 @@ func NewEthereumCoin(networkId string, ethereumRpc string) (Coin, error) {
 }
 
 func NewBitcoinCoin(params *chaincfg.Params) (Coin, error) {
-	return &BitcoinCoin{ chaincfg: params}, nil
+	return &BitcoinCoin{chaincfg: params}, nil
 }
 
 /**
