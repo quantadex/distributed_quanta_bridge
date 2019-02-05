@@ -49,7 +49,7 @@ var ROPSTEN_TRUST = &EthereumTrustSecrets{
 }
 
 var BTCSECRETS = &BtcSecrets{
-	NodeSecrets: []string {
+	NodeSecrets: []string{
 		"cNxQax7BfpbikeuCebPGCgTefTah5h1XhVDfaotVdFmXtaLCWLd9",
 		"cUixT9PYjTtNzcVjF8sB7iM9JeEf8tLHm9Wjgo972x8opCRNTasS",
 		"cPXngzEsUFpNCJ9DGYWyFLfCuGjzhsuM8N3sUf5z4HqLUUGuGp2h",

@@ -1,10 +1,10 @@
 package main
 
 import (
-	"github.com/quantadex/distributed_quanta_bridge/trust/coin"
 	"fmt"
-	"github.com/quantadex/distributed_quanta_bridge/trust/control/sync"
 	"github.com/quantadex/distributed_quanta_bridge/cli"
+	"github.com/quantadex/distributed_quanta_bridge/trust/coin"
+	"github.com/quantadex/distributed_quanta_bridge/trust/control/sync"
 )
 
 func main() {
@@ -23,6 +23,6 @@ func main() {
 	}
 
 	println("Starting ethereum deposit sync")
-	depositSync := sync.NewEthereumSync(coin, config.EthereumTrustAddr, config.CoinName, quanta, kdb,rdb, log, config.EthereumBlockStart)
+	depositSync := sync.NewEthereumSync(coin, config.EthereumTrustAddr, config.CoinName, quanta, kdb, rdb, log, config.EthereumBlockStart)
 	depositSync.Run()
 }

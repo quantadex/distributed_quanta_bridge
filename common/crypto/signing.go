@@ -8,11 +8,11 @@ import (
 	"fmt"
 	"github.com/agl/ed25519"
 	"github.com/btcsuite/btcd/btcec"
+	"github.com/btcsuite/btcd/chaincfg"
 	"github.com/btcsuite/btcutil"
 	"github.com/btcsuite/btcutil/base58"
 	"github.com/go-errors/errors"
 	"github.com/scorum/bitshares-go/sign"
-	"github.com/btcsuite/btcd/chaincfg"
 )
 
 const PREFIX = "QA"

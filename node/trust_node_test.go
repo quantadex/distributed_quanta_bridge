@@ -300,8 +300,6 @@ func TestBTCDeposit(t *testing.T) {
 		depositResult <- c
 	}
 
-
-
 	time.Sleep(5 * time.Second)
 
 	StopNodes(nodes, []int{0, 1})

@@ -19,7 +19,7 @@ type Config struct {
 	EthereumRpc        string
 	EthereumTrustAddr  string
 	EthereumKeyStore   string
-	BtcPrivateKey	   string
+	BtcPrivateKey      string
 	LogLevel           string
 	MinNodes           int
 }

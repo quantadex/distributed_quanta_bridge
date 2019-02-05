@@ -1,54 +1,54 @@
 package sync
 
 import (
-	"github.com/quantadex/distributed_quanta_bridge/trust/coin"
-	"time"
-	"github.com/quantadex/distributed_quanta_bridge/common/logger"
 	"fmt"
 	"github.com/quantadex/distributed_quanta_bridge/common"
 	"github.com/quantadex/distributed_quanta_bridge/common/kv_store"
+	"github.com/quantadex/distributed_quanta_bridge/common/logger"
+	"github.com/quantadex/distributed_quanta_bridge/trust/coin"
+	"github.com/quantadex/distributed_quanta_bridge/trust/control"
 	"github.com/quantadex/distributed_quanta_bridge/trust/db"
 	"github.com/quantadex/distributed_quanta_bridge/trust/quanta"
-	"github.com/quantadex/distributed_quanta_bridge/trust/control"
 	"github.com/scorum/bitshares-go/apis/database"
+	"time"
 )
 
 /**
  * DepositSync is an interface which describes the lifecycle of syncing blockchain deposits into the database.
  */
 type DepositSync struct {
-	coinChannel coin.Coin
-	quantaChannel quanta.Quanta // stellar -> graphene
-	coinInfo      *database.Asset
-	db            kv_store.KVStore
-	rDb           *db.DB
-	logger      logger.Logger
-	blockStartID    int64
-	fnDepositInBlock func(blockID int64) ([]*coin.Deposit, error)
+	coinChannel        coin.Coin
+	quantaChannel      quanta.Quanta // stellar -> graphene
+	coinInfo           *database.Asset
+	db                 kv_store.KVStore
+	rDb                *db.DB
+	logger             logger.Logger
+	blockStartID       int64
+	fnDepositInBlock   func(blockID int64) ([]*coin.Deposit, error)
 	fnPostProcessBlock func(blockID int64) error
 
 	doneChan chan bool
 }
 
 func NewDepositSync(coin coin.Coin,
-				quantaChannel quanta.Quanta,
-				issuingSymbol string,
-				db kv_store.KVStore,
-				rDb *db.DB,
-				logger logger.Logger,
-				blockStartID int64) *DepositSync {
+	quantaChannel quanta.Quanta,
+	issuingSymbol string,
+	db kv_store.KVStore,
+	rDb *db.DB,
+	logger logger.Logger,
+	blockStartID int64) *DepositSync {
 
 	coinInfo, _ := quantaChannel.GetAsset(issuingSymbol)
 
 	return &DepositSync{
-		coinChannel : coin,
+		coinChannel:   coin,
 		quantaChannel: quantaChannel,
-		coinInfo: coinInfo,
-		db: db,
-		rDb: rDb,
-		doneChan : make(chan bool, 1),
-		logger: logger,
-		blockStartID: blockStartID,
+		coinInfo:      coinInfo,
+		db:            db,
+		rDb:           rDb,
+		doneChan:      make(chan bool, 1),
+		logger:        logger,
+		blockStartID:  blockStartID,
 	}
 }
 

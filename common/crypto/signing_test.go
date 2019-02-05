@@ -1,9 +1,9 @@
 package crypto
 
 import (
-	"testing"
 	"github.com/btcsuite/btcutil"
 	"github.com/stretchr/testify/assert"
+	"testing"
 )
 
 /*

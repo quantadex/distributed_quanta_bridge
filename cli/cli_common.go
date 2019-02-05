@@ -1,23 +1,23 @@
 package cli
 
 import (
-	"github.com/spf13/viper"
-	"flag"
-	"io/ioutil"
 	"bytes"
+	"flag"
 	"fmt"
-	"github.com/quantadex/distributed_quanta_bridge/node/common"
-	"github.com/quantadex/distributed_quanta_bridge/common/logger"
-	"strconv"
+	"github.com/go-pg/pg"
 	"github.com/op/go-logging"
 	"github.com/quantadex/distributed_quanta_bridge/common/kv_store"
+	"github.com/quantadex/distributed_quanta_bridge/common/logger"
+	"github.com/quantadex/distributed_quanta_bridge/node/common"
 	"github.com/quantadex/distributed_quanta_bridge/trust/control"
-	"github.com/go-pg/pg"
 	"github.com/quantadex/distributed_quanta_bridge/trust/db"
 	"github.com/quantadex/distributed_quanta_bridge/trust/quanta"
+	"github.com/spf13/viper"
+	"io/ioutil"
+	"strconv"
 )
 
-func Setup() (*common.Config, quanta.Quanta, *db.DB, kv_store.KVStore, logger.Logger){
+func Setup() (*common.Config, quanta.Quanta, *db.DB, kv_store.KVStore, logger.Logger) {
 	viper.SetConfigType("yaml")
 	configFile := flag.String("config", "config.yml", "configuration file")
 	flag.Parse()

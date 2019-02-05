@@ -42,8 +42,8 @@ type TrustNode struct {
 	btcKM    key_manager.KeyManager
 	man      *manifest.Manifest
 	q        quanta.Quanta
-	eth       coin.Coin
-	btc		 coin.Coin
+	eth      coin.Coin
+	btc      coin.Coin
 	db       kv_store.KVStore
 	rDb      *db.DB
 	peer     peer_contact.PeerContact
@@ -239,8 +239,8 @@ func (n *TrustNode) registerNode(config common.Config) bool {
 	}
 
 	btcPub, err := n.btcKM.GetPublicKey()
-	chainAddress := map[string]string {
-		"BTC" : btcPub,
+	chainAddress := map[string]string{
+		"BTC": btcPub,
 	}
 
 	err = n.reg.RegisterNode(nodeIP, strconv.Itoa(nodePort), n.quantakM, chainAddress)
