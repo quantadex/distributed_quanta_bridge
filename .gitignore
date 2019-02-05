@@ -13,6 +13,7 @@
 
 blockchain/ethereum/build
 blockchain/ethereum/node_modules
+blockchain/bitcoin/data/regtest
 
 tmp
 vendor
