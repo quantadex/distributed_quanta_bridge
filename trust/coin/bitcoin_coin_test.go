@@ -29,7 +29,7 @@ func TestCheckHash(t *testing.T) {
 }
 
 func TestBitcoinEncodeRefund(t *testing.T) {
-	client, err := NewBitcoinCoin(&chaincfg.RegressionNetParams)
+	client, err := NewBitcoinCoin(&chaincfg.RegressionNetParams, nil)
 	assert.NoError(t, err)
 
 	err = client.Attach()
@@ -42,8 +42,6 @@ func TestBitcoinEncodeRefund(t *testing.T) {
 		assert.NoError(t, err)
 	}
 
-	println(addr1.String(), addr1.EncodeAddress())
-
 	bitcoin := client.(*BitcoinCoin)
 	msig, err := bitcoin.GenerateMultisig([]btcutil.Address{
 		addr1, addr2,
@@ -52,7 +50,7 @@ func TestBitcoinEncodeRefund(t *testing.T) {
 	log.Println("multisig: ", msig, err)
 
 	w := Withdrawal{
-		SourceAddress:      "n2PNkvCSkkSKvgqLsQXAQACFETQwKvc16X",
+		SourceAddress:      msig,
 		DestinationAddress: "2NGYCnkuo62kL1QpAzV3bRaf747bSM8suQm",
 		Amount:             1000,
 	}
@@ -83,7 +81,7 @@ func TestBitcoinEncodeRefund(t *testing.T) {
 }
 
 func TestTopBlockId(t *testing.T) {
-	client, err := NewBitcoinCoin(&chaincfg.RegressionNetParams)
+	client, err := NewBitcoinCoin(&chaincfg.RegressionNetParams, nil)
 	assert.NoError(t, err)
 
 	err = client.Attach()
@@ -95,18 +93,18 @@ func TestTopBlockId(t *testing.T) {
 }
 
 func TestDeposits(t *testing.T) {
-	client, err := NewBitcoinCoin(&chaincfg.RegressionNetParams)
+	client, err := NewBitcoinCoin(&chaincfg.RegressionNetParams, nil)
 	assert.NoError(t, err)
 
 	err = client.Attach()
 	assert.NoError(t, err)
 
-	_, err = client.GetDepositsInBlock(131, nil)
+	_, err = client.GetDepositsInBlock(130, nil)
 	assert.NoError(t, err)
 }
 
 func TestDecode(t *testing.T) {
-	client, err := NewBitcoinCoin(&chaincfg.RegressionNetParams)
+	client, err := NewBitcoinCoin(&chaincfg.RegressionNetParams, nil)
 	assert.NoError(t, err)
 
 	err = client.Attach()

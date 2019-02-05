@@ -96,19 +96,25 @@ func (b *BitcoinCoin) GetDepositsInBlock(blockID int64, trustAddress map[string]
 		tx := tx.TxHash()
 		currentTx, err := b.Client.GetRawTransactionVerbose(&tx)
 		if err != nil {
-			return nil, err
+			return nil, errors.Wrap(err, "failed to getraw for currentTx")
 		}
+
+		println("current tx = ", tx.String())
 
 		vinLookup := map[string]bool{}
 		vinAddresses := []string{}
 		for _, vin := range currentTx.Vin {
+			if vin.Txid == "" {
+				continue
+			}
+
 			prevTranHash, err := chainhash.NewHashFromStr(vin.Txid)
 			if err != nil {
-				return events, err
+				return events, errors.Wrap(err, "failed to build hash")
 			}
 			prevTran, err := b.Client.GetRawTransactionVerbose(prevTranHash)
 			if err != nil {
-				return events, err
+				return events, errors.Wrap(err, "failed to getraw for vin")
 			}
 
 			prevVout := prevTran.Vout[vin.Vout]
@@ -141,7 +147,8 @@ func (b *BitcoinCoin) GetDepositsInBlock(blockID int64, trustAddress map[string]
 			})
 		}
 	}
-	fmt.Printf("events = %v\n", events)
+	msg,_ := json.Marshal(events)
+	fmt.Printf("events = %v\n", string(msg))
 	return events, nil
 }
 
