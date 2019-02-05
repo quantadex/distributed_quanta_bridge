@@ -21,6 +21,7 @@ type Config struct {
 	EthereumKeyStore   string
 	BtcPrivateKey	   string
 	BtcBlockStart 		int64
+	BtcSigners			[]string
 	LogLevel           string
 	MinNodes           int
 }
