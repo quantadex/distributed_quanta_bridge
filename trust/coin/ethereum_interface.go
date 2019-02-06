@@ -131,7 +131,7 @@ func CheckValidEthereumAddress(address string) bool {
 }
 
 type ForwardInput struct {
-	ContractAddress common.Address
+	ContractAddress string
 	Trust           common.Address
 	QuantaAddr      string
 	TxHash          string

@@ -11,6 +11,7 @@ import (
 	"github.com/quantadex/distributed_quanta_bridge/common"
 	"math/big"
 	"strings"
+	"github.com/btcsuite/btcd/btcec"
 )
 
 const sign_prefix = "\x19Ethereum Signed Message:\n"
@@ -80,6 +81,10 @@ func (c *EthereumCoin) GetForwardersInBlock(blockID int64) ([]*ForwardInput, err
 		return nil, err
 	}
 	return forwarders, nil
+}
+
+func (b *EthereumCoin) GenerateMultisig(pubKey *btcec.PublicKey) (string, error) {
+	panic("not implemented")
 }
 
 //

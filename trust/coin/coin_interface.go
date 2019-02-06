@@ -7,6 +7,7 @@ import (
 	"github.com/quantadex/distributed_quanta_bridge/common"
 	"github.com/scorum/bitshares-go/types"
 	"github.com/btcsuite/btcutil"
+	"github.com/btcsuite/btcd/btcec"
 )
 
 const BLOCKCHAIN_ETH = "ETH"
@@ -88,6 +89,11 @@ type Coin interface {
 	 * We will record this in our KV later, to know where deposits came from.
 	 */
 	GetForwardersInBlock(blockID int64) ([]*ForwardInput, error)
+
+	/**
+	 * GenerateMultisig - this is for creating multisig wallet
+	 */
+	 GenerateMultisig(pubKey *btcec.PublicKey) (string, error)
 
 	/**
 	 * SendWithdrawl

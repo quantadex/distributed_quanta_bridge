@@ -67,7 +67,7 @@ func (c *EthereumSync) PostProcessBlock(blockID int64) error {
 
 	for _, addr := range addresses {
 		if addr.Trust.Hex() == c.trustAddress.Hex() {
-			c.logger.Infof("New Forwarder Address ETH->QUANTA address, %s -> %s", addr.ContractAddress.Hex(), addr.QuantaAddr)
+			c.logger.Infof("New Forwarder Address ETH->QUANTA address, %s -> %s", addr.ContractAddress, addr.QuantaAddr)
 			db.AddCrosschainAddress(c.rDb, addr)
 		} else {
 			c.logger.Error(fmt.Sprintf("MISMATCH: Forwarder address[%s] in blockID=%d does not match our trustAddress[%s]",

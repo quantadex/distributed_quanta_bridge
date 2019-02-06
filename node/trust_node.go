@@ -18,8 +18,12 @@ import (
 	"github.com/quantadex/distributed_quanta_bridge/trust/peer_contact"
 	"github.com/quantadex/distributed_quanta_bridge/trust/quanta"
 	"github.com/quantadex/distributed_quanta_bridge/trust/registrar_client"
+	common2 "github.com/ethereum/go-ethereum/common"
 	"strconv"
 	"time"
+	"github.com/btcsuite/btcd/btcec"
+	"github.com/quantadex/distributed_quanta_bridge/common/crypto"
+	"github.com/btcsuite/btcd/chaincfg"
 )
 
 const (
@@ -163,6 +167,18 @@ func initNode(config common.Config, targetCoin coin.Coin) (*TrustNode, bool) {
 		return nil, false
 	}
 
+	// attach bitcoin
+	coin, err := coin.NewBitcoinCoin(&chaincfg.RegressionNetParams,config.BtcSigners)
+	if err != nil {
+		panic(fmt.Errorf("cannot create ethereum listener"))
+	}
+
+	err = coin.Attach()
+	if err != nil {
+		panic(err)
+	}
+	node.btc = coin
+
 	node.q, err = quanta.NewQuantaGraphene(quanta.QuantaClientOptions{
 		node.log,
 		node.rDb,
@@ -211,7 +227,7 @@ func initNode(config common.Config, targetCoin coin.Coin) (*TrustNode, bool) {
 	}
 
 	pubKey, _ := node.quantakM.GetPublicKey()
-	node.restApi = NewApiServer([]string{control.QUANTA, config.CoinName}, pubKey, config.ListenIp, node.db, node.rDb, fmt.Sprintf(":%d", config.ExternalListenPort), node.log)
+	node.restApi = NewApiServer(node, []string{control.QUANTA, config.CoinName}, pubKey, config.ListenIp, node.db, node.rDb, fmt.Sprintf(":%d", config.ExternalListenPort), node.log)
 
 	return node, true
 }
@@ -243,7 +259,7 @@ func (n *TrustNode) registerNode(config common.Config) bool {
 		"BTC": btcPub,
 	}
 
-	err = n.reg.RegisterNode(nodeIP, strconv.Itoa(nodePort), n.quantakM, chainAddress)
+	err = n.reg.RegisterNode(nodeIP, strconv.Itoa(nodePort), strconv.Itoa(config.ExternalListenPort), n.quantakM, chainAddress)
 	if err != nil {
 		n.log.Error("Failed to send node info to registrar " + err.Error())
 		return false
@@ -392,6 +408,27 @@ func registerNode(config common.Config, node *TrustNode) error {
 	}
 	node.initTrust(config)
 	return nil
+}
+
+func (n *TrustNode) CreateMultisig(blockchain string, pubKey *btcec.PublicKey) (*coin.ForwardInput, error) {
+	msig, err := n.btc.GenerateMultisig(pubKey)
+	if err != nil {
+		return nil, err
+	}
+	quantaAddr, err := crypto.GetGraphenePublicKey(pubKey)
+	if err != nil {
+		return nil, err
+	}
+
+	addr := coin.ForwardInput{
+		msig,
+		common2.HexToAddress("0x0"),
+		quantaAddr,
+		"",
+		n.btc.Blockchain(),
+	}
+	err = db.AddCrosschainAddress(n.rDb, &addr)
+	return &addr, err
 }
 
 func (n *TrustNode) Stop() {

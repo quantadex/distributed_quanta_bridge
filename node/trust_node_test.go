@@ -11,6 +11,8 @@ import (
 	"github.com/stretchr/testify/assert"
 	"testing"
 	"time"
+	"net/http"
+	"io/ioutil"
 )
 
 /*
@@ -350,6 +352,17 @@ func TestBTCDeposit(t *testing.T) {
 	nodes[0].cTQ.SuccessCb = func(c control.DepositResult) {
 		depositResult <- c
 	}
+
+	pubKey := "QA5nvEN2S7Dej2C9hrLJTHNeMGeHq6uyjMdoceR74CksyApeZHWS"
+	res, err := http.Get("http://localhost:5200/api/address/new/BTC/" + pubKey)
+	assert.NoError(t, err)
+	assert.Equal(t, res.StatusCode, 200)
+
+	bodyBytes, err := ioutil.ReadAll(res.Body)
+	assert.NoError(t, err)
+
+	println("Address created ", string(bodyBytes))
+
 
 	time.Sleep(5 * time.Second)
 

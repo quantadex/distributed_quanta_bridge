@@ -340,7 +340,7 @@ func (l *Listener) GetForwardContract(blockNumber int64) ([]*ForwardInput, error
 			}
 
 			input.Blockchain = BLOCKCHAIN_ETH
-			input.ContractAddress = tr.ContractAddress
+			input.ContractAddress = tr.ContractAddress.Hex()
 			input.Trust = vals[0].(common.Address)
 			input.QuantaAddr = vals[1].(string)
 

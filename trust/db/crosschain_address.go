@@ -36,7 +36,7 @@ func RemoveCrosschainAddress(db *DB, id string) error {
 }
 
 func AddCrosschainAddress(db *DB, input *coin.ForwardInput) error {
-	tx := &CrosschainAddress{ input.ContractAddress.Hex(), input.QuantaAddr,
+	tx := &CrosschainAddress{ input.ContractAddress, input.QuantaAddr,
 							input.TxHash, input.Blockchain, time.Now() }
 	_, err := db.Model(tx).Insert()
 	return err

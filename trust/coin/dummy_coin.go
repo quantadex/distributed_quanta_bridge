@@ -5,6 +5,7 @@ import (
 	"fmt"
 	common2 "github.com/ethereum/go-ethereum/common"
 	"sync"
+	"github.com/btcsuite/btcd/btcec"
 )
 
 type DummyCoin struct {
@@ -24,6 +25,10 @@ func GetDummyInstance() *DummyCoin {
 
 func (c *DummyCoin) Blockchain() string {
 	return "DUMMY"
+}
+
+func (b *DummyCoin) GenerateMultisig(pubKey *btcec.PublicKey) (string, error) {
+	panic("not implemented")
 }
 
 func (c *DummyCoin) AddDeposit(deposit *Deposit) error {

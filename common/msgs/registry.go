@@ -3,6 +3,7 @@ package msgs
 type NodeInfo struct {
 	NodeIp       string            `json: "node_ip"`
 	NodePort     string            `json: "node_port"`
+	NodeExternalPort string			`json: "node_external_port"`
 	NodeKey      string            `json: "node_key"`
 	ChainAddress map[string]string `json: "chain_address"`
 }
