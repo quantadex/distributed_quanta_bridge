@@ -143,12 +143,6 @@ func StopRegistry(s *service.Server) {
 	s.Stop()
 }
 
-func DoLoopDeposit(nodes []*TrustNode, blockIds []int64) {
-	for _, node := range nodes {
-		node.cTQ.DoLoop(blockIds)
-	}
-}
-
 func DoLoopWithdrawal(nodes []*TrustNode, cursor int64) {
 	for _, node := range nodes {
 		go node.qTC.DoLoop(cursor)
