@@ -61,16 +61,17 @@ func QueryAllTX(db *DB) ([]Transaction, error) {
 
 func ConfirmDeposit(db *DB, dep *coin.Deposit, isBounced bool) error {
 	tx := &Transaction{
-		Type:      DEPOSIT,
-		Tx:        dep.Tx,
-		Coin:      dep.CoinName,
-		Created:   time.Now(),
-		Amount:    dep.Amount,
-		BlockId:   dep.BlockID,
-		From:      dep.SenderAddr,
-		To:        dep.QuantaAddr,
-		IsBounced: isBounced,
-		Signed:    false,
+		Type:        DEPOSIT,
+		Tx:          dep.Tx,
+		Coin:        dep.CoinName,
+		Created:     time.Now(),
+		Amount:      dep.Amount,
+		BlockId:     dep.BlockID,
+		From:        dep.SenderAddr,
+		To:          dep.QuantaAddr,
+		IsBounced:   isBounced,
+		Signed:      false,
+		SubmitState: SUBMIT_CONSENSUS,
 	}
 	_, err := db.Model(tx).OnConflict("DO NOTHING").Where("Tx=?", dep.Tx).SelectOrInsert()
 
@@ -104,16 +105,17 @@ func ChangeSubmitState(db *DB, id string, state string, typeStr string) error {
 
 func ConfirmWithdrawal(db *DB, dep *coin.Withdrawal) error {
 	tx := &Transaction{
-		Type:    WITHDRAWAL,
-		Tx:      dep.Tx,
-		TxId:    dep.TxId,
-		Coin:    dep.CoinName,
-		Created: time.Now(),
-		Amount:  int64(dep.Amount),
-		BlockId: dep.QuantaBlockID,
-		From:    dep.SourceAddress,
-		To:      dep.DestinationAddress,
-		Signed:  false,
+		Type:        WITHDRAWAL,
+		Tx:          dep.Tx,
+		TxId:        dep.TxId,
+		Coin:        dep.CoinName,
+		Created:     time.Now(),
+		Amount:      int64(dep.Amount),
+		BlockId:     dep.QuantaBlockID,
+		From:        dep.SourceAddress,
+		To:          dep.DestinationAddress,
+		Signed:      false,
+		SubmitState: SUBMIT_CONSENSUS,
 	}
 
 	return db.Insert(tx)

@@ -124,7 +124,7 @@ func (b *BitcoinCoin) GetDepositsInBlock(blockID int64, trustAddress map[string]
 			}
 
 			prevVout := prevTran.Vout[vin.Vout]
-			fromAddress := strings.Join(prevVout.ScriptPubKey.Addresses,",")
+			fromAddress := strings.Join(prevVout.ScriptPubKey.Addresses, ",")
 			vinLookup[fromAddress] = true
 			vinAddresses = append(vinAddresses, fromAddress)
 		}
@@ -132,7 +132,7 @@ func (b *BitcoinCoin) GetDepositsInBlock(blockID int64, trustAddress map[string]
 		fromAddr := strings.Join(vinAddresses, ",")
 
 		for _, vout := range currentTx.Vout {
-			toAddr := strings.Join(vout.ScriptPubKey.Addresses,",")
+			toAddr := strings.Join(vout.ScriptPubKey.Addresses, ",")
 
 			if fromAddr == toAddr || fromAddr == "" {
 				//println("Ignoring tx when from and to the same ", toAddr)
@@ -147,7 +147,7 @@ func (b *BitcoinCoin) GetDepositsInBlock(blockID int64, trustAddress map[string]
 			events = append(events, &Deposit{
 				SenderAddr: fromAddr,
 				QuantaAddr: toAddr,
-				CoinName: b.Blockchain(),
+				CoinName:   b.Blockchain(),
 				Amount:     int64(amount),
 				BlockID:    blockID,
 				Tx:         fmt.Sprintf("%s_%d", currentTx.Hash, vout.N),
@@ -166,7 +166,7 @@ func (b *BitcoinCoin) GetForwardersInBlock(blockID int64) ([]*ForwardInput, erro
 func (b *BitcoinCoin) CombineSignatures(signs []string) (string, error) {
 	sigsByte, err := json.Marshal(signs)
 	args := []string{
-		"-datadir=blockchain/bitcoin/data/",
+		"-datadir=../../blockchain/bitcoin/data",
 		"combinerawtransaction",
 		string(sigsByte),
 	}

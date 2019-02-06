@@ -222,7 +222,7 @@ func NewCoinToQuanta(log logger.Logger,
 
 func (c *CoinToQuanta) processDeposits() {
 	// only leader - pick up  deposits with empty or null submit_state
-	txs := db.QueryDepositByAge(c.rDb, time.Now().Add(-time.Second*5), []string{""})
+	txs := db.QueryDepositByAge(c.rDb, time.Now().Add(-time.Second*5), []string{db.SUBMIT_CONSENSUS})
 	if len(txs) > 0 {
 		tx := txs[0]
 		w := &coin.Deposit{
