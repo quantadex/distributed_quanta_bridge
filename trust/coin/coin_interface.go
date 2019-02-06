@@ -6,6 +6,7 @@ import (
 	common2 "github.com/ethereum/go-ethereum/common"
 	"github.com/quantadex/distributed_quanta_bridge/common"
 	"github.com/scorum/bitshares-go/types"
+	"github.com/btcsuite/btcutil"
 )
 
 const BLOCKCHAIN_ETH = "ETH"
@@ -115,7 +116,16 @@ func NewEthereumCoin(networkId string, ethereumRpc string) (Coin, error) {
 }
 
 func NewBitcoinCoin(params *chaincfg.Params, signers []string) (Coin, error) {
-	return &BitcoinCoin{chaincfg: params}, nil
+	signersA := []btcutil.Address{}
+	for _, s := range signers {
+		addr, err := btcutil.DecodeAddress(s, params)
+		if err != nil {
+			panic("corrupted btc address")
+		}
+		signersA = append(signersA, addr)
+	}
+
+	return &BitcoinCoin{chaincfg: params, signers: signersA}, nil
 }
 
 /**

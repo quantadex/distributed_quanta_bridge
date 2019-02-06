@@ -17,12 +17,15 @@ import (
 	common2 "github.com/quantadex/distributed_quanta_bridge/common"
 	"os/exec"
 	"strings"
+	"github.com/btcsuite/btcd/btcec"
+	"github.com/quantadex/distributed_quanta_bridge/common/crypto"
 )
 
 type BitcoinCoin struct {
 	Client   *rpcclient.Client
 	chaincfg *chaincfg.Params
 	command  string
+	signers []btcutil.Address
 }
 
 const BLOCKCHAIN_BTC = "BTC"
@@ -53,13 +56,17 @@ func (b *BitcoinCoin) GetTopBlockID() (int64, error) {
 	return blockId, err
 }
 
-func (b *BitcoinCoin) GenerateMultisig(addresses []btcutil.Address) (string, error) {
-	addr := []string{}
-	for _, a := range addresses {
-		addr = append(addr, a.String())
+func (b *BitcoinCoin) GenerateMultisig(pubKey *btcec.PublicKey) (string, error) {
+	addr := []btcutil.Address{}
+	addr = append(addr, b.signers...)
+	btcAddress, err  := crypto.GetBitcoinAddressFromGraphene(pubKey)
+	if err != nil {
+		return "", err
 	}
 
-	addrx, err := b.Client.AddMultisigAddress(2, addresses, "")
+	addr = append(addr, btcAddress)
+
+	addrx, err := b.Client.AddMultisigAddress(len(addr) - 1, addr, "")
 	fmt.Println("result ", addrx)
 
 	if err != nil {
@@ -231,7 +238,7 @@ func (b *BitcoinCoin) EncodeRefund(w Withdrawal) (string, error) {
 	// get latest hash
 	unspent, err := b.Client.ListUnspent()
 	if err != nil {
-		return "", err
+		return "", errors.Wrap(err, "No unspent input found")
 	}
 
 	inputs := []btcjson.TransactionInput{}

@@ -10,6 +10,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"log"
 	"testing"
+	"github.com/quantadex/distributed_quanta_bridge/common/crypto"
 )
 
 /*
@@ -29,23 +30,17 @@ func TestCheckHash(t *testing.T) {
 }
 
 func TestBitcoinEncodeRefund(t *testing.T) {
-	client, err := NewBitcoinCoin(&chaincfg.RegressionNetParams, nil)
+	client, err := NewBitcoinCoin(&chaincfg.RegressionNetParams, []string{"2NENNHR9Y9fpKzjKYobbdbwap7xno7sbf2E", "2NEDF3RBHQuUHQmghWzFf6b6eeEnC7KjAtR"})
 	assert.NoError(t, err)
 
 	err = client.Attach()
 	assert.NoError(t, err)
 
-	addr1, err := btcutil.DecodeAddress("2NENNHR9Y9fpKzjKYobbdbwap7xno7sbf2E", &chaincfg.RegressionNetParams)
-	addr2, err := btcutil.DecodeAddress("2NEDF3RBHQuUHQmghWzFf6b6eeEnC7KjAtR", &chaincfg.RegressionNetParams)
-	if err != nil {
-		println(err)
-		assert.NoError(t, err)
-	}
-
 	bitcoin := client.(*BitcoinCoin)
-	msig, err := bitcoin.GenerateMultisig([]btcutil.Address{
-		addr1, addr2,
-	})
+	btec, err := crypto.NewGraphenePublicKeyFromString("QA5nvEN2S7Dej2C9hrLJTHNeMGeHq6uyjMdoceR74CksyApeZHWS")
+	assert.NoError(t, err)
+	msig, err := bitcoin.GenerateMultisig(btec)
+
 
 	log.Println("multisig: ", msig, err)
 
@@ -104,25 +99,17 @@ func TestDeposits(t *testing.T) {
 }
 
 func TestDecode(t *testing.T) {
-	client, err := NewBitcoinCoin(&chaincfg.RegressionNetParams, nil)
+	client, err := NewBitcoinCoin(&chaincfg.RegressionNetParams, []string{"2NENNHR9Y9fpKzjKYobbdbwap7xno7sbf2E","2NEDF3RBHQuUHQmghWzFf6b6eeEnC7KjAtR"})
 	assert.NoError(t, err)
 
 	err = client.Attach()
 	assert.NoError(t, err)
 
-	addr1, err := btcutil.DecodeAddress("2NENNHR9Y9fpKzjKYobbdbwap7xno7sbf2E", &chaincfg.RegressionNetParams)
-	addr2, err := btcutil.DecodeAddress("2NEDF3RBHQuUHQmghWzFf6b6eeEnC7KjAtR", &chaincfg.RegressionNetParams)
-	if err != nil {
-		println(err)
-		assert.NoError(t, err)
-	}
-
-	println(addr1.String(), addr1.EncodeAddress())
-
 	bitcoin := client.(*BitcoinCoin)
-	msig, err := bitcoin.GenerateMultisig([]btcutil.Address{
-		addr1, addr2,
-	})
+	btec, err := crypto.NewGraphenePublicKeyFromString("QA5nvEN2S7Dej2C9hrLJTHNeMGeHq6uyjMdoceR74CksyApeZHWS")
+	assert.NoError(t, err)
+
+	msig, err := bitcoin.GenerateMultisig(btec)
 
 	log.Println("multisig: ", msig, err)
 

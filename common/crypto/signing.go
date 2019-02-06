@@ -11,11 +11,50 @@ import (
 	"github.com/btcsuite/btcd/chaincfg"
 	"github.com/btcsuite/btcutil"
 	"github.com/btcsuite/btcutil/base58"
-	"github.com/go-errors/errors"
 	"github.com/scorum/bitshares-go/sign"
+	"github.com/juju/errors"
 )
 
 const PREFIX = "QA"
+
+func NewGraphenePublicKeyFromString(key string) (*btcec.PublicKey, error) {
+	prefix := key[:len(PREFIX)]
+
+	if prefix != PREFIX {
+		return nil, errors.New("Wrong chain")
+	}
+
+	b58 := base58.Decode(key[len(PREFIX):])
+	if len(b58) < 5 {
+		return nil, errors.New("Invalid public key")
+	}
+
+	chk1 := b58[len(b58)-4:]
+
+	keyBytes := b58[:len(b58)-4]
+	chk2, err := Ripemd160Checksum(keyBytes)
+	if err != nil {
+		return nil, errors.Annotate(err, "Invalid checksum")
+	}
+
+	if !bytes.Equal(chk1, chk2) {
+		return nil, errors.New("Invalid public key")
+	}
+
+	pub, err := btcec.ParsePubKey(keyBytes, btcec.S256())
+	if err != nil {
+		return nil, errors.Annotate(err, "ParsePubKey")
+	}
+
+	//k := PublicKey{
+	//	key:      pub,
+	//	prefix:   prefix,
+	//	checksum: chk1,
+	//}
+
+	return pub, nil
+}
+
 
 func GetGraphenePublicKey(pubKey *btcec.PublicKey) (string, error) {
 	buf := pubKey.SerializeCompressed()
@@ -28,13 +67,13 @@ func GetGraphenePublicKey(pubKey *btcec.PublicKey) (string, error) {
 	return fmt.Sprintf("%s%s", PREFIX, pubkey), nil
 }
 
-func GetBitcoinAddressFromGraphene(pubKey *btcec.PublicKey) (string, error) {
+func GetBitcoinAddressFromGraphene(pubKey *btcec.PublicKey) (*btcutil.AddressPubKey, error) {
 	address, err := btcutil.NewAddressPubKey(pubKey.SerializeUncompressed(), &chaincfg.RegressionNetParams)
 	if err != nil {
-		return "", err
+		return nil, err
 	}
 	address.SetFormat(btcutil.PKFUncompressed)
-	return address.EncodeAddress(), err
+	return address, err
 }
 
 func SignMessage(msg interface{}, privateKey string) *string {
