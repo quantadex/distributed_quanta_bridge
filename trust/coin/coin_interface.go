@@ -7,7 +7,6 @@ import (
 	"github.com/quantadex/distributed_quanta_bridge/common"
 	"github.com/scorum/bitshares-go/types"
 	"github.com/btcsuite/btcutil"
-	"github.com/btcsuite/btcd/btcec"
 )
 
 const BLOCKCHAIN_ETH = "ETH"
@@ -93,7 +92,7 @@ type Coin interface {
 	/**
 	 * GenerateMultisig - this is for creating multisig wallet
 	 */
-	 GenerateMultisig(pubKey *btcec.PublicKey) (string, error)
+	 GenerateMultisig(accountId string) (string, error)
 
 	/**
 	 * SendWithdrawl

@@ -17,7 +17,6 @@ import (
 	common2 "github.com/quantadex/distributed_quanta_bridge/common"
 	"os/exec"
 	"strings"
-	"github.com/btcsuite/btcd/btcec"
 	"github.com/quantadex/distributed_quanta_bridge/common/crypto"
 )
 
@@ -56,10 +55,20 @@ func (b *BitcoinCoin) GetTopBlockID() (int64, error) {
 	return blockId, err
 }
 
-func (b *BitcoinCoin) GenerateMultisig(pubKey *btcec.PublicKey) (string, error) {
+func (b *BitcoinCoin) GenerateMultisig(accountId string) (string, error) {
 	addr := []btcutil.Address{}
 	addr = append(addr, b.signers...)
-	btcAddress, err  := crypto.GetBitcoinAddressFromGraphene(pubKey)
+	btcAddressStr, err  := crypto.GenerateGrapheneKeyWithSeed(accountId)
+	if err != nil {
+		return "", err
+	}
+
+	graphenePK, err  := crypto.NewGraphenePublicKeyFromString(btcAddressStr)
+	if err != nil {
+		return "", err
+	}
+
+	btcAddress, err  := crypto.GetBitcoinAddressFromGraphene(graphenePK)
 	if err != nil {
 		return "", err
 	}

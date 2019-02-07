@@ -21,8 +21,6 @@ import (
 	common2 "github.com/ethereum/go-ethereum/common"
 	"strconv"
 	"time"
-	"github.com/btcsuite/btcd/btcec"
-	"github.com/quantadex/distributed_quanta_bridge/common/crypto"
 	"github.com/btcsuite/btcd/chaincfg"
 )
 
@@ -410,20 +408,18 @@ func registerNode(config common.Config, node *TrustNode) error {
 	return nil
 }
 
-func (n *TrustNode) CreateMultisig(blockchain string, pubKey *btcec.PublicKey) (*coin.ForwardInput, error) {
-	msig, err := n.btc.GenerateMultisig(pubKey)
-	if err != nil {
-		return nil, err
-	}
-	quantaAddr, err := crypto.GetGraphenePublicKey(pubKey)
+func (n *TrustNode) CreateMultisig(blockchain string, accountId string) (*coin.ForwardInput, error) {
+	msig, err := n.btc.GenerateMultisig(accountId)
 	if err != nil {
 		return nil, err
 	}
 
+	//TODO: should we validate user?
+
 	addr := coin.ForwardInput{
 		msig,
 		common2.HexToAddress("0x0"),
-		quantaAddr,
+		accountId,
 		"",
 		n.btc.Blockchain(),
 	}

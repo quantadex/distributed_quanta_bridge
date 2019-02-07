@@ -11,7 +11,6 @@ import (
 	"github.com/quantadex/distributed_quanta_bridge/trust/db"
 	"net/http"
 	"strings"
-	"github.com/quantadex/distributed_quanta_bridge/common/crypto"
 )
 
 type Server struct {
@@ -59,7 +58,6 @@ func (server *Server) newAddressHandler(w http.ResponseWriter, r *http.Request) 
 	vars := mux.Vars(r)
 	blockchain := strings.ToUpper(vars["blockchain"])
 	quanta := vars["quanta"]
-	println("processing ", quanta)
 
 	if blockchain == "BTC" {
 		// if client, broadcast it
@@ -79,13 +77,7 @@ func (server *Server) newAddressHandler(w http.ResponseWriter, r *http.Request) 
 			}
 		}
 
-		pubKey, err := crypto.NewGraphenePublicKeyFromString(quanta)
-		if err != nil {
-			w.WriteHeader(500)
-			w.Write([]byte(err.Error()))
-			return
-		}
-		forwardInput, err := server.trustNode.CreateMultisig(blockchain, pubKey)
+		forwardInput, err := server.trustNode.CreateMultisig(blockchain, quanta)
 		if err != nil {
 			w.WriteHeader(500)
 			w.Write([]byte(err.Error()))

@@ -33,3 +33,13 @@ func TestGetBitcoinAddressFromGraphene(t *testing.T) {
 	assert.NoError(t, err)
 	println(address)
 }
+
+func TestGetGraphenePublicKey(t *testing.T) {
+	address, err := GenerateGrapheneKeyWithSeed("pooja")
+	assert.NoError(t, err)
+	println(address)
+
+	pubKey, err := NewGraphenePublicKeyFromString(address)
+	assert.NoError(t, err)
+	println(pubKey)
+}

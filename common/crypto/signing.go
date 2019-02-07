@@ -41,9 +41,11 @@ func NewGraphenePublicKeyFromString(key string) (*btcec.PublicKey, error) {
 		return nil, errors.New("Invalid public key 2")
 	}
 
+	println("Key bytes ", len(keyBytes))
+
 	pub, err := btcec.ParsePubKey(keyBytes, btcec.S256())
 	if err != nil {
-		return nil, errors.Annotate(err, "ParsePubKey")
+		return nil, errors.Annotate(err, "ParsePubKey??")
 	}
 
 	//k := PublicKey{
@@ -55,6 +57,19 @@ func NewGraphenePublicKeyFromString(key string) (*btcec.PublicKey, error) {
 	return pub, nil
 }
 
+func GenerateGrapheneKeyWithSeed(str string) (string, error) {
+	digest := sha256.Sum256([]byte(str))
+	digest2 := bytes.NewBuffer([]byte{0x2})
+	digest2.Write(digest[:])
+
+	chk, err := Ripemd160Checksum(digest2.Bytes())
+	if err != nil {
+		return "", err
+	}
+	b := append(digest2.Bytes(), chk...)
+	pubkey := base58.Encode(b)
+	return fmt.Sprintf("%s%s", PREFIX, pubkey), nil
+}
 
 func GetGraphenePublicKey(pubKey *btcec.PublicKey) (string, error) {
 	buf := pubKey.SerializeCompressed()

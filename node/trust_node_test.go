@@ -353,7 +353,7 @@ func TestBTCDeposit(t *testing.T) {
 		depositResult <- c
 	}
 
-	pubKey := "QA5nvEN2S7Dej2C9hrLJTHNeMGeHq6uyjMdoceR74CksyApeZHWS"
+	pubKey := "alpha"
 	res, err := http.Get("http://localhost:5200/api/address/new/BTC/" + pubKey)
 	assert.NoError(t, err)
 	assert.Equal(t, res.StatusCode, 200)
