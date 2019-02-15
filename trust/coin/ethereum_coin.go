@@ -9,7 +9,9 @@ import (
 	common2 "github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/ethclient"
 	"github.com/quantadex/distributed_quanta_bridge/common"
+	"github.com/quantadex/distributed_quanta_bridge/common/crypto"
 	"math/big"
+	"regexp"
 	"strings"
 )
 
@@ -26,6 +28,7 @@ type EncodedMsg struct {
 	Message     string
 	Tx          string
 	BlockNumber int64
+	CoinName    string
 }
 
 func (c *EthereumCoin) Blockchain() string {
@@ -74,7 +77,7 @@ func (c *EthereumCoin) GetDepositsInBlock(blockID int64, trustAddress map[string
 	return append(ndeposits, deps...), nil
 }
 
-func (c *EthereumCoin) GetForwardersInBlock(blockID int64) ([]*ForwardInput, error) {
+func (c *EthereumCoin) GetForwardersInBlock(blockID int64) ([]*crypto.ForwardInput, error) {
 	forwarders, err := c.client.GetForwardContract(blockID)
 	if err != nil {
 		return nil, err
@@ -91,6 +94,10 @@ func (c *EthereumCoin) SendWithdrawal(trustAddress common2.Address,
 	ownerKey *ecdsa.PrivateKey,
 	w *Withdrawal) (string, error) {
 	return c.client.SendWithDrawalToRPC(trustAddress, ownerKey, w)
+}
+
+func (c *EthereumCoin) FillCrosschainAddress(crosschainAddr map[string]string) {
+
 }
 
 func (c *EthereumCoin) EncodeRefund(w Withdrawal) (string, error) {
@@ -115,14 +122,15 @@ func (c *EthereumCoin) EncodeRefund(w Withdrawal) (string, error) {
 	//binary.Write(&encoded, binary.BigEndian, abi.U256(new(big.Int).SetUint64(uint64(w.Amount))))
 
 	//println("# of bytes " , encoded.Len(), common2.Bytes2Hex(encoded.Bytes()))
-	data, err := json.Marshal(&EncodedMsg{common2.Bytes2Hex(encoded.Bytes()), w.Tx, w.QuantaBlockID})
-	return common2.Bytes2Hex(data), err
+	data, err := json.Marshal(&EncodedMsg{common2.Bytes2Hex(encoded.Bytes()), w.Tx, w.QuantaBlockID, w.CoinName})
+	//return common2.Bytes2Hex(data), err
+	return string(data), err
 }
 
 func (c *EthereumCoin) DecodeRefund(encoded string) (*Withdrawal, error) {
-	decoded := common2.Hex2Bytes(encoded)
+	//decoded := common2.Hex2Bytes(encoded)
 	msg := &EncodedMsg{}
-	err := json.Unmarshal(decoded, msg)
+	err := json.Unmarshal([]byte(encoded), msg)
 	if err != nil {
 		return nil, err
 	}
@@ -130,7 +138,7 @@ func (c *EthereumCoin) DecodeRefund(encoded string) (*Withdrawal, error) {
 	w := &Withdrawal{}
 	w.Tx = msg.Tx
 	w.QuantaBlockID = msg.BlockNumber
-	decoded = common2.Hex2Bytes(msg.Message)
+	decoded := common2.Hex2Bytes(msg.Message)
 
 	//pl := len(sign_prefix)
 	//header := decoded[0:pl]
@@ -164,4 +172,12 @@ func (c *EthereumCoin) DecodeRefund(encoded string) (*Withdrawal, error) {
 	w.Amount = new(big.Int).SetBytes(amount).Uint64()
 
 	return w, nil
+}
+
+func (c *EthereumCoin) CheckValidAddress(address string) bool {
+	var add [20]byte
+	copy(add[:], address)
+	Ma := common2.NewMixedcaseAddress(add)
+	var validAddress = regexp.MustCompile(`^[0x]+[0-9a-fA-F]{40}$`)
+	return Ma.ValidChecksum() && validAddress.MatchString(address)
 }

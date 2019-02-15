@@ -10,6 +10,7 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/crypto"
+	crypto2 "github.com/quantadex/distributed_quanta_bridge/common/crypto"
 	"github.com/quantadex/distributed_quanta_bridge/registrar/Forwarder"
 	"github.com/quantadex/distributed_quanta_bridge/trust/coin/contracts"
 	"github.com/stellar/go/support/errors"
@@ -290,7 +291,7 @@ func (l *Listener) FilterTransferEvent(blockNumber int64, toAddress map[string]s
 	return events, nil
 }
 
-func (l *Listener) GetForwardContract(blockNumber int64) ([]*ForwardInput, error) {
+func (l *Listener) GetForwardContract(blockNumber int64) ([]*crypto2.ForwardInput, error) {
 	blocks, err := l.GetBlock(blockNumber)
 	if err != nil {
 		return nil, err
@@ -305,7 +306,7 @@ func (l *Listener) GetForwardContract(blockNumber int64) ([]*ForwardInput, error
 		return nil, errors.New("Block not found ")
 	}
 
-	events := []*ForwardInput{}
+	events := []*crypto2.ForwardInput{}
 	for _, tx := range blocks.Transactions() {
 		data := common.Bytes2Hex(tx.Data())
 		//println(data)
@@ -321,7 +322,7 @@ func (l *Listener) GetForwardContract(blockNumber int64) ([]*ForwardInput, error
 				remain = strings.TrimPrefix(data, Forwarder.ForwarderBinV3)
 			}
 
-			input := &ForwardInput{}
+			input := &crypto2.ForwardInput{}
 			vals, err := ABI.Constructor.Inputs.UnpackValues(common.Hex2Bytes(remain))
 			if err != nil {
 				println("Cannot unpack ", err.Error())

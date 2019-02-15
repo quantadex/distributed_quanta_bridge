@@ -3,10 +3,11 @@ package coin
 import (
 	"crypto/ecdsa"
 	"github.com/btcsuite/btcd/chaincfg"
+	"github.com/btcsuite/btcutil"
 	common2 "github.com/ethereum/go-ethereum/common"
 	"github.com/quantadex/distributed_quanta_bridge/common"
+	"github.com/quantadex/distributed_quanta_bridge/common/crypto"
 	"github.com/scorum/bitshares-go/types"
-	"github.com/btcsuite/btcutil"
 )
 
 const BLOCKCHAIN_ETH = "ETH"
@@ -35,7 +36,8 @@ type Deposit struct {
 type Withdrawal struct {
 	Tx                 string
 	TxId               uint64 // The Node authorizing this
-	CoinName           string // The type of coin (e.g. ETH)
+	CoinName           string // The issued coin
+	Blockchain         string
 	SourceAddress      string
 	DestinationAddress string   // Where this money is going
 	QuantaBlockID      int64    // Which block this transaction was processed in quanta
@@ -87,12 +89,12 @@ type Coin interface {
 	 * with information about QUANTA Address
 	 * We will record this in our KV later, to know where deposits came from.
 	 */
-	GetForwardersInBlock(blockID int64) ([]*ForwardInput, error)
+	GetForwardersInBlock(blockID int64) ([]*crypto.ForwardInput, error)
 
 	/**
 	 * GenerateMultisig - this is for creating multisig wallet
 	 */
-	 GenerateMultisig(accountId string) (string, error)
+	GenerateMultisig(accountId string) (string, error)
 
 	/**
 	 * SendWithdrawl
@@ -110,6 +112,10 @@ type Coin interface {
 
 	EncodeRefund(w Withdrawal) (string, error)
 	DecodeRefund(encoded string) (*Withdrawal, error)
+
+	FillCrosschainAddress(crosschainAddr map[string]string)
+
+	CheckValidAddress(address string) bool
 }
 
 func NewDummyCoin() (Coin, error) {

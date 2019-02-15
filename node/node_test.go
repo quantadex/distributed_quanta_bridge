@@ -23,7 +23,7 @@ func generateConfig(quanta *test.QuantaNodeSecrets, ethereum *test.EthereumTrust
 		ListenPort:         5100 + index,
 		UsePrevKeys:        true,
 		KvDbName:           fmt.Sprintf("kv_db_%d", 5100+index),
-		CoinName:           "TESTISSUE2",
+		CoinMapping:        map[string]string{"BTC": "TESTISSUE3", "ETH": "TESTISSUE2"},
 		IssuerAddress:      quanta.SourceAccount,
 		NodeKey:            quanta.NodeSecrets[index],
 		NetworkUrl:         "ws://testnet-01.quantachain.io:8090",
@@ -38,7 +38,7 @@ func generateConfig(quanta *test.QuantaNodeSecrets, ethereum *test.EthereumTrust
 		BtcPrivateKey:      test.BTCSECRETS.NodeSecrets[index],
 		DatabaseUrl:        fmt.Sprintf("postgres://postgres:@localhost/crosschain_%d", index),
 		MinNodes:           2,
-		BtcSigners: []string{"2NENNHR9Y9fpKzjKYobbdbwap7xno7sbf2E","2NEDF3RBHQuUHQmghWzFf6b6eeEnC7KjAtR"},
+		BtcSigners:         []string{"2NENNHR9Y9fpKzjKYobbdbwap7xno7sbf2E", "2NEDF3RBHQuUHQmghWzFf6b6eeEnC7KjAtR"},
 	}
 }
 

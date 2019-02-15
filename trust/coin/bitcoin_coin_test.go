@@ -2,15 +2,16 @@ package coin
 
 import (
 	"encoding/hex"
+	"encoding/json"
 	"fmt"
 	"github.com/btcsuite/btcd/chaincfg"
 	"github.com/btcsuite/btcutil"
 	"github.com/ethereum/go-ethereum/common"
+	"github.com/quantadex/distributed_quanta_bridge/common/crypto"
 	"github.com/quantadex/distributed_quanta_bridge/trust/key_manager"
 	"github.com/stretchr/testify/assert"
 	"log"
 	"testing"
-	"github.com/quantadex/distributed_quanta_bridge/common/crypto"
 )
 
 /*
@@ -37,31 +38,37 @@ func TestBitcoinEncodeRefund(t *testing.T) {
 	assert.NoError(t, err)
 
 	bitcoin := client.(*BitcoinCoin)
-	btec, err := crypto.NewGraphenePublicKeyFromString("QA5nvEN2S7Dej2C9hrLJTHNeMGeHq6uyjMdoceR74CksyApeZHWS")
+	crosschainAddr := make(map[string]string)
+	crosschainAddr["2NA4mXEQvB594k2cZX4maVayQDTw8o7PG5m"] = "pooja"
+	bitcoin.crosschainAddr = crosschainAddr
+	//btec, err := crypto.NewGraphenePublicKeyFromString("QA5nvEN2S7Dej2C9hrLJTHNeMGeHq6uyjMdoceR74CksyApeZHWS")
+	btec, err := crypto.GenerateGrapheneKeyWithSeed("pooja")
 	assert.NoError(t, err)
 	msig, err := bitcoin.GenerateMultisig(btec)
-
 
 	log.Println("multisig: ", msig, err)
 
 	w := Withdrawal{
-		SourceAddress:      msig,
+		SourceAddress:      "2NA4mXEQvB594k2cZX4maVayQDTw8o7PG5m",
 		DestinationAddress: "2NGYCnkuo62kL1QpAzV3bRaf747bSM8suQm",
 		Amount:             1000,
+		QuantaBlockID:      0,
 	}
 	tx, err := client.EncodeRefund(w)
 	assert.NoError(t, err)
+	var encoded EncodedMsg
+	json.Unmarshal([]byte(tx), &encoded)
 
 	km, _ := key_manager.NewBitCoinKeyManager()
 
 	err = km.LoadNodeKeys("cNxQax7BfpbikeuCebPGCgTefTah5h1XhVDfaotVdFmXtaLCWLd9")
 	assert.NoError(t, err)
 
-	tx_signed1, err := km.SignTransaction(tx)
+	tx_signed1, err := km.SignTransaction(encoded.Message)
 	assert.NoError(t, err)
 
 	err = km.LoadNodeKeys("cUixT9PYjTtNzcVjF8sB7iM9JeEf8tLHm9Wjgo972x8opCRNTasS")
-	tx_signed2, err := km.SignTransaction(tx)
+	tx_signed2, err := km.SignTransaction(encoded.Message)
 	assert.NoError(t, err)
 
 	fmt.Println(tx)
@@ -99,14 +106,18 @@ func TestDeposits(t *testing.T) {
 }
 
 func TestDecode(t *testing.T) {
-	client, err := NewBitcoinCoin(&chaincfg.RegressionNetParams, []string{"2NENNHR9Y9fpKzjKYobbdbwap7xno7sbf2E","2NEDF3RBHQuUHQmghWzFf6b6eeEnC7KjAtR"})
+	client, err := NewBitcoinCoin(&chaincfg.RegressionNetParams, []string{"2NENNHR9Y9fpKzjKYobbdbwap7xno7sbf2E", "2NEDF3RBHQuUHQmghWzFf6b6eeEnC7KjAtR"})
 	assert.NoError(t, err)
 
 	err = client.Attach()
 	assert.NoError(t, err)
 
 	bitcoin := client.(*BitcoinCoin)
-	btec, err := crypto.NewGraphenePublicKeyFromString("QA5nvEN2S7Dej2C9hrLJTHNeMGeHq6uyjMdoceR74CksyApeZHWS")
+	crosschainAddr := make(map[string]string)
+	crosschainAddr["n2PNkvCSkkSKvgqLsQXAQACFETQwKvc16X"] = "pooja"
+	bitcoin.crosschainAddr = crosschainAddr
+	//btec, err := crypto.NewGraphenePublicKeyFromString("QA5nvEN2S7Dej2C9hrLJTHNeMGeHq6uyjMdoceR74CksyApeZHWS")
+	btec, err := crypto.GenerateGrapheneKeyWithSeed("pooja")
 	assert.NoError(t, err)
 
 	msig, err := bitcoin.GenerateMultisig(btec)
@@ -117,6 +128,8 @@ func TestDecode(t *testing.T) {
 		SourceAddress:      "n2PNkvCSkkSKvgqLsQXAQACFETQwKvc16X",
 		DestinationAddress: "2NGYCnkuo62kL1QpAzV3bRaf747bSM8suQm",
 		Amount:             1000,
+		Tx:                 "4418603_0",
+		QuantaBlockID:      0,
 	}
 	tx, err := client.EncodeRefund(w)
 	fmt.Println("Encoded = ", tx)

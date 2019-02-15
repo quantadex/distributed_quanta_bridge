@@ -1,15 +1,15 @@
 package sync
 
 import (
-	"github.com/quantadex/distributed_quanta_bridge/trust/coin"
 	"encoding/json"
 	"fmt"
-	"github.com/quantadex/distributed_quanta_bridge/trust/db"
+	"github.com/quantadex/distributed_quanta_bridge/trust/coin"
 	"strings"
 )
 
 type BitcoinSync struct {
 	DepositSync
+	issuingSymbol map[string]string //TODO: pass in only neccessary data (eg. issuingSymbol)
 }
 
 func (c *BitcoinSync) Setup() {
@@ -17,13 +17,20 @@ func (c *BitcoinSync) Setup() {
 }
 
 func (c *BitcoinSync) GetDepositsInBlock(blockID int64) ([]*coin.Deposit, error) {
-	watchAddresses := db.GetCrosschainByBlockchain(c.rDb, coin.BLOCKCHAIN_BTC)
+	watchAddresses := c.rDb.GetCrosschainByBlockchain(coin.BLOCKCHAIN_BTC)
 	watchMap := make(map[string]string)
 
 	for _, w := range watchAddresses {
 		watchMap[strings.ToLower(w.Address)] = w.QuantaAddr
 	}
+
 	deposits, err := c.coinChannel.GetDepositsInBlock(blockID, watchMap)
+
+	for _, dep := range deposits {
+		if dep.CoinName == "BTC" {
+			dep.CoinName = c.issuingSymbol["btc"]
+		}
+	}
 
 	if err != nil {
 		c.logger.Info("getDepositsInBlock failed " + err.Error())
@@ -31,7 +38,7 @@ func (c *BitcoinSync) GetDepositsInBlock(blockID int64) ([]*coin.Deposit, error)
 	}
 
 	if len(deposits) > 0 {
-		msg,_ := json.Marshal(deposits)
+		msg, _ := json.Marshal(deposits)
 		fmt.Printf("events = %v\n", string(msg))
 	}
 

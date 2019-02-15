@@ -8,7 +8,6 @@ import (
 	common2 "github.com/quantadex/distributed_quanta_bridge/common"
 	"github.com/stellar/go/support/log"
 	"math/big"
-	"regexp"
 )
 
 type LogTransfer struct {
@@ -120,20 +119,4 @@ func GrapheneToWei(valueInGraphene uint64) *big.Int {
 	powerDelta := new(big.Rat).SetInt(new(big.Int).Exp(ten, big.NewInt(13), nil))
 
 	return valueWei.Mul(stellar, powerDelta).Num()
-}
-
-func CheckValidEthereumAddress(address string) bool {
-	var add [20]byte
-	copy(add[:], address)
-	Ma := common.NewMixedcaseAddress(add)
-	var validAddress = regexp.MustCompile(`^[0x]+[0-9a-fA-F]{40}$`)
-	return Ma.ValidChecksum() && validAddress.MatchString(address)
-}
-
-type ForwardInput struct {
-	ContractAddress string
-	Trust           common.Address
-	QuantaAddr      string
-	TxHash          string
-	Blockchain      string
 }

@@ -4,6 +4,7 @@ import (
 	"crypto/ecdsa"
 	"fmt"
 	common2 "github.com/ethereum/go-ethereum/common"
+	"github.com/quantadex/distributed_quanta_bridge/common/crypto"
 	"sync"
 )
 
@@ -59,12 +60,16 @@ func (c *DummyCoin) SendWithdrawal(trustAddress common2.Address,
 	panic("implement me")
 }
 
-func (c *DummyCoin) GetForwardersInBlock(blockID int64) ([]*ForwardInput, error) {
-	return []*ForwardInput{}, nil
+func (c *DummyCoin) GetForwardersInBlock(blockID int64) ([]*crypto.ForwardInput, error) {
+	return []*crypto.ForwardInput{}, nil
 }
 
 func (c *DummyCoin) Attach() error {
 	return nil
+}
+
+func (c *DummyCoin) FillCrosschainAddress(crosschainAddr map[string]string) {
+
 }
 
 func (c *DummyCoin) EncodeRefund(w Withdrawal) (string, error) {
@@ -73,4 +78,8 @@ func (c *DummyCoin) EncodeRefund(w Withdrawal) (string, error) {
 
 func (c *DummyCoin) DecodeRefund(encoded string) (*Withdrawal, error) {
 	return nil, nil
+}
+
+func (c *DummyCoin) CheckValidAddress(address string) bool {
+	panic("Not implemented")
 }

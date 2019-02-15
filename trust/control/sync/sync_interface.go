@@ -21,7 +21,7 @@ type DepositSyncInterface interface {
 
 func NewEthereumSync(coin coin.Coin,
 	trustAddress string,
-	issuingSymbol string,
+	issuingSymbol map[string]string,
 	quantaChannel quanta.Quanta,
 	db kv_store.KVStore,
 	rDb *db.DB,
@@ -40,7 +40,7 @@ func NewEthereumSync(coin coin.Coin,
 }
 
 func NewBitcoinSync(coin coin.Coin,
-	issuingSymbol string,
+	issuingSymbol map[string]string,
 	quantaChannel quanta.Quanta,
 	db kv_store.KVStore,
 	rDb *db.DB,
@@ -50,6 +50,7 @@ func NewBitcoinSync(coin coin.Coin,
 	parent := NewDepositSync(coin, quantaChannel, issuingSymbol, db, rDb, logger, blockStartID)
 	btc := &BitcoinSync{
 		*parent,
+		issuingSymbol,
 	}
 	btc.Setup()
 

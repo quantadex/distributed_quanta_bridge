@@ -19,7 +19,7 @@ import (
 type DepositSync struct {
 	coinChannel        coin.Coin
 	quantaChannel      quanta.Quanta // stellar -> graphene
-	coinInfo           *database.Asset
+	coinInfo           map[string]*database.Asset
 	db                 kv_store.KVStore
 	rDb                *db.DB
 	logger             logger.Logger
@@ -32,13 +32,18 @@ type DepositSync struct {
 
 func NewDepositSync(coin coin.Coin,
 	quantaChannel quanta.Quanta,
-	issuingSymbol string,
+	issuingSymbol map[string]string,
 	db kv_store.KVStore,
 	rDb *db.DB,
 	logger logger.Logger,
 	blockStartID int64) *DepositSync {
 
-	coinInfo, _ := quantaChannel.GetAsset(issuingSymbol)
+	//coinInfo, _ := quantaChannel.GetAsset(issuingSymbol[""])
+	coinInfo := make(map[string]*database.Asset)
+	for _, v := range issuingSymbol {
+		asset, _ := quantaChannel.GetAsset(v)
+		coinInfo[v] = asset
+	}
 
 	return &DepositSync{
 		coinChannel:   coin,

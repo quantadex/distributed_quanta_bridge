@@ -15,7 +15,6 @@ import (
 	"github.com/quantadex/distributed_quanta_bridge/trust/peer_contact"
 	"github.com/quantadex/distributed_quanta_bridge/trust/quanta"
 	"github.com/quantadex/quanta_book/consensus/cosi"
-	"github.com/scorum/bitshares-go/apis/database"
 	"github.com/scorum/bitshares-go/types"
 	"strings"
 	"time"
@@ -43,16 +42,13 @@ const (
  */
 type CoinToQuanta struct {
 	logger        logger.Logger
-	coinChannel   coin.Coin     // ethereum
 	quantaChannel quanta.Quanta // stellar -> graphene
 	db            kv_store.KVStore
 	rDb           *db.DB
 	man           *manifest.Manifest
 	peer          peer_contact.PeerContact
-	coinName      string
 	trustPeer     *peer_contact.TrustPeerNode
 	cosi          *cosi.Cosi
-	coinInfo      *database.Asset
 
 	readyChan chan bool
 	doneChan  chan bool
@@ -82,7 +78,6 @@ func NewCoinToQuanta(log logger.Logger,
 	q quanta.Quanta,
 	man *manifest.Manifest,
 	kM key_manager.KeyManager,
-	coinName string,
 	nodeID int,
 	peer peer_contact.PeerContact,
 	queue_ queue.Queue,
@@ -91,18 +86,15 @@ func NewCoinToQuanta(log logger.Logger,
 	quantaOptions quanta.QuantaClientOptions) *CoinToQuanta {
 	res := &CoinToQuanta{C2QOptions: options}
 	res.logger = log
-	res.coinChannel = c
 	res.quantaChannel = q
 	res.db = db_
 	res.rDb = rDb
 	res.man = man
 	res.nodeID = nodeID
-	res.coinName = coinName
 	res.peer = peer
 	res.doneChan = make(chan bool, 1)
 	res.readyChan = make(chan bool, 1)
 	res.quantaOptions = quantaOptions
-	res.coinInfo, _ = q.GetAsset(coinName)
 
 	res.trustPeer = peer_contact.NewTrustPeerNode(man, peer, nodeID, queue_, queue.PEERMSG_QUEUE, "/node/api/peer")
 	res.cosi = cosi.NewProtocol(res.trustPeer, nodeID == 0, time.Second*3)
@@ -234,13 +226,13 @@ func (c *CoinToQuanta) processDeposits() {
 			Amount:     tx.Amount,
 		}
 		// if not a native token, we need to flush it
-		if tx.Coin != c.coinName {
-			parts := strings.Split(c.coinName, "0X")
-			if len(parts) > 1 {
-				// flush
-				// contract := parts[1]
-			}
-		}
+		//if tx.Coin != c.coinName {
+		//	parts := strings.Split(c.coinName, "0X")
+		//	if len(parts) > 1 {
+		//		// flush
+		//		// contract := parts[1]
+		//	}
+		//}
 
 		// check if asset exists
 		//if not, then propose new asset
@@ -346,7 +338,7 @@ func (c *CoinToQuanta) StartConsensus(tx *coin.Deposit, consensus ConsensusType)
 		return HEX_NULL, err
 	}
 
-	data, err := json.Marshal(&coin.EncodedMsg{encoded, tx.Tx, tx.BlockID})
+	data, err := json.Marshal(&coin.EncodedMsg{encoded, tx.Tx, tx.BlockID, tx.CoinName})
 
 	if err != nil {
 		c.logger.Error("Failed to encode refund 2" + err.Error())

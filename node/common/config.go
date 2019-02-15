@@ -7,7 +7,7 @@ type Config struct {
 	UsePrevKeys        bool
 	KvDbName           string
 	DatabaseUrl        string
-	CoinName           string
+	CoinMapping        map[string]string
 	IssuerAddress      string
 	NodeKey            string
 	NetworkUrl         string
@@ -19,9 +19,9 @@ type Config struct {
 	EthereumRpc        string
 	EthereumTrustAddr  string
 	EthereumKeyStore   string
-	BtcPrivateKey	   string
-	BtcBlockStart 		int64
-	BtcSigners			[]string
+	BtcPrivateKey      string
+	BtcBlockStart      int64
+	BtcSigners         []string
 	LogLevel           string
 	MinNodes           int
 }

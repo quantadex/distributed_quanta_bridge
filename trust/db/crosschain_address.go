@@ -1,16 +1,16 @@
 package db
 
 import (
+	"github.com/quantadex/distributed_quanta_bridge/common/crypto"
 	"time"
-	"github.com/quantadex/distributed_quanta_bridge/trust/coin"
 )
 
 type CrosschainAddress struct {
-	Address      string
-	QuantaAddr   string
-	TxHash       string
-	Blockchain   string
-	Updated time.Time
+	Address    string
+	QuantaAddr string
+	TxHash     string
+	Blockchain string
+	Updated    time.Time
 }
 
 func MigrateXC(db *DB) error {
@@ -21,23 +21,23 @@ func MigrateXC(db *DB) error {
 	return err
 }
 
-func GetCrosschainByBlockchain(db *DB, blockchain string) []CrosschainAddress {
-	var tx []CrosschainAddress
-	err := db.Model(&tx).Where("blockchain=?", blockchain ).Select()
+func (db *DB) GetCrosschainByBlockchain(blockchain string) []crypto.CrosschainAddress {
+	var tx []crypto.CrosschainAddress
+	err := db.Model(&tx).Where("blockchain=?", blockchain).Select()
 	if err != nil {
 		return nil
 	}
 	return tx
 }
 
-func RemoveCrosschainAddress(db *DB, id string) error {
+func (db *DB) RemoveCrosschainAddress(id string) error {
 	_, err := db.Model(&CrosschainAddress{}).Where("id=?", id).Delete()
 	return err
 }
 
-func AddCrosschainAddress(db *DB, input *coin.ForwardInput) error {
-	tx := &CrosschainAddress{ input.ContractAddress, input.QuantaAddr,
-							input.TxHash, input.Blockchain, time.Now() }
+func (db *DB) AddCrosschainAddress(input *crypto.ForwardInput) error {
+	tx := &CrosschainAddress{input.ContractAddress, input.QuantaAddr,
+		input.TxHash, input.Blockchain, time.Now()}
 	_, err := db.Model(tx).Insert()
 	return err
 }
