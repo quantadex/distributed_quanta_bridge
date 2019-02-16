@@ -189,6 +189,12 @@ func (l *Listener) GetNativeDeposits(blockNumber int64, toAddress map[string]str
 		}
 
 		if quantaAddr, ok := toAddress[strings.ToLower(tx.To().Hex())]; ok {
+			receipt, err := l.Client.TransactionReceipt(context.Background(), tx.Hash())
+			if err != nil {
+				println("Cannot get Receipt ", err.Error())
+			} else if receipt.Status == types.ReceiptStatusFailed {
+				continue
+			}
 			if tx.Value().Cmp(big.NewInt(0)) != 0 {
 				events = append(events, &Deposit{
 					QuantaAddr: quantaAddr,
@@ -282,7 +288,6 @@ func (l *Listener) FilterTransferEvent(blockNumber int64, toAddress map[string]s
 					Amount:     Erc20AmountToGraphene(*transferEvent.Tokens, dec),
 					Tx:         vLog.TxHash.Hex(),
 				})
-				fmt.Println("erc20 amount = ", events[0].Amount)
 			}
 
 		}
@@ -411,6 +416,20 @@ func (l *Listener) SendWithdrawal(conn bind.ContractBackend,
 		return "", err
 	}
 
+	var receipt *types.Receipt
+	timeBefore := time.Now()
+	for receipt == nil {
+		receipt, err = l.Client.TransactionReceipt(context.Background(), tx.Hash())
+	}
+	if err != nil {
+		return tx.Hash().Hex(), errors.New("could not find receipt")
+	}
+	timeTaken := time.Since(timeBefore)
+	fmt.Printf("Successfully submitted transaction %s, receipt status = %d, took %s sec", tx.Hash().Hex(), receipt.Status, timeTaken.String())
+	fmt.Println()
+	if receipt.Status == types.ReceiptStatusFailed {
+		return tx.Hash().Hex(), errors.New("transaction failed")
+	}
 	return tx.Hash().Hex(), nil
 }
 

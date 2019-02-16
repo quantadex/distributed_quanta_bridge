@@ -35,7 +35,10 @@ module.exports = {
       },
       network_id: 3,
       gas: 4700000,
-      gasPrice: 21
+      // 50 wei is way too small, comment this out and let the system suggest the gas price
+      // may be a little expensive, but transaction will go through.
+
+      //gasPrice: 50
     }
   },
 

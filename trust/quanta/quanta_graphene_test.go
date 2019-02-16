@@ -2,10 +2,12 @@ package quanta
 
 import (
 	"fmt"
+	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/quantadex/distributed_quanta_bridge/trust/coin"
 	"github.com/quantadex/distributed_quanta_bridge/trust/key_manager"
 	"github.com/stretchr/testify/assert"
 	"math/rand"
+	"strings"
 	"testing"
 	"time"
 )
@@ -15,10 +17,8 @@ func TestDynamicGlobalProperties(t *testing.T) {
 	api.Issuer = "crosschain2"
 	api.NetworkUrl = url
 	api.Attach()
-	block, err := api.GetTopBlockID()
+	_, err := api.GetTopBlockID()
 	assert.NoError(t, err)
-
-	fmt.Println("TopBlock = ", block)
 }
 
 func TestGetBalances(t *testing.T) {
@@ -27,13 +27,11 @@ func TestGetBalances(t *testing.T) {
 	api.NetworkUrl = url
 	api.Attach()
 
-	balance, err := api.GetBalance("QDEX", "pooja")
+	_, err := api.GetBalance("QDEX", "pooja")
 	assert.NoError(t, err)
-	fmt.Println("pooja balance = ", balance)
 
-	balances, err := api.GetAllBalances("quanta_foundation")
+	_, err = api.GetAllBalances("quanta_foundation")
 	assert.NoError(t, err)
-	fmt.Println("quanta_foundation balance = ", balances)
 
 }
 
@@ -43,9 +41,8 @@ func TestGetRefund(t *testing.T) {
 	api.NetworkUrl = url
 	api.Attach()
 
-	refund, _, err := api.GetRefundsInBlock(int64(29105), "quanta_foundation")
+	_, _, err := api.GetRefundsInBlock(int64(29105), "quanta_foundation")
 	assert.NoError(t, err)
-	fmt.Println("refund = ", refund)
 }
 
 func TestMultipleSignatures(t *testing.T) {
@@ -54,16 +51,13 @@ func TestMultipleSignatures(t *testing.T) {
 	api.NetworkUrl = url
 	api.Attach()
 
-	//balance, err := api.GetBalance("QDEX", "pooja")
-	//assert.Equal(t, balance, 99687.10431)
-
 	dep := &coin.Deposit{
 		SenderAddr: "crosschain2",
 		QuantaAddr: "pooja",
 		Amount:     6000,
 		CoinName:   "QDEX",
 	}
-	fmt.Println(dep)
+
 	proposed, err := api.CreateTransferProposal(dep)
 	//proposed, err := api.CreateNewAssetProposal("crosschain2", "TESTISSUE2", 5)
 	assert.NoError(t, err)
@@ -81,24 +75,20 @@ func TestMultipleSignatures(t *testing.T) {
 
 	submitTx, err := ProcessGrapheneTransaction(proposed, []string{sig})
 	assert.NoError(t, err)
-	fmt.Println(submitTx)
 
 	// ready to submit to network
-	err = api.Broadcast(submitTx)
+	_, err = api.Broadcast(submitTx)
 
 	km.LoadNodeKeys("5KFJnRn38wuXnpKGvkxmsyiWUuUkPXKZGvdG8aTzHCTvJMUQ4sA")
 	sig, err = km.SignTransaction(proposed)
 	assert.NoError(t, err)
-	fmt.Println(sig)
 
 	submitTx, err = ProcessGrapheneTransaction(proposed, []string{sig})
 	assert.NoError(t, err)
-	fmt.Println(submitTx)
 
 	// ready to submit to network
-	err = api.Broadcast(submitTx)
+	_, err = api.Broadcast(submitTx)
 	assert.NoError(t, err)
-	fmt.Println("broadcast error = ", err)
 }
 
 func TestCreateTransaction(t *testing.T) {
@@ -107,16 +97,12 @@ func TestCreateTransaction(t *testing.T) {
 	api.NetworkUrl = url
 	api.Attach()
 
-	//balance, err := api.GetBalance("QDEX", "pooja")
-	//assert.Equal(t, balance, 99687.10431)
-
 	dep := &coin.Deposit{
 		SenderAddr: "pooja",
 		QuantaAddr: "crosschain2",
 		Amount:     6000,
-		CoinName:   "QDEX",
+		CoinName:   "TESTISSUE2",
 	}
-	fmt.Println(dep)
 	proposed, err := api.CreateTransferProposal(dep)
 	assert.NoError(t, err)
 
@@ -135,19 +121,11 @@ func TestCreateTransaction(t *testing.T) {
 	assert.NoError(t, err)
 
 	// ready to submit to network
-	err = api.Broadcast(submitTx)
+	_, err = api.Broadcast(submitTx)
 	assert.NoError(t, err)
-
-	//newBalance, err := api.GetBalance("QDEX", "pooja")
-	//assert.Equal(t, newBalance, math.Floor((balance+0.00002)*100000)/100000)
-
-	//decoded, err := api.DecodeTransaction(proposed)
-	//assert.NoError(t, err)
-	//fmt.Println(decoded, err)
 }
 
 func TestDecodeTransaction(t *testing.T) {
-
 	api := &QuantaGraphene{}
 	api.Issuer = "crosschain2"
 	api.NetworkUrl = url
@@ -159,23 +137,24 @@ func TestDecodeTransaction(t *testing.T) {
 		Amount:     6000,
 		CoinName:   "QDEX",
 	}
-	fmt.Println(dep)
 	proposed, err := api.CreateTransferProposal(dep)
 	assert.NoError(t, err)
-	fmt.Println(proposed)
 
-	decoded, err := api.DecodeTransaction(proposed)
+	_, err = api.DecodeTransaction(proposed)
 	assert.NoError(t, err)
-	fmt.Println(decoded, err)
-
 }
 
 func TestCreateAsset(t *testing.T) {
 	api := QuantaGraphene{}
 	api.NetworkUrl = url
+	api.Issuer = "pooja"
 	api.Attach()
 
-	proposed, err := api.CreateNewAssetProposal("pooja", "ETHERTEST10", 5)
+	randomKey, _ := crypto.GenerateKey()
+	randomAddr := crypto.PubkeyToAddress(randomKey.PublicKey)
+	token := "SIMPLETOKEN" + strings.ToUpper(randomAddr.String())
+
+	proposed, err := api.CreateNewAssetProposal(api.Issuer, token, 5)
 	assert.NoError(t, err)
 
 	chainID, err := api.Database.GetChainID()
@@ -189,26 +168,29 @@ func TestCreateAsset(t *testing.T) {
 	sig, err := km.SignTransaction(proposed)
 	assert.NoError(t, err)
 
-	submitTx, err := ProcessGrapheneTransaction(proposed, []string{sig})
+	_, err = ProcessGrapheneTransaction(proposed, []string{sig})
 	assert.NoError(t, err)
-	fmt.Println(submitTx)
+
+	_, err = api.DecodeTransaction(proposed)
+	assert.NoError(t, err)
 
 	// ready to submit to network
-	//err = api.Broadcast(submitTx)
+	//_, err = api.Broadcast(submitTx)
 	//assert.NoError(t, err)
+
 }
 
 func TestIssueAsset(t *testing.T) {
 	api := QuantaGraphene{}
-	api.Issuer = "crosschain2"
+	api.Issuer = "pooja"
 	api.NetworkUrl = url
 	api.Attach()
 
 	dep := &coin.Deposit{
-		SenderAddr: "crosschain2",
-		QuantaAddr: "pooja",
-		Amount:     100000000,
-		CoinName:   "TESTISSUE2",
+		SenderAddr: "pooja",
+		QuantaAddr: "crosschain2",
+		Amount:     10000,
+		CoinName:   "ETHERTEST5",
 	}
 
 	proposed, err := api.CreateIssueAssetProposal(dep)
@@ -221,30 +203,16 @@ func TestIssueAsset(t *testing.T) {
 	km, err := key_manager.NewGrapheneKeyManager(*chainID)
 	assert.NoError(t, err)
 
-	km.LoadNodeKeys("5Jd9vxNwWXvMnBpcVm58gwXkJ4smzWDv9ChiBXwSRkvCTtekUrx")
+	km.LoadNodeKeys("5JyYu5DCXbUznQRSx3XT2ZkjFxQyLtMuJ3y6bGLKC3TZWPHMDxj")
 	sig, err := km.SignTransaction(proposed)
 	assert.NoError(t, err)
 
 	submitTx, err := ProcessGrapheneTransaction(proposed, []string{sig})
 	assert.NoError(t, err)
-	fmt.Println(submitTx)
 
-	// ready to submit to network
-	err = api.Broadcast(submitTx)
-
-	km.LoadNodeKeys("5KFJnRn38wuXnpKGvkxmsyiWUuUkPXKZGvdG8aTzHCTvJMUQ4sA")
-	sig, err = km.SignTransaction(proposed)
+	_, err = api.Broadcast(submitTx)
 	assert.NoError(t, err)
-	fmt.Println(sig)
 
-	submitTx, err = ProcessGrapheneTransaction(proposed, []string{sig})
-	assert.NoError(t, err)
-	fmt.Println(submitTx)
-
-	// ready to submit to network
-	err = api.Broadcast(submitTx)
-	assert.NoError(t, err)
-	fmt.Println("broadcast error = ", err)
 }
 
 func TestRandomMissRefund(t *testing.T) {

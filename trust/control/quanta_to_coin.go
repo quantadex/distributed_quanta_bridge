@@ -186,7 +186,6 @@ func NewQuantaToCoin(log logger.Logger,
 			time.Sleep(100 * time.Millisecond)
 		}
 	}()
-
 	go res.DispatchWithdrawal()
 
 	return res
@@ -348,9 +347,12 @@ func (c *QuantaToCoin) StartConsensus(w *coin.Withdrawal) (string, error) {
 				db.ChangeSubmitState(c.rDb, w.Tx, db.SUBMIT_RECOVERABLE, db.WITHDRAWAL)
 			} else if strings.Contains(err.Error(), "insufficient funds for gas * price + value") {
 				db.ChangeSubmitState(c.rDb, w.Tx, db.SUBMIT_RECOVERABLE, db.WITHDRAWAL)
+			} else if strings.Contains(err.Error(), "transaction failed") || strings.Contains(err.Error(), "could not find receipt") {
+				db.ChangeSubmitState(c.rDb, w.Tx, db.SUBMIT_FAILURE, db.WITHDRAWAL)
 			}
 		} else {
-			db.ChangeSubmitState(c.rDb, w.Tx, db.SUBMIT_SUCCESS, db.WITHDRAWAL)
+			db.ChangeWithdrawalSubmitState(c.rDb, w.Tx, db.SUBMIT_SUCCESS, w.TxId, tx)
+			//db.ChangeSubmitState(c.rDb, w.Tx, db.SUBMIT_SUCCESS, db.WITHDRAWAL)
 			c.logger.Infof("Submitted withdrawal in tx=%s SUCCESS", tx)
 		}
 
@@ -416,7 +418,7 @@ func (c *QuantaToCoin) DoLoop(cursor int64) ([]quanta.Refund, error) {
 			Blockchain:         blockchain,
 			SourceAddress:      refund.SourceAddress,
 			DestinationAddress: refund.DestinationAddress,
-			QuantaBlockID:      refund.OperationID,
+			QuantaBlockID:      refund.PageTokenID,
 			// TODO: Potentially losing precision when converting to wei
 			Amount: c.ComputeAmountToGraphene(refund.CoinName, refund.Amount),
 		}
@@ -429,11 +431,12 @@ func (c *QuantaToCoin) DoLoop(cursor int64) ([]quanta.Refund, error) {
 			dep := &coin.Deposit{
 				Tx:         refund.TransactionId,
 				CoinName:   refund.CoinName, // coin,issuer
-				SenderAddr: "",
+				SenderAddr: c.quantaChannel.GetIssuer(),
 				QuantaAddr: refund.SourceAddress,
 				Amount:     int64(refund.Amount),
 				BlockID:    int64(refund.LedgerID),
 			}
+			err = db.ChangeSubmitState(c.rDb, dep.Tx, db.BAD_ADDRESS, db.WITHDRAWAL)
 			// mark as a bounced transaction
 			err := db.ConfirmDeposit(c.rDb, dep, true)
 			if err != nil {
@@ -446,13 +449,11 @@ func (c *QuantaToCoin) DoLoop(cursor int64) ([]quanta.Refund, error) {
 			}
 
 			c.logger.Error("Refund is missing destination address, skipping.")
-
 		} else if w.Amount == 0 {
 			c.logger.Error("Amount is too small")
 		} else if c.nodeID == 0 {
 			db.ChangeSubmitState(c.rDb, w.Tx, db.SUBMIT_CONSENSUS, db.WITHDRAWAL)
 		}
-
 	}
 
 	// mark the block for the next loop through

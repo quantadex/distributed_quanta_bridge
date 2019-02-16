@@ -4,6 +4,7 @@ import (
 	"github.com/quantadex/distributed_quanta_bridge/common/kv_store"
 	"github.com/quantadex/distributed_quanta_bridge/trust/coin"
 	"github.com/scorum/bitshares-go/apis/database"
+	"github.com/scorum/bitshares-go/apis/networkbroadcast"
 )
 
 /**
@@ -70,7 +71,7 @@ type Quanta interface {
 	GetBalance(assetName string, quantaAddress string) (float64, error)
 	GetAllBalances(quantaAddress string) (map[string]float64, error)
 	DecodeTransaction(base64 string) (*coin.Deposit, error)
-	Broadcast(stx string) error
+	Broadcast(stx string) (*networkbroadcast.BroadcastResponse, error)
 
 	CreateTransferProposal(dep *coin.Deposit) (string, error)
 	CreateNewAssetProposal(issuer string, symbol string, precision uint8) (string, error)
@@ -78,6 +79,7 @@ type Quanta interface {
 	AssetExist(issuer string, symbol string) (bool, error)
 	AccountExist(quantaAddr string) bool
 	GetAsset(assetName string) (*database.Asset, error)
+	GetIssuer() string
 }
 
 func NewQuanta(options QuantaClientOptions) (Quanta, error) {
