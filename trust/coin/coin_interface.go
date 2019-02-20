@@ -114,6 +114,7 @@ type Coin interface {
 	DecodeRefund(encoded string) (*Withdrawal, error)
 
 	FillCrosschainAddress(crosschainAddr map[string]string)
+	FlushCoin(forwarder string, address string) error
 
 	CheckValidAddress(address string) bool
 }

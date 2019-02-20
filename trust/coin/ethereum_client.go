@@ -302,7 +302,7 @@ func (l *Listener) GetForwardContract(blockNumber int64) ([]*crypto2.ForwardInpu
 		return nil, err
 	}
 
-	ABI, err := abi.JSON(strings.NewReader(Forwarder.ForwarderABI))
+	ABI, err := abi.JSON(strings.NewReader(contracts.QuantaForwarderABI))
 	if err != nil {
 		return nil, err
 	}

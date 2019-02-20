@@ -48,6 +48,13 @@ func (c *EthereumSync) GetDepositsInBlock(blockID int64) ([]*coin.Deposit, error
 			dep.Amount = coin.PowerDelta(*big.NewInt(dep.Amount), 5, int(c.coinInfo[c.issuingSymbol["eth"]].Precision))
 		} else {
 			// we assume precision is always 5
+			// we need to flush erc-20 coins
+			if strings.Contains(dep.CoinName,"0X") {
+				parts := strings.Split(dep.CoinName, "0X")
+				ercAddr := "0x"+parts[1]
+				err := c.coinChannel.FlushCoin(dep.SenderAddr, ercAddr)
+				c.logger.Error(err.Error())
+			}
 		}
 
 		// Need to convert to uppercase, which graphene requires

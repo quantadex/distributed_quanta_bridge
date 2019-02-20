@@ -176,6 +176,10 @@ func (b *BitcoinCoin) GetDepositsInBlock(blockID int64, trustAddress map[string]
 	return events, nil
 }
 
+func (c *BitcoinCoin) 	FlushCoin(forwarder string, address string) error {
+	panic("not implemented")
+}
+
 func (b *BitcoinCoin) GetForwardersInBlock(blockID int64) ([]*crypto.ForwardInput, error) {
 	panic("not needed for bitcoin")
 }
@@ -345,6 +349,7 @@ func (b *BitcoinCoin) EncodeRefund(w Withdrawal) (string, error) {
 		Tx:       hex.EncodeToString(buf.Bytes()),
 		RawInput: rawInput,
 	}
+
 
 	resJson, err := json.Marshal(res)
 	data, err := json.Marshal(&EncodedMsg{string(resJson), w.Tx, w.QuantaBlockID, w.CoinName})
