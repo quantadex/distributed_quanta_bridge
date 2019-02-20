@@ -26,6 +26,9 @@ func GetDummyInstance() *DummyCoin {
 func (c *DummyCoin) Blockchain() string {
 	return "DUMMY"
 }
+func (c *DummyCoin) 	FlushCoin(forwarder string, address string) error {
+	panic("not implemented")
+}
 
 func (b *DummyCoin) GenerateMultisig(accountId string) (string, error) {
 	panic("not implemented")

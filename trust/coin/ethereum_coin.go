@@ -13,6 +13,8 @@ import (
 	"math/big"
 	"regexp"
 	"strings"
+	"github.com/quantadex/distributed_quanta_bridge/trust/coin/contracts"
+	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 )
 
 const sign_prefix = "\x19Ethereum Signed Message:\n"
@@ -75,6 +77,19 @@ func (c *EthereumCoin) GetDepositsInBlock(blockID int64, trustAddress map[string
 	}
 
 	return append(ndeposits, deps...), nil
+}
+
+func (c *EthereumCoin) FlushCoin(forwarderAddr string, tokenAddr string) error {
+	forwarder, err := contracts.NewQuantaForwarder(common2.HexToAddress(forwarderAddr), c.client.Client.(bind.ContractBackend))
+	if err != nil {
+		return err
+	}
+
+	tx, err := forwarder.FlushTokens(nil, common2.HexToAddress(tokenAddr))
+	if tx != nil {
+		println("Flush coin ", tx.Hash().String())
+	}
+	return err
 }
 
 func (c *EthereumCoin) GetForwardersInBlock(blockID int64) ([]*crypto.ForwardInput, error) {
