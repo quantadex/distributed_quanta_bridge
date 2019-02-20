@@ -76,7 +76,9 @@ func ConfirmDeposit(db *DB, dep *coin.Deposit, isBounced bool) error {
 		Signed:      false,
 		SubmitState: SUBMIT_CONSENSUS,
 	}
-	_, err := db.Model(tx).OnConflict("DO NOTHING").Where("Tx=?", dep.Tx).SelectOrInsert()
+	_, err := db.Model(tx).
+		Where("Type = ? AND Tx = ?", tx.Type, tx.Tx).
+		OnConflict("DO NOTHING").Where("Tx=?", dep.Tx).SelectOrInsert()
 
 	return err
 }

@@ -232,7 +232,8 @@ func (c *QuantaToCoin) getBlockchainForCoin(coinName string) (string, bool) {
 	}
 	for k, v := range c.coinMapping {
 		if v == coinName {
-			return k, true
+			//coinmapping in config makes the key lower case
+			return strings.ToUpper(k), true
 		}
 	}
 	return "", false

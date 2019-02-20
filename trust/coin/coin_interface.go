@@ -126,7 +126,7 @@ func NewEthereumCoin(networkId string, ethereumRpc string) (Coin, error) {
 	return &EthereumCoin{maxRange: common.MaxNumberInt64, networkId: networkId, ethereumRpc: ethereumRpc}, nil
 }
 
-func NewBitcoinCoin(params *chaincfg.Params, signers []string) (Coin, error) {
+func NewBitcoinCoin(params *chaincfg.Params, signers []string, dataDirectory string) (Coin, error) {
 	signersA := []btcutil.Address{}
 	for _, s := range signers {
 		addr, err := btcutil.DecodeAddress(s, params)
@@ -136,7 +136,7 @@ func NewBitcoinCoin(params *chaincfg.Params, signers []string) (Coin, error) {
 		signersA = append(signersA, addr)
 	}
 
-	return &BitcoinCoin{chaincfg: params, signers: signersA}, nil
+	return &BitcoinCoin{chaincfg: params, signers: signersA, dataDirectory: dataDirectory}, nil
 }
 
 /**

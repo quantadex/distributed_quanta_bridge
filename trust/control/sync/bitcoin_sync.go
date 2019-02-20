@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/quantadex/distributed_quanta_bridge/trust/coin"
-	"strings"
 )
 
 type BitcoinSync struct {
@@ -21,9 +20,8 @@ func (c *BitcoinSync) GetDepositsInBlock(blockID int64) ([]*coin.Deposit, error)
 	watchMap := make(map[string]string)
 
 	for _, w := range watchAddresses {
-		watchMap[strings.ToLower(w.Address)] = w.QuantaAddr
+		watchMap[w.Address] = w.QuantaAddr
 	}
-
 	deposits, err := c.coinChannel.GetDepositsInBlock(blockID, watchMap)
 
 	for _, dep := range deposits {

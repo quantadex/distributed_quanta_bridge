@@ -27,7 +27,7 @@ import (
 func GetEthSync(node *TrustNode) sync.DepositSyncInterface {
 	return sync.NewEthereumSync(node.eth,
 		test.GRAPHENE_TRUST.TrustContract,
-		map[string]string{"eth": "TESTISSUE2"},
+		map[string]string{"eth": "TESTETH"},
 		node.q,
 		node.db,
 		node.rDb,
@@ -333,7 +333,7 @@ func TestWithdrawal(t *testing.T) {
 
 	fmt.Printf("[CURSOR %d] END\n=======================\n\n", cursor)
 
-	time.Sleep(time.Second * 8)
+	time.Sleep(time.Second * 48)
 
 	var w *control.WithdrawalResult
 	select {
@@ -435,7 +435,7 @@ func TestBTCWithdrawal(t *testing.T) {
 
 	println("Address created ", string(bodyBytes))
 
-	cursor := int64(4679497)
+	cursor := int64(5116140)
 	fmt.Printf("=======================\n[CURSOR %d] BEGIN\n\n", cursor)
 	for i, node := range nodes {
 		refunds, err := node.qTC.DoLoop(cursor)
