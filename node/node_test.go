@@ -54,7 +54,7 @@ func assertMsgCountEqualDoLoop(t *testing.T, label string, expected int, actual 
  */
 func StartNodesWithIndexes(quanta *test.QuantaNodeSecrets, ethereum *test.EthereumTrustSecrets,
 	etherEnv test.EthereumEnv, removePrevDB bool, indexesToStart []int, nodesIn []*TrustNode) []*TrustNode {
-	println("Starting nodes")
+	println("Starting nodes with ", ethereum.TrustContract)
 
 	nodes := make([]*TrustNode, 2)
 	copy(nodes, nodesIn)
@@ -77,6 +77,7 @@ func StartNodesWithIndexes(quanta *test.QuantaNodeSecrets, ethereum *test.Ethere
 		}
 
 		config := generateConfig(quanta, ethereum, etherEnv, currentIndex)
+		fmt.Println("config trust = ", config.EthereumTrustAddr)
 
 		go func(config common.Config, currentIndex int) {
 			defer wg.Done()
