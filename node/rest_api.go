@@ -10,7 +10,7 @@ import (
 	"github.com/quantadex/distributed_quanta_bridge/trust/control"
 	"github.com/quantadex/distributed_quanta_bridge/trust/db"
 	"net/http"
-	"strings"
+	"strconv"
 )
 
 type Server struct {
@@ -54,28 +54,45 @@ func (server *Server) setRoute() {
 
 func (server *Server) addressHandler(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
-	quanta := strings.ToUpper(vars["quanta"])
-	values, err := server.kv.GetAllValues(control.ETHADDR_QUANTAADDR)
-	fmt.Printf("%v %v", values, err)
+	quanta := vars["quanta"]
+
+	values, err := db.GetCrosschainByBlockchainAndUser(server.db, "ETH", quanta)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
+		w.Write([]byte(err.Error()))
 		return
 	}
 
-	addresses := []string{}
-	for k, v := range values {
-		if v == quanta {
-			addresses = append(addresses, k)
-		}
-	}
-
-	data, _ := json.Marshal(addresses)
+	data, _ := json.Marshal(values)
 
 	w.Write(data)
 }
 
 func (server *Server) historyHandler(w http.ResponseWriter, r *http.Request) {
-	txs, err := db.QueryAllTX(server.db)
+	user := r.URL.Query().Get("user")
+	offsetStr := r.URL.Query().Get("offset")
+	limitStr := r.URL.Query().Get("limit")
+	var offset, limit int
+	if offsetStr == "" {
+		offset = 0
+	} else {
+		offset,_ = strconv.Atoi(offsetStr)
+	}
+	if limitStr == "" {
+		limit = 0
+	} else {
+		limit,_ = strconv.Atoi(limitStr)
+	}
+
+
+	var txs []db.Transaction
+	var err error
+	if user == "" {
+		txs, err = db.QueryAllTX(server.db, offset, limit)
+	} else {
+		txs, err = db.QueryAllTXByUser(server.db, user, offset, limit)
+	}
+
 	if err != nil {
 		w.WriteHeader(500)
 		w.Write([]byte(err.Error()))
