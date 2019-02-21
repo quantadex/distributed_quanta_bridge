@@ -323,7 +323,7 @@ func TestWithdrawal(t *testing.T) {
 		withdrawResult <- c
 	}
 
-	cursor := int64(5290510)
+	cursor := int64(5290122)
 	fmt.Printf("=======================\n[CURSOR %d] BEGIN\n\n", cursor)
 	for i, node := range nodes {
 		refunds, err := node.qTC.DoLoop(cursor)
