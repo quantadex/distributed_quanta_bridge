@@ -65,7 +65,7 @@ func TestForwardScan(t *testing.T) {
 
 	client.Client = ethereumClient
 	client.Start()
-	contracts, err := client.GetForwardContract(4186074)
+	contracts, err := client.GetForwardContract(5061200)
 	if err != nil {
 		println("err... " + err.Error())
 		t.Error(err)
