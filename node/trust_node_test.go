@@ -302,10 +302,10 @@ func TestRopstenERC20Token(t *testing.T) {
 //}
 
 func TestWithdrawal(t *testing.T) {
-	ethereumClient, err := ethclient.Dial(test.ETHER_NETWORKS[test.LOCAL].Rpc)
+	ethereumClient, err := ethclient.Dial(test.ETHER_NETWORKS[test.ROPSTEN].Rpc)
 	assert.Nil(t, err)
 
-	trustAddress := common.HexToAddress(test.GRAPHENE_TRUST.TrustContract)
+	trustAddress := common.HexToAddress(test.GRAPHENE_TRUST2.TrustContract)
 	contract, err := contracts.NewTrustContract(trustAddress, ethereumClient)
 	assert.NoError(t, err)
 
@@ -315,7 +315,7 @@ func TestWithdrawal(t *testing.T) {
 	assert.NoError(t, err)
 	println("latest TXID=", txId)
 
-	nodes := StartNodes(test.GRAPHENE_ISSUER, test.GRAPHENE_TRUST, test.ETHER_NETWORKS[test.LOCAL])
+	nodes := StartNodes(test.GRAPHENE_ISSUER, test.GRAPHENE_TRUST2, test.ETHER_NETWORKS[test.ROPSTEN])
 
 	withdrawResult := make(chan control.WithdrawalResult)
 
