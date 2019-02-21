@@ -51,6 +51,26 @@ func SendBTC(address string, amount btcutil.Amount) (string, error) {
 	return out.String(), err
 }
 
+func ImportAddress(address string) {
+	args := []string{
+		//"-datadir=../../blockchain/bitcoin/data",
+		"importaddress",
+		address,
+	}
+
+	cmd := exec.Command("bitcoin-cli", args...)
+	var out bytes.Buffer
+	var stderr bytes.Buffer
+	cmd.Stdout = &out
+	cmd.Stderr = &stderr
+
+	err := cmd.Run()
+
+	if err != nil {
+		println("err", err.Error(), stderr.String())
+	}
+}
+
 func GenerateBlock() (string, error) {
 	args := []string{
 		//"-datadir=../../blockchain/bitcoin/data",
@@ -88,8 +108,10 @@ func TestBitcoinEncodeRefund(t *testing.T) {
 
 	bitcoin := client.(*BitcoinCoin)
 	addr1, err := bitcoin.GenerateMultisig("aaa1")
+	ImportAddress(addr1)
 	addr2, err := bitcoin.GenerateMultisig("2")
 	println(addr1, addr2)
+	ImportAddress(addr2)
 
 	crosschainAddr := make(map[string]string)
 	crosschainAddr[addr1] = "pooja"
