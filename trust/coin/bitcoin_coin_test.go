@@ -30,7 +30,7 @@ func SendBTC(address string, amount btcutil.Amount) (string, error) {
 	amountStr := fmt.Sprintf("%f", amount.ToBTC())
 	fmt.Printf("Sending to %s amount of %s\n", address, amountStr)
 	args := []string{
-		"-datadir=../../blockchain/bitcoin/data",
+		//"-datadir=../../blockchain/bitcoin/data",
 		"sendtoaddress",
 		address,
 		amountStr,
@@ -53,7 +53,7 @@ func SendBTC(address string, amount btcutil.Amount) (string, error) {
 
 func GenerateBlock() (string, error) {
 	args := []string{
-		"-datadir=../../blockchain/bitcoin/data",
+		//"-datadir=../../blockchain/bitcoin/data",
 		"generate",
 		"1",
 	}
