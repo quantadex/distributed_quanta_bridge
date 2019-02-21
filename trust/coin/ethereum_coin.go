@@ -5,25 +5,27 @@ import (
 	"crypto/ecdsa"
 	"encoding/binary"
 	"encoding/json"
+	"errors"
 	"github.com/ethereum/go-ethereum/accounts/abi"
+	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	common2 "github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/ethclient"
 	"github.com/quantadex/distributed_quanta_bridge/common"
 	"github.com/quantadex/distributed_quanta_bridge/common/crypto"
+	"github.com/quantadex/distributed_quanta_bridge/trust/coin/contracts"
 	"math/big"
 	"regexp"
 	"strings"
-	"github.com/quantadex/distributed_quanta_bridge/trust/coin/contracts"
-	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 )
 
 const sign_prefix = "\x19Ethereum Signed Message:\n"
 
 type EthereumCoin struct {
-	client      *Listener
-	maxRange    int64
-	networkId   string
-	ethereumRpc string
+	client         *Listener
+	maxRange       int64
+	networkId      string
+	ethereumRpc    string
+	ethereumSecret *ecdsa.PrivateKey
 }
 
 type EncodedMsg struct {
@@ -85,7 +87,13 @@ func (c *EthereumCoin) FlushCoin(forwarderAddr string, tokenAddr string) error {
 		return err
 	}
 
-	tx, err := forwarder.FlushTokens(nil, common2.HexToAddress(tokenAddr))
+	if forwarder == nil {
+		return errors.New("Unable to instantiate forwarding address for " + forwarderAddr)
+	}
+
+	auth := bind.NewKeyedTransactor(c.ethereumSecret)
+
+	tx, err := forwarder.FlushTokens(auth, common2.HexToAddress(tokenAddr))
 	if tx != nil {
 		println("Flush coin ", tx.Hash().String())
 	}

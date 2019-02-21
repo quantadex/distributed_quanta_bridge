@@ -317,14 +317,16 @@ func (l *Listener) GetForwardContract(blockNumber int64) ([]*crypto2.ForwardInpu
 		//println(data)
 
 		// matches our forwarding contract
-		if strings.HasPrefix(data, Forwarder.ForwarderBin) || strings.HasPrefix(data, Forwarder.ForwarderBinV2) || strings.HasPrefix(data, Forwarder.ForwarderBinV3) {
+		if strings.HasPrefix(data, Forwarder.ForwarderBin) || strings.HasPrefix(data, Forwarder.ForwarderBinV2) || strings.HasPrefix(data, Forwarder.ForwarderBinV3) || strings.HasPrefix(data, Forwarder.ForwarderBinV4) {
 			var remain string
 			if strings.HasPrefix(data, Forwarder.ForwarderBin) {
 				remain = strings.TrimPrefix(data, Forwarder.ForwarderBin)
 			} else if strings.HasPrefix(data, Forwarder.ForwarderBinV2) {
 				remain = strings.TrimPrefix(data, Forwarder.ForwarderBinV2)
-			} else {
+			} else if strings.HasPrefix(data, Forwarder.ForwarderBinV3) {
 				remain = strings.TrimPrefix(data, Forwarder.ForwarderBinV3)
+			} else {
+				remain = strings.TrimPrefix(data, Forwarder.ForwarderBinV4)
 			}
 
 			input := &crypto2.ForwardInput{}
@@ -425,11 +427,11 @@ func (l *Listener) SendWithdrawal(conn bind.ContractBackend,
 		return tx.Hash().Hex(), errors.New("could not find receipt")
 	}
 	timeTaken := time.Since(timeBefore)
-	fmt.Printf("Successfully submitted transaction %s, receipt status = %d, took %s sec", tx.Hash().Hex(), receipt.Status, timeTaken.String())
-	fmt.Println()
 	if receipt.Status == types.ReceiptStatusFailed {
 		return tx.Hash().Hex(), errors.New("transaction failed")
 	}
+	fmt.Printf("Successfully submitted transaction %s, receipt status = %d, took %s sec", tx.Hash().Hex(), receipt.Status, timeTaken.String())
+	fmt.Println()
 	return tx.Hash().Hex(), nil
 }
 

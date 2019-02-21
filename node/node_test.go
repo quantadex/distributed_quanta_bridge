@@ -81,7 +81,7 @@ func StartNodesWithIndexes(quanta *test.QuantaNodeSecrets, ethereum *test.Ethere
 		go func(config common.Config, currentIndex int) {
 			defer wg.Done()
 
-			coin, err := coin.NewEthereumCoin(config.EthereumNetworkId, config.EthereumRpc)
+			coin, err := coin.NewEthereumCoin(config.EthereumNetworkId, config.EthereumRpc, config.EthereumKeyStore)
 			if err != nil {
 				panic("Cannot create ethereum listener")
 			}

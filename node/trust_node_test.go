@@ -59,7 +59,7 @@ func TestRopstenNativeETH(t *testing.T) {
 	// DEPOSIT to TEST2
 	// 0xba7573C0e805ef71ACB7f1c4a55E7b0af416E96A transfers 0.01 ETH to forward address: 0xb59e4b94e4ed7331ee0520e9377967614ca2dc98 on block 4327101
 	// Foward contract 0xb59e4b94e4ed7331ee0520e9377967614ca2dc98 created on 4327057
-	block := int64(4833984)
+	block := int64(5061200)
 	fmt.Printf("=======================\n[BLOCK %d] BEGIN\n\n", block)
 	for i, node := range nodes {
 		ethSync := GetEthSync(node)
@@ -73,7 +73,7 @@ func TestRopstenNativeETH(t *testing.T) {
 	fmt.Printf("[BLOCK %d] END\n=======================\n\n", block)
 
 	// Check for the deposit
-	block = int64(4835122)
+	block = int64(5061248)
 	fmt.Printf("=======================\n[BLOCK %d] BEGIN\n\n", block)
 	for i, node := range nodes {
 		ethSync := GetEthSync(node)
@@ -125,7 +125,7 @@ func TestRopstenERC20Token(t *testing.T) {
 
 	time.Sleep(time.Millisecond * 250)
 
-	block := int64(4833984)
+	block := int64(5061200)
 	fmt.Printf("=======================\n[BLOCK %d] BEGIN\n\n", block)
 	for i, node := range nodes {
 		ethSync := GetEthSync(node)
@@ -137,7 +137,7 @@ func TestRopstenERC20Token(t *testing.T) {
 	fmt.Printf("[BLOCK %d] END\n=======================\n\n", block)
 
 	// Check for the deposit
-	block = int64(4840525)
+	block = int64(5061261)
 	fmt.Printf("=======================\n[BLOCK %d] BEGIN\n\n", block)
 	for i, node := range nodes {
 		ethSync := GetEthSync(node)
@@ -150,7 +150,7 @@ func TestRopstenERC20Token(t *testing.T) {
 	}
 	fmt.Printf("[BLOCK %d] END\n=======================\n\n", block)
 
-	block = int64(4840526)
+	block = int64(5061262)
 	fmt.Printf("=======================\n[BLOCK %d] BEGIN\n\n", block)
 	for i, node := range nodes {
 		ethSync := GetEthSync(node)

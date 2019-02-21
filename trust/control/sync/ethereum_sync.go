@@ -47,13 +47,16 @@ func (c *EthereumSync) GetDepositsInBlock(blockID int64) ([]*coin.Deposit, error
 			// ethereum converts to precision 5, now we need to convert to precision of the asset
 			dep.Amount = coin.PowerDelta(*big.NewInt(dep.Amount), 5, int(c.coinInfo[c.issuingSymbol["eth"]].Precision))
 		} else {
+			dep.CoinName = strings.ToUpper(dep.CoinName)
 			// we assume precision is always 5
 			// we need to flush erc-20 coins
-			if strings.Contains(dep.CoinName,"0X") {
+			if strings.Contains(dep.CoinName, "0X") {
 				parts := strings.Split(dep.CoinName, "0X")
-				ercAddr := "0x"+parts[1]
+				ercAddr := "0x" + parts[1]
 				err := c.coinChannel.FlushCoin(dep.SenderAddr, ercAddr)
-				c.logger.Error(err.Error())
+				if err != nil {
+					c.logger.Error(err.Error())
+				}
 			}
 		}
 

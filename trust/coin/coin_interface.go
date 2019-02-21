@@ -5,6 +5,7 @@ import (
 	"github.com/btcsuite/btcd/chaincfg"
 	"github.com/btcsuite/btcutil"
 	common2 "github.com/ethereum/go-ethereum/common"
+	crypto2 "github.com/ethereum/go-ethereum/crypto"
 	"github.com/quantadex/distributed_quanta_bridge/common"
 	"github.com/quantadex/distributed_quanta_bridge/common/crypto"
 	"github.com/scorum/bitshares-go/types"
@@ -123,8 +124,12 @@ func NewDummyCoin() (Coin, error) {
 	return &DummyCoin{}, nil
 }
 
-func NewEthereumCoin(networkId string, ethereumRpc string) (Coin, error) {
-	return &EthereumCoin{maxRange: common.MaxNumberInt64, networkId: networkId, ethereumRpc: ethereumRpc}, nil
+func NewEthereumCoin(networkId string, ethereumRpc string, secret string) (Coin, error) {
+	key, err := crypto2.HexToECDSA(secret)
+	if err != nil {
+		return nil, err
+	}
+	return &EthereumCoin{maxRange: common.MaxNumberInt64, networkId: networkId, ethereumRpc: ethereumRpc, ethereumSecret: key}, nil
 }
 
 func NewBitcoinCoin(params *chaincfg.Params, signers []string, dataDirectory string) (Coin, error) {
