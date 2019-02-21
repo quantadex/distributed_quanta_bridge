@@ -28,7 +28,6 @@ type BitcoinCoin struct {
 	signers        []btcutil.Address
 	crosschainAddr map[string]string
 	fee            float64
-	dataDirectory  string
 }
 
 const BLOCKCHAIN_BTC = "BTC"
@@ -176,7 +175,7 @@ func (b *BitcoinCoin) GetDepositsInBlock(blockID int64, trustAddress map[string]
 	return events, nil
 }
 
-func (c *BitcoinCoin) 	FlushCoin(forwarder string, address string) error {
+func (c *BitcoinCoin) FlushCoin(forwarder string, address string) error {
 	panic("not implemented")
 }
 
@@ -186,9 +185,7 @@ func (b *BitcoinCoin) GetForwardersInBlock(blockID int64) ([]*crypto.ForwardInpu
 
 func (b *BitcoinCoin) CombineSignatures(signs []string) (string, error) {
 	sigsByte, err := json.Marshal(signs)
-	dir := "-datadir=" + b.dataDirectory
 	args := []string{
-		dir,
 		"combinerawtransaction",
 		string(sigsByte),
 	}
@@ -349,7 +346,6 @@ func (b *BitcoinCoin) EncodeRefund(w Withdrawal) (string, error) {
 		Tx:       hex.EncodeToString(buf.Bytes()),
 		RawInput: rawInput,
 	}
-
 
 	resJson, err := json.Marshal(res)
 	data, err := json.Marshal(&EncodedMsg{string(resJson), w.Tx, w.QuantaBlockID, w.CoinName})
