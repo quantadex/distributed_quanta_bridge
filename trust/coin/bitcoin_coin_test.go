@@ -87,20 +87,33 @@ func TestBitcoinEncodeRefund(t *testing.T) {
 	err = client.Attach()
 	assert.NoError(t, err)
 
-	GenerateBlock()
-
 	bitcoin := client.(*BitcoinCoin)
+	addr1, err := bitcoin.GenerateMultisig("aaa1")
+	addr2, err := bitcoin.GenerateMultisig("2")
+	println(addr1, addr2)
+
 	crosschainAddr := make(map[string]string)
-	crosschainAddr["2NA4mXEQvB594k2cZX4maVayQDTw8o7PG5m"] = "pooja"
-	crosschainAddr["2N7roUQTFx7pnhEpNew9QFztK6h2XXtJGPY"] = "pooja"
-	crosschainAddr["2N1hVG9emWDW2WVsgKKEr5bLRV9LqYzGhwQ"] = "pooja"
+	crosschainAddr[addr1] = "pooja"
+	crosschainAddr[addr2] = "pooja"
 	bitcoin.crosschainAddr = crosschainAddr
+	fmt.Println(bitcoin.crosschainAddr)
+
+	amount, err := btcutil.NewAmount(0.01)
+	res, err := SendBTC(addr1, amount)
+	println(res, err)
+	res, err = SendBTC(addr2, amount)
+	println(res, err)
+	res, err = GenerateBlock()
+	println(res, err)
+
 	//btec, err := crypto.NewGraphenePublicKeyFromString("QA5nvEN2S7Dej2C9hrLJTHNeMGeHq6uyjMdoceR74CksyApeZHWS")
 	btec, err := crypto.GenerateGrapheneKeyWithSeed("pooja")
 	assert.NoError(t, err)
 	msig, err := bitcoin.GenerateMultisig(btec)
 
 	log.Println("multisig: ", msig, err)
+
+	GenerateBlock()
 
 	w := Withdrawal{
 		SourceAddress:      "2NA4mXEQvB594k2cZX4maVayQDTw8o7PG5m",
