@@ -89,7 +89,7 @@ func (server *Server) addressHandler(w http.ResponseWriter, r *http.Request) {
 		_, err := server.generateNewAddress(blockchain, quanta)
 		if err != nil {
 			w.WriteHeader(http.StatusInternalServerError)
-			w.Write([]byte("Unable to generate address for " + blockchain))
+			w.Write([]byte("Unable to generate address for " + blockchain + "," + err.Error()))
 			return
 		}
 		values, err = db.GetCrosschainByBlockchainAndUser(server.db, blockchain, quanta)
