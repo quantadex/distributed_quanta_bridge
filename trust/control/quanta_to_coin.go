@@ -306,7 +306,6 @@ func (c *QuantaToCoin) StartConsensus(w *coin.Withdrawal) (string, error) {
 
 	txResult := HEX_NULL
 	errResult := error(nil)
-	fmt.Println("coin contract address = ", c.coinContractAddress)
 
 	txId, err := c.coinChannel[blockchain].GetTxID(common.HexToAddress(c.coinContractAddress))
 	if err != nil {
