@@ -1,7 +1,9 @@
 package main
 
 import (
+	"bytes"
 	"fmt"
+	"github.com/btcsuite/btcutil"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/ethclient"
 	"github.com/quantadex/distributed_quanta_bridge/common/test"
@@ -11,6 +13,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"io/ioutil"
 	"net/http"
+	"os/exec"
 	"testing"
 	"time"
 )
@@ -403,6 +406,73 @@ func TestBTCDeposit(t *testing.T) {
 	StopRegistry(r)
 }
 
+func ImportAddress(address string) {
+	args := []string{
+		//"-datadir=../../blockchain/bitcoin/data",
+		"importaddress",
+		address,
+	}
+
+	cmd := exec.Command("bitcoin-cli", args...)
+	var out bytes.Buffer
+	var stderr bytes.Buffer
+	cmd.Stdout = &out
+	cmd.Stderr = &stderr
+
+	err := cmd.Run()
+
+	if err != nil {
+		println("err", err.Error(), stderr.String())
+	}
+}
+
+func SendBTC(address string, amount btcutil.Amount) (string, error) {
+	amountStr := fmt.Sprintf("%f", amount.ToBTC())
+	fmt.Printf("Sending to %s amount of %s\n", address, amountStr)
+	args := []string{
+		//"-datadir=../../blockchain/bitcoin/data",
+		"sendtoaddress",
+		address,
+		amountStr,
+	}
+
+	cmd := exec.Command("bitcoin-cli", args...)
+	var out bytes.Buffer
+	var stderr bytes.Buffer
+	cmd.Stdout = &out
+	cmd.Stderr = &stderr
+
+	err := cmd.Run()
+
+	if err != nil {
+		println("err", err.Error(), stderr.String())
+	}
+
+	return out.String(), err
+}
+
+func GenerateBlock() (string, error) {
+	args := []string{
+		//"-datadir=../../blockchain/bitcoin/data",
+		"generate",
+		"1",
+	}
+
+	cmd := exec.Command("bitcoin-cli", args...)
+	var out bytes.Buffer
+	var stderr bytes.Buffer
+	cmd.Stdout = &out
+	cmd.Stderr = &stderr
+
+	err := cmd.Run()
+
+	if err != nil {
+		println("err", err.Error(), stderr.String())
+	}
+
+	return out.String(), err
+}
+
 func TestBTCWithdrawal(t *testing.T) {
 	ethereumClient, err := ethclient.Dial(test.ETHER_NETWORKS[test.ROPSTEN].Rpc)
 	assert.Nil(t, err)
@@ -434,6 +504,11 @@ func TestBTCWithdrawal(t *testing.T) {
 	assert.NoError(t, err)
 
 	println("Address created ", string(bodyBytes))
+
+	amount, err := btcutil.NewAmount(0.1)
+	ImportAddress("2NA4mXEQvB594k2cZX4maVayQDTw8o7PG5m")
+	SendBTC("2NA4mXEQvB594k2cZX4maVayQDTw8o7PG5m", amount)
+	GenerateBlock()
 
 	cursor := int64(5116140)
 	fmt.Printf("=======================\n[CURSOR %d] BEGIN\n\n", cursor)

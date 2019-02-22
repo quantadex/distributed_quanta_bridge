@@ -424,7 +424,9 @@ func (l *Listener) SendWithdrawal(conn bind.ContractBackend,
 
 	var receipt *types.Receipt
 	timeBefore := time.Now()
-	receipt, err = l.Client.TransactionReceipt(context.Background(), tx.Hash())
+	for receipt == nil {
+		receipt, err = l.Client.TransactionReceipt(context.Background(), tx.Hash())
+	}
 
 	timeTaken := time.Since(timeBefore)
 	if receipt != nil && receipt.Status == types.ReceiptStatusFailed {

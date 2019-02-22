@@ -92,6 +92,7 @@ func TestWithdrawalTX(t *testing.T) {
 
 	sim := backends.NewSimulatedBackend(core.GenesisAlloc{
 		userAuth.From: {Balance: big.NewInt(10000000000)}}, 5000000)
+	fmt.Println(sim)
 
 	w := &Withdrawal{
 		TxId:               1,
@@ -121,12 +122,12 @@ func TestWithdrawalTX(t *testing.T) {
 
 	client.Client = ethereumClient
 	client.Start()
-	tx, err := client.SendWithdrawal(sim, userAuth.From, userKey, w)
+	//tx, err := client.SendWithdrawal(sim, userAuth.From, userKey, w)
 
 	if err != nil {
 		println("ERR: ", err.Error())
 	}
-	println(tx)
+	//println(tx)
 }
 
 /*
