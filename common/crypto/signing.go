@@ -13,6 +13,7 @@ import (
 	"github.com/btcsuite/btcutil/base58"
 	"github.com/scorum/bitshares-go/sign"
 	"github.com/juju/errors"
+	"github.com/btcsuite/btcutil/hdkeychain"
 )
 
 const PREFIX = "QA"
@@ -52,11 +53,23 @@ func NewGraphenePublicKeyFromString(key string) (*btcec.PublicKey, error) {
 //TODO: Try to incorporate the seed back into the private key
 const prefix = "threaten weakness lovely presence common endless travel hop ground illusion anyway nod"
 func GenerateGrapheneKeyWithSeed(str string) (string, error) {
-	//digest := sha256.Sum256([]byte(prefix + ":" + str))
+	digest := sha256.Sum256([]byte(prefix + ":" + str))
 	//digest2 := bytes.NewBuffer([]byte{0x2})
 	//digest2.Write(digest[:])
-	priv, err := btcec.NewPrivateKey(btcec.S256())
-	digest2 := priv.PubKey().SerializeCompressed()
+	masterKey, err := hdkeychain.NewMaster(digest[:], &chaincfg.TestNet3Params)
+	if err != nil {
+		return "", errors.Annotate(err, "Could not get masterKey key")
+	}
+	childKey, err := masterKey.Child(0)
+	if err != nil {
+		return "", errors.Annotate(err, "Could not get child key")
+	}
+	pubKey, err := childKey.ECPubKey()
+	if err != nil {
+		return "", errors.Annotate(err, "Could not get ECPubKey")
+	}
+	
+	digest2 := pubKey.SerializeCompressed()
 
 	chk, err := Ripemd160Checksum(digest2)
 	if err != nil {
