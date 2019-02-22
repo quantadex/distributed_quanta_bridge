@@ -23,6 +23,7 @@ import (
 
 type BitcoinCoin struct {
 	Client         *rpcclient.Client
+	rpcHost		   string
 	chaincfg       *chaincfg.Params
 	command        string
 	signers        []btcutil.Address
@@ -40,7 +41,7 @@ func (b *BitcoinCoin) Attach() error {
 	b.chaincfg = &chaincfg.RegressionNetParams
 	b.command = "-datadir=blockchain/bitcoin/data/"
 	var err error
-	b.Client, err = rpcclient.New(&rpcclient.ConnConfig{Host: "localhost:18332",
+	b.Client, err = rpcclient.New(&rpcclient.ConnConfig{Host: b.rpcHost,
 		Endpoint:     "http",
 		User:         "user",
 		Pass:         "123",

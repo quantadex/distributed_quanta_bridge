@@ -19,6 +19,7 @@ type Config struct {
 	EthereumRpc        string
 	EthereumTrustAddr  string
 	EthereumKeyStore   string
+	BtcRpc			   string
 	BtcPrivateKey      string
 	BtcBlockStart      int64
 	BtcSigners         []string
