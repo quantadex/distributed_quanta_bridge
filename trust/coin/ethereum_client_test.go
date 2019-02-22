@@ -110,7 +110,17 @@ func TestWithdrawalTX(t *testing.T) {
 
 	w.Signatures = []string{signed, signed, signed}
 
-	client := &Listener{NetworkID: ROPSTEN_NETWORK_ID}
+	network := test.ETHER_NETWORKS[test.ROPSTEN]
+	client := &Listener{NetworkID: network.NetworkId}
+	ethereumClient, err := ethclient.Dial(network.Rpc)
+
+	if err != nil {
+		t.Error(err)
+		return
+	}
+
+	client.Client = ethereumClient
+	client.Start()
 	tx, err := client.SendWithdrawal(sim, userAuth.From, userKey, w)
 
 	if err != nil {

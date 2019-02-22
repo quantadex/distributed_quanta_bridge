@@ -317,8 +317,6 @@ func (n *TrustNode) initTrust(config common.Config) {
 		coinInfo[v] = asset
 	}
 
-	fmt.Println("trust address in init = ", config.EthereumTrustAddr)
-
 	n.qTC = control.NewQuantaToCoin(n.log,
 		n.db,
 		n.rDb,

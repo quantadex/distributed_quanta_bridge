@@ -77,7 +77,6 @@ func StartNodesWithIndexes(quanta *test.QuantaNodeSecrets, ethereum *test.Ethere
 		}
 
 		config := generateConfig(quanta, ethereum, etherEnv, currentIndex)
-		fmt.Println("config trust = ", config.EthereumTrustAddr)
 
 		go func(config common.Config, currentIndex int) {
 			defer wg.Done()
