@@ -168,7 +168,7 @@ func initNode(config common.Config, targetCoin coin.Coin) (*TrustNode, bool) {
 	}
 
 	// attach bitcoin
-	coin, err := coin.NewBitcoinCoin(config.BtcRpc,&chaincfg.RegressionNetParams, config.BtcSigners)
+	coin, err := coin.NewBitcoinCoin(config.BtcRpc, crypto.GetChainCfgByString(config.BtcNetwork), config.BtcSigners)
 	if err != nil {
 		panic(fmt.Errorf("cannot create ethereum listener"))
 	}

@@ -1,6 +1,9 @@
 package key_manager
 
-import "crypto/ecdsa"
+import (
+	"crypto/ecdsa"
+	"github.com/quantadex/distributed_quanta_bridge/common/crypto"
+)
 
 /**
  * KeyManager
@@ -88,6 +91,6 @@ func NewGrapheneKeyManager(chain string) (KeyManager, error) {
 	return &QuantaKeyGraphene{chain: chain}, nil
 }
 
-func NewBitCoinKeyManager() (KeyManager, error) {
-	return &BitcoinKeyManager{}, nil
+func NewBitCoinKeyManager(bitcoinRPC string, network string) (KeyManager, error) {
+	return &BitcoinKeyManager{ bitcoinRPC: bitcoinRPC, chaincfg: crypto.GetChainCfgByString(network)}, nil
 }

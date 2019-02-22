@@ -23,6 +23,7 @@ type Config struct {
 	BtcPrivateKey      string
 	BtcBlockStart      int64
 	BtcSigners         []string
+	BtcNetwork		   string
 	LogLevel           string
 	MinNodes           int
 }

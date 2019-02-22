@@ -40,6 +40,7 @@ func generateConfig(quanta *test.QuantaNodeSecrets, ethereum *test.EthereumTrust
 		MinNodes:           2,
 		BtcRpc:				"localhost:18332",
 		BtcSigners:         []string{"2NENNHR9Y9fpKzjKYobbdbwap7xno7sbf2E", "2NEDF3RBHQuUHQmghWzFf6b6eeEnC7KjAtR"},
+		BtcNetwork: 		"regnet",
 	}
 }
 

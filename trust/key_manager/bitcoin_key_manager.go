@@ -17,6 +17,7 @@ type BitcoinKeyManager struct {
 	privateKey *btcutil.WIF
 	client     *rpcclient.Client
 	chaincfg   *chaincfg.Params
+	bitcoinRPC string
 }
 
 func (b *BitcoinKeyManager) CreateNodeKeys() error {
@@ -26,8 +27,7 @@ func (b *BitcoinKeyManager) CreateNodeKeys() error {
 func (b *BitcoinKeyManager) LoadNodeKeys(privKey string) error {
 	var err error
 	// TODO: make this configurable
-	b.chaincfg = &chaincfg.RegressionNetParams
-	b.client, err = rpcclient.New(&rpcclient.ConnConfig{Host: "localhost:18332",
+	b.client, err = rpcclient.New(&rpcclient.ConnConfig{Host:b.bitcoinRPC,
 		User:         "user",
 		Pass:         "123",
 		DisableTLS:   true,
@@ -39,7 +39,6 @@ func (b *BitcoinKeyManager) LoadNodeKeys(privKey string) error {
 	}
 
 	b.privateKey, err = btcutil.DecodeWIF(privKey)
-	println("loading priv ", privKey)
 
 	return err
 }
