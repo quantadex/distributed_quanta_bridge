@@ -8,13 +8,68 @@ import (
 	"fmt"
 	"github.com/agl/ed25519"
 	"github.com/btcsuite/btcd/btcec"
+	"github.com/btcsuite/btcd/chaincfg"
 	"github.com/btcsuite/btcutil"
 	"github.com/btcsuite/btcutil/base58"
-	"github.com/go-errors/errors"
 	"github.com/scorum/bitshares-go/sign"
+	"github.com/juju/errors"
 )
 
 const PREFIX = "QA"
+
+func NewGraphenePublicKeyFromString(key string) (*btcec.PublicKey, error) {
+	prefix := key[:len(PREFIX)]
+
+	if prefix != PREFIX {
+		return nil, errors.New("Wrong chain")
+	}
+
+	b58 := base58.Decode(key[len(PREFIX):])
+	if len(b58) < 5 {
+		return nil, errors.New(fmt.Sprintf("Invalid public key 1 %d %v", len(b58), b58))
+	}
+
+	chk1 := b58[len(b58)-4:]
+
+	keyBytes := b58[:len(b58)-4]
+	chk2, err := Ripemd160Checksum(keyBytes)
+	if err != nil {
+		return nil, errors.Annotate(err, "Invalid checksum")
+	}
+
+	if !bytes.Equal(chk1, chk2) {
+		return nil, errors.New("Invalid public key 2")
+	}
+
+	println("Key bytes ", len(keyBytes))
+
+	pub, err := btcec.ParsePubKey(keyBytes, btcec.S256())
+	if err != nil {
+		return nil, errors.Annotate(err, "ParsePubKey??")
+	}
+
+	//k := PublicKey{
+	//	key:      pub,
+	//	prefix:   prefix,
+	//	checksum: chk1,
+	//}
+
+	return pub, nil
+}
+
+func GenerateGrapheneKeyWithSeed(str string) (string, error) {
+	digest := sha256.Sum256([]byte(str))
+	digest2 := bytes.NewBuffer([]byte{0x2})
+	digest2.Write(digest[:])
+
+	chk, err := Ripemd160Checksum(digest2.Bytes())
+	if err != nil {
+		return "", err
+	}
+	b := append(digest2.Bytes(), chk...)
+	pubkey := base58.Encode(b)
+	return fmt.Sprintf("%s%s", PREFIX, pubkey), nil
+}
 
 func GetGraphenePublicKey(pubKey *btcec.PublicKey) (string, error) {
 	buf := pubKey.SerializeCompressed()
@@ -25,6 +80,15 @@ func GetGraphenePublicKey(pubKey *btcec.PublicKey) (string, error) {
 	b := append(buf, chk...)
 	pubkey := base58.Encode(b)
 	return fmt.Sprintf("%s%s", PREFIX, pubkey), nil
+}
+
+func GetBitcoinAddressFromGraphene(pubKey *btcec.PublicKey) (*btcutil.AddressPubKey, error) {
+	address, err := btcutil.NewAddressPubKey(pubKey.SerializeUncompressed(), &chaincfg.RegressionNetParams)
+	if err != nil {
+		return nil, err
+	}
+	address.SetFormat(btcutil.PKFUncompressed)
+	return address, err
 }
 
 func SignMessage(msg interface{}, privateKey string) *string {

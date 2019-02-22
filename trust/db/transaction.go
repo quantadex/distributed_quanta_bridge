@@ -70,18 +70,23 @@ func QueryAllTXByUser(db *DB, user string, offset int, limit int) ([]Transaction
 
 func ConfirmDeposit(db *DB, dep *coin.Deposit, isBounced bool) error {
 	tx := &Transaction{
-		Type:      DEPOSIT,
-		Tx:        dep.Tx,
-		Coin:      dep.CoinName,
-		Created:   time.Now(),
-		Amount:    dep.Amount,
-		BlockId:   dep.BlockID,
-		From:      dep.SenderAddr,
-		To:        dep.QuantaAddr,
-		IsBounced: isBounced,
-		Signed:    false,
+		Type:        DEPOSIT,
+		Tx:          dep.Tx,
+		Coin:        dep.CoinName,
+		Created:     time.Now(),
+		Amount:      dep.Amount,
+		BlockId:     dep.BlockID,
+		From:        dep.SenderAddr,
+		To:          dep.QuantaAddr,
+		IsBounced:   isBounced,
+		Signed:      false,
+		SubmitState: SUBMIT_CONSENSUS,
 	}
-	return db.Insert(tx)
+	_, err := db.Model(tx).
+		Where("Type = ? AND Tx = ?", tx.Type, tx.Tx).
+		OnConflict("DO NOTHING").Where("Tx=?", dep.Tx).SelectOrInsert()
+
+	return err
 }
 
 func SignDeposit(db *DB, dep *coin.Deposit) error {
@@ -131,16 +136,17 @@ func ChangeWithdrawalSubmitState(db *DB, id string, state string, txid uint64, t
 
 func ConfirmWithdrawal(db *DB, dep *coin.Withdrawal) error {
 	tx := &Transaction{
-		Type:    WITHDRAWAL,
-		Tx:      dep.Tx,
-		TxId:    dep.TxId,
-		Coin:    dep.CoinName,
-		Created: time.Now(),
-		Amount:  int64(dep.Amount),
-		BlockId: dep.QuantaBlockID,
-		From:    dep.SourceAddress,
-		To:      dep.DestinationAddress,
-		Signed:  false,
+		Type:        WITHDRAWAL,
+		Tx:          dep.Tx,
+		TxId:        dep.TxId,
+		Coin:        dep.CoinName,
+		Created:     time.Now(),
+		Amount:      int64(dep.Amount),
+		BlockId:     dep.QuantaBlockID,
+		From:        dep.SourceAddress,
+		To:          dep.DestinationAddress,
+		Signed:      false,
+		SubmitState: SUBMIT_CONSENSUS,
 	}
 
 	return db.Insert(tx)
@@ -197,12 +203,23 @@ func QueryWithdrawalByAge(db *DB, age time.Time, states []string) []Transaction 
 
 func EmptyTable(db *DB) error {
 	st, err := db.db.Prepare("TRUNCATE table transactions")
+	if err != nil {
+		return err
+	}
 	_, err = st.Exec()
 
 	st, err = db.db.Prepare("TRUNCATE table crosschain_addresses")
+	if err != nil {
+		return err
+	}
+
 	_, err = st.Exec()
 
 	st, err = db.db.Prepare("TRUNCATE table key_values")
+	if err != nil {
+		return err
+	}
+
 	_, err = st.Exec()
 
 	return err

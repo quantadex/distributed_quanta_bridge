@@ -53,7 +53,7 @@ func main() {
 		config.ListenPort = *portNumber
 	}
 
-	coin, err := coin.NewEthereumCoin(config.EthereumNetworkId, config.EthereumRpc)
+	coin, err := coin.NewEthereumCoin(config.EthereumNetworkId, config.EthereumRpc, config.EthereumKeyStore)
 	if err != nil {
 		panic(fmt.Errorf("cannot create ethereum listener"))
 	}

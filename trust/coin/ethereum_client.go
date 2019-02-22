@@ -10,6 +10,7 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/crypto"
+	crypto2 "github.com/quantadex/distributed_quanta_bridge/common/crypto"
 	"github.com/quantadex/distributed_quanta_bridge/registrar/Forwarder"
 	"github.com/quantadex/distributed_quanta_bridge/trust/coin/contracts"
 	"github.com/stellar/go/support/errors"
@@ -295,13 +296,13 @@ func (l *Listener) FilterTransferEvent(blockNumber int64, toAddress map[string]s
 	return events, nil
 }
 
-func (l *Listener) GetForwardContract(blockNumber int64) ([]*ForwardInput, error) {
+func (l *Listener) GetForwardContract(blockNumber int64) ([]*crypto2.ForwardInput, error) {
 	blocks, err := l.GetBlock(blockNumber)
 	if err != nil {
 		return nil, err
 	}
 
-	ABI, err := abi.JSON(strings.NewReader(Forwarder.ForwarderABI))
+	ABI, err := abi.JSON(strings.NewReader(contracts.QuantaForwarderABI))
 	if err != nil {
 		return nil, err
 	}
@@ -310,23 +311,25 @@ func (l *Listener) GetForwardContract(blockNumber int64) ([]*ForwardInput, error
 		return nil, errors.New("Block not found ")
 	}
 
-	events := []*ForwardInput{}
+	events := []*crypto2.ForwardInput{}
 	for _, tx := range blocks.Transactions() {
 		data := common.Bytes2Hex(tx.Data())
 		//println(data)
 
 		// matches our forwarding contract
-		if strings.HasPrefix(data, Forwarder.ForwarderBin) || strings.HasPrefix(data, Forwarder.ForwarderBinV2) || strings.HasPrefix(data, Forwarder.ForwarderBinV3) {
+		if strings.HasPrefix(data, Forwarder.ForwarderBin) || strings.HasPrefix(data, Forwarder.ForwarderBinV2) || strings.HasPrefix(data, Forwarder.ForwarderBinV3) || strings.HasPrefix(data, Forwarder.ForwarderBinV4) {
 			var remain string
 			if strings.HasPrefix(data, Forwarder.ForwarderBin) {
 				remain = strings.TrimPrefix(data, Forwarder.ForwarderBin)
 			} else if strings.HasPrefix(data, Forwarder.ForwarderBinV2) {
 				remain = strings.TrimPrefix(data, Forwarder.ForwarderBinV2)
-			} else {
+			} else if strings.HasPrefix(data, Forwarder.ForwarderBinV3) {
 				remain = strings.TrimPrefix(data, Forwarder.ForwarderBinV3)
+			} else {
+				remain = strings.TrimPrefix(data, Forwarder.ForwarderBinV4)
 			}
 
-			input := &ForwardInput{}
+			input := &crypto2.ForwardInput{}
 			vals, err := ABI.Constructor.Inputs.UnpackValues(common.Hex2Bytes(remain))
 			if err != nil {
 				println("Cannot unpack ", err.Error())
@@ -345,7 +348,7 @@ func (l *Listener) GetForwardContract(blockNumber int64) ([]*ForwardInput, error
 			}
 
 			input.Blockchain = BLOCKCHAIN_ETH
-			input.ContractAddress = tr.ContractAddress
+			input.ContractAddress = tr.ContractAddress.Hex()
 			input.Trust = vals[0].(common.Address)
 			input.QuantaAddr = vals[1].(string)
 
@@ -415,20 +418,20 @@ func (l *Listener) SendWithdrawal(conn bind.ContractBackend,
 		return "", err
 	}
 
+	if tx == nil {
+		return "", errors.New("PaymentTX did not produce a transaction")
+	}
+
 	var receipt *types.Receipt
 	timeBefore := time.Now()
-	for receipt == nil {
-		receipt, err = l.Client.TransactionReceipt(context.Background(), tx.Hash())
-	}
-	if err != nil {
-		return tx.Hash().Hex(), errors.New("could not find receipt")
-	}
+	receipt, err = l.Client.TransactionReceipt(context.Background(), tx.Hash())
+
 	timeTaken := time.Since(timeBefore)
-	fmt.Printf("Successfully submitted transaction %s, receipt status = %d, took %s sec", tx.Hash().Hex(), receipt.Status, timeTaken.String())
-	fmt.Println()
-	if receipt.Status == types.ReceiptStatusFailed {
+	if receipt != nil && receipt.Status == types.ReceiptStatusFailed {
 		return tx.Hash().Hex(), errors.New("transaction failed")
 	}
+	fmt.Printf("Successfully submitted transaction %s, took %s sec", tx.Hash().Hex(), timeTaken.String())
+	fmt.Println()
 	return tx.Hash().Hex(), nil
 }
 

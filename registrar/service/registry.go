@@ -23,7 +23,7 @@ type Registry struct {
 func (r *Registry) AddNode(n *msgs.NodeInfo) error {
 	r.Lock()
 	defer r.Unlock()
-	return r.manifest.AddNode(n.NodeIp, n.NodePort, n.NodeKey)
+	return r.manifest.AddNode(n.NodeIp, n.NodePort, n.NodeExternalPort, n.NodeKey, n.ChainAddress)
 }
 
 func (r *Registry) ReceiveHealth(nodeKey string, state string) error {

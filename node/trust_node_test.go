@@ -7,7 +7,10 @@ import (
 	"github.com/quantadex/distributed_quanta_bridge/common/test"
 	"github.com/quantadex/distributed_quanta_bridge/trust/coin/contracts"
 	"github.com/quantadex/distributed_quanta_bridge/trust/control"
+	"github.com/quantadex/distributed_quanta_bridge/trust/control/sync"
 	"github.com/stretchr/testify/assert"
+	"io/ioutil"
+	"net/http"
 	"testing"
 	"time"
 )
@@ -20,9 +23,31 @@ import (
  * This one test native token from block 4186072
  * DATA DEPENDENT on ROPSTEN
  */
+
+func GetEthSync(node *TrustNode) sync.DepositSyncInterface {
+	return sync.NewEthereumSync(node.eth,
+		test.GRAPHENE_TRUST.TrustContract,
+		map[string]string{"eth": "TESTETH"},
+		node.q,
+		node.db,
+		node.rDb,
+		node.log,
+		0)
+}
+
+func GetBtcSync(node *TrustNode) sync.DepositSyncInterface {
+	return sync.NewBitcoinSync(node.btc,
+		map[string]string{"btc": "TESTISSUE3"},
+		node.q,
+		node.db,
+		node.rDb,
+		node.log,
+		0)
+}
 func TestRopstenNativeETH(t *testing.T) {
 	r := StartRegistry(2, ":6000")
 	nodes := StartNodes(test.GRAPHENE_ISSUER, test.GRAPHENE_TRUST, test.ETHER_NETWORKS[test.ROPSTEN])
+
 	time.Sleep(time.Millisecond * 250)
 
 	depositResult := make(chan control.DepositResult)
@@ -34,11 +59,13 @@ func TestRopstenNativeETH(t *testing.T) {
 	// DEPOSIT to TEST2
 	// 0xba7573C0e805ef71ACB7f1c4a55E7b0af416E96A transfers 0.01 ETH to forward address: 0xb59e4b94e4ed7331ee0520e9377967614ca2dc98 on block 4327101
 	// Foward contract 0xb59e4b94e4ed7331ee0520e9377967614ca2dc98 created on 4327057
-	block := int64(4833984)
+	block := int64(5066807)
 	fmt.Printf("=======================\n[BLOCK %d] BEGIN\n\n", block)
 	for i, node := range nodes {
+		ethSync := GetEthSync(node)
 		fmt.Printf("[BLOCK %d] Node[#%d/%d id=%d] calling doLoop...\n", block, i+1, len(nodes), node.nodeID)
-		allDeposits := node.cTQ.DoLoop([]int64{block})
+		//allDeposits := node.cTQ.DoLoop([]int64{block})
+		allDeposits := ethSync.DoLoop([]int64{block})
 		fmt.Printf("...[BLOCK %d] Node[#%d/%d] counts %d [deposit]\n\n", block, i+1, len(nodes), len(allDeposits))
 
 		assertMsgCountEqualDoLoop(t, "deposit", 0, len(allDeposits), block, i+1, len(nodes), node)
@@ -46,11 +73,12 @@ func TestRopstenNativeETH(t *testing.T) {
 	fmt.Printf("[BLOCK %d] END\n=======================\n\n", block)
 
 	// Check for the deposit
-	block = int64(4835122)
+	block = int64(5066820)
 	fmt.Printf("=======================\n[BLOCK %d] BEGIN\n\n", block)
 	for i, node := range nodes {
+		ethSync := GetEthSync(node)
 		fmt.Printf("[BLOCK %d] Node[#%d/%d id=%d] calling doLoop...\n", block, i+1, len(nodes), node.nodeID)
-		allDeposits := node.cTQ.DoLoop([]int64{block})
+		allDeposits := ethSync.DoLoop([]int64{block})
 		fmt.Printf("...[BLOCK %d] Node[#%d/%d] counts %d [deposit]\n\n", block, i+1, len(nodes), len(allDeposits))
 
 		// TODO: inspect the messages for the right content
@@ -96,9 +124,44 @@ func TestRopstenERC20Token(t *testing.T) {
 	fmt.Printf("[ASSET %s] [ACCOUNT %s] initial_balance = %.9f\n", "SIMPLETOKEN0XDFE1002C2E1AE5E8F4F34BF481900DAAE5351992", "pooja", initialBalance)
 
 	time.Sleep(time.Millisecond * 250)
-	DoLoopDeposit(nodes, []int64{4833984}) // forward address
-	DoLoopDeposit(nodes, []int64{4840525}) // we make deposit
-	DoLoopDeposit(nodes, []int64{4840526}) // no-op
+
+	block := int64(5066807)
+	fmt.Printf("=======================\n[BLOCK %d] BEGIN\n\n", block)
+	for i, node := range nodes {
+		ethSync := GetEthSync(node)
+		fmt.Printf("[BLOCK %d] Node[#%d/%d id=%d] calling doLoop...\n", block, i+1, len(nodes), node.nodeID)
+		//allDeposits := node.cTQ.DoLoop([]int64{block})
+		allDeposits := ethSync.DoLoop([]int64{block})
+		fmt.Printf("...[BLOCK %d] Node[#%d/%d] counts %d [deposit]\n\n", block, i+1, len(nodes), len(allDeposits))
+	}
+	fmt.Printf("[BLOCK %d] END\n=======================\n\n", block)
+
+	// Check for the deposit
+	block = int64(5066833)
+	fmt.Printf("=======================\n[BLOCK %d] BEGIN\n\n", block)
+	for i, node := range nodes {
+		ethSync := GetEthSync(node)
+		fmt.Printf("[BLOCK %d] Node[#%d/%d id=%d] calling doLoop...\n", block, i+1, len(nodes), node.nodeID)
+		allDeposits := ethSync.DoLoop([]int64{block})
+		fmt.Printf("...[BLOCK %d] Node[#%d/%d] counts %d [deposit]\n\n", block, i+1, len(nodes), len(allDeposits))
+
+		// TODO: inspect the messages for the right content
+		assertMsgCountEqualDoLoop(t, "deposit", 1, len(allDeposits), block, i+1, len(nodes), node)
+	}
+	fmt.Printf("[BLOCK %d] END\n=======================\n\n", block)
+
+	block = int64(5066834)
+	fmt.Printf("=======================\n[BLOCK %d] BEGIN\n\n", block)
+	for i, node := range nodes {
+		ethSync := GetEthSync(node)
+		fmt.Printf("[BLOCK %d] Node[#%d/%d id=%d] calling doLoop...\n", block, i+1, len(nodes), node.nodeID)
+		allDeposits := ethSync.DoLoop([]int64{block})
+		fmt.Printf("...[BLOCK %d] Node[#%d/%d] counts %d [deposit]\n\n", block, i+1, len(nodes), len(allDeposits))
+
+		// TODO: inspect the messages for the right content
+		assertMsgCountEqualDoLoop(t, "deposit", 0, len(allDeposits), block, i+1, len(nodes), node)
+	}
+	fmt.Printf("[BLOCK %d] END\n=======================\n\n", block)
 
 	time.Sleep(time.Second * 6)
 	newBalance, err := nodes[0].q.GetBalance("SIMPLETOKEN0XDFE1002C2E1AE5E8F4F34BF481900DAAE5351992", "pooja")
@@ -260,7 +323,119 @@ func TestWithdrawal(t *testing.T) {
 		withdrawResult <- c
 	}
 
-	cursor := int64(2499302)
+	cursor := int64(5290122)
+	fmt.Printf("=======================\n[CURSOR %d] BEGIN\n\n", cursor)
+	for i, node := range nodes {
+		refunds, err := node.qTC.DoLoop(cursor)
+		assert.NoError(t, err, "error: cursor #%d [node #%d/%d id=%d]", cursor, i+1, len(nodes), node.nodeID)
+		assert.Equal(t, 1, len(refunds), "refunds: cursor #%d [node #%d/%d id=%d]", cursor, i+1, len(nodes), node.nodeID)
+	}
+
+	fmt.Printf("[CURSOR %d] END\n=======================\n\n", cursor)
+
+	time.Sleep(time.Second * 48)
+
+	var w *control.WithdrawalResult
+	select {
+	case <-time.After(time.Second * 8):
+		w = nil
+	case w_ := <-withdrawResult:
+		w = &w_
+	}
+
+	fmt.Println("w = ", w)
+
+	assert.NotNil(t, w, "We expect withdrawal completed")
+	assert.NoError(t, w.Err, "should not get an error")
+
+	StopNodes(nodes, []int{0, 1})
+	StopRegistry(r)
+}
+
+func TestBTCDeposit(t *testing.T) {
+	r := StartRegistry(2, ":6000")
+	nodes := StartNodes(test.GRAPHENE_ISSUER, test.GRAPHENE_TRUST, test.ETHER_NETWORKS[test.ROPSTEN])
+	time.Sleep(time.Millisecond * 250)
+
+	depositResult := make(chan control.DepositResult)
+
+	nodes[0].cTQ.SuccessCb = func(c control.DepositResult) {
+		depositResult <- c
+	}
+
+	pubKey := "pooja"
+	res, err := http.Get("http://localhost:5200/api/address/new/BTC/" + pubKey)
+	assert.NoError(t, err)
+	assert.Equal(t, res.StatusCode, 200)
+
+	bodyBytes, err := ioutil.ReadAll(res.Body)
+	assert.NoError(t, err)
+
+	println("Address created ", string(bodyBytes))
+
+	block := int64(146)
+	fmt.Printf("=======================\n[BLOCK %d] BEGIN\n\n", block)
+	for i, node := range nodes {
+		btcSync := GetBtcSync(node)
+		fmt.Printf("[BLOCK %d] Node[#%d/%d id=%d] calling doLoop...\n", block, i+1, len(nodes), node.nodeID)
+		//allDeposits := node.cTQ.DoLoop([]int64{block})
+		allDeposits := btcSync.DoLoop([]int64{block})
+		fmt.Printf("...[BLOCK %d] Node[#%d/%d] counts %d [deposit]\n\n", block, i+1, len(nodes), len(allDeposits))
+	}
+	fmt.Printf("[BLOCK %d] END\n=======================\n\n", block)
+
+	time.Sleep(10 * time.Second)
+
+	var w *control.DepositResult
+	select {
+	case <-time.After(time.Second * 8):
+		w = nil
+	case w_ := <-depositResult:
+		w = &w_
+	}
+
+	assert.NotNil(t, w, "We expect withdrawal completed")
+	assert.NoError(t, w.Err, "should not get an error")
+
+	time.Sleep(time.Second * 5)
+
+	StopNodes(nodes, []int{0, 1})
+	StopRegistry(r)
+}
+
+func TestBTCWithdrawal(t *testing.T) {
+	ethereumClient, err := ethclient.Dial(test.ETHER_NETWORKS[test.ROPSTEN].Rpc)
+	assert.Nil(t, err)
+
+	trustAddress := common.HexToAddress(test.GRAPHENE_TRUST.TrustContract)
+	contract, err := contracts.NewTrustContract(trustAddress, ethereumClient)
+	assert.NoError(t, err)
+
+	r := StartRegistry(2, ":6000")
+
+	txId, err := contract.TxIdLast(nil)
+	assert.NoError(t, err)
+	println("latest TXID=", txId)
+
+	nodes := StartNodes(test.GRAPHENE_ISSUER, test.GRAPHENE_TRUST, test.ETHER_NETWORKS[test.ROPSTEN])
+
+	withdrawResult := make(chan control.WithdrawalResult)
+
+	nodes[0].qTC.SuccessCb = func(c control.WithdrawalResult) {
+		withdrawResult <- c
+	}
+
+	pubKey := "pooja"
+	res, err := http.Get("http://localhost:5200/api/address/new/BTC/" + pubKey)
+	assert.NoError(t, err)
+	assert.Equal(t, res.StatusCode, 200)
+
+	bodyBytes, err := ioutil.ReadAll(res.Body)
+	assert.NoError(t, err)
+
+	println("Address created ", string(bodyBytes))
+
+	cursor := int64(5116140)
 	fmt.Printf("=======================\n[CURSOR %d] BEGIN\n\n", cursor)
 	for i, node := range nodes {
 		refunds, err := node.qTC.DoLoop(cursor)

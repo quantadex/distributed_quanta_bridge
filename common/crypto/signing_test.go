@@ -1,6 +1,10 @@
 package crypto
 
-import "testing"
+import (
+	"github.com/btcsuite/btcutil"
+	"github.com/stretchr/testify/assert"
+	"testing"
+)
 
 /*
 {
@@ -20,4 +24,22 @@ func TestSignMessage(t *testing.T) {
 	if !success {
 		t.Error("expect to be successful")
 	}
+}
+
+func TestGetBitcoinAddressFromGraphene(t *testing.T) {
+	w, _ := btcutil.DecodeWIF("5JyYu5DCXbUznQRSx3XT2ZkjFxQyLtMuJ3y6bGLKC3TZWPHMDxj")
+
+	address, err := GetBitcoinAddressFromGraphene(w.PrivKey.PubKey())
+	assert.NoError(t, err)
+	println(address)
+}
+
+func TestGetGraphenePublicKey(t *testing.T) {
+	address, err := GenerateGrapheneKeyWithSeed("pooja")
+	assert.NoError(t, err)
+	println(address)
+
+	pubKey, err := NewGraphenePublicKeyFromString(address)
+	assert.NoError(t, err)
+	println(pubKey)
 }

@@ -22,11 +22,12 @@ type Server struct {
 	httpService *http.Server
 	kv          kv_store.KVStore
 	db          *db.DB
+	trustNode   *TrustNode
 	coinNames    []string
 }
 
-func NewApiServer(coinNames []string, publicKey string, listenIp string, kv kv_store.KVStore, db *db.DB, url string, logger logger.Logger) *Server {
-	return &Server{coinNames: coinNames, publicKey: publicKey, listenIp: listenIp, url: url, logger: logger, kv: kv, db: db, httpService: &http.Server{Addr: url}}
+func NewApiServer(trustNode *TrustNode, coinNames []string, publicKey string, listenIp string, kv kv_store.KVStore, db *db.DB, url string, logger logger.Logger) *Server {
+	return &Server{trustNode: trustNode, coinNames: coinNames, publicKey: publicKey, listenIp: listenIp, url: url, logger: logger, kv: kv, db: db, httpService: &http.Server{Addr: url}}
 }
 
 func (server *Server) Stop() {
@@ -46,10 +47,56 @@ func (server *Server) Start() {
 func (server *Server) setRoute() {
 	server.handlers = mux.NewRouter()
 	server.handlers.HandleFunc("/api/address/eth/{quanta}", server.addressHandler)
+	server.handlers.HandleFunc("/api/address/new/{blockchain}/{quanta}", server.newAddressHandler)
 	server.handlers.HandleFunc("/api/history", server.historyHandler)
 	server.handlers.HandleFunc("/api/status", server.statusHandler)
 
 	server.httpService.Handler = server.handlers
+}
+
+func (server *Server) newAddressHandler(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	blockchain := strings.ToUpper(vars["blockchain"])
+	quanta := vars["quanta"]
+
+	if blockchain == "BTC" {
+		// if client, broadcast it
+		if r.Header.Get("IS_PEER") != "true" {
+			for k, _ := range server.trustNode.man.Nodes {
+				if k != server.trustNode.nodeID {
+					peer := server.trustNode.man.Nodes[k]
+					url := fmt.Sprintf("http://%s:%s%s", peer.IP, peer.ExternalPort, r.RequestURI)
+					req, err := http.NewRequest("GET", url, nil)
+					if err != nil {
+					}
+					req.Header.Set("IS_PEER", "true")
+					client := &http.Client{}
+					_, err = client.Do(req)
+
+				}
+			}
+		}
+
+		forwardInput, err := server.trustNode.CreateMultisig(blockchain, quanta)
+		if err != nil {
+			w.WriteHeader(500)
+			w.Write([]byte(err.Error()))
+			return
+		}
+
+		json, err := json.Marshal(forwardInput)
+		if err != nil {
+			w.WriteHeader(500)
+			w.Write([]byte(err.Error()))
+			return
+		}
+
+		w.Write(json)
+
+		// else just return result
+	} else {
+		w.Write([]byte("Not supported"))
+	}
 }
 
 func (server *Server) addressHandler(w http.ResponseWriter, r *http.Request) {

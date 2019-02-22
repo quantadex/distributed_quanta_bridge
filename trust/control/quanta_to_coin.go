@@ -42,14 +42,14 @@ type QuantaToCoin struct {
 	logger              logger.Logger
 	db                  kv_store.KVStore
 	rDb                 *db.DB
-	coinChannel         coin.Coin
+	coinChannel         map[string]coin.Coin
 	quantaChannel       quanta.Quanta
 	quantaTrustAddress  string
 	coinContractAddress string
-	coinkM              key_manager.KeyManager
-	coinName            string
+	coinkM              map[string]key_manager.KeyManager
 	nodeID              int
-	coinInfo            *database.Asset
+	coinMapping         map[string]string
+	coinInfo            map[string]*database.Asset
 
 	rr        *RoundRobinSigner
 	cosi      *cosi.Cosi
@@ -67,16 +67,17 @@ type QuantaToCoin struct {
 func NewQuantaToCoin(log logger.Logger,
 	db_ kv_store.KVStore,
 	rDb *db.DB,
-	c coin.Coin,
+	c map[string]coin.Coin,
 	q quanta.Quanta,
 	man *manifest.Manifest,
 	quantaTrustAddress string,
 	coinContractAddress string,
-	kM key_manager.KeyManager,
-	coinName string,
+	kM map[string]key_manager.KeyManager,
+	coinMapping map[string]string,
 	peer peer_contact.PeerContact,
 	queue_ queue.Queue,
-	nodeID int) *QuantaToCoin {
+	nodeID int,
+	coinInfo map[string]*database.Asset) *QuantaToCoin {
 	res := &QuantaToCoin{}
 	res.logger = log
 	res.db = db_
@@ -86,55 +87,79 @@ func NewQuantaToCoin(log logger.Logger,
 	res.quantaTrustAddress = quantaTrustAddress
 	res.coinContractAddress = coinContractAddress
 	res.coinkM = kM
-	res.coinName = coinName
+	res.coinMapping = coinMapping
 	res.nodeID = nodeID
 	res.doneChan = make(chan bool, 1)
 	res.trustPeer = peer_contact.NewTrustPeerNode(man, peer, nodeID, queue_, queue.REFUNDMSG_QUEUE, "/node/api/refund")
 	res.cosi = cosi.NewProtocol(res.trustPeer, nodeID == 0, time.Second*3)
-	res.coinInfo, _ = q.GetAsset(coinName)
+
+	res.coinInfo = coinInfo
 
 	res.cosi.Verify = func(msg string) error {
-		withdrawal, err := res.coinChannel.DecodeRefund(msg)
-		if err != nil {
-			log.Error("Unable to decode refund")
-			return err
-		}
-		tx, err := db.GetTransaction(rDb, withdrawal.Tx)
-		if tx != nil {
-			// we're not going to sign again
-			if tx.Signed == false {
-				return nil
+		var encoded coin.EncodedMsg
+		json.Unmarshal([]byte(msg), &encoded)
+		blockchain, b := res.getBlockchainForCoin(encoded.CoinName)
+		if !b {
+			log.Error("Unable to verify refund coin name" + encoded.CoinName)
+		} else {
+			withdrawal, err := res.coinChannel[blockchain].DecodeRefund(msg)
+			if err != nil {
+				log.Error("Unable to decode refund")
+				return err
 			}
-			log.Error("Unable to verify refund " + tx.Tx)
-		}
+			tx, err := db.GetTransaction(rDb, withdrawal.Tx)
+			if tx != nil {
+				// we're not going to sign again
+				if tx.Signed == false {
+					return nil
+				}
+				log.Error("Unable to verify refund " + tx.Tx)
+			}
 
-		return errors.New("Unable to verify: " + withdrawal.Tx + " " + err.Error())
+			return errors.New("Unable to verify: " + withdrawal.Tx + " " + err.Error())
+		}
+		return nil
 	}
 
 	res.cosi.Persist = func(msg string) error {
-		withdrawal, err := res.coinChannel.DecodeRefund(msg)
-		if err != nil {
-			log.Error("Unable to decode refund at persist")
-			return err
-		}
+		var encoded coin.EncodedMsg
+		json.Unmarshal([]byte(msg), &encoded)
+		blockchain, b := res.getBlockchainForCoin(encoded.CoinName)
+		if !b {
+			return nil
+		} else {
+			withdrawal, err := res.coinChannel[blockchain].DecodeRefund(msg)
+			if err != nil {
+				log.Error("Unable to decode refund at persist")
+				return err
+			}
 
-		err = db.SignWithdrawal(rDb, withdrawal)
-		if err != nil {
-			res.logger.Error("Failed to confirm transaction: " + err.Error())
-			return errors.New("Failed to confirm transaction: " + err.Error())
+			err = db.SignWithdrawal(rDb, withdrawal)
+			if err != nil {
+				res.logger.Error("Failed to confirm transaction: " + err.Error())
+				return errors.New("Failed to confirm transaction: " + err.Error())
+			}
+			return nil
 		}
 		return nil
 	}
 
 	res.cosi.SignMsg = func(encoded string) (string, error) {
-		decoded := common.Hex2Bytes(encoded)
+		//decoded := common.Hex2Bytes(encoded)
 		msg := &coin.EncodedMsg{}
-		err := json.Unmarshal(decoded, msg)
+		err := json.Unmarshal([]byte(encoded), msg)
 		if err != nil {
 			return "", err
 		}
 
-		encodedSig, err := res.coinkM.SignTransaction(msg.Message)
+		blockchain, b := res.getBlockchainForCoin(msg.CoinName)
+		if !b {
+			return "", nil
+		} else {
+
+		}
+
+		encodedSig, err := res.coinkM[blockchain].SignTransaction(msg.Message)
 		log.Infof("Sign msg %s -> %s", msg.Message, encodedSig)
 
 		if err != nil {
@@ -200,6 +225,19 @@ func (c *QuantaToCoin) GetNewCoinBlockIDs() []int64 {
 
 	return blocks
 }
+
+func (c *QuantaToCoin) getBlockchainForCoin(coinName string) (string, bool) {
+	if strings.Contains(coinName, "0X") {
+		return coin.BLOCKCHAIN_ETH, true
+	}
+	for k, v := range c.coinMapping {
+		if v == coinName {
+			//coinmapping in config makes the key lower case
+			return strings.ToUpper(k), true
+		}
+	}
+	return "", false
+}
 func (c *QuantaToCoin) DispatchWithdrawal() {
 	var lastBlock int64 = 0
 	for {
@@ -208,26 +246,32 @@ func (c *QuantaToCoin) DispatchWithdrawal() {
 			txs := db.QueryWithdrawalByAge(c.rDb, time.Now().Add(-time.Second*5), []string{db.SUBMIT_CONSENSUS})
 
 			if len(txs) > 0 {
-				currentBlock, err := c.coinChannel.GetTopBlockID()
-				if err != nil {
-					c.logger.Error(err.Error())
-
+				blockchain, ok := c.getBlockchainForCoin(txs[0].Coin)
+				if !ok {
+					c.logger.Errorf("Blockchain not found for %s", txs[0].Coin)
 				} else {
-					//to avoid multiple transactions in one block
-					if currentBlock > lastBlock+1 {
-						lastBlock = currentBlock
-						w := &coin.Withdrawal{
-							Tx:                 txs[0].Tx,
-							TxId:               txs[0].TxId,
-							CoinName:           txs[0].Coin,
-							SourceAddress:      txs[0].From,
-							DestinationAddress: txs[0].To,
-							QuantaBlockID:      txs[0].BlockId,
-							Amount:             uint64(txs[0].Amount),
+					currentBlock, err := c.coinChannel[blockchain].GetTopBlockID()
+					if err != nil {
+						c.logger.Error(err.Error())
+
+					} else {
+						//to avoid multiple transactions in one block
+						if currentBlock > lastBlock+1 {
+							lastBlock = currentBlock
+							w := &coin.Withdrawal{
+								Tx:                 txs[0].Tx,
+								TxId:               txs[0].TxId,
+								CoinName:           txs[0].Coin,
+								SourceAddress:      txs[0].From,
+								DestinationAddress: txs[0].To,
+								QuantaBlockID:      txs[0].BlockId,
+								Amount:             uint64(txs[0].Amount),
+							}
+							c.StartConsensus(w)
 						}
-						c.StartConsensus(w)
 					}
 				}
+
 			}
 		case <-c.doneChan:
 			c.logger.Infof("Exiting.")
@@ -240,18 +284,37 @@ func (c *QuantaToCoin) Stop() {
 	c.doneChan <- true
 }
 
+func (c *QuantaToCoin) GetCrosschainAddress(w *coin.Withdrawal, blockchain string) map[string]string {
+	crossAddr := c.rDb.GetCrosschainByBlockchain(blockchain)
+
+	watchMap := make(map[string]string)
+
+	for _, w := range crossAddr {
+		watchMap[w.Address] = w.QuantaAddr
+	}
+	return watchMap
+}
+
 func (c *QuantaToCoin) StartConsensus(w *coin.Withdrawal) (string, error) {
+	blockchain, ok := c.getBlockchainForCoin(w.CoinName)
+	if !ok {
+		c.logger.Errorf("Blockchain not found for %s", w.CoinName)
+		return "", nil
+	}
+
+	c.coinChannel[blockchain].FillCrosschainAddress(c.GetCrosschainAddress(w, blockchain))
+
 	txResult := HEX_NULL
 	errResult := error(nil)
 
-	txId, err := c.coinChannel.GetTxID(common.HexToAddress(c.coinContractAddress))
+	txId, err := c.coinChannel[blockchain].GetTxID(common.HexToAddress(c.coinContractAddress))
 	if err != nil {
 		c.logger.Error("Could not get txID: " + err.Error() + " " + c.coinContractAddress)
 		//TODO: How to handle this?
 	}
 	w.TxId = txId + 1
 	c.logger.Infof("Start new round %s %s to=%s amount=%d", w.Tx, w.CoinName, w.DestinationAddress, w.Amount)
-	encoded, err := c.coinChannel.EncodeRefund(*w)
+	encoded, err := c.coinChannel[blockchain].EncodeRefund(*w)
 
 	if err != nil {
 		c.logger.Error("Failed to encode refund " + err.Error())
@@ -273,7 +336,7 @@ func (c *QuantaToCoin) StartConsensus(w *coin.Withdrawal) (string, error) {
 		// save in eth_tx_log_signed (kvstore) [S=signed,X=submitted,F=failed(uncoverable), R=retry(connection failed)] ; recoverable=RPC not available
 		c.logger.Infof("Great! Cosi successfully signed refund")
 		//c.SubmitWithdrawal(&w)
-		tx, err := c.coinChannel.SendWithdrawal(common.HexToAddress(c.coinContractAddress), c.coinkM.GetPrivateKey(), w)
+		tx, err := c.coinChannel[blockchain].SendWithdrawal(common.HexToAddress(c.coinContractAddress), c.coinkM[blockchain].GetPrivateKey(), w)
 
 		if err != nil {
 			c.logger.Errorf("Error submission: %s", err.Error())
@@ -285,7 +348,7 @@ func (c *QuantaToCoin) StartConsensus(w *coin.Withdrawal) (string, error) {
 				db.ChangeSubmitState(c.rDb, w.Tx, db.SUBMIT_RECOVERABLE, db.WITHDRAWAL)
 			} else if strings.Contains(err.Error(), "insufficient funds for gas * price + value") {
 				db.ChangeSubmitState(c.rDb, w.Tx, db.SUBMIT_RECOVERABLE, db.WITHDRAWAL)
-			} else if strings.Contains(err.Error(), "transaction failed") || strings.Contains(err.Error(), "could not find receipt") {
+			} else if strings.Contains(err.Error(), "transaction failed") {
 				db.ChangeSubmitState(c.rDb, w.Tx, db.SUBMIT_FAILURE, db.WITHDRAWAL)
 			}
 		} else {
@@ -304,11 +367,17 @@ func (c *QuantaToCoin) StartConsensus(w *coin.Withdrawal) (string, error) {
 	return txResult, errResult
 }
 
+// VERY IMPORTANT CODE
 func (c *QuantaToCoin) ComputeAmountToGraphene(coinName string, amount uint64) uint64 {
 	// this is ETH, so we have to convert from system precision standard precision (5)
-	if coinName == c.coinName {
-		return uint64(coin.PowerDelta(*big.NewInt(int64(amount)), int(c.coinInfo.Precision), 5))
+	for _, v := range c.coinInfo {
+		if coinName == v.Symbol {
+			return uint64(coin.PowerDelta(*big.NewInt(int64(amount)), int(v.Precision), 5))
+		}
 	}
+	//if coinName == c.coinName {
+	//	return uint64(coin.PowerDelta(*big.NewInt(int64(amount)), int(c.coinInfo.Precision), 5))
+	//}
 
 	return amount
 }
@@ -334,11 +403,20 @@ func (c *QuantaToCoin) DoLoop(cursor int64) ([]quanta.Refund, error) {
 	c.logger.Debugf("QuantaToCoin refunds %v", refunds)
 
 	// separate confirm, and sign as two different stages
+	// refund gives issued token, withdrawal can convert into blockchain
 	for _, refund := range refunds {
+		// REPLACE WITH COMMON CODE
+		blockchain, ok := c.getBlockchainForCoin(refund.CoinName)
+		if !ok {
+			c.logger.Errorf("Blockchain not found for %s", refund.CoinName)
+			continue
+		}
+
 		c.logger.Infof("Confirm Refund tx=%s pt=%d", refund.TransactionId, refund.PageTokenID)
 		w := &coin.Withdrawal{
 			Tx:                 refund.TransactionId,
 			CoinName:           refund.CoinName,
+			Blockchain:         blockchain,
 			SourceAddress:      refund.SourceAddress,
 			DestinationAddress: refund.DestinationAddress,
 			QuantaBlockID:      refund.PageTokenID,
@@ -349,7 +427,7 @@ func (c *QuantaToCoin) DoLoop(cursor int64) ([]quanta.Refund, error) {
 		db.ConfirmWithdrawal(c.rDb, w)
 		//cursor = refund.PageTokenID
 
-		if w.DestinationAddress == "0x0000000000000000000000000000000000000000" || !coin.CheckValidEthereumAddress(w.DestinationAddress) {
+		if w.DestinationAddress == "0x0000000000000000000000000000000000000000" || !c.coinChannel[blockchain].CheckValidAddress(w.DestinationAddress) {
 			// create a deposit
 			dep := &coin.Deposit{
 				Tx:         refund.TransactionId,
@@ -380,7 +458,7 @@ func (c *QuantaToCoin) DoLoop(cursor int64) ([]quanta.Refund, error) {
 	}
 
 	// mark the block for the next loop through
-	success := setLastBlock(c.db, QUANTA, cursor)
+	success := SetLastBlock(c.db, QUANTA, cursor)
 	if !success {
 		c.logger.Error("Failed to mark block as signed")
 		return refunds, errors.New("Failed to mark block as signed")

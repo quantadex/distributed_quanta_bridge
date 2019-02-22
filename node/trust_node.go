@@ -2,9 +2,12 @@ package main
 
 import (
 	"fmt"
+	"github.com/btcsuite/btcd/chaincfg"
+	common2 "github.com/ethereum/go-ethereum/common"
 	"github.com/go-errors/errors"
 	"github.com/go-pg/pg"
 	"github.com/op/go-logging"
+	"github.com/quantadex/distributed_quanta_bridge/common/crypto"
 	"github.com/quantadex/distributed_quanta_bridge/common/kv_store"
 	"github.com/quantadex/distributed_quanta_bridge/common/listener"
 	"github.com/quantadex/distributed_quanta_bridge/common/logger"
@@ -18,6 +21,7 @@ import (
 	"github.com/quantadex/distributed_quanta_bridge/trust/peer_contact"
 	"github.com/quantadex/distributed_quanta_bridge/trust/quanta"
 	"github.com/quantadex/distributed_quanta_bridge/trust/registrar_client"
+	"github.com/scorum/bitshares-go/apis/database"
 	"strconv"
 	"time"
 )
@@ -39,9 +43,11 @@ type TrustNode struct {
 	log      logger.Logger
 	quantakM key_manager.KeyManager
 	coinkM   key_manager.KeyManager
+	btcKM    key_manager.KeyManager
 	man      *manifest.Manifest
 	q        quanta.Quanta
-	c        coin.Coin
+	eth      coin.Coin
+	btc      coin.Coin
 	db       kv_store.KVStore
 	rDb      *db.DB
 	peer     peer_contact.PeerContact
@@ -108,6 +114,17 @@ func initNode(config common.Config, targetCoin coin.Coin) (*TrustNode, bool) {
 		return nil, false
 	}
 
+	node.btcKM, err = key_manager.NewBitCoinKeyManager()
+	if err != nil {
+		node.log.Error("Failed to create BTC key manager")
+		return nil, false
+	}
+	err = node.btcKM.LoadNodeKeys(config.BtcPrivateKey)
+	if err != nil {
+		node.log.Error("Failed to set up btc keys")
+		return nil, false
+	}
+
 	needsInitialize := !kv_store.DbExists(config.KvDbName)
 
 	node.db, err = kv_store.NewKVPGStore()
@@ -140,15 +157,27 @@ func initNode(config common.Config, targetCoin coin.Coin) (*TrustNode, bool) {
 	db.MigrateKv(node.rDb)
 	db.MigrateXC(node.rDb)
 
-	node.c = targetCoin
+	node.eth = targetCoin
 
 	//node.coinName = coin.BLOCKCHAIN_ETH
-	node.coinName = config.CoinName
-	err = node.c.Attach()
+	//node.coinName = config.CoinName
+	err = node.eth.Attach()
 	if err != nil {
 		node.log.Error("Failed to attach to coin " + err.Error())
 		return nil, false
 	}
+
+	// attach bitcoin
+	coin, err := coin.NewBitcoinCoin(&chaincfg.RegressionNetParams, config.BtcSigners)
+	if err != nil {
+		panic(fmt.Errorf("cannot create ethereum listener"))
+	}
+
+	err = coin.Attach()
+	if err != nil {
+		panic(err)
+	}
+	node.btc = coin
 
 	node.q, err = quanta.NewQuantaGraphene(quanta.QuantaClientOptions{
 		node.log,
@@ -198,7 +227,15 @@ func initNode(config common.Config, targetCoin coin.Coin) (*TrustNode, bool) {
 	}
 
 	pubKey, _ := node.quantakM.GetPublicKey()
-	node.restApi = NewApiServer([]string{control.QUANTA, config.CoinName}, pubKey, config.ListenIp, node.db, node.rDb, fmt.Sprintf(":%d", config.ExternalListenPort), node.log)
+
+	blockchain := make([]string, len(config.CoinMapping)+1)
+	blockchain[0] = control.QUANTA
+	i := 1
+	for _, v := range config.CoinMapping {
+		blockchain[i] = v
+		i = i + 1
+	}
+	node.restApi = NewApiServer(node, blockchain, pubKey, config.ListenIp, node.db, node.rDb, fmt.Sprintf(":%d", config.ExternalListenPort), node.log)
 
 	return node, true
 }
@@ -225,7 +262,12 @@ func (n *TrustNode) registerNode(config common.Config) bool {
 		return false
 	}
 
-	err = n.reg.RegisterNode(nodeIP, strconv.Itoa(nodePort), n.quantakM)
+	btcPub, err := n.btcKM.GetPublicKey()
+	chainAddress := map[string]string{
+		"BTC": btcPub,
+	}
+
+	err = n.reg.RegisterNode(nodeIP, strconv.Itoa(nodePort), strconv.Itoa(config.ExternalListenPort), n.quantakM, chainAddress)
 	if err != nil {
 		n.log.Error("Failed to send node info to registrar " + err.Error())
 		return false
@@ -267,28 +309,36 @@ func (n *TrustNode) registerNode(config common.Config) bool {
  */
 func (n *TrustNode) initTrust(config common.Config) {
 	n.log.Info("Trust initialized")
+
+	coinInfo := make(map[string]*database.Asset)
+
+	for _, v := range config.CoinMapping {
+		asset, _ := n.q.GetAsset(v)
+		coinInfo[v] = asset
+	}
+
 	n.qTC = control.NewQuantaToCoin(n.log,
 		n.db,
 		n.rDb,
-		n.c,
+		map[string]coin.Coin{coin.BLOCKCHAIN_ETH: n.eth, coin.BLOCKCHAIN_BTC: n.btc},
 		n.q,
 		n.man,
 		config.IssuerAddress,
 		config.EthereumTrustAddr,
-		n.coinkM,
-		n.coinName,
+		map[string]key_manager.KeyManager{coin.BLOCKCHAIN_ETH: n.coinkM, coin.BLOCKCHAIN_BTC: n.btcKM},
+		config.CoinMapping,
 		n.peer,
 		n.queue,
-		n.nodeID)
+		n.nodeID,
+		coinInfo)
 
 	n.cTQ = control.NewCoinToQuanta(n.log,
 		n.db,
 		n.rDb,
-		n.c,
+		n.eth,
 		n.q,
 		n.man,
 		n.quantakM,
-		n.coinName,
 		n.nodeID,
 		n.peer,
 		n.queue,
@@ -317,10 +367,12 @@ func (n *TrustNode) run() {
 			if n.reg.HealthCheckRequested() {
 				n.reg.SendHealth("RUNNING", n.quantakM)
 			}
-			blockIDs := n.cTQ.GetNewCoinBlockIDs()
-			n.cTQ.DoLoop(blockIDs)
 
-			blockIDs = n.qTC.GetNewCoinBlockIDs()
+			// handled in CLI
+			//blockIDs := n.cTQ.GetNewCoinBlockIDs()
+			//n.cTQ.DoLoop(blockIDs)
+
+			blockIDs := n.qTC.GetNewCoinBlockIDs()
 			//if init == false {
 			//	cursor = 1911002
 			//	init = true
@@ -372,6 +424,25 @@ func registerNode(config common.Config, node *TrustNode) error {
 	}
 	node.initTrust(config)
 	return nil
+}
+
+func (n *TrustNode) CreateMultisig(blockchain string, accountId string) (*crypto.ForwardInput, error) {
+	msig, err := n.btc.GenerateMultisig(accountId)
+	if err != nil {
+		return nil, err
+	}
+
+	//TODO: should we validate user?
+
+	addr := crypto.ForwardInput{
+		msig,
+		common2.HexToAddress("0x0"),
+		accountId,
+		"",
+		n.btc.Blockchain(),
+	}
+	err = n.rDb.AddCrosschainAddress(&addr)
+	return &addr, err
 }
 
 func (n *TrustNode) Stop() {

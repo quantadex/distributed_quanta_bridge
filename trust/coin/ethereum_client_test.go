@@ -65,7 +65,7 @@ func TestForwardScan(t *testing.T) {
 
 	client.Client = ethereumClient
 	client.Start()
-	contracts, err := client.GetForwardContract(4186074)
+	contracts, err := client.GetForwardContract(5061200)
 	if err != nil {
 		println("err... " + err.Error())
 		t.Error(err)
@@ -110,7 +110,17 @@ func TestWithdrawalTX(t *testing.T) {
 
 	w.Signatures = []string{signed, signed, signed}
 
-	client := &Listener{NetworkID: ROPSTEN_NETWORK_ID}
+	network := test.ETHER_NETWORKS[test.ROPSTEN]
+	client := &Listener{NetworkID: network.NetworkId}
+	ethereumClient, err := ethclient.Dial(network.Rpc)
+
+	if err != nil {
+		t.Error(err)
+		return
+	}
+
+	client.Client = ethereumClient
+	client.Start()
 	tx, err := client.SendWithdrawal(sim, userAuth.From, userKey, w)
 
 	if err != nil {
@@ -151,7 +161,7 @@ func TestWithdrawalGanacheTX(t *testing.T) {
 	}
 
 	network := test.ETHER_NETWORKS[test.ROPSTEN]
-	coin, _ := NewEthereumCoin(network.NetworkId, network.Rpc)
+	coin, _ := NewEthereumCoin(network.NetworkId, network.Rpc, "c87509a1c067bbde78beb793e6fa76530b6382a4c0241e5e4a9ec0a0f44dc0d3")
 	coin.Attach()
 	encoded, _ := coin.EncodeRefund(*w)
 	println(encoded)
@@ -183,7 +193,7 @@ func TestWithdrawalGanacheTX(t *testing.T) {
 func TestGanacheTX(t *testing.T) {
 	network := test.ETHER_NETWORKS[test.LOCAL]
 
-	coin, err := NewEthereumCoin(network.NetworkId, network.Rpc)
+	coin, err := NewEthereumCoin(network.NetworkId, network.Rpc, "c87509a1c067bbde78beb793e6fa76530b6382a4c0241e5e4a9ec0a0f44dc0d3")
 	if err != nil {
 		t.Error(err)
 		return
@@ -205,10 +215,17 @@ var cmd *exec.Cmd
 func setupEthereum() {
 	fmt.Println("Spinning up GETH")
 	cmd = exec.Command("./run_ethereum.sh")
-	cmd.Start()
+	err := cmd.Start()
+	if err != nil {
+		fmt.Println("trouble with spinning up geth", err.Error())
+		cmd = nil
+	}
 }
 
 func teardownEthereum() {
+	if cmd == nil {
+		return
+	}
 	if err := cmd.Process.Kill(); err != nil {
 		fmt.Printf("failed to kill process: %v", err)
 	}

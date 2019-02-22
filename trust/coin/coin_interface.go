@@ -2,8 +2,12 @@ package coin
 
 import (
 	"crypto/ecdsa"
+	"github.com/btcsuite/btcd/chaincfg"
+	"github.com/btcsuite/btcutil"
 	common2 "github.com/ethereum/go-ethereum/common"
+	crypto2 "github.com/ethereum/go-ethereum/crypto"
 	"github.com/quantadex/distributed_quanta_bridge/common"
+	"github.com/quantadex/distributed_quanta_bridge/common/crypto"
 	"github.com/scorum/bitshares-go/types"
 )
 
@@ -33,7 +37,8 @@ type Deposit struct {
 type Withdrawal struct {
 	Tx                 string
 	TxId               uint64 // The Node authorizing this
-	CoinName           string // The type of coin (e.g. ETH)
+	CoinName           string // The issued coin
+	Blockchain         string
 	SourceAddress      string
 	DestinationAddress string   // Where this money is going
 	QuantaBlockID      int64    // Which block this transaction was processed in quanta
@@ -55,6 +60,8 @@ type Coin interface {
 	 * Connect to the specified coin core node. Return error if failed.
 	 */
 	Attach() error
+
+	Blockchain() string
 
 	/**
 	 * GetTopBlockID
@@ -83,7 +90,12 @@ type Coin interface {
 	 * with information about QUANTA Address
 	 * We will record this in our KV later, to know where deposits came from.
 	 */
-	GetForwardersInBlock(blockID int64) ([]*ForwardInput, error)
+	GetForwardersInBlock(blockID int64) ([]*crypto.ForwardInput, error)
+
+	/**
+	 * GenerateMultisig - this is for creating multisig wallet
+	 */
+	GenerateMultisig(accountId string) (string, error)
 
 	/**
 	 * SendWithdrawl
@@ -101,14 +113,36 @@ type Coin interface {
 
 	EncodeRefund(w Withdrawal) (string, error)
 	DecodeRefund(encoded string) (*Withdrawal, error)
+
+	FillCrosschainAddress(crosschainAddr map[string]string)
+	FlushCoin(forwarder string, address string) error
+
+	CheckValidAddress(address string) bool
 }
 
 func NewDummyCoin() (Coin, error) {
 	return &DummyCoin{}, nil
 }
 
-func NewEthereumCoin(networkId string, ethereumRpc string) (Coin, error) {
-	return &EthereumCoin{maxRange: common.MaxNumberInt64, networkId: networkId, ethereumRpc: ethereumRpc}, nil
+func NewEthereumCoin(networkId string, ethereumRpc string, secret string) (Coin, error) {
+	key, err := crypto2.HexToECDSA(secret)
+	if err != nil {
+		return nil, err
+	}
+	return &EthereumCoin{maxRange: common.MaxNumberInt64, networkId: networkId, ethereumRpc: ethereumRpc, ethereumSecret: key}, nil
+}
+
+func NewBitcoinCoin(params *chaincfg.Params, signers []string) (Coin, error) {
+	signersA := []btcutil.Address{}
+	for _, s := range signers {
+		addr, err := btcutil.DecodeAddress(s, params)
+		if err != nil {
+			panic("corrupted btc address")
+		}
+		signersA = append(signersA, addr)
+	}
+
+	return &BitcoinCoin{chaincfg: params, signers: signersA}, nil
 }
 
 /**

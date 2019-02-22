@@ -23,7 +23,7 @@ func generateConfig(quanta *test.QuantaNodeSecrets, ethereum *test.EthereumTrust
 		ListenPort:         5100 + index,
 		UsePrevKeys:        true,
 		KvDbName:           fmt.Sprintf("kv_db_%d", 5100+index),
-		CoinName:           "TESTISSUE2",
+		CoinMapping:        map[string]string{"BTC": "TESTISSUE3", "ETH": "TESTETH"},
 		IssuerAddress:      quanta.SourceAccount,
 		NodeKey:            quanta.NodeSecrets[index],
 		NetworkUrl:         "ws://testnet-01.quantachain.io:8090",
@@ -35,8 +35,10 @@ func generateConfig(quanta *test.QuantaNodeSecrets, ethereum *test.EthereumTrust
 		EthereumRpc:        etherNet.Rpc,
 		EthereumKeyStore:   ethereum.NodeSecrets[index],
 		EthereumTrustAddr:  ethereum.TrustContract,
+		BtcPrivateKey:      test.BTCSECRETS.NodeSecrets[index],
 		DatabaseUrl:        fmt.Sprintf("postgres://postgres:@localhost/crosschain_%d", index),
 		MinNodes:           2,
+		BtcSigners:         []string{"2NENNHR9Y9fpKzjKYobbdbwap7xno7sbf2E", "2NEDF3RBHQuUHQmghWzFf6b6eeEnC7KjAtR"},
 	}
 }
 
@@ -52,7 +54,7 @@ func assertMsgCountEqualDoLoop(t *testing.T, label string, expected int, actual 
  */
 func StartNodesWithIndexes(quanta *test.QuantaNodeSecrets, ethereum *test.EthereumTrustSecrets,
 	etherEnv test.EthereumEnv, removePrevDB bool, indexesToStart []int, nodesIn []*TrustNode) []*TrustNode {
-	println("Starting nodes")
+	println("Starting nodes with ", ethereum.TrustContract)
 
 	nodes := make([]*TrustNode, 2)
 	copy(nodes, nodesIn)
@@ -79,7 +81,7 @@ func StartNodesWithIndexes(quanta *test.QuantaNodeSecrets, ethereum *test.Ethere
 		go func(config common.Config, currentIndex int) {
 			defer wg.Done()
 
-			coin, err := coin.NewEthereumCoin(config.EthereumNetworkId, config.EthereumRpc)
+			coin, err := coin.NewEthereumCoin(config.EthereumNetworkId, config.EthereumRpc, config.EthereumKeyStore)
 			if err != nil {
 				panic("Cannot create ethereum listener")
 			}
@@ -140,12 +142,6 @@ func StartRegistry(minNodes int, url string) *service.Server {
 
 func StopRegistry(s *service.Server) {
 	s.Stop()
-}
-
-func DoLoopDeposit(nodes []*TrustNode, blockIds []int64) {
-	for _, node := range nodes {
-		node.cTQ.DoLoop(blockIds)
-	}
 }
 
 func DoLoopWithdrawal(nodes []*TrustNode, cursor int64) {
