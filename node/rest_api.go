@@ -11,6 +11,7 @@ import (
 	"github.com/quantadex/distributed_quanta_bridge/trust/db"
 	"net/http"
 	"strconv"
+	"strings"
 )
 
 type Server struct {
