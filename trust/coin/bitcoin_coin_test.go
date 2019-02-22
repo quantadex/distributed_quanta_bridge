@@ -17,6 +17,7 @@ import (
 )
 
 const LOCAL_RPC_HOST = "localhost:18332"
+
 /*
 cSJ2vqDoT9p6PXqNdNzaLNtMKePVjEzvoAryUUN7qAAB4njLKMXa 2018-10-29T23:34:06Z
 reserve=1 # addr=2N39mAkxmLNnnL9WYecjkkTTtHTVQ3RtfZx hdkeypath=m/0'/0'/5'
@@ -149,7 +150,7 @@ func TestBitcoinEncodeRefund(t *testing.T) {
 	var encoded EncodedMsg
 	json.Unmarshal([]byte(tx), &encoded)
 
-	km, _ := key_manager.NewBitCoinKeyManager()
+	km, _ := key_manager.NewBitCoinKeyManager(LOCAL_RPC_HOST, "regnet")
 
 	err = km.LoadNodeKeys("cNxQax7BfpbikeuCebPGCgTefTah5h1XhVDfaotVdFmXtaLCWLd9")
 	assert.NoError(t, err)
@@ -173,7 +174,7 @@ func TestBitcoinEncodeRefund(t *testing.T) {
 }
 
 func TestTopBlockId(t *testing.T) {
-	client, err := NewBitcoinCoin(LOCAL_RPC_HOST,&chaincfg.RegressionNetParams, nil)
+	client, err := NewBitcoinCoin(LOCAL_RPC_HOST, &chaincfg.RegressionNetParams, nil)
 	assert.NoError(t, err)
 
 	err = client.Attach()
@@ -185,7 +186,7 @@ func TestTopBlockId(t *testing.T) {
 }
 
 func TestDeposits(t *testing.T) {
-	client, err := NewBitcoinCoin(LOCAL_RPC_HOST,&chaincfg.RegressionNetParams, nil)
+	client, err := NewBitcoinCoin(LOCAL_RPC_HOST, &chaincfg.RegressionNetParams, nil)
 	assert.NoError(t, err)
 
 	err = client.Attach()
@@ -198,7 +199,7 @@ func TestDeposits(t *testing.T) {
 }
 
 func TestDecode(t *testing.T) {
-	client, err := NewBitcoinCoin(LOCAL_RPC_HOST,&chaincfg.RegressionNetParams, []string{"2NENNHR9Y9fpKzjKYobbdbwap7xno7sbf2E", "2NEDF3RBHQuUHQmghWzFf6b6eeEnC7KjAtR"})
+	client, err := NewBitcoinCoin(LOCAL_RPC_HOST, &chaincfg.RegressionNetParams, []string{"2NENNHR9Y9fpKzjKYobbdbwap7xno7sbf2E", "2NEDF3RBHQuUHQmghWzFf6b6eeEnC7KjAtR"})
 	assert.NoError(t, err)
 
 	err = client.Attach()
@@ -232,7 +233,7 @@ func TestDecode(t *testing.T) {
 }
 
 func TestEncodeWithMultipleInputs(t *testing.T) {
-	client, err := NewBitcoinCoin(LOCAL_RPC_HOST,&chaincfg.RegressionNetParams, []string{"2NENNHR9Y9fpKzjKYobbdbwap7xno7sbf2E", "2NEDF3RBHQuUHQmghWzFf6b6eeEnC7KjAtR"})
+	client, err := NewBitcoinCoin(LOCAL_RPC_HOST, &chaincfg.RegressionNetParams, []string{"2NENNHR9Y9fpKzjKYobbdbwap7xno7sbf2E", "2NEDF3RBHQuUHQmghWzFf6b6eeEnC7KjAtR"})
 	assert.NoError(t, err)
 
 	err = client.Attach()
