@@ -2,7 +2,6 @@ package main
 
 import (
 	"fmt"
-	"github.com/btcsuite/btcd/chaincfg"
 	common2 "github.com/ethereum/go-ethereum/common"
 	"github.com/go-errors/errors"
 	"github.com/go-pg/pg"
@@ -114,7 +113,7 @@ func initNode(config common.Config, targetCoin coin.Coin) (*TrustNode, bool) {
 		return nil, false
 	}
 
-	node.btcKM, err = key_manager.NewBitCoinKeyManager()
+	node.btcKM, err = key_manager.NewBitCoinKeyManager(config.BtcRpc, config.BtcNetwork)
 	if err != nil {
 		node.log.Error("Failed to create BTC key manager")
 		return nil, false
