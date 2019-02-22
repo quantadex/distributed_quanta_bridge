@@ -418,11 +418,14 @@ func (l *Listener) SendWithdrawal(conn bind.ContractBackend,
 		return "", err
 	}
 
+	if tx == nil {
+		return "", errors.New("PaymentTX did not produce a transaction")
+	}
+
 	var receipt *types.Receipt
 	timeBefore := time.Now()
-	for receipt == nil {
-		receipt, err = l.Client.TransactionReceipt(context.Background(), tx.Hash())
-	}
+	receipt, err = l.Client.TransactionReceipt(context.Background(), tx.Hash())
+
 	if err != nil {
 		return tx.Hash().Hex(), errors.New("could not find receipt")
 	}
