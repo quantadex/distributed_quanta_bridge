@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/quantadex/distributed_quanta_bridge/trust/coin"
+	"math/big"
 )
 
 type BitcoinSync struct {
@@ -28,6 +29,7 @@ func (c *BitcoinSync) GetDepositsInBlock(blockID int64) ([]*coin.Deposit, error)
 		if dep.CoinName == "BTC" {
 			dep.CoinName = c.issuingSymbol["btc"]
 		}
+		dep.Amount = coin.PowerDelta(*big.NewInt(dep.Amount), 8, int(c.coinInfo[c.issuingSymbol["btc"]].Precision))
 	}
 
 	if err != nil {
