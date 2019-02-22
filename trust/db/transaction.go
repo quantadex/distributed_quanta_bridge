@@ -56,9 +56,15 @@ type Transaction struct {
 	SubmitTxHash        string
 }
 
-func QueryAllTX(db *DB) ([]Transaction, error) {
+func QueryAllTX(db *DB, offset int, limit int) ([]Transaction, error) {
 	var txs []Transaction
-	err := db.Model(&txs).Order("created desc").Select()
+	err := db.Model(&txs).Offset(offset).Limit(limit).Order("created desc").Select()
+	return txs, err
+}
+
+func QueryAllTXByUser(db *DB, user string, offset int, limit int) ([]Transaction, error) {
+	var txs []Transaction
+	err := db.Model(&txs).Offset(offset).Limit(limit).Where("\"from\" = ? OR \"to\" = ?", user, user).Order("created desc").Select()
 	return txs, err
 }
 

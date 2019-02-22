@@ -30,7 +30,13 @@ func (db *DB) GetCrosschainByBlockchain(blockchain string) []crypto.CrosschainAd
 	return tx
 }
 
-func (db *DB) RemoveCrosschainAddress(id string) error {
+func GetCrosschainByBlockchainAndUser(db *DB, blockchain string, quantaAddr string) ([]CrosschainAddress,error) {
+	var tx []CrosschainAddress
+	err := db.Model(&tx).Where("blockchain=? and quanta_addr=?", blockchain, quantaAddr).Select()
+	return tx, err
+}
+
+func RemoveCrosschainAddress(db *DB, id string) error {
 	_, err := db.Model(&CrosschainAddress{}).Where("id=?", id).Delete()
 	return err
 }
