@@ -364,7 +364,7 @@ func TestBTCDeposit(t *testing.T) {
 	}
 
 	pubKey := "pooja"
-	res, err := http.Get("http://localhost:5200/api/address/new/BTC/" + pubKey)
+	res, err := http.Get("http://localhost:5200/api/address/BTC/" + pubKey)
 	assert.NoError(t, err)
 	assert.Equal(t, res.StatusCode, 200)
 
@@ -426,7 +426,7 @@ func TestBTCWithdrawal(t *testing.T) {
 	}
 
 	pubKey := "pooja"
-	res, err := http.Get("http://localhost:5200/api/address/new/BTC/" + pubKey)
+	res, err := http.Get("http://localhost:5200/api/address/BTC/" + pubKey)
 	assert.NoError(t, err)
 	assert.Equal(t, res.StatusCode, 200)
 

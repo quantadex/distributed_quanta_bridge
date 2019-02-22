@@ -12,6 +12,9 @@ import (
 	"net/http"
 	"strconv"
 	"strings"
+	"github.com/quantadex/distributed_quanta_bridge/common/crypto"
+	"github.com/quantadex/distributed_quanta_bridge/trust/coin"
+	"github.com/go-errors/errors"
 )
 
 type Server struct {
@@ -47,24 +50,59 @@ func (server *Server) Start() {
 
 func (server *Server) setRoute() {
 	server.handlers = mux.NewRouter()
-	server.handlers.HandleFunc("/api/address/eth/{quanta}", server.addressHandler)
-	server.handlers.HandleFunc("/api/address/new/{blockchain}/{quanta}", server.newAddressHandler)
+	server.handlers.HandleFunc("/api/address/{blockchain}/{quanta}", server.addressHandler)
 	server.handlers.HandleFunc("/api/history", server.historyHandler)
 	server.handlers.HandleFunc("/api/status", server.statusHandler)
 
 	server.httpService.Handler = server.handlers
 }
 
-func (server *Server) newAddressHandler(w http.ResponseWriter, r *http.Request) {
+func (server *Server) generateNewAddress(blockchain string, quanta string) (*crypto.ForwardInput, error) {
+	if blockchain == coin.BLOCKCHAIN_BTC {
+		forwardInput, err := server.trustNode.CreateMultisig(blockchain, quanta)
+		return forwardInput, err
+	} else {
+		return nil, errors.New("not supported")
+	}
+}
+
+func (server *Server) addressHandler(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	blockchain := strings.ToUpper(vars["blockchain"])
 	quanta := vars["quanta"]
 
-	if blockchain == "BTC" {
+	if blockchain != coin.BLOCKCHAIN_BTC && blockchain != coin.BLOCKCHAIN_ETH {
+		w.WriteHeader(http.StatusBadRequest)
+		w.Write([]byte("not a supported blockchain"))
+		return
+	}
+
+	values, err := db.GetCrosschainByBlockchainAndUser(server.db, blockchain, quanta)
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		w.Write([]byte(err.Error()))
+		return
+	}
+
+	if len(values) == 0 && blockchain == coin.BLOCKCHAIN_BTC{
+		_, err := server.generateNewAddress(blockchain, quanta)
+		if err != nil {
+			w.WriteHeader(http.StatusInternalServerError)
+			w.Write([]byte("Unable to generate address for " + blockchain))
+			return
+		}
+		values, err = db.GetCrosschainByBlockchainAndUser(server.db, blockchain, quanta)
+		if err != nil {
+			w.WriteHeader(http.StatusInternalServerError)
+			w.Write([]byte("Unable to fetch address for " + blockchain))
+			return
+		}
+
 		// if client, broadcast it
 		if r.Header.Get("IS_PEER") != "true" {
 			for k, _ := range server.trustNode.man.Nodes {
 				if k != server.trustNode.nodeID {
+					println("Broadcast create address message to node", k)
 					peer := server.trustNode.man.Nodes[k]
 					url := fmt.Sprintf("http://%s:%s%s", peer.IP, peer.ExternalPort, r.RequestURI)
 					req, err := http.NewRequest("GET", url, nil)
@@ -77,38 +115,6 @@ func (server *Server) newAddressHandler(w http.ResponseWriter, r *http.Request) 
 				}
 			}
 		}
-
-		forwardInput, err := server.trustNode.CreateMultisig(blockchain, quanta)
-		if err != nil {
-			w.WriteHeader(500)
-			w.Write([]byte(err.Error()))
-			return
-		}
-
-		json, err := json.Marshal(forwardInput)
-		if err != nil {
-			w.WriteHeader(500)
-			w.Write([]byte(err.Error()))
-			return
-		}
-
-		w.Write(json)
-
-		// else just return result
-	} else {
-		w.Write([]byte("Not supported"))
-	}
-}
-
-func (server *Server) addressHandler(w http.ResponseWriter, r *http.Request) {
-	vars := mux.Vars(r)
-	quanta := vars["quanta"]
-
-	values, err := db.GetCrosschainByBlockchainAndUser(server.db, "ETH", quanta)
-	if err != nil {
-		w.WriteHeader(http.StatusInternalServerError)
-		w.Write([]byte(err.Error()))
-		return
 	}
 
 	data, _ := json.Marshal(values)
