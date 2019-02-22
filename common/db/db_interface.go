@@ -25,7 +25,5 @@ type DB interface {
 
 	GetCrosschainByBlockchain(blockchain string) []crypto.CrosschainAddress
 
-	RemoveCrosschainAddress(id string) error
-
 	AddCrosschainAddress(input *crypto.ForwardInput) error
 }

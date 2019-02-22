@@ -336,7 +336,7 @@ func TestWithdrawal(t *testing.T) {
 
 	fmt.Printf("[CURSOR %d] END\n=======================\n\n", cursor)
 
-	time.Sleep(time.Second * 48)
+	time.Sleep(time.Second * 60)
 
 	var w *control.WithdrawalResult
 	select {
