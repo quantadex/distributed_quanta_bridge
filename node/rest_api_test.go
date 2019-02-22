@@ -12,6 +12,7 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 	"strconv"
 	"encoding/json"
+	"github.com/quantadex/distributed_quanta_bridge/common/crypto"
 )
 
 func TestAPI(t *testing.T) {
@@ -19,8 +20,8 @@ func TestAPI(t *testing.T) {
 	nodes := StartNodes(test.GRAPHENE_ISSUER, test.GRAPHENE_TRUST, test.ETHER_NETWORKS[test.ROPSTEN])
 	time.Sleep(time.Millisecond * 250)
 
-	address := &coin.ForwardInput{
-		common.HexToAddress( "0xba420ef5d725361d8fdc58cb1e4fa62eda9ec990"),
+	address := &crypto.ForwardInput{
+		"0xba420ef5d725361d8fdc58cb1e4fa62eda9ec990",
 		common.HexToAddress(test.GRAPHENE_TRUST.TrustContract),
 		"alpha",
 		"0x01",
@@ -28,7 +29,7 @@ func TestAPI(t *testing.T) {
 	}
 
 	// test crosschain
-	db.AddCrosschainAddress(nodes[0].rDb, address)
+	nodes[0].rDb.AddCrosschainAddress(address)
 	res, err := http.Get("http://localhost:5200/api/address/eth/alpha")
 	assert.NoError(t, err)
 	bodyBytes, _ := ioutil.ReadAll(res.Body)
