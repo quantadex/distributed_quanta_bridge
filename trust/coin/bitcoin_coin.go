@@ -95,7 +95,7 @@ func (b *BitcoinCoin) GenerateMultisig(accountId string) (string, error) {
 		return "", err
 	}
 
-	err = b.Client.ImportAddress(res.P2sh)
+	err = b.Client.ImportAddressRescan(res.P2sh,"", false)
 	if err != nil {
 		return "", errors.Wrap(err, "Unable to import address " + res.P2sh)
 	}

@@ -269,6 +269,9 @@ func TestEncodeWithMultipleInputs(t *testing.T) {
 	assert.NoError(t, err)
 }
 
+/**
+ * These are the public keys on testnet, and it failed to generate a key for some instances, fixed by adding more to the seed
+ */
 func TestGenerateMultisig(t *testing.T) {
 	client, err := NewBitcoinCoin(LOCAL_RPC_HOST, &chaincfg.TestNet3Params, []string{"03AF8891DA9BBF3CED03F04BC3C17EC4D3AE61D464E9B89A6B6A1FA60E361FDEA4", "038CAFE50CA757FAD36DA592A7C2B19158C0163445BAC2DDF6A59BDDC8F5BF6AD1","03F8C8D630BB53B2E08FB108E2A951C84E582BB3D585D2127FAE6DE43150A415AE"})
 	assert.NoError(t, err)
@@ -277,7 +280,7 @@ func TestGenerateMultisig(t *testing.T) {
 	assert.NoError(t, err)
 	bitcoin := client.(*BitcoinCoin)
 
-	addr1, err := bitcoin.GenerateMultisig("crosschain1")
+	addr1, err := bitcoin.GenerateMultisig("crosschain2")
 	println(addr1, err)
 	assert.NoError(t, err)
 

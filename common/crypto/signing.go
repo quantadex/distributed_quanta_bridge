@@ -46,26 +46,23 @@ func NewGraphenePublicKeyFromString(key string) (*btcec.PublicKey, error) {
 		return nil, errors.Annotate(err, "ParsePubKey??")
 	}
 
-	//k := PublicKey{
-	//	key:      pub,
-	//	prefix:   prefix,
-	//	checksum: chk1,
-	//}
-
 	return pub, nil
 }
 
+//TODO: Try to incorporate the seed back into the private key
 const prefix = "threaten weakness lovely presence common endless travel hop ground illusion anyway nod"
 func GenerateGrapheneKeyWithSeed(str string) (string, error) {
-	digest := sha256.Sum256([]byte(prefix + ":" + str))
-	digest2 := bytes.NewBuffer([]byte{0x2})
-	digest2.Write(digest[:])
+	//digest := sha256.Sum256([]byte(prefix + ":" + str))
+	//digest2 := bytes.NewBuffer([]byte{0x2})
+	//digest2.Write(digest[:])
+	priv, err := btcec.NewPrivateKey(btcec.S256())
+	digest2 := priv.PubKey().SerializeCompressed()
 
-	chk, err := Ripemd160Checksum(digest2.Bytes())
+	chk, err := Ripemd160Checksum(digest2)
 	if err != nil {
 		return "", err
 	}
-	b := append(digest2.Bytes(), chk...)
+	b := append(digest2, chk...)
 	pubkey := base58.Encode(b)
 	return fmt.Sprintf("%s%s", PREFIX, pubkey), nil
 }
