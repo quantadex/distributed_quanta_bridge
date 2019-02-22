@@ -41,8 +41,6 @@ func NewGraphenePublicKeyFromString(key string) (*btcec.PublicKey, error) {
 		return nil, errors.New("Invalid public key 2")
 	}
 
-	println("Key bytes ", len(keyBytes))
-
 	pub, err := btcec.ParsePubKey(keyBytes, btcec.S256())
 	if err != nil {
 		return nil, errors.Annotate(err, "ParsePubKey??")

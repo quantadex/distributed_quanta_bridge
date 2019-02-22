@@ -15,6 +15,7 @@ import (
 	"github.com/quantadex/distributed_quanta_bridge/common/crypto"
 	"github.com/quantadex/distributed_quanta_bridge/trust/coin"
 	"github.com/go-errors/errors"
+	"io/ioutil"
 )
 
 type Server struct {
@@ -71,7 +72,7 @@ func (server *Server) addressHandler(w http.ResponseWriter, r *http.Request) {
 	blockchain := strings.ToUpper(vars["blockchain"])
 	quanta := vars["quanta"]
 
-	if blockchain != coin.BLOCKCHAIN_BTC && blockchain != coin.BLOCKCHAIN_ETH {
+	if !(blockchain == coin.BLOCKCHAIN_BTC || blockchain == coin.BLOCKCHAIN_ETH) {
 		w.WriteHeader(http.StatusBadRequest)
 		w.Write([]byte("not a supported blockchain"))
 		return
@@ -102,16 +103,26 @@ func (server *Server) addressHandler(w http.ResponseWriter, r *http.Request) {
 		if r.Header.Get("IS_PEER") != "true" {
 			for k, _ := range server.trustNode.man.Nodes {
 				if k != server.trustNode.nodeID {
-					println("Broadcast create address message to node", k)
 					peer := server.trustNode.man.Nodes[k]
 					url := fmt.Sprintf("http://%s:%s%s", peer.IP, peer.ExternalPort, r.RequestURI)
 					req, err := http.NewRequest("GET", url, nil)
+					println("Broadcast create address message to node", k, url)
 					if err != nil {
+						server.logger.Error("unable to build request: " + err.Error())
+						continue
 					}
 					req.Header.Set("IS_PEER", "true")
 					client := &http.Client{}
-					_, err = client.Do(req)
-
+					res, err := client.Do(req)
+					if err != nil {
+						server.logger.Error("unable to broadcast: " + err.Error())
+						continue
+					}
+					//if res.StatusCode != 200
+					{
+						bodyBytes, _ := ioutil.ReadAll(res.Body)
+						server.logger.Errorf("Broadcast got code %s %s",res.Status, string(bodyBytes))
+					}
 				}
 			}
 		}
