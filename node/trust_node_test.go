@@ -320,13 +320,13 @@ func TestWithdrawal(t *testing.T) {
 
 	nodes := StartNodes(test.GRAPHENE_ISSUER, test.GRAPHENE_TRUST, test.ETHER_NETWORKS[test.ROPSTEN])
 
-	withdrawResult := make(chan control.WithdrawalResult)
+	withdrawResult := make(chan control.DepositResult)
 
-	nodes[0].qTC.SuccessCb = func(c control.WithdrawalResult) {
+	nodes[0].cTQ.SuccessCb = func(c control.DepositResult) {
 		withdrawResult <- c
 	}
 
-	cursor := int64(5290122)
+	cursor := int64(5373523)
 	fmt.Printf("=======================\n[CURSOR %d] BEGIN\n\n", cursor)
 	for i, node := range nodes {
 		refunds, err := node.qTC.DoLoop(cursor)
@@ -336,9 +336,9 @@ func TestWithdrawal(t *testing.T) {
 
 	fmt.Printf("[CURSOR %d] END\n=======================\n\n", cursor)
 
-	time.Sleep(time.Second * 60)
+	time.Sleep(time.Second * 6)
 
-	var w *control.WithdrawalResult
+	var w *control.DepositResult
 	select {
 	case <-time.After(time.Second * 8):
 		w = nil
