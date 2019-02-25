@@ -50,6 +50,7 @@ type QuantaToCoin struct {
 	nodeID              int
 	coinMapping         map[string]string
 	coinInfo            map[string]*database.Asset
+	blockInfo           map[string]int64
 
 	rr        *RoundRobinSigner
 	cosi      *cosi.Cosi
@@ -77,7 +78,8 @@ func NewQuantaToCoin(log logger.Logger,
 	peer peer_contact.PeerContact,
 	queue_ queue.Queue,
 	nodeID int,
-	coinInfo map[string]*database.Asset) *QuantaToCoin {
+	coinInfo map[string]*database.Asset,
+	blockInfo map[string]int64) *QuantaToCoin {
 	res := &QuantaToCoin{}
 	res.logger = log
 	res.db = db_
@@ -94,6 +96,7 @@ func NewQuantaToCoin(log logger.Logger,
 	res.cosi = cosi.NewProtocol(res.trustPeer, nodeID == 0, time.Second*3)
 
 	res.coinInfo = coinInfo
+	res.blockInfo = blockInfo
 
 	res.cosi.Verify = func(msg string) error {
 		var encoded coin.EncodedMsg
@@ -239,7 +242,6 @@ func (c *QuantaToCoin) getBlockchainForCoin(coinName string) (string, bool) {
 	return "", false
 }
 func (c *QuantaToCoin) DispatchWithdrawal() {
-	var lastBlock int64 = 0
 	for {
 		select {
 		case <-time.After(time.Second * 10):
@@ -256,8 +258,8 @@ func (c *QuantaToCoin) DispatchWithdrawal() {
 
 					} else {
 						//to avoid multiple transactions in one block
-						if currentBlock > lastBlock+1 {
-							lastBlock = currentBlock
+						if currentBlock > c.blockInfo[blockchain]+1 {
+							c.blockInfo[blockchain] = currentBlock
 							w := &coin.Withdrawal{
 								Tx:                 txs[0].Tx,
 								TxId:               txs[0].TxId,

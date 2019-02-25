@@ -329,7 +329,8 @@ func (n *TrustNode) initTrust(config common.Config) {
 		n.peer,
 		n.queue,
 		n.nodeID,
-		coinInfo)
+		coinInfo,
+		map[string]int64{coin.BLOCKCHAIN_ETH: 0, coin.BLOCKCHAIN_BTC: 0})
 
 	n.cTQ = control.NewCoinToQuanta(n.log,
 		n.db,
