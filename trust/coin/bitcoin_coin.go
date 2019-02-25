@@ -95,7 +95,7 @@ func (b *BitcoinCoin) GenerateMultisig(accountId string) (string, error) {
 		return "", err
 	}
 
-	err = b.Client.ImportAddress(res.P2sh)
+	err = b.Client.ImportAddressRescan(res.P2sh,"", false)
 	if err != nil {
 		return "", errors.Wrap(err, "Unable to import address " + res.P2sh)
 	}
@@ -289,6 +289,8 @@ func (b *BitcoinCoin) GetUnspentInputs(destAddress btcutil.Address, amount btcut
 
 // TODO: inspect all unspent for addresses that matches the pattern for our multisig
 // gather enough input and create a refund
+// encoding withdrawal with precision of 5.
+// must convert to our system precision
 func (b *BitcoinCoin) EncodeRefund(w Withdrawal) (string, error) {
 	fmt.Printf("Encode refund %v\n", w)
 
