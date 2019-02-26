@@ -3,10 +3,12 @@ package main
 import (
 	"bytes"
 	"fmt"
+	"github.com/btcsuite/btcd/chaincfg"
 	"github.com/btcsuite/btcutil"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/ethclient"
 	"github.com/quantadex/distributed_quanta_bridge/common/test"
+	"github.com/quantadex/distributed_quanta_bridge/trust/coin"
 	"github.com/quantadex/distributed_quanta_bridge/trust/coin/contracts"
 	"github.com/quantadex/distributed_quanta_bridge/trust/control"
 	"github.com/quantadex/distributed_quanta_bridge/trust/control/sync"
@@ -376,7 +378,25 @@ func TestBTCDeposit(t *testing.T) {
 
 	println("Address created ", string(bodyBytes))
 
-	block := int64(146)
+	address := string(bodyBytes)[13:48]
+	err = ImportAddress(address)
+	assert.NoError(t, err)
+
+	amount, _ := btcutil.NewAmount(0.01)
+	SendBTC(address, amount)
+	GenerateBlock()
+
+	client, err := coin.NewBitcoinCoin("localhost:18332", &chaincfg.RegressionNetParams, nil)
+	assert.NoError(t, err)
+
+	err = client.Attach()
+	assert.NoError(t, err)
+
+	blockId, err := client.GetTopBlockID()
+	assert.NoError(t, err)
+	fmt.Println(blockId)
+
+	block := int64(blockId)
 	fmt.Printf("=======================\n[BLOCK %d] BEGIN\n\n", block)
 	for i, node := range nodes {
 		btcSync := GetBtcSync(node)
@@ -406,7 +426,7 @@ func TestBTCDeposit(t *testing.T) {
 	StopRegistry(r)
 }
 
-func ImportAddress(address string) {
+func ImportAddress(address string) error {
 	args := []string{
 		//"-datadir=../../blockchain/bitcoin/data",
 		"importaddress",
@@ -423,7 +443,9 @@ func ImportAddress(address string) {
 
 	if err != nil {
 		println("err", err.Error(), stderr.String())
+		return err
 	}
+	return nil
 }
 
 func SendBTC(address string, amount btcutil.Amount) (string, error) {
