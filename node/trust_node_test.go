@@ -527,9 +527,12 @@ func TestBTCWithdrawal(t *testing.T) {
 
 	println("Address created ", string(bodyBytes))
 
-	amount, err := btcutil.NewAmount(0.1)
-	ImportAddress("2NA4mXEQvB594k2cZX4maVayQDTw8o7PG5m")
-	SendBTC("2NA4mXEQvB594k2cZX4maVayQDTw8o7PG5m", amount)
+	amount, err := btcutil.NewAmount(0.9)
+	address := string(bodyBytes)[13:48]
+	err = ImportAddress(address)
+	assert.NoError(t, err)
+
+	SendBTC(address, amount)
 	GenerateBlock()
 
 	cursor := int64(5116140)
