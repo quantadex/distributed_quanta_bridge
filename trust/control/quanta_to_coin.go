@@ -255,10 +255,15 @@ func (c *QuantaToCoin) DispatchWithdrawal() {
 					currentBlock, err := c.coinChannel[blockchain].GetTopBlockID()
 					if err != nil {
 						c.logger.Error(err.Error())
-
 					} else {
+						var prevBlock int64
+						if blockchain == coin.BLOCKCHAIN_ETH {
+							prevBlock = c.blockInfo[blockchain] + 1
+						} else {
+							prevBlock = c.blockInfo[blockchain]
+						}
 						//to avoid multiple transactions in one block
-						if currentBlock > c.blockInfo[blockchain]+1 {
+						if currentBlock > prevBlock {
 							c.blockInfo[blockchain] = currentBlock
 							w := &coin.Withdrawal{
 								Tx:                 txs[0].Tx,
