@@ -53,10 +53,21 @@ func (c *EthereumSync) GetDepositsInBlock(blockID int64) ([]*coin.Deposit, error
 			if strings.Contains(dep.CoinName, "0X") {
 				parts := strings.Split(dep.CoinName, "0X")
 				ercAddr := "0x" + parts[1]
-				err := c.coinChannel.FlushCoin(dep.SenderAddr, ercAddr)
+
+				err = c.coinChannel.FlushCoin(dep.SenderAddr, ercAddr)
 				if err != nil {
 					c.logger.Error(err.Error())
 				}
+
+				asset, err := c.quantaChannel.GetAsset(dep.CoinName)
+				var precision int
+				if err != nil {
+					precision = 5
+				} else {
+					precision = int(asset.Precision)
+				}
+
+				dep.Amount = coin.PowerDelta(*big.NewInt(dep.Amount), 5, precision)
 			}
 		}
 

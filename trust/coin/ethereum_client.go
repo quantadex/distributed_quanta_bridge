@@ -285,7 +285,7 @@ func (l *Listener) FilterTransferEvent(blockNumber int64, toAddress map[string]s
 					BlockID:    int64(vLog.BlockNumber),
 					CoinName:   name + vLog.Address.Hex(),
 					SenderAddr: transferEvent.To.Hex(),
-					Amount:     Erc20AmountToGraphene(*transferEvent.Tokens, dec),
+					Amount:     PowerDelta(*transferEvent.Tokens, int(dec), 5),
 					Tx:         vLog.TxHash.Hex(),
 				})
 			}
