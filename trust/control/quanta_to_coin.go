@@ -382,11 +382,13 @@ func (c *QuantaToCoin) ComputeAmountToGraphene(coinName string, amount uint64) u
 			return uint64(coin.PowerDelta(*big.NewInt(int64(amount)), int(v.Precision), 5))
 		}
 	}
-	//if coinName == c.coinName {
-	//	return uint64(coin.PowerDelta(*big.NewInt(int64(amount)), int(c.coinInfo.Precision), 5))
-	//}
 
-	return amount
+	asset, err := c.quantaChannel.GetAsset(coinName)
+	if err != nil {
+		return amount
+	}
+	return uint64(coin.PowerDelta(*big.NewInt(int64(amount)), int(asset.Precision), 5))
+
 }
 
 /**

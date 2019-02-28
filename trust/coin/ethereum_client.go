@@ -380,13 +380,17 @@ func (l *Listener) SendWithdrawal(conn bind.ContractBackend,
 	}
 
 	var smartAddress common.Address
+	var amount *big.Int
 	parts := strings.Split(w.CoinName, "0X")
 	if len(parts) > 1 {
 		smartAddress = common.HexToAddress(parts[1])
+		amount = new(big.Int).SetUint64(w.Amount)
+	} else {
+		amount = GrapheneToWei(w.Amount)
 	}
 	//smartAddress = common.HexToAddress(w.CoinName[11:])
 	toAddr := common.HexToAddress(w.DestinationAddress)
-	amount := GrapheneToWei(w.Amount)
+
 	fmt.Printf("Sending from %s\n", auth.From.Hex())
 	fmt.Printf("Submit to contract=%s txId=%d erc20=%s to=%s amount=%s\n", trustAddress.Hex(), w.TxId, smartAddress.Hex(), toAddr.Hex(), amount.String())
 
