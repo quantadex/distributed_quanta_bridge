@@ -384,7 +384,18 @@ func (l *Listener) SendWithdrawal(conn bind.ContractBackend,
 	parts := strings.Split(w.CoinName, "0X")
 	if len(parts) > 1 {
 		smartAddress = common.HexToAddress(parts[1])
-		amount = new(big.Int).SetUint64(w.Amount)
+
+		erc20, err := contracts.NewSimpleToken(smartAddress, l.Client.(bind.ContractBackend))
+		if err != nil {
+			return "", err
+		}
+		dec, err := erc20.Decimals(nil)
+		if err != nil {
+			return "", err
+		}
+		erc20Amount := PowerDelta(*new(big.Int).SetUint64(w.Amount), 5, int(dec))
+
+		amount = new(big.Int).SetInt64(erc20Amount)
 	} else {
 		amount = GrapheneToWei(w.Amount)
 	}
