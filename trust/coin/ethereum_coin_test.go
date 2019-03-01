@@ -2,6 +2,8 @@ package coin
 
 import (
 	"fmt"
+	"github.com/ethereum/go-ethereum/ethclient"
+	"github.com/quantadex/distributed_quanta_bridge/common/test"
 	"math"
 	"strings"
 	"testing"
@@ -49,7 +51,7 @@ func TestEthereumEncodeDecodeERC20(t *testing.T) {
 	w := Withdrawal{
 		"some_long_tx_id",
 		1,
-		",0Xba7573C0e805ef71ACB7f1c4a55E7b0af4169999",
+		",0Xc300ee2594fe0404a278f6ea81a024729843fa02",
 		"ETH",
 		strings.ToLower("0xba7573C0e805ef71ACB7f1c4a55E7b0af416E96A"),
 		"0x000000000000000000000000000000000000000a",
@@ -59,20 +61,33 @@ func TestEthereumEncodeDecodeERC20(t *testing.T) {
 	}
 	fmt.Printf("original: %v\n", w)
 
+	network := test.ETHER_NETWORKS[test.ROPSTEN]
+	listener := &Listener{NetworkID: network.NetworkId}
+	ethereumClient, err := ethclient.Dial(network.Rpc)
+
+	if err != nil {
+		t.Error(err)
+		return
+	}
+
+	coin.client = listener
+
+	listener.Client = ethereumClient
+	listener.Start()
+
 	encoded, _ := coin.EncodeRefund(w)
 	println(encoded)
 
-	decoded, _ := coin.DecodeRefund(encoded)
+	decoded, err := coin.DecodeRefund(encoded)
 	fmt.Printf("decoded: %v\n", decoded)
 
 	if strings.ToLower(w.CoinName) != decoded.CoinName {
-		fmt.Println("coin name :", decoded.CoinName, decoded.Amount)
 		t.Error("Coin name do not match")
 	}
 	if w.DestinationAddress != decoded.DestinationAddress {
 		t.Error("Destination do not match")
 	}
-	if uint64(math.Pow10(13)*float64(w.Amount)) != decoded.Amount {
+	if uint64(math.Pow10(4)*float64(w.Amount)) != decoded.Amount {
 		t.Error("Amount do not match")
 	}
 }
