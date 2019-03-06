@@ -26,13 +26,15 @@ func NewEthereumSync(coin coin.Coin,
 	db kv_store.KVStore,
 	rDb *db.DB,
 	logger logger.Logger,
-	blockStartID int64) DepositSyncInterface {
+	blockStartID int64,
+	ethFlush bool) DepositSyncInterface {
 
 	parent := NewDepositSync(coin, quantaChannel, issuingSymbol, db, rDb, logger, blockStartID)
 	eth := &EthereumSync{
 		*parent,
 		common.HexToAddress(trustAddress),
 		issuingSymbol,
+		ethFlush,
 	}
 	eth.Setup()
 

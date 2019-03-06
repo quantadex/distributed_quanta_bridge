@@ -128,10 +128,22 @@ func (c *EthereumCoin) EncodeRefund(w Withdrawal) (string, error) {
 	var smartAddress string
 
 	parts := strings.Split(w.CoinName, "0X")
+	var amount *big.Int
 	if len(parts) == 2 {
 		smartAddress = parts[1]
+		erc20, err := contracts.NewSimpleToken(common2.HexToAddress(smartAddress), c.client.Client.(bind.ContractBackend))
+		if err != nil {
+			return "", err
+		}
+		dec, err := erc20.Decimals(nil)
+		if err != nil {
+			return "", err
+		}
+		erc20Amount := PowerDelta(*new(big.Int).SetUint64(w.Amount), 5, int(dec))
+		amount = new(big.Int).SetInt64(erc20Amount)
 	} else {
 		smartAddress = ""
+		amount = GrapheneToWei(w.Amount)
 	}
 	//smartAddress = w.CoinName[11:]
 	//fmt.Println("Smart address = ", smartAddress)
@@ -141,7 +153,7 @@ func (c *EthereumCoin) EncodeRefund(w Withdrawal) (string, error) {
 	encoded.Write(common2.HexToAddress(strings.ToLower(smartAddress)).Bytes())
 	encoded.Write(common2.HexToAddress(strings.ToLower(w.DestinationAddress)).Bytes())
 	//encoded.Write(abi.U256(new(big.Int).SetUint64(uint64(w.Amount))))
-	encoded.Write(abi.U256(GrapheneToWei(w.Amount)))
+	encoded.Write(abi.U256(amount))
 	//binary.Write(&encoded, binary.BigEndian, abi.U256(new(big.Int).SetUint64(uint64(w.Amount))))
 
 	//println("# of bytes " , encoded.Len(), common2.Bytes2Hex(encoded.Bytes()))
