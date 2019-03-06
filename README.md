@@ -10,6 +10,10 @@ cd node && go build
 ./node -config ropsten/node1.yml # run for each node
 ```
 
+```
+docker run --name bitcoind -v "$PWD/bitcoin-data:/data" nicolasdorier/docker-bitcoin:0.17.0 bitcoind -testnet -deprecatedrpc=signrawtransaction -txindex -deprecatedrpc=accounts
+```
+
 ## Configuring Lumen
 
 lumen set config:network "custom;http://testnet-02.quantachain.io:8000;QUANTA Test Network ; September 2018"
