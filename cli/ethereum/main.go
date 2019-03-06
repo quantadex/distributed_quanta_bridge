@@ -23,6 +23,6 @@ func main() {
 	}
 
 	println("Starting ethereum deposit sync")
-	depositSync := sync.NewEthereumSync(coin, config.EthereumTrustAddr, config.CoinMapping, quanta, kdb, rdb, log, config.EthereumBlockStart)
+	depositSync := sync.NewEthereumSync(coin, config.EthereumTrustAddr, config.CoinMapping, quanta, kdb, rdb, log, config.EthereumBlockStart, config.EthFlush)
 	depositSync.Run()
 }

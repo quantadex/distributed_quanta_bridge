@@ -137,6 +137,10 @@ func (c *DepositSync) GetNewCoinBlockIDs() []int64 {
 		c.logger.Error("Failed to get current top block")
 		return nil
 	}
+	//to avaoid the error - block not found
+	if c.coinChannel.Blockchain() == coin.BLOCKCHAIN_ETH {
+		currentTop = currentTop - 2
+	}
 
 	if lastProcessed > currentTop {
 		c.logger.Error("Coin top block smaller than last processed")

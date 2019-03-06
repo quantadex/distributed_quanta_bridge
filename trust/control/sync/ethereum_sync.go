@@ -12,6 +12,7 @@ type EthereumSync struct {
 	DepositSync
 	trustAddress  common.Address
 	issuingSymbol map[string]string
+	ethFlush      bool
 }
 
 func (c *EthereumSync) Setup() {
@@ -51,12 +52,15 @@ func (c *EthereumSync) GetDepositsInBlock(blockID int64) ([]*coin.Deposit, error
 			// we assume precision is always 5
 			// we need to flush erc-20 coins
 			if strings.Contains(dep.CoinName, "0X") {
-				parts := strings.Split(dep.CoinName, "0X")
-				ercAddr := "0x" + parts[1]
 
-				err = c.coinChannel.FlushCoin(dep.SenderAddr, ercAddr)
-				if err != nil {
-					c.logger.Error(err.Error())
+				if c.ethFlush {
+					parts := strings.Split(dep.CoinName, "0X")
+					ercAddr := "0x" + parts[1]
+
+					err = c.coinChannel.FlushCoin(dep.SenderAddr, ercAddr)
+					if err != nil {
+						c.logger.Error(err.Error())
+					}
 				}
 
 				asset, err := c.quantaChannel.GetAsset(dep.CoinName)

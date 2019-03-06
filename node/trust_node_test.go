@@ -29,7 +29,7 @@ import (
  * DATA DEPENDENT on ROPSTEN
  */
 
-func GetEthSync(node *TrustNode) sync.DepositSyncInterface {
+func GetEthSync(node *TrustNode, ethFlush bool) sync.DepositSyncInterface {
 	return sync.NewEthereumSync(node.eth,
 		test.GRAPHENE_TRUST.TrustContract,
 		map[string]string{"eth": "TESTETH"},
@@ -37,7 +37,8 @@ func GetEthSync(node *TrustNode) sync.DepositSyncInterface {
 		node.db,
 		node.rDb,
 		node.log,
-		0)
+		0,
+		ethFlush)
 }
 
 func GetBtcSync(node *TrustNode) sync.DepositSyncInterface {
@@ -67,7 +68,13 @@ func TestRopstenNativeETH(t *testing.T) {
 	block := int64(5066807)
 	fmt.Printf("=======================\n[BLOCK %d] BEGIN\n\n", block)
 	for i, node := range nodes {
-		ethSync := GetEthSync(node)
+		var ethSync sync.DepositSyncInterface
+		if i == 0 {
+			ethSync = GetEthSync(node, true)
+		} else {
+			ethSync = GetEthSync(node, false)
+		}
+
 		fmt.Printf("[BLOCK %d] Node[#%d/%d id=%d] calling doLoop...\n", block, i+1, len(nodes), node.nodeID)
 		//allDeposits := node.cTQ.DoLoop([]int64{block})
 		allDeposits := ethSync.DoLoop([]int64{block})
@@ -81,7 +88,13 @@ func TestRopstenNativeETH(t *testing.T) {
 	block = int64(5066820)
 	fmt.Printf("=======================\n[BLOCK %d] BEGIN\n\n", block)
 	for i, node := range nodes {
-		ethSync := GetEthSync(node)
+		var ethSync sync.DepositSyncInterface
+		if i == 0 {
+			ethSync = GetEthSync(node, true)
+		} else {
+			ethSync = GetEthSync(node, false)
+		}
+
 		fmt.Printf("[BLOCK %d] Node[#%d/%d id=%d] calling doLoop...\n", block, i+1, len(nodes), node.nodeID)
 		allDeposits := ethSync.DoLoop([]int64{block})
 		fmt.Printf("...[BLOCK %d] Node[#%d/%d] counts %d [deposit]\n\n", block, i+1, len(nodes), len(allDeposits))
@@ -133,7 +146,13 @@ func TestRopstenERC20Token(t *testing.T) {
 	block := int64(5066807)
 	fmt.Printf("=======================\n[BLOCK %d] BEGIN\n\n", block)
 	for i, node := range nodes {
-		ethSync := GetEthSync(node)
+		var ethSync sync.DepositSyncInterface
+		if i == 0 {
+			ethSync = GetEthSync(node, true)
+		} else {
+			ethSync = GetEthSync(node, false)
+		}
+
 		fmt.Printf("[BLOCK %d] Node[#%d/%d id=%d] calling doLoop...\n", block, i+1, len(nodes), node.nodeID)
 		//allDeposits := node.cTQ.DoLoop([]int64{block})
 		allDeposits := ethSync.DoLoop([]int64{block})
@@ -145,7 +164,13 @@ func TestRopstenERC20Token(t *testing.T) {
 	block = int64(5066833)
 	fmt.Printf("=======================\n[BLOCK %d] BEGIN\n\n", block)
 	for i, node := range nodes {
-		ethSync := GetEthSync(node)
+		var ethSync sync.DepositSyncInterface
+		if i == 0 {
+			ethSync = GetEthSync(node, true)
+		} else {
+			ethSync = GetEthSync(node, false)
+		}
+
 		fmt.Printf("[BLOCK %d] Node[#%d/%d id=%d] calling doLoop...\n", block, i+1, len(nodes), node.nodeID)
 		allDeposits := ethSync.DoLoop([]int64{block})
 		fmt.Printf("...[BLOCK %d] Node[#%d/%d] counts %d [deposit]\n\n", block, i+1, len(nodes), len(allDeposits))
@@ -158,7 +183,13 @@ func TestRopstenERC20Token(t *testing.T) {
 	block = int64(5066834)
 	fmt.Printf("=======================\n[BLOCK %d] BEGIN\n\n", block)
 	for i, node := range nodes {
-		ethSync := GetEthSync(node)
+		var ethSync sync.DepositSyncInterface
+		if i == 0 {
+			ethSync = GetEthSync(node, true)
+		} else {
+			ethSync = GetEthSync(node, false)
+		}
+
 		fmt.Printf("[BLOCK %d] Node[#%d/%d id=%d] calling doLoop...\n", block, i+1, len(nodes), node.nodeID)
 		allDeposits := ethSync.DoLoop([]int64{block})
 		fmt.Printf("...[BLOCK %d] Node[#%d/%d] counts %d [deposit]\n\n", block, i+1, len(nodes), len(allDeposits))
