@@ -86,6 +86,10 @@ func (q *QuantaClient) Broadcast(stx string) (*networkbroadcast.BroadcastRespons
 	panic("Not implemented")
 }
 
+func (q *QuantaClient) Reconnect() {
+	panic("Not implemented")
+}
+
 func (q *QuantaClient) AccountExist(quantaAddr string) bool {
 	panic("Not implemented")
 }

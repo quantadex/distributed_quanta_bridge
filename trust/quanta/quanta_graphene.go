@@ -18,6 +18,7 @@ import (
 	"github.com/scorum/bitshares-go/sign"
 	"github.com/scorum/bitshares-go/transport/websocket"
 	"github.com/scorum/bitshares-go/types"
+	"gopkg.in/matryer/try.v1"
 	"math"
 	"strconv"
 	"time"
@@ -63,6 +64,17 @@ func (q *QuantaGraphene) Attach() error {
 	apiNetwork := networkbroadcast.NewAPI(networkAPIID, transport)
 	q.NetworkBroadcast = apiNetwork
 	return nil
+}
+
+func (q *QuantaGraphene) Reconnect() {
+	try.Do(func(attempt int) (bool, error) {
+		var err error
+		err = q.Attach()
+		if err != nil {
+			time.Sleep(5 * time.Second)
+		}
+		return true, err
+	})
 }
 
 func (q *QuantaGraphene) AssetExist(issuer string, symbol string) (bool, error) {

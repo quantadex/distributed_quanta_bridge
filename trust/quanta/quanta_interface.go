@@ -80,6 +80,7 @@ type Quanta interface {
 	AccountExist(quantaAddr string) bool
 	GetAsset(assetName string) (*database.Asset, error)
 	GetIssuer() string
+	Reconnect()
 }
 
 func NewQuanta(options QuantaClientOptions) (Quanta, error) {
