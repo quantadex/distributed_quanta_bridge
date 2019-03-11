@@ -2,6 +2,8 @@ package service
 
 import (
 	"crypto/ecdsa"
+	"encoding/json"
+	"fmt"
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/quantadex/distributed_quanta_bridge/common/manifest"
@@ -9,6 +11,8 @@ import (
 	"github.com/quantadex/distributed_quanta_bridge/registrar/Forwarder"
 	"github.com/quantadex/distributed_quanta_bridge/trust/coin"
 	"github.com/spf13/viper"
+	"io/ioutil"
+	"os"
 	"sync"
 )
 
@@ -23,7 +27,23 @@ type Registry struct {
 func (r *Registry) AddNode(n *msgs.NodeInfo) error {
 	r.Lock()
 	defer r.Unlock()
-	return r.manifest.AddNode(n.NodeIp, n.NodePort, n.NodeExternalPort, n.NodeKey, n.ChainAddress)
+
+	for _, v := range r.manifest.Nodes {
+		if v.PubKey == n.NodeKey {
+			v.IP = n.NodeIp
+		}
+	}
+	err := r.manifest.AddNode(n.NodeIp, n.NodePort, n.NodeExternalPort, n.NodeKey, n.ChainAddress)
+	r.SaveManifest(n)
+	return err
+}
+
+func (r *Registry) SaveManifest(n *msgs.NodeInfo) {
+	b, _ := r.manifest.GetJSON()
+	err := ioutil.WriteFile("manifest", b, 0644)
+	if err != nil {
+		fmt.Println("Error while writing to the file :", err)
+	}
 }
 
 func (r *Registry) ReceiveHealth(nodeKey string, state string) error {
@@ -42,7 +62,24 @@ func (r *Registry) GetAddress(quantaAddr string) (string, error) {
 
 func NewRegistry(minNodes int) *Registry {
 	r := &Registry{}
-	r.manifest = manifest.CreateNewManifest(minNodes)
+	if _, err := os.Stat("manifest"); err != nil {
+		if os.IsNotExist(err) {
+			r.manifest = manifest.CreateNewManifest(minNodes)
+		}
+	} else {
+		data, err := ioutil.ReadFile("manifest")
+		if err != nil {
+			return nil
+		} else {
+			var man *manifest.Manifest
+			err = json.Unmarshal(data, &man)
+			if err != nil {
+				return nil
+			}
+			r.manifest = man
+		}
+	}
+
 	r.listener = &coin.Listener{}
 	//r.ownerEthereumKey = viper.GetString("CREATOR_ETHEREUM_KEY")
 	r.trustEthereumAddress = common.HexToAddress(viper.GetString("TRUST_ETHEREUM_ADDRESS"))

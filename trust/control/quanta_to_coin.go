@@ -274,7 +274,12 @@ func (c *QuantaToCoin) DispatchWithdrawal() {
 								QuantaBlockID:      txs[0].BlockId,
 								Amount:             uint64(txs[0].Amount),
 							}
-							c.StartConsensus(w)
+
+							if len(txs[0].SubmitTx) != 0 {
+								c.SubmitWithdrawal(w, blockchain)
+							} else {
+								c.StartConsensus(w)
+							}
 						}
 					}
 				}
@@ -343,35 +348,45 @@ func (c *QuantaToCoin) StartConsensus(w *coin.Withdrawal) (string, error) {
 		// save in eth_tx_log_signed (kvstore) [S=signed,X=submitted,F=failed(uncoverable), R=retry(connection failed)] ; recoverable=RPC not available
 		c.logger.Infof("Great! Cosi successfully signed refund")
 		//c.SubmitWithdrawal(&w)
-		tx, err := c.coinChannel[blockchain].SendWithdrawal(common.HexToAddress(c.coinContractAddress), c.coinkM[blockchain].GetPrivateKey(), w)
-
+		wbytes, err := json.Marshal(w)
 		if err != nil {
-			c.logger.Errorf("Error submission: %s", err.Error())
-			if strings.Contains(err.Error(), "known transaction") {
-				db.ChangeSubmitState(c.rDb, w.Tx, db.SUBMIT_FATAL, db.WITHDRAWAL)
-			} else if strings.Contains(err.Error(), "replacement transaction underpriced") {
-				db.ChangeSubmitState(c.rDb, w.Tx, db.SUBMIT_FATAL, db.WITHDRAWAL)
-			} else if strings.Contains(err.Error(), "connect: connection refused") {
-				db.ChangeSubmitState(c.rDb, w.Tx, db.SUBMIT_RECOVERABLE, db.WITHDRAWAL)
-			} else if strings.Contains(err.Error(), "insufficient funds for gas * price + value") {
-				db.ChangeSubmitState(c.rDb, w.Tx, db.SUBMIT_RECOVERABLE, db.WITHDRAWAL)
-			} else if strings.Contains(err.Error(), "transaction failed") {
-				db.ChangeSubmitState(c.rDb, w.Tx, db.SUBMIT_FAILURE, db.WITHDRAWAL)
-			}
-		} else {
-			db.ChangeWithdrawalSubmitState(c.rDb, w.Tx, db.SUBMIT_SUCCESS, w.TxId, tx)
-			//db.ChangeSubmitState(c.rDb, w.Tx, db.SUBMIT_SUCCESS, db.WITHDRAWAL)
-			c.logger.Infof("Submitted withdrawal in tx=%s SUCCESS", tx)
+			return "", err
 		}
+		db.ChangeWithdrawalSubmitTx(c.rDb, w.Tx, w.TxId, string(wbytes))
+		tx, err := c.SubmitWithdrawal(w, blockchain)
 
 		txResult = tx
 		errResult = err
-
-		if c.SuccessCb != nil {
-			c.SuccessCb(WithdrawalResult{w, errResult, tx})
-		}
 	}
 	return txResult, errResult
+}
+
+func (c *QuantaToCoin) SubmitWithdrawal(w *coin.Withdrawal, blockchain string) (string, error) {
+	tx, err := c.coinChannel[blockchain].SendWithdrawal(common.HexToAddress(c.coinContractAddress), c.coinkM[blockchain].GetPrivateKey(), w)
+
+	if err != nil {
+		c.logger.Errorf("Error submission: %s", err.Error())
+		if strings.Contains(err.Error(), "known transaction") {
+			db.ChangeSubmitState(c.rDb, w.Tx, db.SUBMIT_FATAL, db.WITHDRAWAL)
+		} else if strings.Contains(err.Error(), "replacement transaction underpriced") {
+			db.ChangeSubmitState(c.rDb, w.Tx, db.SUBMIT_FATAL, db.WITHDRAWAL)
+		} else if strings.Contains(err.Error(), "connect: connection refused") {
+			db.ChangeSubmitState(c.rDb, w.Tx, db.SUBMIT_RECOVERABLE, db.WITHDRAWAL)
+		} else if strings.Contains(err.Error(), "insufficient funds for gas * price + value") {
+			db.ChangeSubmitState(c.rDb, w.Tx, db.SUBMIT_RECOVERABLE, db.WITHDRAWAL)
+		} else if strings.Contains(err.Error(), "transaction failed") {
+			db.ChangeSubmitState(c.rDb, w.Tx, db.SUBMIT_FAILURE, db.WITHDRAWAL)
+		}
+	} else {
+		db.ChangeWithdrawalSubmitState(c.rDb, w.Tx, db.SUBMIT_SUCCESS, w.TxId, tx)
+		//db.ChangeSubmitState(c.rDb, w.Tx, db.SUBMIT_SUCCESS, db.WITHDRAWAL)
+		c.logger.Infof("Submitted withdrawal in tx=%s SUCCESS", tx)
+	}
+
+	if c.SuccessCb != nil {
+		c.SuccessCb(WithdrawalResult{w, err, tx})
+	}
+	return tx, err
 }
 
 // VERY IMPORTANT CODE
