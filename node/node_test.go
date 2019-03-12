@@ -10,6 +10,7 @@ import (
 	"github.com/quantadex/distributed_quanta_bridge/trust/db"
 	"github.com/stretchr/testify/assert"
 	"os"
+	"path/filepath"
 	"sync"
 	"testing"
 	"time"
@@ -38,9 +39,9 @@ func generateConfig(quanta *test.QuantaNodeSecrets, ethereum *test.EthereumTrust
 		BtcPrivateKey:      test.BTCSECRETS.NodeSecrets[index],
 		DatabaseUrl:        fmt.Sprintf("postgres://postgres:@localhost/crosschain_%d", index),
 		MinNodes:           2,
-		BtcRpc:				"localhost:18332",
+		BtcRpc:             "localhost:18332",
 		BtcSigners:         []string{"2NENNHR9Y9fpKzjKYobbdbwap7xno7sbf2E", "2NEDF3RBHQuUHQmghWzFf6b6eeEnC7KjAtR"},
-		BtcNetwork: 		"regnet",
+		BtcNetwork:         "regnet",
 	}
 }
 
@@ -136,7 +137,8 @@ func StopNodes(nodes []*TrustNode, indexesToStart []int) {
 
 func StartRegistry(minNodes int, url string) *service.Server {
 	logger, _ := logger.NewLogger("registrar")
-	s := service.NewServer(service.NewRegistry(minNodes), url, logger)
+	path, _ := filepath.Abs(filepath.Dir("config.yml"))
+	s := service.NewServer(service.NewRegistry(minNodes, path), url, logger)
 	s.DoHealthCheck(5)
 	go s.Start()
 	return s

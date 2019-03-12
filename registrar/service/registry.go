@@ -22,6 +22,7 @@ type Registry struct {
 	ownerEthereumKey     *ecdsa.PrivateKey
 	trustEthereumAddress common.Address
 	sync.RWMutex
+	path string
 }
 
 func (r *Registry) AddNode(n *msgs.NodeInfo) error {
@@ -40,7 +41,7 @@ func (r *Registry) AddNode(n *msgs.NodeInfo) error {
 
 func (r *Registry) SaveManifest(n *msgs.NodeInfo) {
 	b, _ := r.manifest.GetJSON()
-	err := ioutil.WriteFile("manifest", b, 0644)
+	err := ioutil.WriteFile(r.path, b, 0644)
 	if err != nil {
 		fmt.Println("Error while writing to the file :", err)
 	}
@@ -60,14 +61,16 @@ func (r *Registry) GetAddress(quantaAddr string) (string, error) {
 	return Forwarder.SubmitContract(r.listener.Client.(bind.ContractBackend), r.ownerEthereumKey, r.trustEthereumAddress, quantaAddr)
 }
 
-func NewRegistry(minNodes int) *Registry {
+func NewRegistry(minNodes int, path string) *Registry {
 	r := &Registry{}
-	if _, err := os.Stat("manifest"); err != nil {
+	filePath := path + "/manifest.yml"
+	r.path = filePath
+	if _, err := os.Stat(filePath); err != nil {
 		if os.IsNotExist(err) {
 			r.manifest = manifest.CreateNewManifest(minNodes)
 		}
 	} else {
-		data, err := ioutil.ReadFile("manifest")
+		data, err := ioutil.ReadFile(filePath)
 		if err != nil {
 			return nil
 		} else {
