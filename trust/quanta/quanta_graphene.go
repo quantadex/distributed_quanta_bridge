@@ -118,9 +118,9 @@ func (q *QuantaGraphene) GetTopBlockID() (int64, error) {
 	if err != nil {
 		return 0, err
 	}
-	blockId := res.LastIrreversibleBlockNum
+	blockId,_ := strconv.Atoi(res.HeadBlockID)
 
-	return int64(blockId), nil
+	return int64(blockId - 1), nil
 }
 
 // get block , transfer
