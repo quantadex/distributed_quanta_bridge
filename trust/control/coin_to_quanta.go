@@ -307,6 +307,12 @@ func (c *CoinToQuanta) dispatchIssuance() {
 			ready = true
 		case <-time.After(time.Second):
 			if ready {
+				_, err := c.quantaChannel.GetTopBlockID()
+				if err != nil {
+					if err.Error() == "connection is shut down" {
+						c.quantaChannel.Reconnect()
+					}
+				}
 				c.processDeposits()
 				c.processSubmissions()
 			}

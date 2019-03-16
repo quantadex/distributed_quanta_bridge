@@ -59,7 +59,7 @@ func (r *RegistrarClient) RegisterNode(nodeIP string, nodePort string, externalP
 func (r *RegistrarClient) SendHealth(nodeState string, km key_manager.KeyManager) error {
 	msg := msgs.PingReq{}
 	nodeKey, _ := km.GetPublicKey()
-	msg.Body = msgs.PingBody{nodeState, nodeKey}
+	msg.Body = msgs.PingBody{nodeKey, nodeState}
 
 	if signature := km.SignMessageObj(msg.Body); signature != nil {
 		msg.Signature = *signature

@@ -23,7 +23,7 @@ import (
 
 type BitcoinCoin struct {
 	Client         *rpcclient.Client
-	rpcHost		   string
+	rpcHost        string
 	chaincfg       *chaincfg.Params
 	signers        []btcutil.Address
 	crosschainAddr map[string]string
@@ -95,9 +95,9 @@ func (b *BitcoinCoin) GenerateMultisig(accountId string) (string, error) {
 		return "", err
 	}
 
-	err = b.Client.ImportAddressRescan(res.P2sh,"", false)
+	err = b.Client.ImportAddressRescan(res.P2sh, "", false)
 	if err != nil {
-		return "", errors.Wrap(err, "Unable to import address " + res.P2sh)
+		return "", errors.Wrap(err, "Unable to import address "+res.P2sh)
 	}
 
 	return res.P2sh, err
@@ -118,8 +118,9 @@ func (b *BitcoinCoin) GetDepositsInBlock(blockID int64, trustAddress map[string]
 	events := []*Deposit{}
 
 	for _, tx := range block.Transactions {
-		tx := tx.TxHash()
-		currentTx, err := b.Client.GetRawTransactionVerbose(&tx)
+		txHash := tx.TxHash()
+
+		currentTx, err := b.Client.GetRawTransactionVerbose(&txHash)
 		if err != nil {
 			return nil, errors.Wrap(err, "failed to getraw for currentTx")
 		}
@@ -168,7 +169,7 @@ func (b *BitcoinCoin) GetDepositsInBlock(blockID int64, trustAddress map[string]
 					CoinName:   b.Blockchain(),
 					Amount:     int64(amount),
 					BlockID:    blockID,
-					Tx:         fmt.Sprintf("%s_%d", currentTx.Hash, vout.N),
+					Tx:         txHash.String(),
 				})
 			}
 		}

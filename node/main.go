@@ -10,6 +10,7 @@ import (
 	"github.com/quantadex/distributed_quanta_bridge/trust/coin"
 	"github.com/spf13/viper"
 	"io/ioutil"
+	"path/filepath"
 )
 
 /**
@@ -20,6 +21,12 @@ import (
 func main() {
 	viper.SetConfigType("yaml")
 	configFile := flag.String("config", "config.yml", "configuration file")
+
+	path, err := filepath.Abs(filepath.Dir(*configFile))
+	if err != nil {
+		panic(fmt.Errorf("Could not find file path: %s \n", err))
+	}
+
 	enableRegistry := flag.Bool("registry", false, "enables registry")
 	portNumber := flag.Int("port", 0, "overrides port")
 	flag.Parse()
@@ -44,7 +51,7 @@ func main() {
 		// start registrar if we need to
 		logger, _ := logger.NewLogger("registrar")
 		registrarUrl := fmt.Sprintf(":%d", config.RegistrarPort)
-		s := service.NewServer(service.NewRegistry(config.MinNodes), registrarUrl, logger)
+		s := service.NewServer(service.NewRegistry(config.MinNodes, path), registrarUrl, logger)
 		s.DoHealthCheck(5)
 		go s.Start()
 	}

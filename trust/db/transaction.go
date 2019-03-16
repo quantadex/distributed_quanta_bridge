@@ -134,6 +134,15 @@ func ChangeWithdrawalSubmitState(db *DB, id string, state string, txid uint64, t
 	return err
 }
 
+func ChangeWithdrawalSubmitTx(db *DB, id string, txid uint64, submitTx string) error {
+	tx := &Transaction{Tx: id}
+	tx.SubmitDate = time.Now()
+	tx.TxId = txid
+	tx.SubmitTx = submitTx
+	_, err := db.Model(tx).Column("submit_date", "tx_id", "submit_tx").Where("Tx=? and Type=?", id, WITHDRAWAL).Returning("*").Update()
+	return err
+}
+
 func ConfirmWithdrawal(db *DB, dep *coin.Withdrawal) error {
 	tx := &Transaction{
 		Type:        WITHDRAWAL,
