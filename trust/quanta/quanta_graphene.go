@@ -43,8 +43,6 @@ type Object struct {
 	Name string
 }
 
-const url = "ws://testnet-01.quantachain.io:8090"
-
 func (q *QuantaGraphene) Attach() error {
 	transport, err := websocket.NewTransport(q.QuantaClientOptions.NetworkUrl)
 	if err != nil {
@@ -72,6 +70,8 @@ func (q *QuantaGraphene) Reconnect() {
 		err = q.Attach()
 		if err != nil {
 			time.Sleep(5 * time.Second)
+		} else {
+			q.Logger.Error(err.Error())
 		}
 		return true, err
 	})

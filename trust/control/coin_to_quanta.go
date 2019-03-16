@@ -311,6 +311,8 @@ func (c *CoinToQuanta) dispatchIssuance() {
 				if err != nil {
 					if err.Error() == "connection is shut down" {
 						c.quantaChannel.Reconnect()
+					} else {
+						c.logger.Error("Unhandled error. " + err.Error())
 					}
 				}
 				c.processDeposits()
