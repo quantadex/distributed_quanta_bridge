@@ -6,13 +6,15 @@
   "directories": {
     "test": "test"
   },
-  "dependencies": {},
+  "dependencies": {
+    "truffle-privatekey-provider": "^1.1.0"
+  },
   "devDependencies": {
     "bn": "^1.0.1",
     "bytebuffer": "^5.0.1",
     "dotenv": "^6.1.0",
     "ethereumjs-util": "^6.0.0",
-    "ganache-cli": "^6.1.8",
+    "ganache-cli": "^6.4.1",
     "truffle": "4.1.14",
     "truffle-assertions": "^0.6.1",
     "truffle-hdwallet-provider": "0.0.6",
