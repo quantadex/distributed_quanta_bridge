@@ -61,6 +61,7 @@ type Listener struct {
 	Storage            Storage `inject:""`
 	NetworkID          string
 	TransactionHandler TransactionHandler
+	Erc20map           map[string]string
 
 	log *log.Entry
 }

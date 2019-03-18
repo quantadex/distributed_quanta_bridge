@@ -27,4 +27,5 @@ type Config struct {
 	LogLevel           string
 	MinNodes           int
 	EthFlush           bool
+	Erc20Mapping       map[string]string
 }

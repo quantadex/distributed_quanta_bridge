@@ -11,6 +11,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"os"
 	"path/filepath"
+	"strings"
 	"sync"
 	"testing"
 	"time"
@@ -42,6 +43,7 @@ func generateConfig(quanta *test.QuantaNodeSecrets, ethereum *test.EthereumTrust
 		BtcRpc:             "localhost:18332",
 		BtcSigners:         []string{"2NENNHR9Y9fpKzjKYobbdbwap7xno7sbf2E", "2NEDF3RBHQuUHQmghWzFf6b6eeEnC7KjAtR"},
 		BtcNetwork:         "regnet",
+		Erc20Mapping:       map[string]string{strings.ToLower("0xDfE1002c2e1AE5E8F4f34bf481900dAae5351992"): "DAI"},
 	}
 }
 
@@ -84,7 +86,7 @@ func StartNodesWithIndexes(quanta *test.QuantaNodeSecrets, ethereum *test.Ethere
 		go func(config common.Config, currentIndex int) {
 			defer wg.Done()
 
-			coin, err := coin.NewEthereumCoin(config.EthereumNetworkId, config.EthereumRpc, config.EthereumKeyStore)
+			coin, err := coin.NewEthereumCoin(config.EthereumNetworkId, config.EthereumRpc, config.EthereumKeyStore, config.Erc20Mapping)
 			if err != nil {
 				panic("Cannot create ethereum listener")
 			}

@@ -124,12 +124,12 @@ func NewDummyCoin() (Coin, error) {
 	return &DummyCoin{}, nil
 }
 
-func NewEthereumCoin(networkId string, ethereumRpc string, secret string) (Coin, error) {
+func NewEthereumCoin(networkId string, ethereumRpc string, secret string, erc20map map[string]string) (Coin, error) {
 	key, err := crypto2.HexToECDSA(secret)
 	if err != nil {
 		return nil, err
 	}
-	return &EthereumCoin{maxRange: common.MaxNumberInt64, networkId: networkId, ethereumRpc: ethereumRpc, ethereumSecret: key}, nil
+	return &EthereumCoin{maxRange: common.MaxNumberInt64, networkId: networkId, ethereumRpc: ethereumRpc, ethereumSecret: key, erc20map: erc20map}, nil
 }
 
 func NewBitcoinCoin(rpcHost string, params *chaincfg.Params, signers []string) (Coin, error) {

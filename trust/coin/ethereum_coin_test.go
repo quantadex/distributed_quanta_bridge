@@ -73,7 +73,7 @@ func TestEthereumEncodeDecodeERC20(t *testing.T) {
 	coin.client = listener
 
 	listener.Client = ethereumClient
-	listener.Start()
+	listener.Start(nil)
 
 	encoded, _ := coin.EncodeRefund(w)
 	println(encoded)

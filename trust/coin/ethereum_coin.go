@@ -26,6 +26,7 @@ type EthereumCoin struct {
 	networkId      string
 	ethereumRpc    string
 	ethereumSecret *ecdsa.PrivateKey
+	erc20map       map[string]string
 }
 
 type EncodedMsg struct {
@@ -47,7 +48,7 @@ func (c *EthereumCoin) Attach() error {
 	}
 
 	c.client.Client = ethereumClient
-	err = c.client.Start()
+	err = c.client.Start(c.erc20map)
 	if err != nil {
 		return err
 	}

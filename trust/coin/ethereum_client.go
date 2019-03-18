@@ -22,7 +22,9 @@ import (
 
 const abiCode = `[{"anonymous":false,"inputs":[{"indexed":true,"name":"from","type":"address"},{"indexed":true,"name":"to","type":"address"},{"indexed":false,"name":"tokens","type":"uint256"}],"name":"Transfer","type":"event"},{"anonymous":false,"inputs":[{"indexed":true,"name":"tokenOwner","type":"address"},{"indexed":true,"name":"spender","type":"address"},{"indexed":false,"name":"tokens","type":"uint256"}],"name":"Approval","type":"event"}]`
 
-func (l *Listener) Start() error {
+func (l *Listener) Start(erc20map map[string]string) error {
+	l.Erc20map = erc20map
+
 	l.log = log.DefaultLogger.WithField("service", "EthereumListener")
 	l.log.Logger.Info("Ethereum listner started")
 
@@ -274,6 +276,9 @@ func (l *Listener) FilterTransferEvent(blockNumber int64, toAddress map[string]s
 				}
 
 				symbol, err := erc20.Symbol(nil)
+				if len(symbol) == 0 {
+					symbol = l.Erc20map[strings.ToLower(vLog.Address.Hex())]
+				}
 
 				dec, err := erc20.Decimals(nil)
 				if err != nil {

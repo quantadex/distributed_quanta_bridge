@@ -27,7 +27,7 @@ func TestCheckDepositNode(t *testing.T) {
 	}
 
 	client.Client = ethereumClient
-	client.Start()
+	client.Start(nil)
 
 	const blockNumber = 4356013
 
@@ -64,7 +64,7 @@ func TestForwardScan(t *testing.T) {
 	}
 
 	client.Client = ethereumClient
-	client.Start()
+	client.Start(nil)
 	contracts, err := client.GetForwardContract(5061200)
 	if err != nil {
 		println("err... " + err.Error())
@@ -121,7 +121,7 @@ func TestWithdrawalTX(t *testing.T) {
 	}
 
 	client.Client = ethereumClient
-	client.Start()
+	client.Start(nil)
 	//tx, err := client.SendWithdrawal(sim, userAuth.From, userKey, w)
 
 	if err != nil {
@@ -162,7 +162,7 @@ func TestWithdrawalGanacheTX(t *testing.T) {
 	}
 
 	network := test.ETHER_NETWORKS[test.ROPSTEN]
-	coin, _ := NewEthereumCoin(network.NetworkId, network.Rpc, "c87509a1c067bbde78beb793e6fa76530b6382a4c0241e5e4a9ec0a0f44dc0d3")
+	coin, _ := NewEthereumCoin(network.NetworkId, network.Rpc, "c87509a1c067bbde78beb793e6fa76530b6382a4c0241e5e4a9ec0a0f44dc0d3", nil)
 	coin.Attach()
 	encoded, _ := coin.EncodeRefund(*w)
 	println(encoded)
@@ -194,7 +194,7 @@ func TestWithdrawalGanacheTX(t *testing.T) {
 func TestGanacheTX(t *testing.T) {
 	network := test.ETHER_NETWORKS[test.LOCAL]
 
-	coin, err := NewEthereumCoin(network.NetworkId, network.Rpc, "c87509a1c067bbde78beb793e6fa76530b6382a4c0241e5e4a9ec0a0f44dc0d3")
+	coin, err := NewEthereumCoin(network.NetworkId, network.Rpc, "c87509a1c067bbde78beb793e6fa76530b6382a4c0241e5e4a9ec0a0f44dc0d3", nil)
 	if err != nil {
 		t.Error(err)
 		return
