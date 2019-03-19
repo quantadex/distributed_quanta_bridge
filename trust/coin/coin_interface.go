@@ -6,6 +6,10 @@ import (
 	"github.com/btcsuite/btcutil"
 	common2 "github.com/ethereum/go-ethereum/common"
 	crypto2 "github.com/ethereum/go-ethereum/crypto"
+	chaincfg3 "github.com/gcash/bchd/chaincfg"
+	"github.com/gcash/bchutil"
+	chaincfg2 "github.com/ltcsuite/ltcd/chaincfg"
+	"github.com/ltcsuite/ltcutil"
 	"github.com/quantadex/distributed_quanta_bridge/common"
 	"github.com/quantadex/distributed_quanta_bridge/common/crypto"
 	"github.com/scorum/bitshares-go/types"
@@ -143,6 +147,32 @@ func NewBitcoinCoin(rpcHost string, params *chaincfg.Params, signers []string) (
 	}
 
 	return &BitcoinCoin{rpcHost: rpcHost, chaincfg: params, signers: signersA}, nil
+}
+
+func NewLitecoinCoin(rpcHost string, params *chaincfg2.Params, signers []string) (Coin, error) {
+	signersA := []ltcutil.Address{}
+	for _, s := range signers {
+		addr, err := ltcutil.DecodeAddress(s, params)
+		if err != nil {
+			panic("corrupted ltc address")
+		}
+		signersA = append(signersA, addr)
+	}
+
+	return &LiteCoin{rpcHost: rpcHost, chaincfg: params, signers: signersA}, nil
+}
+
+func NewBCHCoin(rpcHost string, params *chaincfg3.Params, signers []string) (Coin, error) {
+	signersA := []bchutil.Address{}
+	for _, s := range signers {
+		addr, err := bchutil.DecodeAddress(s, params)
+		if err != nil {
+			panic("corrupted bch address")
+		}
+		signersA = append(signersA, addr)
+	}
+
+	return &BCH{rpcHost: rpcHost, chaincfg: params, signers: signersA}, nil
 }
 
 /**

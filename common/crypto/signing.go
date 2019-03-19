@@ -11,9 +11,13 @@ import (
 	"github.com/btcsuite/btcd/chaincfg"
 	"github.com/btcsuite/btcutil"
 	"github.com/btcsuite/btcutil/base58"
-	"github.com/scorum/bitshares-go/sign"
-	"github.com/juju/errors"
 	"github.com/btcsuite/btcutil/hdkeychain"
+	chaincfg2 "github.com/gcash/bchd/chaincfg"
+	"github.com/gcash/bchutil"
+	"github.com/juju/errors"
+	chaincfg3 "github.com/ltcsuite/ltcd/chaincfg"
+	"github.com/ltcsuite/ltcutil"
+	"github.com/scorum/bitshares-go/sign"
 )
 
 const PREFIX = "QA"
@@ -52,6 +56,7 @@ func NewGraphenePublicKeyFromString(key string) (*btcec.PublicKey, error) {
 
 //TODO: Try to incorporate the seed back into the private key
 const prefix = "threaten weakness lovely presence common endless travel hop ground illusion anyway nod"
+
 func GenerateGrapheneKeyWithSeed(str string) (string, error) {
 	digest := sha256.Sum256([]byte(prefix + ":" + str))
 	//digest2 := bytes.NewBuffer([]byte{0x2})
@@ -68,7 +73,7 @@ func GenerateGrapheneKeyWithSeed(str string) (string, error) {
 	if err != nil {
 		return "", errors.Annotate(err, "Could not get ECPubKey")
 	}
-	
+
 	digest2 := pubKey.SerializeCompressed()
 
 	chk, err := Ripemd160Checksum(digest2)
@@ -97,6 +102,24 @@ func GetBitcoinAddressFromGraphene(pubKey *btcec.PublicKey) (*btcutil.AddressPub
 		return nil, err
 	}
 	address.SetFormat(btcutil.PKFUncompressed)
+	return address, err
+}
+
+func GetLitecoinAddressFromGraphene(pubKey *btcec.PublicKey) (*ltcutil.AddressPubKey, error) {
+	address, err := ltcutil.NewAddressPubKey(pubKey.SerializeUncompressed(), &chaincfg3.RegressionNetParams)
+	if err != nil {
+		return nil, err
+	}
+	address.SetFormat(ltcutil.PKFUncompressed)
+	return address, err
+}
+
+func GetBCHAddressFromGraphene(pubKey *btcec.PublicKey) (*bchutil.AddressPubKey, error) {
+	address, err := bchutil.NewAddressPubKey(pubKey.SerializeUncompressed(), &chaincfg2.RegressionNetParams)
+	if err != nil {
+		return nil, err
+	}
+	address.SetFormat(bchutil.PKFUncompressed)
 	return address, err
 }
 
