@@ -2,12 +2,12 @@ package coin
 
 import (
 	"crypto/ecdsa"
+	chaincfg3 "github.com/bchsuite/bchd/chaincfg"
+	"github.com/bchsuite/bchutil"
 	"github.com/btcsuite/btcd/chaincfg"
 	"github.com/btcsuite/btcutil"
 	common2 "github.com/ethereum/go-ethereum/common"
 	crypto2 "github.com/ethereum/go-ethereum/crypto"
-	chaincfg3 "github.com/gcash/bchd/chaincfg"
-	"github.com/gcash/bchutil"
 	chaincfg2 "github.com/ltcsuite/ltcd/chaincfg"
 	"github.com/ltcsuite/ltcutil"
 	"github.com/quantadex/distributed_quanta_bridge/common"

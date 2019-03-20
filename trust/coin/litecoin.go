@@ -1,7 +1,6 @@
 package coin
 
 import (
-	"github.com/btcsuite/btcutil"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ltcsuite/ltcd/btcjson"
 	chaincfg2 "github.com/ltcsuite/ltcd/chaincfg"
@@ -292,15 +291,6 @@ func (b *LiteCoin) GetUnspentInputs(destAddress ltcutil.Address, amount ltcutil.
 // gather enough input and create a refund
 // encoding withdrawal with precision of 5.
 // must convert to our system precision
-
-type Add struct {
-	Address btcutil.Address
-}
-
-type LAdd struct {
-	Address ltcutil.Address
-}
-
 func (b *LiteCoin) EncodeRefund(w Withdrawal) (string, error) {
 	fmt.Printf("Encode refund %v\n", w)
 
@@ -425,7 +415,7 @@ func (b *LiteCoin) DecodeRefund(encoded string) (*Withdrawal, error) {
 			//println("Ignoring tx when from and to the same ", toAddr)
 			continue
 		}
-		amount, err := btcutil.NewAmount(vout.Value)
+		amount, err := ltcutil.NewAmount(vout.Value)
 		if err != nil {
 			return nil, errors.Wrap(err, "unable to create new amount")
 		}

@@ -1,13 +1,13 @@
 package coin
 
 import (
+	"github.com/bchsuite/bchd/bchjson"
+	"github.com/bchsuite/bchd/chaincfg"
+	"github.com/bchsuite/bchd/chaincfg/chainhash"
+	"github.com/bchsuite/bchd/rpcclient"
+	"github.com/bchsuite/bchd/wire"
+	"github.com/bchsuite/bchutil"
 	"github.com/ethereum/go-ethereum/common"
-	"github.com/gcash/bchd/btcjson"
-	"github.com/gcash/bchd/chaincfg"
-	"github.com/gcash/bchd/chaincfg/chainhash"
-	"github.com/gcash/bchd/rpcclient"
-	"github.com/gcash/bchd/wire"
-	"github.com/gcash/bchutil"
 	"github.com/pkg/errors"
 	common2 "github.com/quantadex/distributed_quanta_bridge/common"
 	"github.com/quantadex/distributed_quanta_bridge/common/crypto"
@@ -93,7 +93,7 @@ func (b *BCH) GenerateMultisig(accountId string) (string, error) {
 		return "", err
 	}
 
-	err = b.Client.ImportAddressRescan(res.P2sh, "", false)
+	err = b.Client.ImportAddressRescan(res.P2sh, false)
 	if err != nil {
 		return "", errors.Wrap(err, "Unable to import address "+res.P2sh)
 	}
@@ -238,16 +238,16 @@ func (b *BCH) FillCrosschainAddress(crosschainAddr map[string]string) {
 	b.crosschainAddr = crosschainAddr
 }
 
-func (b *BCH) GetUnspentInputs(destAddress bchutil.Address, amount bchutil.Amount) (bchutil.Amount, []btcjson.TransactionInput, []btcjson.ListUnspentResult, []btcjson.RawTxInput, error) {
+func (b *BCH) GetUnspentInputs(destAddress bchutil.Address, amount bchutil.Amount) (bchutil.Amount, []bchjson.TransactionInput, []bchjson.ListUnspentResult, []bchjson.RawTxInput, error) {
 	// get latest hash
 	unspent, err := b.Client.ListUnspent()
 	if err != nil {
 		return 0, nil, nil, nil, errors.Wrap(err, "No unspent input found")
 	}
 
-	inputs := []btcjson.TransactionInput{}
-	unspentFound := []btcjson.ListUnspentResult{}
-	rawInput := []btcjson.RawTxInput{}
+	inputs := []bchjson.TransactionInput{}
+	unspentFound := []bchjson.ListUnspentResult{}
+	rawInput := []bchjson.RawTxInput{}
 	totalAmount, _ := bchutil.NewAmount(0)
 
 	amountWithFee := amount.ToBCH() + (b.fee * 50)
@@ -259,9 +259,9 @@ func (b *BCH) GetUnspentInputs(destAddress bchutil.Address, amount bchutil.Amoun
 			//	return nil, nil, nil, errors.New("We don't expect destination address to be same as ")
 			//}
 
-			inputs = append(inputs, btcjson.TransactionInput{Txid: e.TxID, Vout: e.Vout})
+			inputs = append(inputs, bchjson.TransactionInput{Txid: e.TxID, Vout: e.Vout})
 			unspentFound = append(unspentFound, e)
-			rawInput = append(rawInput, btcjson.RawTxInput{
+			rawInput = append(rawInput, bchjson.RawTxInput{
 				Txid:         e.TxID,
 				Vout:         e.Vout,
 				RedeemScript: e.RedeemScript,
