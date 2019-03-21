@@ -24,7 +24,6 @@ func main() {
 		panic(err)
 	}
 
-	fmt.Printf("BTC signers %v\n", config.BtcSigners)
 	time.Sleep(3 * time.Second)
 	println("Starting bitcoin deposit sync")
 
