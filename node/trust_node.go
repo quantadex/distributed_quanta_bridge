@@ -426,6 +426,15 @@ func registerNode(config common.Config, node *TrustNode) error {
 	return nil
 }
 
+func (n *TrustNode) GetPendingTx() ([]*db.Transaction, error) {
+	//deposits,err := n.btc.GetPendingTx()
+	//if err != nil {
+	//	return nil, err
+	//}
+	//
+	panic("not implemented")
+}
+
 func (n *TrustNode) CreateMultisig(blockchain string, accountId string) (*crypto.ForwardInput, error) {
 	msig, err := n.btc.GenerateMultisig(accountId)
 	if err != nil {

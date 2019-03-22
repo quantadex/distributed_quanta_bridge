@@ -23,6 +23,10 @@ func GetDummyInstance() *DummyCoin {
 	return instance
 }
 
+func (c *DummyCoin) 	GetPendingTx() ([]*Deposit, error) {
+	panic("not implemented")
+}
+
 func (c *DummyCoin) Blockchain() string {
 	return "DUMMY"
 }

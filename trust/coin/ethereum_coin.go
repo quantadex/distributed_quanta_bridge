@@ -101,6 +101,10 @@ func (c *EthereumCoin) FlushCoin(forwarderAddr string, tokenAddr string) error {
 	return err
 }
 
+func (c *EthereumCoin) 	GetPendingTx() ([]*Deposit, error) {
+	panic("not implemented")
+}
+
 func (c *EthereumCoin) GetForwardersInBlock(blockID int64) ([]*crypto.ForwardInput, error) {
 	forwarders, err := c.client.GetForwardContract(blockID)
 	if err != nil {
