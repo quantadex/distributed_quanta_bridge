@@ -25,7 +25,7 @@ func SendLTC(address string, amount ltcutil.Amount) (string, error) {
 		amountStr,
 	}
 
-	cmd := exec.Command("../../../../litecoin/./src/litecoin-cli", args...)
+	cmd := exec.Command("bitcoin-cli", args...)
 	var out bytes.Buffer
 	var stderr bytes.Buffer
 	cmd.Stdout = &out
@@ -48,7 +48,7 @@ func ImportLTCAddress(address string) {
 		address,
 	}
 
-	cmd := exec.Command("../../../../litecoin/./src/litecoin-cli", args...)
+	cmd := exec.Command("bitcoin-cli", args...)
 	var out bytes.Buffer
 	var stderr bytes.Buffer
 	cmd.Stdout = &out
@@ -69,7 +69,7 @@ func GenerateLTCBlock() (string, error) {
 		"1",
 	}
 
-	cmd := exec.Command("../../../../litecoin/./src/litecoin-cli", args...)
+	cmd := exec.Command("bitcoin-cli", args...)
 	var out bytes.Buffer
 	var stderr bytes.Buffer
 	cmd.Stdout = &out
@@ -85,7 +85,7 @@ func GenerateLTCBlock() (string, error) {
 }
 
 func TestLTCEncodeRefund(t *testing.T) {
-	client, err := NewLitecoinCoin(LOCAL_RPC_HOST, &chaincfg.TestNet4Params, []string{"040C9B0D5324CBAF4F40A215C1D87DF1BEB51A0345E0384942FE0D60F8D796F7B7200CC5B70DDCF101E7804EFA26A0CE6EC6622C2FE90BCFD2DA2482006C455FF1", "049C8C4647E016C502766C6F5C40CFD37EE86CD02972274CA50DA16D72016CAB5812F867F27C268923E5DE3ADCB268CC8A29B96D0D8972841F286BA6D9CCF61360"})
+	client, err := NewLitecoinCoin(LOCAL_RPC_HOST, &chaincfg.TestNet4Params, []string{"miia2r4FLxkJXNcDCUyjkUzMSVNQnoGunr", "n1VeF9P45yWNr3mZKm4YdYAaRFFHnqiJRT"})
 	assert.NoError(t, err)
 
 	err = client.Attach()
@@ -122,8 +122,8 @@ func TestLTCEncodeRefund(t *testing.T) {
 	GenerateBlock()
 
 	w := Withdrawal{
-		SourceAddress:      "mn3SFr4mQctRqDbQDqwFMFDfzyzmhe6vxn",
-		DestinationAddress: "2N8MWCvyNQzJqbcsdusUeLYTdgbQbepbuks",
+		SourceAddress:      msig,
+		DestinationAddress: addr1,
 		Amount:             1000,
 		QuantaBlockID:      0,
 	}
@@ -133,15 +133,15 @@ func TestLTCEncodeRefund(t *testing.T) {
 	var encoded EncodedMsg
 	json.Unmarshal([]byte(tx), &encoded)
 
-	km, _ := key_manager.NewBitCoinKeyManager(LOCAL_RPC_HOST, "regnet")
+	km, _ := key_manager.NewLiteCoinKeyManager(LOCAL_RPC_HOST, "regnet")
 
-	err = km.LoadNodeKeys("cNxQax7BfpbikeuCebPGCgTefTah5h1XhVDfaotVdFmXtaLCWLd9")
+	err = km.LoadNodeKeys("92REaZhgcw6FF2rz8EnY1HMtBvgh3qh4gs9PxnccPrju6ZCFetk")
 	assert.NoError(t, err)
 
 	tx_signed1, err := km.SignTransaction(encoded.Message)
 	assert.NoError(t, err)
 
-	err = km.LoadNodeKeys("cUixT9PYjTtNzcVjF8sB7iM9JeEf8tLHm9Wjgo972x8opCRNTasS")
+	err = km.LoadNodeKeys("923EhimzuuHQvRaRWhTbKtocZSaKjvXkc32jbBiT5NPkCVGKYmf")
 	tx_signed2, err := km.SignTransaction(encoded.Message)
 	assert.NoError(t, err)
 
@@ -175,14 +175,14 @@ func TestDepositsLTC(t *testing.T) {
 	err = client.Attach()
 	assert.NoError(t, err)
 
-	//blockId, err := client.GetTopBlockID()
+	blockId, err := client.GetTopBlockID()
 
-	_, err = client.GetDepositsInBlock(103, map[string]string{"QdRXeFHACBC9tDNc9AobaHQqMrNxgqZ1WT": "pooja"})
+	_, err = client.GetDepositsInBlock(blockId, nil)
 	assert.NoError(t, err)
 }
 
 func TestDecodeLTC(t *testing.T) {
-	client, err := NewLitecoinCoin(LOCAL_RPC_HOST, &chaincfg.TestNet4Params, []string{"03AF8891DA9BBF3CED03F04BC3C17EC4D3AE61D464E9B89A6B6A1FA60E361FDEA4", "038CAFE50CA757FAD36DA592A7C2B19158C0163445BAC2DDF6A59BDDC8F5BF6AD1", "03F8C8D630BB53B2E08FB108E2A951C84E582BB3D585D2127FAE6DE43150A415AE"})
+	client, err := NewLitecoinCoin(LOCAL_RPC_HOST, &chaincfg.TestNet4Params, []string{"miia2r4FLxkJXNcDCUyjkUzMSVNQnoGunr", "n1VeF9P45yWNr3mZKm4YdYAaRFFHnqiJRT"})
 	assert.NoError(t, err)
 
 	err = client.Attach()

@@ -93,7 +93,7 @@ func (b *BCH) GenerateMultisig(accountId string) (string, error) {
 		return "", err
 	}
 
-	err = b.Client.ImportAddressRescan(res.P2sh, false)
+	err = b.Client.ImportAddress(res.P2sh)
 	if err != nil {
 		return "", errors.Wrap(err, "Unable to import address "+res.P2sh)
 	}
@@ -106,18 +106,25 @@ func (b *BCH) GetTxID(trustAddress common.Address) (uint64, error) {
 }
 
 func (b *BCH) GetDepositsInBlock(blockID int64, trustAddress map[string]string) ([]*Deposit, error) {
-	blockHash, err := b.Client.GetBlockHash(blockID)
-	if err != nil {
-		return nil, err
-	}
-	block, err := b.Client.GetBlock(blockHash)
-
 	events := []*Deposit{}
 
-	for _, tx := range block.Transactions {
-		txHash := tx.TxHash()
+	unspent, err := b.Client.ListUnspent()
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to get unspent")
+	}
 
-		currentTx, err := b.Client.GetRawTransactionVerbose(&txHash)
+	txidMap := make(map[string]string)
+	for _, e := range unspent {
+		txidMap[e.TxID] = e.Address
+	}
+
+	for tx := range txidMap {
+		txHash, err := chainhash.NewHashFromStr(tx)
+		if err != nil {
+			return nil, errors.Wrap(err, "failed to get chainhash from string")
+		}
+
+		currentTx, err := b.Client.GetRawTransactionVerbose(txHash)
 		if err != nil {
 			return nil, errors.Wrap(err, "failed to getraw for currentTx")
 		}
@@ -166,7 +173,7 @@ func (b *BCH) GetDepositsInBlock(blockID int64, trustAddress map[string]string) 
 					CoinName:   b.Blockchain(),
 					Amount:     int64(amount),
 					BlockID:    blockID,
-					Tx:         txHash.String(),
+					Tx:         tx,
 				})
 			}
 		}
