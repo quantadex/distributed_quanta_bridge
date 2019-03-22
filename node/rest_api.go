@@ -150,11 +150,13 @@ func (server *Server) historyHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 
+	// combine the pending tx in here
 	var txs []db.Transaction
 	var err error
 	if user == "" {
 		txs, err = db.QueryAllTX(server.db, offset, limit)
 	} else {
+		// filter pending if we are including w/ user.  
 		txs, err = db.QueryAllTXByUser(server.db, user, offset, limit)
 	}
 

@@ -108,6 +108,38 @@ func (b *BitcoinCoin) GetTxID(trustAddress common.Address) (uint64, error) {
 	return 0, nil
 }
 
+func (b *BitcoinCoin) GetPendingTx() ([]*Deposit, error) {
+	//results, err := b.Client.ListUnspentMinMax(0, 0)
+	//if err != nil {
+	//	return nil, err
+	//}
+	//for _, e := range results {
+	//	e
+	//	toAddr := strings.Join(e..ScriptPubKey.Addresses, ",")
+	//
+	//	if fromAddr == toAddr || fromAddr == "" {
+	//		//println("Ignoring tx when from and to the same ", toAddr)
+	//		continue
+	//	}
+	//
+	//	amount, err := btcutil.NewAmount(vout.Value)
+	//	if err != nil {
+	//		return nil, errors.Wrap(err, "unable to create new amount")
+	//	}
+	//
+	//	if quantaAddr, ok := trustAddress[toAddr]; ok {
+	//		events = append(events, &Deposit{
+	//			SenderAddr: fromAddr,
+	//			QuantaAddr: quantaAddr,
+	//			CoinName:   b.Blockchain(),
+	//			Amount:     int64(amount),
+	//			BlockID:    blockID,
+	//			Tx:         tx,
+	//		})
+	//	}
+	//}
+}
+
 func (b *BitcoinCoin) GetDepositsInBlock(blockID int64, trustAddress map[string]string) ([]*Deposit, error) {
 	events := []*Deposit{}
 
