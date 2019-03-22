@@ -109,7 +109,12 @@ func (b *BitcoinCoin) GetTxID(trustAddress common.Address) (uint64, error) {
 }
 
 func (b *BitcoinCoin) GetDepositsInBlock(blockID int64, trustAddress map[string]string) ([]*Deposit, error) {
-	events := []*Deposit{}
+	blockHash, err := b.Client.GetBlockHash(blockID)
+	if err != nil {
+		return nil, err
+	}
+
+	block, err := b.Client.GetBlock(blockHash)
 
 	unspent, err := b.Client.ListUnspent()
 	if err != nil {
@@ -121,63 +126,63 @@ func (b *BitcoinCoin) GetDepositsInBlock(blockID int64, trustAddress map[string]
 		txidMap[e.TxID] = e.Address
 	}
 
-	for tx := range txidMap {
-		txHash, err := chainhash.NewHashFromStr(tx)
-		if err != nil {
-			return nil, errors.Wrap(err, "failed to get chainhash from string")
-		}
+	events := []*Deposit{}
 
-		currentTx, err := b.Client.GetRawTransactionVerbose(txHash)
-		if err != nil {
-			return nil, errors.Wrap(err, "failed to getraw for currentTx")
-		}
-
-		vinLookup := map[string]bool{}
-		vinAddresses := []string{}
-		for _, vin := range currentTx.Vin {
-			if vin.Txid == "" {
-				continue
-			}
-
-			prevTranHash, err := chainhash.NewHashFromStr(vin.Txid)
+	for _, tx := range block.Transactions {
+		if _, ok := txidMap[tx.TxHash().String()]; ok {
+			txHash := tx.TxHash()
+			currentTx, err := b.Client.GetRawTransactionVerbose(&txHash)
 			if err != nil {
-				return events, errors.Wrap(err, "failed to build hash")
-			}
-			prevTran, err := b.Client.GetRawTransactionVerbose(prevTranHash)
-			if err != nil {
-				return events, errors.Wrap(err, "failed to getraw for vin")
+				return nil, errors.Wrap(err, "failed to getraw for currentTx")
 			}
 
-			prevVout := prevTran.Vout[vin.Vout]
-			fromAddress := strings.Join(prevVout.ScriptPubKey.Addresses, ",")
-			vinLookup[fromAddress] = true
-			vinAddresses = append(vinAddresses, fromAddress)
-		}
+			vinLookup := map[string]bool{}
+			vinAddresses := []string{}
+			for _, vin := range currentTx.Vin {
+				if vin.Txid == "" {
+					continue
+				}
 
-		fromAddr := strings.Join(vinAddresses, ",")
+				prevTranHash, err := chainhash.NewHashFromStr(vin.Txid)
+				if err != nil {
+					return events, errors.Wrap(err, "failed to build hash")
+				}
+				prevTran, err := b.Client.GetRawTransactionVerbose(prevTranHash)
+				if err != nil {
+					return events, errors.Wrap(err, "failed to getraw for vin")
+				}
 
-		for _, vout := range currentTx.Vout {
-			toAddr := strings.Join(vout.ScriptPubKey.Addresses, ",")
-
-			if fromAddr == toAddr || fromAddr == "" {
-				//println("Ignoring tx when from and to the same ", toAddr)
-				continue
+				prevVout := prevTran.Vout[vin.Vout]
+				fromAddress := strings.Join(prevVout.ScriptPubKey.Addresses, ",")
+				vinLookup[fromAddress] = true
+				vinAddresses = append(vinAddresses, fromAddress)
 			}
 
-			amount, err := btcutil.NewAmount(vout.Value)
-			if err != nil {
-				return nil, errors.Wrap(err, "unable to create new amount")
-			}
+			fromAddr := strings.Join(vinAddresses, ",")
 
-			if quantaAddr, ok := trustAddress[toAddr]; ok {
-				events = append(events, &Deposit{
-					SenderAddr: fromAddr,
-					QuantaAddr: quantaAddr,
-					CoinName:   b.Blockchain(),
-					Amount:     int64(amount),
-					BlockID:    blockID,
-					Tx:         tx,
-				})
+			for _, vout := range currentTx.Vout {
+				toAddr := strings.Join(vout.ScriptPubKey.Addresses, ",")
+
+				if fromAddr == toAddr || fromAddr == "" {
+					//println("Ignoring tx when from and to the same ", toAddr)
+					continue
+				}
+
+				amount, err := btcutil.NewAmount(vout.Value)
+				if err != nil {
+					return nil, errors.Wrap(err, "unable to create new amount")
+				}
+
+				if quantaAddr, ok := trustAddress[toAddr]; ok {
+					events = append(events, &Deposit{
+						SenderAddr: fromAddr,
+						QuantaAddr: quantaAddr,
+						CoinName:   b.Blockchain(),
+						Amount:     int64(amount),
+						BlockID:    blockID,
+						Tx:         txHash.String(),
+					})
+				}
 			}
 		}
 	}
