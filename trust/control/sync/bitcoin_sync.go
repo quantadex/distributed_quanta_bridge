@@ -15,6 +15,15 @@ type BitcoinSync struct {
 func (c *BitcoinSync) Setup() {
 	c.fnDepositInBlock = c.GetDepositsInBlock
 	c.fnGetWatchAddress = c.GetWatchAddress
+	c.fnTransformCoin = c.TransformCoin
+}
+
+func (c *BitcoinSync) TransformCoin(dep *coin.Deposit) *coin.Deposit {
+	if dep.CoinName == "BTC" {
+		dep.CoinName = c.issuingSymbol["btc"]
+	}
+	dep.Amount = coin.PowerDelta(*big.NewInt(dep.Amount), 8, int(c.coinInfo[c.issuingSymbol["btc"]].Precision))
+	return dep
 }
 
 func (c *BitcoinSync) GetDepositsInBlock(blockID int64) ([]*coin.Deposit, error) {
@@ -27,10 +36,7 @@ func (c *BitcoinSync) GetDepositsInBlock(blockID int64) ([]*coin.Deposit, error)
 	deposits, err := c.coinChannel.GetDepositsInBlock(blockID, watchMap)
 
 	for _, dep := range deposits {
-		if dep.CoinName == "BTC" {
-			dep.CoinName = c.issuingSymbol["btc"]
-		}
-		dep.Amount = coin.PowerDelta(*big.NewInt(dep.Amount), 8, int(c.coinInfo[c.issuingSymbol["btc"]].Precision))
+		dep = c.TransformCoin(dep)
 	}
 
 	if err != nil {

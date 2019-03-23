@@ -27,6 +27,7 @@ type DepositSync struct {
 	fnDepositInBlock   func(blockID int64) ([]*coin.Deposit, error)
 	fnPostProcessBlock func(blockID int64) error
 	fnGetWatchAddress  func() map[string]string
+	fnTransformCoin	   func(dep *coin.Deposit) *coin.Deposit
 
 	doneChan chan bool
 }
@@ -66,6 +67,13 @@ func (c *DepositSync) DoLoop(blockIDs []int64) []*coin.Deposit {
 
 	watchMap := c.fnGetWatchAddress
 	pending, err := c.coinChannel.GetPendingTx(watchMap())
+
+	if c.fnTransformCoin != nil {
+		for _, p := range pending {
+			p = c.fnTransformCoin(p)
+		}
+	}
+
 	if err != nil {
 		c.logger.Error("Could not get pending transactions")
 	}
