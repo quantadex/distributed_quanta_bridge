@@ -84,8 +84,7 @@ func ConfirmDeposit(db *DB, dep *coin.Deposit, isBounced bool) error {
 		SubmitState: SUBMIT_CONSENSUS,
 	}
 	_, err := db.Model(tx).
-		Where("Type = ? AND Tx = ?", tx.Type, tx.Tx).
-		OnConflict("(Type,Tx) DO UPDATE SET Submit_State = ?", SUBMIT_CONSENSUS).SelectOrInsert()
+		OnConflict("(Type,Tx) DO UPDATE").Set("Submit_State = EXCLUDED.Submit_State").SelectOrInsert()
 
 	return err
 }
@@ -183,8 +182,8 @@ func ConfirmWithdrawal(db *DB, dep *coin.Withdrawal) error {
 	}
 
 	_, err := db.Model(tx).
-		Where("Type = ? AND Tx = ?", tx.Type, tx.Tx).
-		OnConflict("(Type,Tx) DO UPDATE SET Submit_State = ?", SUBMIT_CONSENSUS).SelectOrInsert()
+		OnConflict("(Type,Tx) DO UPDATE").Set("Submit_State = EXCLUDED.Submit_State").SelectOrInsert()
+
 	return err
 }
 
