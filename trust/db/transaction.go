@@ -83,10 +83,7 @@ func ConfirmDeposit(db *DB, dep *coin.Deposit, isBounced bool) error {
 		Signed:      false,
 		SubmitState: SUBMIT_CONSENSUS,
 	}
-	inserted, err := db.Model(tx).SelectOrInsert()
-	if !inserted {
-		ChangeSubmitState(db, dep.Tx, SUBMIT_CONSENSUS, DEPOSIT)
-	}
+	_, err := db.Model(tx).OnConflict("(Type,Tx) DO UPDATE").Set("Submit_State = EXCLUDED.Submit_State").Insert()
 
 	return err
 }
@@ -184,7 +181,7 @@ func ConfirmWithdrawal(db *DB, dep *coin.Withdrawal) error {
 	}
 
 	_, err := db.Model(tx).
-		OnConflict("(Type,Tx) DO UPDATE").Set("Submit_State = EXCLUDED.Submit_State").SelectOrInsert()
+		OnConflict("(Type,Tx) DO UPDATE").Set("Submit_State = EXCLUDED.Submit_State").Insert()
 
 	return err
 }

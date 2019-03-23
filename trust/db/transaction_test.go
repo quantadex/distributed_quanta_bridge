@@ -80,7 +80,11 @@ func TestTransactionQuery(t *testing.T) {
 	if err != nil {
 		t.Error(err)
 	}
-	ConfirmDeposit(rDb, d, false)
+	err = ConfirmDeposit(rDb, d, false)
+	if err != nil {
+		t.Error(err)
+	}
+
 	ConfirmDeposit(rDb, d, false)
 	ConfirmDeposit(rDb, d, false)
 
