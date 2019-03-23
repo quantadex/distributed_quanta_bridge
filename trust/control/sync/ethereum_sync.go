@@ -18,6 +18,7 @@ type EthereumSync struct {
 func (c *EthereumSync) Setup() {
 	c.fnDepositInBlock = c.GetDepositsInBlock
 	c.fnPostProcessBlock = c.PostProcessBlock
+	c.fnGetWatchAddress = c.GetWatchAddress
 }
 
 /**
@@ -99,5 +100,9 @@ func (c *EthereumSync) PostProcessBlock(blockID int64) error {
 				addr.Trust.Hex(), blockID, c.trustAddress.Hex()))
 		}
 	}
+	return nil
+}
+
+func (c *EthereumSync) GetWatchAddress() map[string]string {
 	return nil
 }

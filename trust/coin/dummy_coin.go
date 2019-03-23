@@ -23,14 +23,14 @@ func GetDummyInstance() *DummyCoin {
 	return instance
 }
 
-func (c *DummyCoin) 	GetPendingTx() ([]*Deposit, error) {
+func (c *DummyCoin) GetPendingTx(map[string]string) ([]*Deposit, error) {
 	panic("not implemented")
 }
 
 func (c *DummyCoin) Blockchain() string {
 	return "DUMMY"
 }
-func (c *DummyCoin) 	FlushCoin(forwarder string, address string) error {
+func (c *DummyCoin) FlushCoin(forwarder string, address string) error {
 	panic("not implemented")
 }
 

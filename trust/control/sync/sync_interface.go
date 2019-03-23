@@ -12,6 +12,7 @@ import (
 type DepositSyncInterface interface {
 	Setup()
 	GetDepositsInBlock(blockID int64) ([]*coin.Deposit, error)
+	GetWatchAddress() map[string]string
 	DoLoop(blockIDs []int64) []*coin.Deposit
 	GetNewCoinBlockIDs() []int64
 	PostProcessBlock(blockID int64) error

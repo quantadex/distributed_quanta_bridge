@@ -36,6 +36,13 @@ func TestTransactionQuery(t *testing.T) {
 		t.Error(err)
 	}
 
+	// do it again
+	err = ConfirmWithdrawal(rDb, w)
+
+	if err != nil {
+		t.Error(err)
+	}
+
 	err = SignWithdrawal(rDb, w)
 	if err != nil {
 		t.Error(err)

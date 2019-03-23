@@ -14,6 +14,7 @@ type BitcoinSync struct {
 
 func (c *BitcoinSync) Setup() {
 	c.fnDepositInBlock = c.GetDepositsInBlock
+	c.fnGetWatchAddress = c.GetWatchAddress
 }
 
 func (c *BitcoinSync) GetDepositsInBlock(blockID int64) ([]*coin.Deposit, error) {
@@ -43,6 +44,16 @@ func (c *BitcoinSync) GetDepositsInBlock(blockID int64) ([]*coin.Deposit, error)
 	}
 
 	return deposits, err
+}
+
+func (c *BitcoinSync) GetWatchAddress() map[string]string {
+	watchAddresses := c.rDb.GetCrosschainByBlockchain(coin.BLOCKCHAIN_BTC)
+	watchMap := make(map[string]string)
+
+	for _, w := range watchAddresses {
+		watchMap[w.Address] = w.QuantaAddr
+	}
+	return watchMap
 }
 
 func (c *BitcoinSync) PostProcessBlock(blockID int64) error {
