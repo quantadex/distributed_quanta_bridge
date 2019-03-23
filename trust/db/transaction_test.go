@@ -81,6 +81,8 @@ func TestTransactionQuery(t *testing.T) {
 		t.Error(err)
 	}
 	ConfirmDeposit(rDb, d, false)
+	ConfirmDeposit(rDb, d, false)
+	ConfirmDeposit(rDb, d, false)
 
 	tx, err := GetTransaction(rDb, "123_pending")
 	if err != nil {
