@@ -189,7 +189,9 @@ func NewQuantaToCoin(log logger.Logger,
 			time.Sleep(100 * time.Millisecond)
 		}
 	}()
-	go res.DispatchWithdrawal()
+	if nodeID == 0 {
+		go res.DispatchWithdrawal()
+	}
 
 	return res
 }
