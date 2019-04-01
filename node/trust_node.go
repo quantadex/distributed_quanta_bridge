@@ -372,6 +372,14 @@ func (n *TrustNode) run() {
 			//blockIDs := n.cTQ.GetNewCoinBlockIDs()
 			//n.cTQ.DoLoop(blockIDs)
 
+			_, err := n.q.GetTopBlockID()
+			if err != nil {
+				if err.Error() == "connection is shut down" {
+					n.q.Reconnect()
+				} else {
+					n.log.Error("Unhandled error. " + err.Error())
+				}
+			}
 			blockIDs := n.qTC.GetNewCoinBlockIDs()
 			//if init == false {
 			//	cursor = 1911002
