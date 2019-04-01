@@ -1,13 +1,14 @@
 package coin
 
 import (
-	"github.com/bchsuite/bchd/bchjson"
-	"github.com/bchsuite/bchd/chaincfg"
-	"github.com/bchsuite/bchd/chaincfg/chainhash"
-	"github.com/bchsuite/bchd/rpcclient"
-	"github.com/bchsuite/bchd/wire"
-	"github.com/bchsuite/bchutil"
+	"fmt"
 	"github.com/ethereum/go-ethereum/common"
+	"github.com/gcash/bchd/btcjson"
+	"github.com/gcash/bchd/chaincfg"
+	"github.com/gcash/bchd/chaincfg/chainhash"
+	"github.com/gcash/bchd/rpcclient"
+	"github.com/gcash/bchd/wire"
+	"github.com/gcash/bchutil"
 	"github.com/pkg/errors"
 	common2 "github.com/quantadex/distributed_quanta_bridge/common"
 	"github.com/quantadex/distributed_quanta_bridge/common/crypto"
@@ -17,9 +18,10 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"os/exec"
-	"regexp"
 	"strings"
 )
+
+const BLOCKCHAIN_BCH = "BCH"
 
 type BCH struct {
 	Client         *rpcclient.Client
@@ -31,7 +33,7 @@ type BCH struct {
 }
 
 func (b *BCH) Blockchain() string {
-	return BLOCKCHAIN_BTC
+	return BLOCKCHAIN_BCH
 }
 
 func (b *BCH) Attach() error {
@@ -75,12 +77,15 @@ func (b *BCH) GenerateMultisig(accountId string) (string, error) {
 
 	addr = append(addr, btcAddress)
 
-	addrx, err := b.Client.AddMultisigAddress(len(addr)-1, addr, "")
-	//fmt.Println("result ", addrx)
+	addrx, err := b.Client.CreateMultisig(len(addr)-1, addr)
 
-	if err != nil {
-		return "", err
-	}
+	//addrx, err := b.Client.AddMultisigAddress(len(addr)-1, addr, "")
+	//fmt.Println("error = ", err, addrx)
+	////fmt.Println("result ", addrx)
+	//
+	//if err != nil {
+	//	return "", err
+	//}
 
 	scriptBytes, err := hex.DecodeString(addrx.RedeemScript)
 	if err != nil {
@@ -93,7 +98,7 @@ func (b *BCH) GenerateMultisig(accountId string) (string, error) {
 		return "", err
 	}
 
-	err = b.Client.ImportAddress(res.P2sh)
+	err = b.Client.ImportAddressRescan(res.P2sh, "", false)
 	if err != nil {
 		return "", errors.Wrap(err, "Unable to import address "+res.P2sh)
 	}
@@ -106,7 +111,12 @@ func (b *BCH) GetTxID(trustAddress common.Address) (uint64, error) {
 }
 
 func (b *BCH) GetDepositsInBlock(blockID int64, trustAddress map[string]string) ([]*Deposit, error) {
-	events := []*Deposit{}
+	blockHash, err := b.Client.GetBlockHash(blockID)
+	if err != nil {
+		return nil, err
+	}
+
+	block, err := b.Client.GetBlock(blockHash)
 
 	unspent, err := b.Client.ListUnspent()
 	if err != nil {
@@ -118,63 +128,68 @@ func (b *BCH) GetDepositsInBlock(blockID int64, trustAddress map[string]string) 
 		txidMap[e.TxID] = e.Address
 	}
 
-	for tx := range txidMap {
-		txHash, err := chainhash.NewHashFromStr(tx)
-		if err != nil {
-			return nil, errors.Wrap(err, "failed to get chainhash from string")
-		}
+	events := []*Deposit{}
+	fmt.Printf("%v", block.Transactions)
 
-		currentTx, err := b.Client.GetRawTransactionVerbose(txHash)
-		if err != nil {
-			return nil, errors.Wrap(err, "failed to getraw for currentTx")
-		}
-
-		vinLookup := map[string]bool{}
-		vinAddresses := []string{}
-		for _, vin := range currentTx.Vin {
-			if vin.Txid == "" {
-				continue
-			}
-
-			prevTranHash, err := chainhash.NewHashFromStr(vin.Txid)
+	for _, tx := range block.Transactions {
+		if _, ok := txidMap[tx.TxHash().String()]; ok {
+			txHash := tx.TxHash()
+			currentTx, err := b.Client.GetRawTransactionVerbose(&txHash)
 			if err != nil {
-				return events, errors.Wrap(err, "failed to build hash")
+				return nil, errors.Wrap(err, "failed to getraw for currentTx")
 			}
-			prevTran, err := b.Client.GetRawTransactionVerbose(prevTranHash)
+
+			vinLookup := map[string]bool{}
+			vinAddresses := []string{}
+			for _, vin := range currentTx.Vin {
+				if vin.Txid == "" {
+					continue
+				}
+
+				prevTranHash, err := chainhash.NewHashFromStr(vin.Txid)
+				if err != nil {
+					return nil, errors.Wrap(err, "failed to build hash")
+				}
+				prevTran, err := b.Client.GetRawTransactionVerbose(prevTranHash)
+				if err != nil {
+					return nil, errors.Wrap(err, "failed to getraw for vin")
+				}
+
+				prevVout := prevTran.Vout[vin.Vout]
+				fromAddress := strings.Join(prevVout.ScriptPubKey.Addresses, ",")
+				vinLookup[fromAddress] = true
+				vinAddresses = append(vinAddresses, fromAddress)
+			}
+
+			fromAddr := strings.Join(vinAddresses, ",")
+
 			if err != nil {
-				return events, errors.Wrap(err, "failed to getraw for vin")
+				return nil, errors.Wrap(err, "failed to from address for currentTx")
 			}
 
-			prevVout := prevTran.Vout[vin.Vout]
-			fromAddress := strings.Join(prevVout.ScriptPubKey.Addresses, ",")
-			vinLookup[fromAddress] = true
-			vinAddresses = append(vinAddresses, fromAddress)
-		}
+			for _, vout := range currentTx.Vout {
+				toAddr := strings.Join(vout.ScriptPubKey.Addresses, ",")
 
-		fromAddr := strings.Join(vinAddresses, ",")
+				if fromAddr == toAddr || fromAddr == "" {
+					//println("Ignoring tx when from and to the same ", toAddr)
+					continue
+				}
 
-		for _, vout := range currentTx.Vout {
-			toAddr := strings.Join(vout.ScriptPubKey.Addresses, ",")
+				amount, err := bchutil.NewAmount(vout.Value)
+				if err != nil {
+					return nil, errors.Wrap(err, "unable to create new amount")
+				}
 
-			if fromAddr == toAddr || fromAddr == "" {
-				//println("Ignoring tx when from and to the same ", toAddr)
-				continue
-			}
-
-			amount, err := bchutil.NewAmount(vout.Value)
-			if err != nil {
-				return nil, errors.Wrap(err, "unable to create new amount")
-			}
-
-			if quantaAddr, ok := trustAddress[toAddr]; ok {
-				events = append(events, &Deposit{
-					SenderAddr: fromAddr,
-					QuantaAddr: quantaAddr,
-					CoinName:   b.Blockchain(),
-					Amount:     int64(amount),
-					BlockID:    blockID,
-					Tx:         tx,
-				})
+				if quantaAddr, ok := trustAddress[toAddr]; ok {
+					events = append(events, &Deposit{
+						SenderAddr: fromAddr,
+						QuantaAddr: quantaAddr,
+						CoinName:   b.Blockchain(),
+						Amount:     int64(amount),
+						BlockID:    blockID,
+						Tx:         txHash.String(),
+					})
+				}
 			}
 		}
 	}
@@ -245,16 +260,16 @@ func (b *BCH) FillCrosschainAddress(crosschainAddr map[string]string) {
 	b.crosschainAddr = crosschainAddr
 }
 
-func (b *BCH) GetUnspentInputs(destAddress bchutil.Address, amount bchutil.Amount) (bchutil.Amount, []bchjson.TransactionInput, []bchjson.ListUnspentResult, []bchjson.RawTxInput, error) {
+func (b *BCH) GetUnspentInputs(destAddress bchutil.Address, amount bchutil.Amount) (bchutil.Amount, []btcjson.TransactionInput, []btcjson.ListUnspentResult, []btcjson.RawTxInput, error) {
 	// get latest hash
 	unspent, err := b.Client.ListUnspent()
 	if err != nil {
 		return 0, nil, nil, nil, errors.Wrap(err, "No unspent input found")
 	}
 
-	inputs := []bchjson.TransactionInput{}
-	unspentFound := []bchjson.ListUnspentResult{}
-	rawInput := []bchjson.RawTxInput{}
+	inputs := []btcjson.TransactionInput{}
+	unspentFound := []btcjson.ListUnspentResult{}
+	rawInput := []btcjson.RawTxInput{}
 	totalAmount, _ := bchutil.NewAmount(0)
 
 	amountWithFee := amount.ToBCH() + (b.fee * 50)
@@ -266,13 +281,14 @@ func (b *BCH) GetUnspentInputs(destAddress bchutil.Address, amount bchutil.Amoun
 			//	return nil, nil, nil, errors.New("We don't expect destination address to be same as ")
 			//}
 
-			inputs = append(inputs, bchjson.TransactionInput{Txid: e.TxID, Vout: e.Vout})
+			inputs = append(inputs, btcjson.TransactionInput{Txid: e.TxID, Vout: e.Vout})
 			unspentFound = append(unspentFound, e)
-			rawInput = append(rawInput, bchjson.RawTxInput{
+			rawInput = append(rawInput, btcjson.RawTxInput{
 				Txid:         e.TxID,
 				Vout:         e.Vout,
 				RedeemScript: e.RedeemScript,
 				ScriptPubKey: e.ScriptPubKey,
+				Amount:       e.Amount,
 			})
 			unspentAmount, err := bchutil.NewAmount(e.Amount)
 			if err != nil {
@@ -429,13 +445,9 @@ func (b *BCH) DecodeRefund(encoded string) (*Withdrawal, error) {
 }
 
 func (b *BCH) CheckValidAddress(address string) bool {
-	if len(address) > 35 || len(address) < 26 {
-		return false
-	}
 	_, err := bchutil.DecodeAddress(address, b.chaincfg)
 	if err != nil {
 		return false
 	}
-	var validAddress = regexp.MustCompile(`^[1-9a-zA-NP-Z]`)
-	return validAddress.MatchString(address)
+	return true
 }

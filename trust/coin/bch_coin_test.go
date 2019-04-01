@@ -4,9 +4,9 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
-	"github.com/bchsuite/bchd/chaincfg"
-	"github.com/bchsuite/bchutil"
 	common2 "github.com/ethereum/go-ethereum/common"
+	"github.com/gcash/bchd/chaincfg"
+	"github.com/gcash/bchutil"
 	"github.com/quantadex/distributed_quanta_bridge/common/crypto"
 	"github.com/quantadex/distributed_quanta_bridge/trust/key_manager"
 	"github.com/stretchr/testify/assert"
@@ -51,18 +51,17 @@ func SendBCH(address string, amount bchutil.Amount) (string, error) {
 }
 
 func TestBitcoinEncodeRefundBCH(t *testing.T) {
-	client, err := NewBCHCoin(LOCAL_RPC_HOST, &chaincfg.TestNet3Params, []string{"049C8C4647E016C502766C6F5C40CFD37EE86CD02972274CA50DA16D72016CAB5812F867F27C268923E5DE3ADCB268CC8A29B96D0D8972841F286BA6D9CCF61360", "040C9B0D5324CBAF4F40A215C1D87DF1BEB51A0345E0384942FE0D60F8D796F7B7200CC5B70DDCF101E7804EFA26A0CE6EC6622C2FE90BCFD2DA2482006C455FF1"})
+	client, err := NewBCHCoin(LOCAL_RPC_HOST, &chaincfg.RegressionNetParams, []string{"049C8C4647E016C502766C6F5C40CFD37EE86CD02972274CA50DA16D72016CAB5812F867F27C268923E5DE3ADCB268CC8A29B96D0D8972841F286BA6D9CCF61360", "040C9B0D5324CBAF4F40A215C1D87DF1BEB51A0345E0384942FE0D60F8D796F7B7200CC5B70DDCF101E7804EFA26A0CE6EC6622C2FE90BCFD2DA2482006C455FF1"})
 	assert.NoError(t, err)
 
 	err = client.Attach()
 	assert.NoError(t, err)
 
 	bch := client.(*BCH)
+
 	addr1, err := bch.GenerateMultisig("aaa1")
-	ImportAddress(addr1)
 	addr2, err := bch.GenerateMultisig("2")
 	println(addr1, addr2)
-	ImportAddress(addr2)
 
 	crosschainAddr := make(map[string]string)
 	crosschainAddr[addr1] = "pooja"
@@ -75,8 +74,7 @@ func TestBitcoinEncodeRefundBCH(t *testing.T) {
 	println(res, err)
 	res, err = SendBCH(addr2, amount)
 	println(res, err)
-	res, err = GenerateBlock()
-	println(res, err)
+	_, err = GenerateBlock()
 
 	//btec, err := crypto.NewGraphenePublicKeyFromString("QA5nvEN2S7Dej2C9hrLJTHNeMGeHq6uyjMdoceR74CksyApeZHWS")
 	btec, err := crypto.GenerateGrapheneKeyWithSeed("pooja")
@@ -89,7 +87,7 @@ func TestBitcoinEncodeRefundBCH(t *testing.T) {
 
 	w := Withdrawal{
 		SourceAddress:      msig,
-		DestinationAddress: addr1,
+		DestinationAddress: addr2,
 		Amount:             1000,
 		QuantaBlockID:      0,
 	}
@@ -148,7 +146,7 @@ func TestDepositsBCH(t *testing.T) {
 }
 
 func TestDecodeBCH(t *testing.T) {
-	client, err := NewBCHCoin(LOCAL_RPC_HOST, &chaincfg.RegressionNetParams, []string{"2NENNHR9Y9fpKzjKYobbdbwap7xno7sbf2E", "2NEDF3RBHQuUHQmghWzFf6b6eeEnC7KjAtR"})
+	client, err := NewBCHCoin(LOCAL_RPC_HOST, &chaincfg.RegressionNetParams, []string{"049C8C4647E016C502766C6F5C40CFD37EE86CD02972274CA50DA16D72016CAB5812F867F27C268923E5DE3ADCB268CC8A29B96D0D8972841F286BA6D9CCF61360", "040C9B0D5324CBAF4F40A215C1D87DF1BEB51A0345E0384942FE0D60F8D796F7B7200CC5B70DDCF101E7804EFA26A0CE6EC6622C2FE90BCFD2DA2482006C455FF1"})
 	assert.NoError(t, err)
 
 	err = client.Attach()
@@ -189,7 +187,7 @@ func TestDecodeBCH(t *testing.T) {
 }
 
 func TestEncodeWithMultipleInputsBCH(t *testing.T) {
-	client, err := NewBCHCoin(LOCAL_RPC_HOST, &chaincfg.TestNet3Params, []string{"03AF8891DA9BBF3CED03F04BC3C17EC4D3AE61D464E9B89A6B6A1FA60E361FDEA4", "038CAFE50CA757FAD36DA592A7C2B19158C0163445BAC2DDF6A59BDDC8F5BF6AD1", "03F8C8D630BB53B2E08FB108E2A951C84E582BB3D585D2127FAE6DE43150A415AE"})
+	client, err := NewBCHCoin(LOCAL_RPC_HOST, &chaincfg.RegressionNetParams, []string{"03AF8891DA9BBF3CED03F04BC3C17EC4D3AE61D464E9B89A6B6A1FA60E361FDEA4", "038CAFE50CA757FAD36DA592A7C2B19158C0163445BAC2DDF6A59BDDC8F5BF6AD1", "03F8C8D630BB53B2E08FB108E2A951C84E582BB3D585D2127FAE6DE43150A415AE"})
 	assert.NoError(t, err)
 
 	err = client.Attach()
@@ -198,6 +196,8 @@ func TestEncodeWithMultipleInputsBCH(t *testing.T) {
 	bch := client.(*BCH)
 	addr1, err := bch.GenerateMultisig("aaa1")
 	addr2, err := bch.GenerateMultisig("2")
+	addr3, err := bch.GenerateMultisig("crosschain2")
+	addr4, err := bch.GenerateMultisig("token_sale")
 	println(addr1, addr2)
 
 	crosschainAddr := make(map[string]string)
@@ -214,8 +214,8 @@ func TestEncodeWithMultipleInputsBCH(t *testing.T) {
 	println(res, err)
 
 	w := Withdrawal{
-		SourceAddress:      "n2PNkvCSkkSKvgqLsQXAQACFETQwKvc16X",
-		DestinationAddress: "2NGYCnkuo62kL1QpAzV3bRaf747bSM8suQm",
+		SourceAddress:      addr3,
+		DestinationAddress: addr4,
 		Amount:             3000,
 		Tx:                 "4418603_0",
 		QuantaBlockID:      0,
@@ -229,7 +229,7 @@ func TestEncodeWithMultipleInputsBCH(t *testing.T) {
  * These are the public keys on testnet, and it failed to generate a key for some instances, fixed by adding more to the seed
  */
 func TestGenerateMultisigBCH(t *testing.T) {
-	client, err := NewBCHCoin(LOCAL_RPC_HOST, &chaincfg.TestNet3Params, []string{"03AF8891DA9BBF3CED03F04BC3C17EC4D3AE61D464E9B89A6B6A1FA60E361FDEA4", "038CAFE50CA757FAD36DA592A7C2B19158C0163445BAC2DDF6A59BDDC8F5BF6AD1", "03F8C8D630BB53B2E08FB108E2A951C84E582BB3D585D2127FAE6DE43150A415AE"})
+	client, err := NewBCHCoin(LOCAL_RPC_HOST, &chaincfg.RegressionNetParams, []string{"03AF8891DA9BBF3CED03F04BC3C17EC4D3AE61D464E9B89A6B6A1FA60E361FDEA4", "038CAFE50CA757FAD36DA592A7C2B19158C0163445BAC2DDF6A59BDDC8F5BF6AD1", "03F8C8D630BB53B2E08FB108E2A951C84E582BB3D585D2127FAE6DE43150A415AE"})
 	assert.NoError(t, err)
 
 	err = client.Attach()

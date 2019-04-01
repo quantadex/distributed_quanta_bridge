@@ -1,8 +1,8 @@
 package common
 
 import (
-	btcjson3 "github.com/bchsuite/bchd/bchjson"
 	"github.com/btcsuite/btcd/btcjson"
+	btcjson3 "github.com/gcash/bchd/btcjson"
 	btcjson2 "github.com/ltcsuite/ltcd/btcjson"
 )
 

@@ -7,17 +7,18 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/agl/ed25519"
-	chaincfg2 "github.com/bchsuite/bchd/chaincfg"
-	"github.com/bchsuite/bchutil"
 	"github.com/btcsuite/btcd/btcec"
 	"github.com/btcsuite/btcd/chaincfg"
 	"github.com/btcsuite/btcutil"
 	"github.com/btcsuite/btcutil/base58"
 	"github.com/btcsuite/btcutil/hdkeychain"
+	"github.com/gcash/bchutil"
 	"github.com/juju/errors"
 	chaincfg3 "github.com/ltcsuite/ltcd/chaincfg"
 	"github.com/ltcsuite/ltcutil"
 	"github.com/scorum/bitshares-go/sign"
+
+	chaincfg2 "github.com/gcash/bchd/chaincfg"
 )
 
 const PREFIX = "QA"
@@ -119,7 +120,7 @@ func GetBCHAddressFromGraphene(pubKey *btcec.PublicKey) (*bchutil.AddressPubKey,
 	if err != nil {
 		return nil, err
 	}
-	address.SetFormat(bchutil.PKFUncompressed)
+	//address.SetFormat(bchutil.PKFUncompressed)
 	return address, err
 }
 

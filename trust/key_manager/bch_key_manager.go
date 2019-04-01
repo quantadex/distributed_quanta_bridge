@@ -5,10 +5,11 @@ import (
 	"crypto/ecdsa"
 	"encoding/hex"
 	"encoding/json"
-	"github.com/bchsuite/bchd/chaincfg"
-	"github.com/bchsuite/bchd/rpcclient"
-	"github.com/bchsuite/bchd/wire"
-	"github.com/bchsuite/bchutil"
+	"fmt"
+	"github.com/gcash/bchd/chaincfg"
+	"github.com/gcash/bchd/rpcclient"
+	"github.com/gcash/bchd/wire"
+	"github.com/gcash/bchutil"
 	"github.com/pkg/errors"
 	"github.com/quantadex/distributed_quanta_bridge/common"
 )
@@ -87,6 +88,7 @@ func (b *BCHKeyManager) SignTransaction(encoded string) (string, error) {
 	}
 
 	txSigned, _, err := b.client.SignRawTransaction3(tx, res.RawInput, []string{b.privateKey.String()})
+	fmt.Println("private key = ", b.privateKey.String())
 	if err != nil {
 		return "", err
 	}

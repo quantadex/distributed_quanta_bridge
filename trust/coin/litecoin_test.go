@@ -85,7 +85,7 @@ func GenerateLTCBlock() (string, error) {
 }
 
 func TestLTCEncodeRefund(t *testing.T) {
-	client, err := NewLitecoinCoin(LOCAL_RPC_HOST, &chaincfg.TestNet4Params, []string{"miia2r4FLxkJXNcDCUyjkUzMSVNQnoGunr", "n1VeF9P45yWNr3mZKm4YdYAaRFFHnqiJRT"})
+	client, err := NewLitecoinCoin(LOCAL_RPC_HOST, &chaincfg.RegressionNetParams, []string{"miia2r4FLxkJXNcDCUyjkUzMSVNQnoGunr", "n1VeF9P45yWNr3mZKm4YdYAaRFFHnqiJRT"})
 	assert.NoError(t, err)
 
 	err = client.Attach()
@@ -182,7 +182,7 @@ func TestDepositsLTC(t *testing.T) {
 }
 
 func TestDecodeLTC(t *testing.T) {
-	client, err := NewLitecoinCoin(LOCAL_RPC_HOST, &chaincfg.TestNet4Params, []string{"miia2r4FLxkJXNcDCUyjkUzMSVNQnoGunr", "n1VeF9P45yWNr3mZKm4YdYAaRFFHnqiJRT"})
+	client, err := NewLitecoinCoin(LOCAL_RPC_HOST, &chaincfg.RegressionNetParams, []string{"miia2r4FLxkJXNcDCUyjkUzMSVNQnoGunr", "n1VeF9P45yWNr3mZKm4YdYAaRFFHnqiJRT"})
 	assert.NoError(t, err)
 
 	err = client.Attach()
@@ -217,7 +217,7 @@ func TestDecodeLTC(t *testing.T) {
 }
 
 func TestEncodeWithMultipleInputsLTC(t *testing.T) {
-	client, err := NewLitecoinCoin(LOCAL_RPC_HOST, &chaincfg.TestNet4Params, []string{"03AF8891DA9BBF3CED03F04BC3C17EC4D3AE61D464E9B89A6B6A1FA60E361FDEA4", "038CAFE50CA757FAD36DA592A7C2B19158C0163445BAC2DDF6A59BDDC8F5BF6AD1", "03F8C8D630BB53B2E08FB108E2A951C84E582BB3D585D2127FAE6DE43150A415AE"})
+	client, err := NewLitecoinCoin(LOCAL_RPC_HOST, &chaincfg.RegressionNetParams, []string{"03AF8891DA9BBF3CED03F04BC3C17EC4D3AE61D464E9B89A6B6A1FA60E361FDEA4", "038CAFE50CA757FAD36DA592A7C2B19158C0163445BAC2DDF6A59BDDC8F5BF6AD1", "03F8C8D630BB53B2E08FB108E2A951C84E582BB3D585D2127FAE6DE43150A415AE"})
 	assert.NoError(t, err)
 
 	err = client.Attach()
@@ -258,7 +258,7 @@ func TestEncodeWithMultipleInputsLTC(t *testing.T) {
  * These are the public keys on testnet, and it failed to generate a key for some instances, fixed by adding more to the seed
  */
 func TestGenerateMultisigLTC(t *testing.T) {
-	client, err := NewLitecoinCoin(LOCAL_RPC_HOST, &chaincfg.TestNet4Params, []string{"03AF8891DA9BBF3CED03F04BC3C17EC4D3AE61D464E9B89A6B6A1FA60E361FDEA4", "038CAFE50CA757FAD36DA592A7C2B19158C0163445BAC2DDF6A59BDDC8F5BF6AD1", "03F8C8D630BB53B2E08FB108E2A951C84E582BB3D585D2127FAE6DE43150A415AE"})
+	client, err := NewLitecoinCoin(LOCAL_RPC_HOST, &chaincfg.RegressionNetParams, []string{"03AF8891DA9BBF3CED03F04BC3C17EC4D3AE61D464E9B89A6B6A1FA60E361FDEA4", "038CAFE50CA757FAD36DA592A7C2B19158C0163445BAC2DDF6A59BDDC8F5BF6AD1", "03F8C8D630BB53B2E08FB108E2A951C84E582BB3D585D2127FAE6DE43150A415AE"})
 	assert.NoError(t, err)
 
 	err = client.Attach()

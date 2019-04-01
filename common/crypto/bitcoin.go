@@ -1,8 +1,8 @@
 package crypto
 
 import (
-	chaincfg3 "github.com/bchsuite/bchd/chaincfg"
 	"github.com/btcsuite/btcd/chaincfg"
+	chaincfg3 "github.com/gcash/bchd/chaincfg"
 	chaincfg2 "github.com/ltcsuite/ltcd/chaincfg"
 )
 
