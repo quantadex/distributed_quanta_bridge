@@ -132,6 +132,15 @@ func (server *Server) addressHandler(w http.ResponseWriter, r *http.Request) {
 			w.Write([]byte(err.Error()))
 			return
 		}
+
+		err = server.db.UpdateLastBlockNumber(addr.Address, uint64(headBlock))
+		if err != nil {
+			server.logger.Errorf("Could not update last block number for %s", addr.Address)
+			w.WriteHeader(http.StatusInternalServerError)
+			w.Write([]byte(err.Error()))
+			return
+		}
+
 		values, err = db.GetCrosschainByBlockchainAndUser(server.db, blockchain, quanta)
 		if err != nil {
 			server.logger.Errorf("Could not retrieve crosschain address for %s", quanta)
