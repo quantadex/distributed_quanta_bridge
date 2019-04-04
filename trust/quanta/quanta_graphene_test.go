@@ -58,6 +58,7 @@ func TestStressTest(t *testing.T) {
 
 }
 
+
 func TestDynamicGlobalProperties(t *testing.T) {
 	api := QuantaGraphene{}
 	api.Issuer = "crosschain2"
