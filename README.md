@@ -14,19 +14,38 @@ cd node && go build
 docker run --name bitcoind -v "$PWD/bitcoin-data:/data" nicolasdorier/docker-bitcoin:0.17.0 bitcoind -testnet -deprecatedrpc=signrawtransaction -txindex -deprecatedrpc=accounts
 ```
 
-## Configuring Lumen
+## Deploy Testnet
 
-lumen set config:network "custom;http://testnet-02.quantachain.io:8000;QUANTA Test Network ; September 2018"
+ssh -i ~/.ssh/testnet-oregon.pem  ec2-user@ec2-54-188-223-216.us-west-2.compute.amazonaws.com
+ssh -i ~/.ssh/testnet-oregon.pem  ec2-user@ec2-34-221-59-194.us-west-2.compute.amazonaws.com
+ssh -i ~/.ssh/testnet-oregon.pem  ec2-user@ec2-34-219-198-107.us-west-2.compute.amazonaws.com
 
-## Testnet
+ssh ec2-user@ec2-54-188-223-216.us-west-2.compute.amazonaws.com
+ssh ec2-user@ec2-34-221-59-194.us-west-2.compute.amazonaws.com
+ssh ec2-user@ec2-34-219-198-107.us-west-2.compute.amazonaws.com
 
-ISSUER:
-[QCISRUJ73RQBHB3C4LA6X537LPGSFZF3YUZ6MOPUOUJR5A63I5TLJML4](http://testnet-02.quantachain.io:8000/accounts/QCISRUJ73RQBHB3C4LA6X537LPGSFZF3YUZ6MOPUOUJR5A63I5TLJML4)
+IP Addresses  Public         Internal
+Crosschain1: 54.188.223.216 192.168.137.186
+Crosschain2: 34.221.59.194 192.168.174.110
+Crosschain3: 34.219.198.107 192.168.171.58
 
-SIGNERS:
-1. QAIS24MZVMNZFOGDFDXFSPIZTSNS46H7Y2JTUYXNYMDBK6ZEIBEX5JDN
-2. QBIS326UFEHDA36IZTLBSKBF245DJ37JBMF3FEC45AWVIRM36KDB2LFQ
-3. QCN2DWLVXNAZW6ALR6KXJWGQB4J2J5TBJVPYLQMIU2TDCXIOBID5WRU5
+## Stopping node
+docker-compose  stop crosschain1
+
+## Pull latest
+$(aws ecr get-login --no-include-email --region us-east-1)
+docker pull 691216021071.dkr.ecr.us-east-1.amazonaws.com/quanta-bridge:latest
+
+## Restart all dockers
+docker-compose  up --force-recreate --build -d crosschain_eth
+docker-compose  up --force-recreate --build -d crosschain_btc
+docker-compose  up --force-recreate --build -d crosschain1
+
+## Get logs
+
+docker-compose  logs -f crosschain1
+docker-compose  logs -f crosschain_eth
+docker-compose  logs -f crosschain_btc
 
 
 ETH Forwarding Contract Deployed:
