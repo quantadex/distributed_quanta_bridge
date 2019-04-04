@@ -6,13 +6,58 @@ import (
 	"github.com/quantadex/distributed_quanta_bridge/trust/coin"
 	"github.com/quantadex/distributed_quanta_bridge/trust/key_manager"
 	"github.com/stretchr/testify/assert"
+	"github.com/jamiealquiza/tachymeter"
 	"math/rand"
 	"strings"
 	"testing"
 	"time"
+	"sync"
 )
 
 const url = "ws://testnet-01.quantachain.io:8090"
+
+func TestStressTest(t *testing.T) {
+	instances := []*QuantaGraphene{}
+	meter := tachymeter.New(&tachymeter.Config{Size: 100})
+	var waitgroup sync.WaitGroup
+
+	for i:=0 ; i < 1000; i++ {
+		waitgroup.Add(1)
+
+		go func(waitgroup *sync.WaitGroup) {
+			api := QuantaGraphene{}
+			api.NetworkUrl = "ws://testnet-01.quantachain.io:8096"
+			instances = append(instances, &api)
+
+			start := time.Now()
+			err := api.Attach()
+			assert.NoError(t, err)
+
+			if err != nil {
+				t.Errorf("Got bad connection #%d", i)
+			}
+
+			_, err = api.GetTopBlockID()
+			if err != nil {
+				t.Errorf("Got wrong result at connection #%d", i)
+			}
+
+			meter.AddTime(time.Since(start))
+			waitgroup.Done()
+		}(&waitgroup)
+
+		time.Sleep(time.Millisecond * 50)
+
+		if i % 10 == 0 {
+			fmt.Printf("Completed %d instances\n", i)
+		}
+	}
+
+	waitgroup.Wait()
+	fmt.Println(meter.Calc().String())
+
+}
+
 
 func TestDynamicGlobalProperties(t *testing.T) {
 	api := QuantaGraphene{}
