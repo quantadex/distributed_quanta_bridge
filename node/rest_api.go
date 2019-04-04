@@ -32,8 +32,8 @@ type Server struct {
 	MinBlock    int64
 }
 
-func NewApiServer(trustNode *TrustNode, coinNames []string, publicKey string, listenIp string, kv kv_store.KVStore, db *db.DB, url string, logger logger.Logger) *Server {
-	return &Server{trustNode: trustNode, coinNames: coinNames, publicKey: publicKey, listenIp: listenIp, url: url, logger: logger, kv: kv, db: db, httpService: &http.Server{Addr: url}, MinBlock: (24 * 60 * 60 * 5) / 14}
+func NewApiServer(trustNode *TrustNode, coinNames []string, publicKey string, listenIp string, kv kv_store.KVStore, db *db.DB, url string, logger logger.Logger, minBlock int64) *Server {
+	return &Server{trustNode: trustNode, coinNames: coinNames, publicKey: publicKey, listenIp: listenIp, url: url, logger: logger, kv: kv, db: db, httpService: &http.Server{Addr: url}, MinBlock: minBlock}
 }
 
 func (server *Server) Stop() {
@@ -116,9 +116,8 @@ func (server *Server) addressHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if len(values) == 0 && blockchain == coin.BLOCKCHAIN_ETH {
-		keyValue := db.GetValue(server.db, coin.BLOCKCHAIN_ETH)
-		headBlock, _ := strconv.ParseInt(keyValue.Value, 10, 64)
-		addr, err := server.db.GetAvailableShareAddress(headBlock, 1)
+		headBlock, _ := control.GetLastBlock(server.kv, coin.BLOCKCHAIN_ETH)
+		addr, err := server.db.GetAvailableShareAddress(headBlock, server.MinBlock)
 
 		if err != nil {
 			server.logger.Errorf("Could not generate crosschain address for %s", quanta)
@@ -135,10 +134,13 @@ func (server *Server) addressHandler(w http.ResponseWriter, r *http.Request) {
 		}
 		values, err = db.GetCrosschainByBlockchainAndUser(server.db, blockchain, quanta)
 		if err != nil {
+			server.logger.Errorf("Could not retrieve crosschain address for %s", quanta)
 			w.WriteHeader(http.StatusInternalServerError)
 			w.Write([]byte(err.Error()))
 			return
 		}
+
+		server.logger.Infof("Updated the crosschain address for account : %s to %s", quanta, addr.Address)
 	}
 
 	if len(values) == 0 && blockchain == coin.BLOCKCHAIN_BTC {

@@ -234,7 +234,7 @@ func initNode(config common.Config, targetCoin coin.Coin) (*TrustNode, bool) {
 		blockchain[i] = v
 		i = i + 1
 	}
-	node.restApi = NewApiServer(node, blockchain, pubKey, config.ListenIp, node.db, node.rDb, fmt.Sprintf(":%d", config.ExternalListenPort), node.log)
+	node.restApi = NewApiServer(node, blockchain, pubKey, config.ListenIp, node.db, node.rDb, fmt.Sprintf(":%d", config.ExternalListenPort), node.log, config.MinBlockReuse)
 
 	return node, true
 }

@@ -28,4 +28,5 @@ type Config struct {
 	MinNodes           int
 	EthFlush           bool
 	Erc20Mapping       map[string]string
+	MinBlockReuse      int64
 }
