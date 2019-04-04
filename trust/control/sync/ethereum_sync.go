@@ -42,6 +42,12 @@ func (c *EthereumSync) GetDepositsInBlock(blockID int64) ([]*coin.Deposit, error
 	}
 
 	for _, dep := range deposits {
+
+		err := c.rDb.UpdateLastBlockNumber(dep.SenderAddr, uint64(blockID))
+		if err != nil {
+			c.logger.Errorf("Could not update the last block number for %s", dep.SenderAddr)
+		}
+
 		// define custom token issuance
 		if dep.CoinName == "ETH" {
 			dep.CoinName = c.issuingSymbol["eth"]

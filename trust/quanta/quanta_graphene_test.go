@@ -12,6 +12,8 @@ import (
 	"time"
 )
 
+const url = "ws://testnet-01.quantachain.io:8090"
+
 func TestDynamicGlobalProperties(t *testing.T) {
 	api := QuantaGraphene{}
 	api.Issuer = "crosschain2"
