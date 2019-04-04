@@ -58,8 +58,8 @@ func NewAddressConsensus(logger logger.Logger, trustNode *TrustNode, db *db.DB,k
 		if err != nil {
 			return err
 		}
-
-		err = db.UpdateShareAddressDestination(msg.Address, msg.QuantaAddr)
+		headBlock, _ := control.GetLastBlock(kv, coin.BLOCKCHAIN_ETH)
+		err = db.UpdateShareAddressDestination(msg.Address, msg.QuantaAddr, uint64(headBlock))
 		return err
 	}
 

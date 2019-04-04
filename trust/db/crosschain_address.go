@@ -72,14 +72,15 @@ func (db *DB) GetAvailableShareAddress(head_block_number int64, min_block int64)
 	return address, err
 }
 
-func (db *DB) UpdateShareAddressDestination(address string, quantaAddr string) error {
+func (db *DB) UpdateShareAddressDestination(address string, quantaAddr string, headBlock uint64) error {
 	tx := &CrosschainAddress{Address: address}
 	tx.QuantaAddr = quantaAddr
-	_, err := db.Model(tx).Column("quanta_addr").Where("Address=?", address).Update()
+	tx.LastBlockNumber = headBlock
+	_, err := db.Model(tx).Column("quanta_addr","last_block_number").Where("Address=?", address).Update()
 	return err
 }
 
-func (db *DB) UpdateLastBlockNumber(address string, blockNumber uint64) error {
+func (db *DB) UpdateCrosschainAddrBlockNumber(address string, blockNumber uint64) error {
 	tx := &CrosschainAddress{Address: address}
 	tx.LastBlockNumber = blockNumber
 	_, err := db.Model(tx).Column("last_block_number").Where("Address=?", address).Update()
