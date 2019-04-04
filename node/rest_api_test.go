@@ -13,6 +13,7 @@ import (
 	"strconv"
 	"testing"
 	"time"
+	"github.com/quantadex/distributed_quanta_bridge/trust/control"
 )
 
 func TestAPI(t *testing.T) {
@@ -104,18 +105,24 @@ func TestAddress(t *testing.T) {
 	time.Sleep(time.Millisecond * 250)
 
 	address := &crypto.ForwardInput{
-		"0xba420ef5d725361d8fdc58cb1e4fa62eda9ec990",
+		"0xba420ef5d725361d8fdc58cb1e4fa62eda9ec999",
 		common.HexToAddress(test.GRAPHENE_TRUST.TrustContract),
 		"address-pool",
 		"0x01",
 		coin.BLOCKCHAIN_ETH,
 	}
 
+	control.SetLastBlock(nodes[0].db, coin.BLOCKCHAIN_ETH, 700000)
+	control.SetLastBlock(nodes[1].db, coin.BLOCKCHAIN_ETH, 700000)
+
 	// test crosschain
 	nodes[0].rDb.AddCrosschainAddress(address)
 	nodes[1].rDb.AddCrosschainAddress(address)
 	//nodes[0].rDb.UpdateLastBlockNumber("0xba420ef5d725361d8fdc58cb1e4fa62eda9ec990", 1)
 	//nodes[1].rDb.UpdateLastBlockNumber("0xba420ef5d725361d8fdc58cb1e4fa62eda9ec990", 1)
+
+	// wait for node to bootup
+	time.Sleep(time.Millisecond * 2000)
 
 	// test crosschain
 	res, err := http.Get("http://localhost:5200/api/address/eth/pooja")

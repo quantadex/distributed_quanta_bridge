@@ -30,10 +30,14 @@ type Server struct {
 	trustNode   *TrustNode
 	coinNames   []string
 	MinBlock    int64
+	addressChange *AddressConsensus
 }
 
 func NewApiServer(trustNode *TrustNode, coinNames []string, publicKey string, listenIp string, kv kv_store.KVStore, db *db.DB, url string, logger logger.Logger, minBlock int64) *Server {
-	return &Server{trustNode: trustNode, coinNames: coinNames, publicKey: publicKey, listenIp: listenIp, url: url, logger: logger, kv: kv, db: db, httpService: &http.Server{Addr: url}, MinBlock: minBlock}
+	return &Server{trustNode: trustNode, coinNames: coinNames, publicKey: publicKey,
+					listenIp: listenIp, url: url, logger: logger,
+					kv: kv, db: db, httpService: &http.Server{Addr: url},
+					MinBlock: minBlock, addressChange: NewAddressConsensus(logger, trustNode, db, kv, minBlock)}
 }
 
 func (server *Server) Stop() {
@@ -120,18 +124,20 @@ func (server *Server) addressHandler(w http.ResponseWriter, r *http.Request) {
 		addr, err := server.db.GetAvailableShareAddress(headBlock, server.MinBlock)
 
 		if err != nil {
-			server.logger.Errorf("Could not generate crosschain address for %s", quanta)
+			server.logger.Errorf("Could not find available crosschain address for %s error: %s", quanta, err.Error())
 			w.WriteHeader(http.StatusInternalServerError)
 			w.Write([]byte(err.Error()))
 			return
 		}
-		err = server.db.UpdateShareAddressDestination(addr.Address, quanta)
+
+		err = server.addressChange.GetConsensus(AddressChange{ quanta, addr.Address})
 		if err != nil {
-			server.logger.Errorf("Could not update crosschain address for %s", quanta)
+			server.logger.Errorf("Could not agree on address change:", err.Error())
 			w.WriteHeader(http.StatusInternalServerError)
 			w.Write([]byte(err.Error()))
 			return
 		}
+
 		values, err = db.GetCrosschainByBlockchainAndUser(server.db, blockchain, quanta)
 		if err != nil {
 			server.logger.Errorf("Could not retrieve crosschain address for %s", quanta)
@@ -156,9 +162,9 @@ func (server *Server) addressHandler(w http.ResponseWriter, r *http.Request) {
 			w.Write([]byte("Unable to fetch address for " + blockchain))
 			return
 		}
+		BroadcastIfNeeded()
 	}
 
-	BroadcastIfNeeded()
 	data, _ := json.Marshal(values)
 
 	w.Write(data)

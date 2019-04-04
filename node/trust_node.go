@@ -225,17 +225,6 @@ func initNode(config common.Config, targetCoin coin.Coin) (*TrustNode, bool) {
 		return nil, false
 	}
 
-	pubKey, _ := node.quantakM.GetPublicKey()
-
-	blockchain := make([]string, len(config.CoinMapping)+1)
-	blockchain[0] = control.QUANTA
-	i := 1
-	for _, v := range config.CoinMapping {
-		blockchain[i] = v
-		i = i + 1
-	}
-	node.restApi = NewApiServer(node, blockchain, pubKey, config.ListenIp, node.db, node.rDb, fmt.Sprintf(":%d", config.ExternalListenPort), node.log, config.MinBlockReuse)
-
 	return node, true
 }
 
@@ -272,8 +261,6 @@ func (n *TrustNode) registerNode(config common.Config) bool {
 		return false
 	}
 
-	go n.restApi.Start()
-
 	// Now we sit and wait to be added to quorum
 	for {
 		//n.log.Info("Wait to be added to quorum")
@@ -296,9 +283,23 @@ func (n *TrustNode) registerNode(config common.Config) bool {
 				return false
 			}
 			n.log.Info("Added to quorum")
-			return true
+			break
 		}
 	}
+
+	// we need quorum for address consensus
+	pubKey, _ := n.quantakM.GetPublicKey()
+	blockchain := make([]string, len(config.CoinMapping)+1)
+	blockchain[0] = control.QUANTA
+	i := 1
+	for _, v := range config.CoinMapping {
+		blockchain[i] = v
+		i = i + 1
+	}
+	n.restApi = NewApiServer(n, blockchain, pubKey, config.ListenIp, n.db, n.rDb, fmt.Sprintf(":%d", config.ExternalListenPort), n.log, config.MinBlockReuse)
+	go n.restApi.Start()
+
+	return true
 }
 
 /**
