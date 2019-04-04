@@ -44,6 +44,7 @@ func generateConfig(quanta *test.QuantaNodeSecrets, ethereum *test.EthereumTrust
 		BtcSigners:         []string{"2NENNHR9Y9fpKzjKYobbdbwap7xno7sbf2E", "2NEDF3RBHQuUHQmghWzFf6b6eeEnC7KjAtR"},
 		BtcNetwork:         "regnet",
 		Erc20Mapping:       map[string]string{strings.ToLower("0xDfE1002c2e1AE5E8F4f34bf481900dAae5351992"): "DAI"},
+		MinBlockReuse:      43200,
 	}
 }
 

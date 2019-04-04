@@ -102,8 +102,6 @@ func TestAddress(t *testing.T) {
 	r := StartRegistry(2, ":6000")
 	nodes := StartNodes(test.GRAPHENE_ISSUER, test.GRAPHENE_TRUST, test.ETHER_NETWORKS[test.ROPSTEN])
 	time.Sleep(time.Millisecond * 250)
-	db.UpdateValue(nodes[0].rDb, "ETH", "5000")
-	db.UpdateValue(nodes[1].rDb, "ETH", "5000")
 
 	address := &crypto.ForwardInput{
 		"0xba420ef5d725361d8fdc58cb1e4fa62eda9ec990",
@@ -116,8 +114,8 @@ func TestAddress(t *testing.T) {
 	// test crosschain
 	nodes[0].rDb.AddCrosschainAddress(address)
 	nodes[1].rDb.AddCrosschainAddress(address)
-	nodes[0].rDb.UpdateLastBlockNumber("0xba420ef5d725361d8fdc58cb1e4fa62eda9ec990", 50000)
-	nodes[1].rDb.UpdateLastBlockNumber("0xba420ef5d725361d8fdc58cb1e4fa62eda9ec990", 50000)
+	//nodes[0].rDb.UpdateLastBlockNumber("0xba420ef5d725361d8fdc58cb1e4fa62eda9ec990", 1)
+	//nodes[1].rDb.UpdateLastBlockNumber("0xba420ef5d725361d8fdc58cb1e4fa62eda9ec990", 1)
 
 	// test crosschain
 	res, err := http.Get("http://localhost:5200/api/address/eth/pooja")

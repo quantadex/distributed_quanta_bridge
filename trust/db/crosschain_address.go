@@ -50,7 +50,7 @@ func RemoveCrosschainAddress(db *DB, id string) error {
 
 func (db *DB) AddCrosschainAddress(input *crypto.ForwardInput) error {
 	var shared bool
-	lastBlock := uint64(0)
+	lastBlock := uint64(1)
 	if input.QuantaAddr == "address-pool" {
 		shared = true
 	}
@@ -67,7 +67,7 @@ func (db *DB) GetAvailableShareAddress(head_block_number int64, min_block int64)
 		Where("shared=true").
 		WrapWith("shared_addresses").
 		Table("shared_addresses").
-		Where("last_block_number - ? > ?", head_block_number, min_block).Order("last_block_number asc").Limit(1).Select()
+		Where("? - last_block_number > ?", head_block_number, min_block).Order("last_block_number asc").Limit(1).Select()
 
 	return address, err
 }
