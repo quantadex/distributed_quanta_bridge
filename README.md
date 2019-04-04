@@ -16,6 +16,7 @@ docker run --name bitcoind -v "$PWD/bitcoin-data:/data" nicolasdorier/docker-bit
 
 ## Deploy Testnet
 
+```
 ssh -i ~/.ssh/testnet-oregon.pem  ec2-user@ec2-54-188-223-216.us-west-2.compute.amazonaws.com
 ssh -i ~/.ssh/testnet-oregon.pem  ec2-user@ec2-34-221-59-194.us-west-2.compute.amazonaws.com
 ssh -i ~/.ssh/testnet-oregon.pem  ec2-user@ec2-34-219-198-107.us-west-2.compute.amazonaws.com
@@ -23,13 +24,17 @@ ssh -i ~/.ssh/testnet-oregon.pem  ec2-user@ec2-34-219-198-107.us-west-2.compute.
 ssh ec2-user@ec2-54-188-223-216.us-west-2.compute.amazonaws.com
 ssh ec2-user@ec2-34-221-59-194.us-west-2.compute.amazonaws.com
 ssh ec2-user@ec2-34-219-198-107.us-west-2.compute.amazonaws.com
+```
 
+```
 IP Addresses  Public         Internal
 Crosschain1: 54.188.223.216 192.168.137.186
 Crosschain2: 34.221.59.194 192.168.174.110
 Crosschain3: 34.219.198.107 192.168.171.58
-
+```
 ## Stopping node
+
+```
 docker-compose  stop crosschain1
 
 ## Pull latest
@@ -40,6 +45,7 @@ docker pull 691216021071.dkr.ecr.us-east-1.amazonaws.com/quanta-bridge:latest
 docker-compose  up --force-recreate --build -d crosschain_eth
 docker-compose  up --force-recreate --build -d crosschain_btc
 docker-compose  up --force-recreate --build -d crosschain1
+```
 
 ## Get logs
 
