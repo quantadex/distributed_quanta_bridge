@@ -20,6 +20,10 @@ ssh -i ~/.ssh/testnet-oregon.pem  ec2-user@ec2-54-188-223-216.us-west-2.compute.
 ssh -i ~/.ssh/testnet-oregon.pem  ec2-user@ec2-34-221-59-194.us-west-2.compute.amazonaws.com
 ssh -i ~/.ssh/testnet-oregon.pem  ec2-user@ec2-34-219-198-107.us-west-2.compute.amazonaws.com
 
+ssh ec2-user@ec2-54-188-223-216.us-west-2.compute.amazonaws.com
+ssh ec2-user@ec2-34-221-59-194.us-west-2.compute.amazonaws.com
+ssh ec2-user@ec2-34-219-198-107.us-west-2.compute.amazonaws.com
+
 IP Addresses  Public         Internal
 Crosschain1: 54.188.223.216 192.168.137.186
 Crosschain2: 34.221.59.194 192.168.174.110
