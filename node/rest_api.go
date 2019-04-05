@@ -142,7 +142,7 @@ func (server *Server) addressHandler(w http.ResponseWriter, r *http.Request) {
 		if len(addr) == 0 {
 			server.logger.Errorf("Could not find available crosschain address for %s", quanta)
 			w.WriteHeader(http.StatusInternalServerError)
-			w.Write([]byte(err.Error()))
+			w.Write([]byte(fmt.Sprintf("Could not find available crosschain address for %s", quanta)))
 			return
 		}
 
