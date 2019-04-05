@@ -157,6 +157,10 @@ func TestAddress(t *testing.T) {
 	bodyBytes, _ = ioutil.ReadAll(res.Body)
 	println("data", res.StatusCode, string(bodyBytes))
 
+	res, err = http.Post("http://localhost:5200/api/address/eth/charlie","", nil)
+	assert.NoError(t, err)
+	bodyBytes, _ = ioutil.ReadAll(res.Body)
+	println("data 3", res.StatusCode, string(bodyBytes))
 
 	StopNodes(nodes, []int{0, 1})
 	StopRegistry(r)
