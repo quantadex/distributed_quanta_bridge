@@ -139,6 +139,13 @@ func (server *Server) addressHandler(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
+		if len(addr) == 0 {
+			server.logger.Errorf("Could not find available crosschain address for %s", quanta)
+			w.WriteHeader(http.StatusInternalServerError)
+			w.Write([]byte(err.Error()))
+			return
+		}
+
 		err = server.addressChange.GetConsensus(AddressChange{ quanta, addr[0].Address})
 		if err != nil {
 			server.logger.Errorf("Could not agree on address change:", err.Error())
