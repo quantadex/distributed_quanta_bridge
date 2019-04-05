@@ -117,7 +117,24 @@ func TestAddress(t *testing.T) {
 
 	// test crosschain
 	nodes[0].rDb.AddCrosschainAddress(address)
+
+	// try to mess with the order of adddresses
+	nodes[1].rDb.AddCrosschainAddress(&crypto.ForwardInput{
+		"0xba420ef5d725361d8fdc58cb1e4fa62eda9ec888",
+		common.HexToAddress(test.GRAPHENE_TRUST.TrustContract),
+		"address-pool",
+		"0x01",
+		coin.BLOCKCHAIN_ETH,
+	})
 	nodes[1].rDb.AddCrosschainAddress(address)
+	nodes[1].rDb.AddCrosschainAddress(&crypto.ForwardInput{
+		"0xba420ef5d725361d8fdc58cb1e4fa62eda9ec991",
+		common.HexToAddress(test.GRAPHENE_TRUST.TrustContract),
+		"address-pool",
+		"0x01",
+		coin.BLOCKCHAIN_ETH,
+	})
+
 	//nodes[0].rDb.UpdateLastBlockNumber("0xba420ef5d725361d8fdc58cb1e4fa62eda9ec990", 1)
 	//nodes[1].rDb.UpdateLastBlockNumber("0xba420ef5d725361d8fdc58cb1e4fa62eda9ec990", 1)
 

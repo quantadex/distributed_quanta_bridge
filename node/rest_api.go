@@ -130,7 +130,7 @@ func (server *Server) addressHandler(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		err = server.addressChange.GetConsensus(AddressChange{ quanta, addr.Address})
+		err = server.addressChange.GetConsensus(AddressChange{ quanta, addr[0].Address})
 		if err != nil {
 			server.logger.Errorf("Could not agree on address change:", err.Error())
 			w.WriteHeader(http.StatusInternalServerError)
@@ -146,7 +146,7 @@ func (server *Server) addressHandler(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		server.logger.Infof("Updated the crosschain address for account : %s to %s", quanta, addr.Address)
+		server.logger.Infof("Updated the crosschain address for account : %s to %s", quanta, addr[0].Address)
 	}
 
 	if len(values) == 0 && blockchain == coin.BLOCKCHAIN_BTC {

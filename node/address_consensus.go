@@ -41,14 +41,16 @@ func NewAddressConsensus(logger logger.Logger, trustNode *TrustNode, db *db.DB,k
 		}
 
 		headBlock, _ := control.GetLastBlock(kv, coin.BLOCKCHAIN_ETH)
-		addr, err := db.GetAvailableShareAddress(headBlock, minBlock)
+		addrAvailable, err := db.GetAvailableShareAddress(headBlock, minBlock)
 		if err != nil {
 			return err
 		}
-		if addr.Address != msg.Address {
-			return errors.New(fmt.Sprintf("Address available not match - %s msg=%s",addr.Address,msg.Address))
+		for _, a := range addrAvailable {
+			if a.Address == msg.Address {
+				return nil
+			}
 		}
-		return nil
+		return errors.New(fmt.Sprintf("Address available not match - %v msg=%s",addrAvailable,msg.Address))
 	}
 
 	res.cosi.Persist = func(encoded string) error {

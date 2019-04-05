@@ -60,14 +60,14 @@ func (db *DB) AddCrosschainAddress(input *crypto.ForwardInput) error {
 	return err
 }
 
-func (db *DB) GetAvailableShareAddress(head_block_number int64, min_block int64) (CrosschainAddress, error) {
-	var address CrosschainAddress
+func (db *DB) GetAvailableShareAddress(head_block_number int64, min_block int64) ([]CrosschainAddress, error) {
+	var address []CrosschainAddress
 
 	err := db.Model(&address).
 		Where("shared=true").
 		WrapWith("shared_addresses").
 		Table("shared_addresses").
-		Where("? - last_block_number > ?", head_block_number, min_block).Order("last_block_number asc").Limit(1).Select()
+		Where("? - last_block_number > ?", head_block_number, min_block).Order("last_block_number asc","address asc").Limit(10).Select()
 
 	return address, err
 }
