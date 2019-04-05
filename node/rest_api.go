@@ -119,6 +119,15 @@ func (server *Server) addressHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	if r.Method == "GET" {
+		if values == nil {
+			values = []db.CrosschainAddress{}
+		}
+		data, _ := json.Marshal(values)
+		w.Write(data)
+		return
+	}
+
 	if len(values) == 0 && blockchain == coin.BLOCKCHAIN_ETH {
 		headBlock, _ := control.GetLastBlock(server.kv, coin.BLOCKCHAIN_ETH)
 		addr, err := server.db.GetAvailableShareAddress(headBlock, server.MinBlock)
@@ -166,7 +175,6 @@ func (server *Server) addressHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	data, _ := json.Marshal(values)
-
 	w.Write(data)
 }
 
