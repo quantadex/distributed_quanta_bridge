@@ -14,6 +14,7 @@ import (
 	"testing"
 	"time"
 	"github.com/quantadex/distributed_quanta_bridge/trust/control"
+	"strings"
 )
 
 func TestAPI(t *testing.T) {
@@ -161,7 +162,7 @@ func TestAddress(t *testing.T) {
 	assert.NoError(t, err)
 	bodyBytes, _ = ioutil.ReadAll(res.Body)
 	println("data 3", res.StatusCode, string(bodyBytes))
-
+	assert.True(t, strings.Contains(string(bodyBytes), "Could not find available crosschain address"))
 	StopNodes(nodes, []int{0, 1})
 	StopRegistry(r)
 
