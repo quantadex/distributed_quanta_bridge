@@ -87,6 +87,8 @@ type Coin interface {
 	 */
 	GetDepositsInBlock(blockID int64, trustAddress map[string]string) ([]*Deposit, error)
 
+	GetPendingTx(map[string]string) ([]*Deposit, error)
+
 	/**
 	 * GetForwardersInBlock
 	 *

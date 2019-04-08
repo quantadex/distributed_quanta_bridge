@@ -14,15 +14,22 @@ type DB struct {
 	DebugSQL bool
 }
 
+type eventHookTest struct {
+	beforeQueryMethod func(*pg.QueryEvent)
+	afterQueryMethod  func(*pg.QueryEvent)
+}
+
+func (e eventHookTest) BeforeQuery(event *pg.QueryEvent) {
+	e.beforeQueryMethod(event)
+}
+
+func (e eventHookTest) AfterQuery(event *pg.QueryEvent) {
+	e.afterQueryMethod(event)
+}
+
 func (db *DB) Debug() {
 	db.DebugSQL = true
 	db.Drop = true
-
-	//if db.DebugSQL {
-	//	db.db.OnQueryProcessed(func(event *pg.QueryProcessedEvent) {
-	//		log.Println(event.FormattedQuery())
-	//	})
-	//}
 }
 
 func (db *DB) Connect(addr, user, pass, database string) {
@@ -56,6 +63,16 @@ func (db *DB) Connect(addr, user, pass, database string) {
 		Password: pass,
 		Database: database,
 	})
+
+	// uncomment to see raw SQL
+	//hookImpl := struct{ eventHookTest }{}
+	//hookImpl.beforeQueryMethod = func(event *pg.QueryEvent) {
+	//	msg, _ := event.FormattedQuery()
+	//	log.Println(msg)
+	//}
+	//hookImpl.afterQueryMethod = hookImpl.beforeQueryMethod
+	//
+	//db.db.AddQueryHook(hookImpl)
 }
 
 func (db *DB) CreateTable(model interface{}) error {

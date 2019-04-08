@@ -4,35 +4,40 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"github.com/go-errors/errors"
 	"github.com/gorilla/mux"
+	"github.com/quantadex/distributed_quanta_bridge/common/crypto"
 	"github.com/quantadex/distributed_quanta_bridge/common/kv_store"
 	"github.com/quantadex/distributed_quanta_bridge/common/logger"
+	"github.com/quantadex/distributed_quanta_bridge/trust/coin"
 	"github.com/quantadex/distributed_quanta_bridge/trust/control"
 	"github.com/quantadex/distributed_quanta_bridge/trust/db"
+	"io/ioutil"
 	"net/http"
 	"strconv"
 	"strings"
-	"github.com/quantadex/distributed_quanta_bridge/common/crypto"
-	"github.com/quantadex/distributed_quanta_bridge/trust/coin"
-	"github.com/go-errors/errors"
-	"io/ioutil"
 )
 
 type Server struct {
 	url         string
 	publicKey   string
-	listenIp	string
+	listenIp    string
 	handlers    *mux.Router
 	logger      logger.Logger
 	httpService *http.Server
 	kv          kv_store.KVStore
 	db          *db.DB
 	trustNode   *TrustNode
-	coinNames    []string
+	coinNames   []string
+	MinBlock    int64
+	addressChange *AddressConsensus
 }
 
-func NewApiServer(trustNode *TrustNode, coinNames []string, publicKey string, listenIp string, kv kv_store.KVStore, db *db.DB, url string, logger logger.Logger) *Server {
-	return &Server{trustNode: trustNode, coinNames: coinNames, publicKey: publicKey, listenIp: listenIp, url: url, logger: logger, kv: kv, db: db, httpService: &http.Server{Addr: url}}
+func NewApiServer(trustNode *TrustNode, coinNames []string, publicKey string, listenIp string, kv kv_store.KVStore, db *db.DB, url string, logger logger.Logger, minBlock int64) *Server {
+	return &Server{trustNode: trustNode, coinNames: coinNames, publicKey: publicKey,
+					listenIp: listenIp, url: url, logger: logger,
+					kv: kv, db: db, httpService: &http.Server{Addr: url},
+					MinBlock: minBlock, addressChange: NewAddressConsensus(logger, trustNode, db, kv, minBlock)}
 }
 
 func (server *Server) Stop() {
@@ -72,33 +77,7 @@ func (server *Server) addressHandler(w http.ResponseWriter, r *http.Request) {
 	blockchain := strings.ToUpper(vars["blockchain"])
 	quanta := vars["quanta"]
 
-	if !(blockchain == coin.BLOCKCHAIN_BTC || blockchain == coin.BLOCKCHAIN_ETH) {
-		w.WriteHeader(http.StatusBadRequest)
-		w.Write([]byte("not a supported blockchain"))
-		return
-	}
-
-	values, err := db.GetCrosschainByBlockchainAndUser(server.db, blockchain, quanta)
-	if err != nil {
-		w.WriteHeader(http.StatusInternalServerError)
-		w.Write([]byte(err.Error()))
-		return
-	}
-
-	if len(values) == 0 && blockchain == coin.BLOCKCHAIN_BTC{
-		_, err := server.generateNewAddress(blockchain, quanta)
-		if err != nil {
-			w.WriteHeader(http.StatusInternalServerError)
-			w.Write([]byte("Unable to generate address for " + blockchain + "," + err.Error()))
-			return
-		}
-		values, err = db.GetCrosschainByBlockchainAndUser(server.db, blockchain, quanta)
-		if err != nil {
-			w.WriteHeader(http.StatusInternalServerError)
-			w.Write([]byte("Unable to fetch address for " + blockchain))
-			return
-		}
-
+	BroadcastIfNeeded := func() {
 		// if client, broadcast it
 		if r.Header.Get("IS_PEER") != "true" {
 			for k, _ := range server.trustNode.man.Nodes {
@@ -121,15 +100,88 @@ func (server *Server) addressHandler(w http.ResponseWriter, r *http.Request) {
 					//if res.StatusCode != 200
 					{
 						bodyBytes, _ := ioutil.ReadAll(res.Body)
-						server.logger.Errorf("Broadcast got code %s %s",res.Status, string(bodyBytes))
+						server.logger.Errorf("Broadcast got code %s %s", res.Status, string(bodyBytes))
 					}
 				}
 			}
 		}
 	}
+	if !(blockchain == coin.BLOCKCHAIN_BTC || blockchain == coin.BLOCKCHAIN_ETH) {
+		w.WriteHeader(http.StatusBadRequest)
+		w.Write([]byte("not a supported blockchain"))
+		return
+	}
+
+	values, err := db.GetCrosschainByBlockchainAndUser(server.db, blockchain, quanta)
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		w.Write([]byte(err.Error()))
+		return
+	}
+
+	if r.Method == "GET" {
+		if values == nil {
+			values = []db.CrosschainAddress{}
+		}
+		data, _ := json.Marshal(values)
+		w.Write(data)
+		return
+	}
+
+	if len(values) == 0 && blockchain == coin.BLOCKCHAIN_ETH {
+		headBlock, _ := control.GetLastBlock(server.kv, coin.BLOCKCHAIN_ETH)
+		addr, err := server.db.GetAvailableShareAddress(headBlock, server.MinBlock)
+
+		if err != nil {
+			server.logger.Errorf("Could not find available crosschain address for %s error: %s", quanta, err.Error())
+			w.WriteHeader(http.StatusInternalServerError)
+			w.Write([]byte(err.Error()))
+			return
+		}
+
+		if len(addr) == 0 {
+			server.logger.Errorf("Could not find available crosschain address for %s", quanta)
+			w.WriteHeader(http.StatusInternalServerError)
+			w.Write([]byte(err.Error()))
+			return
+		}
+
+		err = server.addressChange.GetConsensus(AddressChange{ quanta, addr[0].Address})
+		if err != nil {
+			server.logger.Errorf("Could not agree on address change:", err.Error())
+			w.WriteHeader(http.StatusInternalServerError)
+			w.Write([]byte(err.Error()))
+			return
+		}
+
+		values, err = db.GetCrosschainByBlockchainAndUser(server.db, blockchain, quanta)
+		if err != nil {
+			server.logger.Errorf("Could not retrieve crosschain address for %s", quanta)
+			w.WriteHeader(http.StatusInternalServerError)
+			w.Write([]byte(err.Error()))
+			return
+		}
+
+		server.logger.Infof("Updated the crosschain address for account : %s to %s", quanta, addr[0].Address)
+	}
+
+	if len(values) == 0 && blockchain == coin.BLOCKCHAIN_BTC {
+		_, err := server.generateNewAddress(blockchain, quanta)
+		if err != nil {
+			w.WriteHeader(http.StatusInternalServerError)
+			w.Write([]byte("Unable to generate address for " + blockchain + "," + err.Error()))
+			return
+		}
+		values, err = db.GetCrosschainByBlockchainAndUser(server.db, blockchain, quanta)
+		if err != nil {
+			w.WriteHeader(http.StatusInternalServerError)
+			w.Write([]byte("Unable to fetch address for " + blockchain))
+			return
+		}
+		BroadcastIfNeeded()
+	}
 
 	data, _ := json.Marshal(values)
-
 	w.Write(data)
 }
 
@@ -141,20 +193,21 @@ func (server *Server) historyHandler(w http.ResponseWriter, r *http.Request) {
 	if offsetStr == "" {
 		offset = 0
 	} else {
-		offset,_ = strconv.Atoi(offsetStr)
+		offset, _ = strconv.Atoi(offsetStr)
 	}
 	if limitStr == "" {
 		limit = 0
 	} else {
-		limit,_ = strconv.Atoi(limitStr)
+		limit, _ = strconv.Atoi(limitStr)
 	}
 
-
+	// combine the pending tx in here
 	var txs []db.Transaction
 	var err error
 	if user == "" {
 		txs, err = db.QueryAllTX(server.db, offset, limit)
 	} else {
+		// filter pending if we are including w/ user.
 		txs, err = db.QueryAllTXByUser(server.db, user, offset, limit)
 	}
 
@@ -168,7 +221,7 @@ func (server *Server) historyHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func (server *Server) statusHandler(w http.ResponseWriter, r *http.Request) {
-	status := map[string]string {}
+	status := map[string]string{}
 	status["VERSION"] = Version
 	status["BUILDTIME"] = BuildStamp
 	status["GITHASH"] = GitHash
@@ -178,7 +231,7 @@ func (server *Server) statusHandler(w http.ResponseWriter, r *http.Request) {
 	for _, coinName := range server.coinNames {
 		lastProcessed, valid := control.GetLastBlock(server.kv, coinName)
 		if valid {
-			status["CURRENTBLOCK:" + coinName] = fmt.Sprintf("%d",lastProcessed)
+			status["CURRENTBLOCK:"+coinName] = fmt.Sprintf("%d", lastProcessed)
 		}
 	}
 

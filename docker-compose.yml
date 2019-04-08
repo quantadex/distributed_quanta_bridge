@@ -1,0 +1,62 @@
+version: '3'
+services:
+  crosschain1:
+    image: 691216021071.dkr.ecr.us-east-1.amazonaws.com/quanta-bridge:latest
+    ulimits:
+      nproc: 65535
+      nofile:
+        soft: 20000
+        hard: 40000
+    ports:
+    - "5000:5000"
+    - "5001:5001"
+    - "5100:5100"
+    volumes:
+    - "/home/ec2-user/crosschain:/data"
+    - "/home/ec2-user/secrets/crosschain.yml:/data/crosschain.yml"
+    - "/home/ec2-user/secrets/bitcoin.conf:/root/.bitcoin/bitcoin.conf"
+    command: /usr/bin/quanta-bridge -config /data/crosschain.yml -registry
+
+  crosschain_btc:
+    image: 691216021071.dkr.ecr.us-east-1.amazonaws.com/quanta-bridge:latest
+    ulimits:
+      nproc: 65535
+      nofile:
+        soft: 20000
+        hard: 40000
+    volumes:
+    - "/home/ec2-user/crosschain:/data"
+    - "/home/ec2-user/secrets/crosschain.yml:/data/crosschain.yml"
+    command: /usr/bin/bitcoin_sync -config /data/crosschain.yml
+
+  crosschain_eth:
+    image: 691216021071.dkr.ecr.us-east-1.amazonaws.com/quanta-bridge:latest
+    ulimits:
+      nproc: 65535
+      nofile:
+        soft: 20000
+        hard: 40000
+    volumes:
+    - "/home/ec2-user/crosschain:/data"
+    - "/home/ec2-user/secrets/crosschain.yml:/data/crosschain.yml"
+    command: /usr/bin/ethereum_sync -config /data/crosschain.yml
+  db:
+    image: postgres:9.6-alpine
+    restart: always
+    environment:
+      POSTGRES_PASSWORD: Welcome123
+    volumes:
+    - "/home/ec2-user/db:/var/lib/postgresql/data"
+
+  bitcoind:
+    image: nicolasdorier/docker-bitcoin:0.17.0
+    ports:
+    - "18332:18332"
+    environment:
+      BITCOIN_EXTRA_ARGS: "rpcpassword=123\nrpcport=18332\nrpcuser=user"
+    volumes:
+    - "/home/ec2-user/bitcoin-data:/data"
+    - "/Users/quoc/Projects/cryptodex/docker-stellar/secrets/crosschain1.yml:/data/crosschain.yml"
+    command: bitcoind -testnet -deprecatedrpc=signrawtransaction -txindex -deprecatedrpc=accounts
+
+

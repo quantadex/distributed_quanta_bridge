@@ -101,6 +101,10 @@ func (c *EthereumCoin) FlushCoin(forwarderAddr string, tokenAddr string) error {
 	return err
 }
 
+func (c *EthereumCoin) GetPendingTx(map[string]string) ([]*Deposit, error) {
+	return nil, nil
+}
+
 func (c *EthereumCoin) GetForwardersInBlock(blockID int64) ([]*crypto.ForwardInput, error) {
 	forwarders, err := c.client.GetForwardContract(blockID)
 	if err != nil {

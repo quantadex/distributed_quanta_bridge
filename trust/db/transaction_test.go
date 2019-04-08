@@ -36,6 +36,13 @@ func TestTransactionQuery(t *testing.T) {
 		t.Error(err)
 	}
 
+	// do it again
+	err = ConfirmWithdrawal(rDb, w)
+
+	if err != nil {
+		t.Error(err)
+	}
+
 	err = SignWithdrawal(rDb, w)
 	if err != nil {
 		t.Error(err)
@@ -63,4 +70,31 @@ func TestTransactionQuery(t *testing.T) {
 
 	println(txs)
 
+
+	d := &coin.Deposit{
+		Tx:                 "123_pending",
+		CoinName:           "ETH",
+		Amount:             0,
+	}
+	err = AddPendingDeposits(rDb, []*coin.Deposit{d})
+	if err != nil {
+		t.Error(err)
+	}
+	err = ConfirmDeposit(rDb, d, false)
+	if err != nil {
+		t.Error(err)
+	}
+
+	ConfirmDeposit(rDb, d, false)
+	ConfirmDeposit(rDb, d, false)
+
+	tx, err := GetTransaction(rDb, "123_pending")
+	if err != nil {
+		t.Error(err)
+	}
+	fmt.Printf("%v", tx)
+
+	if tx.SubmitState != SUBMIT_CONSENSUS {
+		t.Error("error!, expect to be submit_consensus: " + tx.SubmitState)
+	}
 }

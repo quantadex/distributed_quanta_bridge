@@ -18,6 +18,7 @@ type EthereumSync struct {
 func (c *EthereumSync) Setup() {
 	c.fnDepositInBlock = c.GetDepositsInBlock
 	c.fnPostProcessBlock = c.PostProcessBlock
+	c.fnGetWatchAddress = c.GetWatchAddress
 }
 
 /**
@@ -41,6 +42,12 @@ func (c *EthereumSync) GetDepositsInBlock(blockID int64) ([]*coin.Deposit, error
 	}
 
 	for _, dep := range deposits {
+
+		err := c.rDb.UpdateCrosschainAddrBlockNumber(dep.SenderAddr, uint64(blockID))
+		if err != nil {
+			c.logger.Errorf("Could not update the last block number for %s", dep.SenderAddr)
+		}
+
 		// define custom token issuance
 		if dep.CoinName == "ETH" {
 			dep.CoinName = c.issuingSymbol["eth"]
@@ -99,5 +106,9 @@ func (c *EthereumSync) PostProcessBlock(blockID int64) error {
 				addr.Trust.Hex(), blockID, c.trustAddress.Hex()))
 		}
 	}
+	return nil
+}
+
+func (c *EthereumSync) GetWatchAddress() map[string]string {
 	return nil
 }

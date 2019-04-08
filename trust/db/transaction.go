@@ -35,6 +35,7 @@ const ENCODE_FAILURE = "encode_fatal"
 const DUPLICATE_ASSET = "duplicate_asset"
 const BAD_ADDRESS = "bad_address"
 const SUBMIT_FAILURE = "submit_failure"
+const PENDING = "pending"
 
 type Transaction struct {
 	Type                string `sql:"unique:type_tx"`
@@ -82,11 +83,32 @@ func ConfirmDeposit(db *DB, dep *coin.Deposit, isBounced bool) error {
 		Signed:      false,
 		SubmitState: SUBMIT_CONSENSUS,
 	}
-	_, err := db.Model(tx).
-		Where("Type = ? AND Tx = ?", tx.Type, tx.Tx).
-		OnConflict("DO NOTHING").Where("Tx=?", dep.Tx).SelectOrInsert()
+	_, err := db.Model(tx).OnConflict("(Type,Tx) DO UPDATE").Set("Submit_State = EXCLUDED.Submit_State").Insert()
 
 	return err
+}
+
+func AddPendingDeposits(db *DB, deposits []*coin.Deposit) error {
+	for _, dep := range deposits {
+		tx := &Transaction{
+			Type:        DEPOSIT,
+			Tx:          dep.Tx,
+			Coin:        dep.CoinName,
+			Created:     time.Now(),
+			Amount:      dep.Amount,
+			BlockId:     dep.BlockID,
+			From:        dep.SenderAddr,
+			To:          dep.QuantaAddr,
+			IsBounced:   false,
+			Signed:      false,
+			SubmitState: PENDING,
+		}
+		_, err := db.Model(tx).
+			Where("Type = ? AND Tx = ?", tx.Type, tx.Tx).
+			OnConflict("DO NOTHING").SelectOrInsert()
+		return err
+	}
+	return nil
 }
 
 func SignDeposit(db *DB, dep *coin.Deposit) error {
@@ -158,7 +180,10 @@ func ConfirmWithdrawal(db *DB, dep *coin.Withdrawal) error {
 		SubmitState: SUBMIT_CONSENSUS,
 	}
 
-	return db.Insert(tx)
+	_, err := db.Model(tx).
+		OnConflict("(Type,Tx) DO UPDATE").Set("Submit_State = EXCLUDED.Submit_State").Insert()
+
+	return err
 }
 
 func SignWithdrawal(db *DB, dep *coin.Withdrawal) error {
