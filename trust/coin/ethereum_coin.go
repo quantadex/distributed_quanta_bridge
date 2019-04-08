@@ -144,8 +144,9 @@ func (c *EthereumCoin) EncodeRefund(w Withdrawal) (string, error) {
 		if err != nil {
 			return "", err
 		}
-		erc20Amount := PowerDelta(*new(big.Int).SetUint64(w.Amount), 5, int(dec))
-		amount = new(big.Int).SetInt64(erc20Amount)
+		erc20Amount := GrapheneToERC20(*new(big.Int).SetUint64(w.Amount), 5, int(dec))
+		//amount = new(big.Int).SetInt64(erc20Amount)
+		amount = erc20Amount
 	} else {
 		smartAddress = ""
 		amount = GrapheneToWei(w.Amount)
@@ -168,7 +169,7 @@ func (c *EthereumCoin) EncodeRefund(w Withdrawal) (string, error) {
 }
 
 func (c *EthereumCoin) DecodeRefund(encoded string) (*Withdrawal, error) {
-	//decoded := common2.Hex2Bytes(encoded)
+	//decoded := common2.Hex2Bytes(encoded)big
 	msg := &EncodedMsg{}
 	err := json.Unmarshal([]byte(encoded), msg)
 	if err != nil {

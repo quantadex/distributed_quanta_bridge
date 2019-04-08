@@ -40,8 +40,12 @@ func TestErc20AmountToStellar(t *testing.T) {
 }
 
 func TestPowerdelta(t *testing.T) {
-	result := PowerDelta(*big.NewInt(1000), 3, 2)
-	assert.Equal(t, result, int64(100))
-	result = PowerDelta(*big.NewInt(1000), 3, 5)
-	assert.Equal(t, result, int64(100000))
+	bigInt := big.NewInt(1000000000000000000)
+	mul := big.NewInt(10000)
+	bigInt.Mul(bigInt, mul)
+	result := PowerDelta(*bigInt, 18, 5)
+	assert.Equal(t, result, big.NewInt(1000000000))
+	result = PowerDelta(*big.NewInt(1000000000000000000), 18, 5)
+	assert.Equal(t, result, big.NewInt(100000))
+
 }

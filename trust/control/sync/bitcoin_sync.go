@@ -22,7 +22,8 @@ func (c *BitcoinSync) TransformCoin(dep *coin.Deposit) *coin.Deposit {
 	if dep.CoinName == "BTC" {
 		dep.CoinName = c.issuingSymbol["btc"]
 	}
-	dep.Amount = coin.PowerDelta(*big.NewInt(dep.Amount), 8, int(c.coinInfo[c.issuingSymbol["btc"]].Precision))
+	amount := coin.PowerDelta(*big.NewInt(dep.Amount), 8, int(c.coinInfo[c.issuingSymbol["btc"]].Precision))
+	dep.Amount = amount.Int64()
 	return dep
 }
 

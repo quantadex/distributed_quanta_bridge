@@ -290,7 +290,7 @@ func (l *Listener) FilterTransferEvent(blockNumber int64, toAddress map[string]s
 					BlockID:    int64(vLog.BlockNumber),
 					CoinName:   symbol + vLog.Address.Hex(),
 					SenderAddr: transferEvent.To.Hex(),
-					Amount:     PowerDelta(*transferEvent.Tokens, int(dec), 5),
+					Amount:     PowerDelta(*transferEvent.Tokens, int(dec), 5).Int64(),
 					Tx:         vLog.TxHash.Hex(),
 				})
 			}
@@ -398,9 +398,10 @@ func (l *Listener) SendWithdrawal(conn bind.ContractBackend,
 		if err != nil {
 			return "", err
 		}
-		erc20Amount := PowerDelta(*new(big.Int).SetUint64(w.Amount), 5, int(dec))
+		erc20Amount := GrapheneToERC20(*new(big.Int).SetUint64(w.Amount), 5, int(dec))
 
-		amount = new(big.Int).SetInt64(erc20Amount)
+		//amount = new(big.Int).SetInt64(erc20Amount)
+		amount = erc20Amount
 	} else {
 		amount = GrapheneToWei(w.Amount)
 	}

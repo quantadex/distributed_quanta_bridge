@@ -53,7 +53,8 @@ func (c *EthereumSync) GetDepositsInBlock(blockID int64) ([]*coin.Deposit, error
 			dep.CoinName = c.issuingSymbol["eth"]
 
 			// ethereum converts to precision 5, now we need to convert to precision of the asset
-			dep.Amount = coin.PowerDelta(*big.NewInt(dep.Amount), 5, int(c.coinInfo[c.issuingSymbol["eth"]].Precision))
+			amount := coin.PowerDelta(*big.NewInt(dep.Amount), 5, int(c.coinInfo[c.issuingSymbol["eth"]].Precision))
+			dep.Amount = amount.Int64()
 		} else {
 			dep.CoinName = strings.ToUpper(dep.CoinName)
 			// we assume precision is always 5
@@ -78,7 +79,7 @@ func (c *EthereumSync) GetDepositsInBlock(blockID int64) ([]*coin.Deposit, error
 					precision = int(asset.Precision)
 				}
 
-				dep.Amount = coin.PowerDelta(*big.NewInt(dep.Amount), 5, precision)
+				dep.Amount = coin.PowerDelta(*big.NewInt(dep.Amount), 5, precision).Int64()
 			}
 		}
 
