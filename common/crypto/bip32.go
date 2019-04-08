@@ -1,11 +1,11 @@
 package crypto
 
 import (
-	"github.com/tyler-smith/go-bip32"
-	"github.com/ethereum/go-ethereum/crypto"
-	"github.com/ethereum/go-ethereum/common"
-	"github.com/haltingstate/secp256k1-go"
 	"crypto/ecdsa"
+	"github.com/ethereum/go-ethereum/common"
+	"github.com/ethereum/go-ethereum/crypto"
+	"github.com/haltingstate/secp256k1-go"
+	"github.com/tyler-smith/go-bip32"
 )
 
 func GenerateBip32Key(bip32Private string, index uint32) (common.Address, *ecdsa.PrivateKey, error) {

@@ -111,7 +111,7 @@ func GetLitecoinAddressFromGraphene(pubKey *btcec.PublicKey) (*ltcutil.AddressPu
 	if err != nil {
 		return nil, err
 	}
-	address.SetFormat(ltcutil.PKFUncompressed)
+	//address.SetFormat(ltcutil.PKFUncompressed)
 	return address, err
 }
 

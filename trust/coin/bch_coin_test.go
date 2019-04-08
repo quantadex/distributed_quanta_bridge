@@ -35,7 +35,29 @@ func SendBCH(address string, amount bchutil.Amount) (string, error) {
 		amountStr,
 	}
 
-	cmd := exec.Command("bitcoin-cli", args...)
+	cmd := exec.Command("../../blockchain/bch-abc/bitcoin-abc-0.19.1/bin/bitcoin-cli", args...)
+	var out bytes.Buffer
+	var stderr bytes.Buffer
+	cmd.Stdout = &out
+	cmd.Stderr = &stderr
+
+	err := cmd.Run()
+
+	if err != nil {
+		println("err", err.Error(), stderr.String())
+	}
+
+	return out.String(), err
+}
+
+func GenerateBCHBlock() (string, error) {
+	args := []string{
+		//"-datadir=../../blockchain/bitcoin/data",
+		"generate",
+		"1",
+	}
+
+	cmd := exec.Command("../../blockchain/bch-abc/bitcoin-abc-0.19.1/bin/bitcoin-cli", args...)
 	var out bytes.Buffer
 	var stderr bytes.Buffer
 	cmd.Stdout = &out
@@ -74,7 +96,7 @@ func TestBitcoinEncodeRefundBCH(t *testing.T) {
 	println(res, err)
 	res, err = SendBCH(addr2, amount)
 	println(res, err)
-	_, err = GenerateBlock()
+	_, err = GenerateBCHBlock()
 
 	//btec, err := crypto.NewGraphenePublicKeyFromString("QA5nvEN2S7Dej2C9hrLJTHNeMGeHq6uyjMdoceR74CksyApeZHWS")
 	btec, err := crypto.GenerateGrapheneKeyWithSeed("pooja")
@@ -83,7 +105,7 @@ func TestBitcoinEncodeRefundBCH(t *testing.T) {
 
 	log.Println("multisig: ", msig, err)
 
-	GenerateBlock()
+	GenerateBCHBlock()
 
 	w := Withdrawal{
 		SourceAddress:      msig,
@@ -161,18 +183,15 @@ func TestDecodeBCH(t *testing.T) {
 	GenerateBlock()
 
 	crosschainAddr := make(map[string]string)
+	//addr1 = "bchreg:" + addr1
 	crosschainAddr[addr1] = "pooja"
 	bch.crosschainAddr = crosschainAddr
 	//btec, err := crypto.NewGraphenePublicKeyFromString("QA5nvEN2S7Dej2C9hrLJTHNeMGeHq6uyjMdoceR74CksyApeZHWS")
-	btec, err := crypto.GenerateGrapheneKeyWithSeed("pooja")
-	assert.NoError(t, err)
 
-	msig, err := bch.GenerateMultisig(btec)
-
-	log.Println("multisig: ", msig, err)
+	log.Println("multisig: ", addr1, err)
 
 	w := Withdrawal{
-		SourceAddress:      msig,
+		SourceAddress:      addr1,
 		DestinationAddress: "2N3Zj2iCe2YuZD7sXRLD6yvAHiz318NTiae",
 		Amount:             1000,
 		Tx:                 "4418603_0",
@@ -198,9 +217,10 @@ func TestEncodeWithMultipleInputsBCH(t *testing.T) {
 	addr2, err := bch.GenerateMultisig("2")
 	addr3, err := bch.GenerateMultisig("crosschain2")
 	addr4, err := bch.GenerateMultisig("token_sale")
-	println(addr1, addr2)
+	println(addr1, addr2, addr3, addr4)
 
 	crosschainAddr := make(map[string]string)
+
 	crosschainAddr[addr1] = "pooja"
 	crosschainAddr[addr2] = "pooja"
 	bch.crosschainAddr = crosschainAddr

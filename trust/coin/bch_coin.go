@@ -57,6 +57,10 @@ func (b *BCH) GetTopBlockID() (int64, error) {
 	return blockId, err
 }
 
+func (b *BCH) GetPendingTx(map[string]string) ([]*Deposit, error) {
+	panic("not implemented")
+}
+
 func (b *BCH) GenerateMultisig(accountId string) (string, error) {
 	addr := []bchutil.Address{}
 	addr = append(addr, b.signers...)
@@ -78,6 +82,9 @@ func (b *BCH) GenerateMultisig(accountId string) (string, error) {
 	addr = append(addr, btcAddress)
 
 	addrx, err := b.Client.CreateMultisig(len(addr)-1, addr)
+	if err != nil {
+		return "", err
+	}
 
 	//addrx, err := b.Client.AddMultisigAddress(len(addr)-1, addr, "")
 	//fmt.Println("error = ", err, addrx)
@@ -117,6 +124,10 @@ func (b *BCH) GetDepositsInBlock(blockID int64, trustAddress map[string]string) 
 	}
 
 	block, err := b.Client.GetBlock(blockHash)
+	if err != nil {
+		fmt.Println("error = ", err)
+		return nil, err
+	}
 
 	unspent, err := b.Client.ListUnspent()
 	if err != nil {
@@ -129,7 +140,6 @@ func (b *BCH) GetDepositsInBlock(blockID int64, trustAddress map[string]string) 
 	}
 
 	events := []*Deposit{}
-	fmt.Printf("%v", block.Transactions)
 
 	for _, tx := range block.Transactions {
 		if _, ok := txidMap[tx.TxHash().String()]; ok {

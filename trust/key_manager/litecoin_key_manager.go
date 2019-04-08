@@ -86,6 +86,7 @@ func (b *LitecoinKeyManager) SignTransaction(encoded string) (string, error) {
 		return "", err
 	}
 
+	println("signing with ", b.privateKey.String())
 	txSigned, _, err := b.client.SignRawTransaction3(tx, res.RawInput, []string{b.privateKey.String()})
 	if err != nil {
 		return "", err

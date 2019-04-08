@@ -19,25 +19,25 @@ import (
 )
 
 type Server struct {
-	url         string
-	publicKey   string
-	listenIp    string
-	handlers    *mux.Router
-	logger      logger.Logger
-	httpService *http.Server
-	kv          kv_store.KVStore
-	db          *db.DB
-	trustNode   *TrustNode
-	coinNames   []string
-	MinBlock    int64
+	url           string
+	publicKey     string
+	listenIp      string
+	handlers      *mux.Router
+	logger        logger.Logger
+	httpService   *http.Server
+	kv            kv_store.KVStore
+	db            *db.DB
+	trustNode     *TrustNode
+	coinNames     []string
+	MinBlock      int64
 	addressChange *AddressConsensus
 }
 
 func NewApiServer(trustNode *TrustNode, coinNames []string, publicKey string, listenIp string, kv kv_store.KVStore, db *db.DB, url string, logger logger.Logger, minBlock int64) *Server {
 	return &Server{trustNode: trustNode, coinNames: coinNames, publicKey: publicKey,
-					listenIp: listenIp, url: url, logger: logger,
-					kv: kv, db: db, httpService: &http.Server{Addr: url},
-					MinBlock: minBlock, addressChange: NewAddressConsensus(logger, trustNode, db, kv, minBlock)}
+		listenIp: listenIp, url: url, logger: logger,
+		kv: kv, db: db, httpService: &http.Server{Addr: url},
+		MinBlock: minBlock, addressChange: NewAddressConsensus(logger, trustNode, db, kv, minBlock)}
 }
 
 func (server *Server) Stop() {
@@ -146,7 +146,7 @@ func (server *Server) addressHandler(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		err = server.addressChange.GetConsensus(AddressChange{ quanta, addr[0].Address})
+		err = server.addressChange.GetConsensus(AddressChange{quanta, addr[0].Address})
 		if err != nil {
 			server.logger.Errorf("Could not agree on address change:", err.Error())
 			w.WriteHeader(http.StatusInternalServerError)

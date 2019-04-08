@@ -3,10 +3,10 @@ package main
 import (
 	"fmt"
 	"github.com/quantadex/distributed_quanta_bridge/cli"
+	"github.com/quantadex/distributed_quanta_bridge/common/crypto"
 	"github.com/quantadex/distributed_quanta_bridge/trust/coin"
 	"github.com/quantadex/distributed_quanta_bridge/trust/control/sync"
 	"time"
-	"github.com/quantadex/distributed_quanta_bridge/common/crypto"
 )
 
 func main() {

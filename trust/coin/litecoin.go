@@ -57,6 +57,10 @@ func (b *LiteCoin) GetTopBlockID() (int64, error) {
 	return blockId, err
 }
 
+func (b *LiteCoin) GetPendingTx(map[string]string) ([]*Deposit, error) {
+	panic("not implemented")
+}
+
 func (b *LiteCoin) GenerateMultisig(accountId string) (string, error) {
 	addr := []ltcutil.Address{}
 	addr = append(addr, b.signers...)
@@ -78,9 +82,9 @@ func (b *LiteCoin) GenerateMultisig(accountId string) (string, error) {
 	addr = append(addr, btcAddress)
 
 	addrx, err := b.Client.AddMultisigAddress(len(addr)-1, addr, "")
-	//fmt.Println("result ", addrx)
 
 	if err != nil {
+		fmt.Println("error = ", err)
 		return "", err
 	}
 
@@ -94,6 +98,7 @@ func (b *LiteCoin) GenerateMultisig(accountId string) (string, error) {
 	if err != nil {
 		return "", err
 	}
+	fmt.Println("generating with addresses ", addr, res.P2sh)
 
 	err = b.Client.ImportAddressRescan(res.P2sh, "", false)
 	if err != nil {
@@ -190,8 +195,8 @@ func (b *LiteCoin) GetDepositsInBlock(blockID int64, trustAddress map[string]str
 			}
 		}
 	}
-	//msg,_ := json.Marshal(events)
-	//fmt.Printf("events = %v\n", string(msg))
+	msg, _ := json.Marshal(events)
+	fmt.Printf("events = %v\n", string(msg))
 	return events, nil
 }
 
@@ -210,7 +215,7 @@ func (b *LiteCoin) CombineSignatures(signs []string) (string, error) {
 		string(sigsByte),
 	}
 
-	cmd := exec.Command("bitcoin-cli", args...)
+	cmd := exec.Command("litecoin-cli", args...)
 	var out bytes.Buffer
 	var stderr bytes.Buffer
 	cmd.Stdout = &out
@@ -260,7 +265,7 @@ func (b *LiteCoin) FillCrosschainAddress(crosschainAddr map[string]string) {
 
 // GetUnspentInputs retrieves a list of unspent addresses that meets or exceed the amount, and returns a list of unspent data
 // amount is 8 precision / satoshi / int64
-func (b *LiteCoin) GetUnspentInputs(destAddress ltcutil.Address, amount ltcutil.Amount) (ltcutil.Amount, []btcjson.TransactionInput, []btcjson.ListUnspentResult, []btcjson.RawTxInput, error) {
+func (b *LiteCoin) GetUnspentInputs(amount ltcutil.Amount) (ltcutil.Amount, []btcjson.TransactionInput, []btcjson.ListUnspentResult, []btcjson.RawTxInput, error) {
 	// get latest hash
 	unspent, err := b.Client.ListUnspent()
 	if err != nil {
@@ -316,12 +321,12 @@ func (b *LiteCoin) EncodeRefund(w Withdrawal) (string, error) {
 		return "", err
 	}
 	amount, err := ltcutil.NewAmount(float64(w.Amount) / 1e5)
-	println(amount.ToBTC())
+	println(destinationAddr.String(), amount.ToBTC())
 	if err != nil {
 		return "", err
 	}
 
-	totalAmount, inputs, unspentFound, rawInput, err := b.GetUnspentInputs(destinationAddr, amount)
+	totalAmount, inputs, unspentFound, rawInput, err := b.GetUnspentInputs(amount)
 
 	if err != nil {
 		return "", err

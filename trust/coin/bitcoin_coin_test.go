@@ -139,7 +139,7 @@ func TestBitcoinEncodeRefund(t *testing.T) {
 	GenerateBlock()
 
 	w := Withdrawal{
-		SourceAddress:      "2NA4mXEQvB594k2cZX4maVayQDTw8o7PG5m",
+		SourceAddress:      addr1,
 		DestinationAddress: "2NGYCnkuo62kL1QpAzV3bRaf747bSM8suQm",
 		Amount:             1000,
 		QuantaBlockID:      0,
@@ -273,7 +273,7 @@ func TestEncodeWithMultipleInputs(t *testing.T) {
  * These are the public keys on testnet, and it failed to generate a key for some instances, fixed by adding more to the seed
  */
 func TestGenerateMultisig(t *testing.T) {
-	client, err := NewBitcoinCoin(LOCAL_RPC_HOST, &chaincfg.TestNet3Params, []string{"03AF8891DA9BBF3CED03F04BC3C17EC4D3AE61D464E9B89A6B6A1FA60E361FDEA4", "038CAFE50CA757FAD36DA592A7C2B19158C0163445BAC2DDF6A59BDDC8F5BF6AD1","03F8C8D630BB53B2E08FB108E2A951C84E582BB3D585D2127FAE6DE43150A415AE"})
+	client, err := NewBitcoinCoin(LOCAL_RPC_HOST, &chaincfg.TestNet3Params, []string{"03AF8891DA9BBF3CED03F04BC3C17EC4D3AE61D464E9B89A6B6A1FA60E361FDEA4", "038CAFE50CA757FAD36DA592A7C2B19158C0163445BAC2DDF6A59BDDC8F5BF6AD1", "03F8C8D630BB53B2E08FB108E2A951C84E582BB3D585D2127FAE6DE43150A415AE"})
 	assert.NoError(t, err)
 
 	err = client.Attach()
