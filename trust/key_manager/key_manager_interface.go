@@ -92,5 +92,13 @@ func NewGrapheneKeyManager(chain string) (KeyManager, error) {
 }
 
 func NewBitCoinKeyManager(bitcoinRPC string, network string) (KeyManager, error) {
-	return &BitcoinKeyManager{ bitcoinRPC: bitcoinRPC, chaincfg: crypto.GetChainCfgByString(network)}, nil
+	return &BitcoinKeyManager{bitcoinRPC: bitcoinRPC, chaincfg: crypto.GetChainCfgByString(network)}, nil
+}
+
+func NewLiteCoinKeyManager(bitcoinRPC string, network string) (KeyManager, error) {
+	return &LitecoinKeyManager{bitcoinRPC: bitcoinRPC, chaincfg: crypto.GetChainCfgByStringLTC(network)}, nil
+}
+
+func NewBCHCoinKeyManager(bitcoinRPC string, network string) (KeyManager, error) {
+	return &BCHKeyManager{bitcoinRPC: bitcoinRPC, chaincfg: crypto.GetChainCfgByStringBCH(network)}, nil
 }

@@ -13,9 +13,9 @@ func main() {
 	config, quanta, rdb, kdb, log := cli.Setup()
 
 	// setup coin
-	coin, err := coin.NewBitcoinCoin(config.BtcRpc, crypto.GetChainCfgByString(config.BtcNetwork), config.BtcSigners)
+	coin, err := coin.NewLitecoinCoin(config.LtcRpc, crypto.GetChainCfgByStringLTC(config.LtcNetwork), config.LtcSigners)
 	if err != nil {
-		panic(fmt.Errorf("cannot create ethereum listener"))
+		panic(fmt.Errorf("cannot create litecoin coin"))
 	}
 
 	err = coin.Attach()
@@ -25,8 +25,8 @@ func main() {
 	}
 
 	time.Sleep(3 * time.Second)
-	println("Starting bitcoin deposit sync")
+	println("Starting litecoin deposit sync")
 
-	depositSync := sync.NewBitcoinSync(coin, config.CoinMapping, quanta, kdb, rdb, log, config.BtcBlockStart)
+	depositSync := sync.NewLitecoinSync(coin, config.CoinMapping, quanta, kdb, rdb, log, config.LtcBlockStart)
 	depositSync.Run()
 }

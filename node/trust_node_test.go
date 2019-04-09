@@ -7,6 +7,8 @@ import (
 	"github.com/btcsuite/btcutil"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/ethclient"
+	"github.com/ltcsuite/ltcutil"
+	"github.com/quantadex/distributed_quanta_bridge/common/crypto"
 	"github.com/quantadex/distributed_quanta_bridge/common/test"
 	"github.com/quantadex/distributed_quanta_bridge/trust/coin"
 	"github.com/quantadex/distributed_quanta_bridge/trust/coin/contracts"
@@ -18,6 +20,8 @@ import (
 	"os/exec"
 	"testing"
 	"time"
+
+	chaincfg2 "github.com/ltcsuite/ltcd/chaincfg"
 )
 
 /*
@@ -50,6 +54,17 @@ func GetBtcSync(node *TrustNode) sync.DepositSyncInterface {
 		node.log,
 		0)
 }
+
+func GetLtcSync(node *TrustNode) sync.DepositSyncInterface {
+	return sync.NewLitecoinSync(node.ltc,
+		map[string]string{"ltc": "TESTISSUE3"},
+		node.q,
+		node.db,
+		node.rDb,
+		node.log,
+		0)
+}
+
 func TestRopstenNativeETH(t *testing.T) {
 	r := StartRegistry(2, ":6000")
 	nodes := StartNodes(test.GRAPHENE_ISSUER, test.GRAPHENE_TRUST, test.ETHER_NETWORKS[test.ROPSTEN])
@@ -388,6 +403,202 @@ func TestWithdrawal(t *testing.T) {
 	StopRegistry(r)
 }
 
+func SendLTC(address string, amount ltcutil.Amount) (string, error) {
+	amountStr := fmt.Sprintf("%f", amount.ToBTC())
+	fmt.Printf("Sending to %s amount of %s\n", address, amountStr)
+	args := []string{
+		//"-datadir=../../blockchain/bitcoin/data",
+		"sendtoaddress",
+		address,
+		amountStr,
+	}
+
+	cmd := exec.Command("../blockchain/litecoin/src/litecoin-cli", args...)
+	var out bytes.Buffer
+	var stderr bytes.Buffer
+	cmd.Stdout = &out
+	cmd.Stderr = &stderr
+
+	err := cmd.Run()
+
+	if err != nil {
+		println("err", err.Error(), stderr.String())
+	}
+
+	return out.String(), err
+}
+
+func TestLTCDeposit(t *testing.T) {
+	r := StartRegistry(2, ":6000")
+	nodes := StartNodes(test.GRAPHENE_ISSUER, test.GRAPHENE_TRUST, test.ETHER_NETWORKS[test.ROPSTEN])
+	time.Sleep(time.Millisecond * 250)
+
+	depositResult := make(chan control.DepositResult)
+
+	nodes[0].cTQ.SuccessCb = func(c control.DepositResult) {
+		depositResult <- c
+	}
+
+	client, err := coin.NewLitecoinCoin("localhost:19332", &chaincfg2.RegressionNetParams, []string{"047AABB69BBE1B5D9E2EFD10D0215A37AE835EAE08DFDF795E5A8411271F690CC8797CF4DEB3508844920E28A42A67D8A3F56D5B6B65401DEDB1E130F9F9908463", "04851D591308AFBE768566060C01A60A5F6AC6C78C3766559C835BEF0485628013ADC7D7E7676B0281FB83E788F4BC11E4CA597D1A53AF5F0BB90D555A28B55504"})
+	err = client.Attach()
+	assert.NoError(t, err)
+
+	msig, err := client.GenerateMultisig("pooja")
+	assert.NoError(t, err)
+
+	forwardAddress := &crypto.ForwardInput{
+		msig,
+		common.HexToAddress(test.GRAPHENE_TRUST.TrustContract),
+		"pooja",
+		"",
+		coin.BLOCKCHAIN_LTC,
+	}
+	nodes[0].rDb.AddCrosschainAddress(forwardAddress)
+	nodes[1].rDb.AddCrosschainAddress(forwardAddress)
+
+	assert.NoError(t, err)
+
+	pubKey := "pooja"
+	res, err := http.Get("http://localhost:5200/api/address/LTC/" + pubKey)
+	assert.NoError(t, err)
+	assert.Equal(t, res.StatusCode, 200)
+
+	bodyBytes, err := ioutil.ReadAll(res.Body)
+	assert.NoError(t, err)
+
+	println("Address created ", string(bodyBytes))
+
+	address := string(bodyBytes)[13:47]
+	err = ImportAddress(address, "litecoin-cli")
+	assert.NoError(t, err)
+
+	amount, _ := ltcutil.NewAmount(0.01)
+	SendLTC(address, amount)
+	GenerateBlock("litecoin-cli")
+
+	blockId, err := client.GetTopBlockID()
+	assert.NoError(t, err)
+	fmt.Println(blockId)
+
+	block := int64(blockId)
+	fmt.Printf("=======================\n[BLOCK %d] BEGIN\n\n", block)
+	for i, node := range nodes {
+		ltcSync := GetLtcSync(node)
+		fmt.Printf("[BLOCK %d] Node[#%d/%d id=%d] calling doLoop...\n", block, i+1, len(nodes), node.nodeID)
+		//allDeposits := node.cTQ.DoLoop([]int64{block})
+		allDeposits := ltcSync.DoLoop([]int64{block})
+		fmt.Printf("...[BLOCK %d] Node[#%d/%d] counts %d [deposit]\n\n", block, i+1, len(nodes), len(allDeposits))
+	}
+	fmt.Printf("[BLOCK %d] END\n=======================\n\n", block)
+
+	time.Sleep(10 * time.Second)
+
+	var w *control.DepositResult
+	select {
+	case <-time.After(time.Second * 8):
+		w = nil
+	case w_ := <-depositResult:
+		w = &w_
+	}
+
+	assert.NotNil(t, w, "We expect withdrawal completed")
+	assert.NoError(t, w.Err, "should not get an error")
+
+	time.Sleep(time.Second * 5)
+
+	StopNodes(nodes, []int{0, 1})
+	StopRegistry(r)
+}
+
+func TestLTCWithdrawal(t *testing.T) {
+	ethereumClient, err := ethclient.Dial(test.ETHER_NETWORKS[test.ROPSTEN].Rpc)
+	assert.Nil(t, err)
+
+	trustAddress := common.HexToAddress(test.GRAPHENE_TRUST.TrustContract)
+	contract, err := contracts.NewTrustContract(trustAddress, ethereumClient)
+	assert.NoError(t, err)
+
+	r := StartRegistry(2, ":6000")
+
+	txId, err := contract.TxIdLast(nil)
+	assert.NoError(t, err)
+	println("latest TXID=", txId)
+
+	nodes := StartNodes(test.GRAPHENE_ISSUER, test.GRAPHENE_TRUST, test.ETHER_NETWORKS[test.ROPSTEN])
+
+	withdrawResult := make(chan control.WithdrawalResult)
+
+	nodes[0].qTC.SuccessCb = func(c control.WithdrawalResult) {
+		withdrawResult <- c
+	}
+
+	client, err := coin.NewLitecoinCoin("localhost:19332", &chaincfg2.RegressionNetParams, []string{"047AABB69BBE1B5D9E2EFD10D0215A37AE835EAE08DFDF795E5A8411271F690CC8797CF4DEB3508844920E28A42A67D8A3F56D5B6B65401DEDB1E130F9F9908463", "04851D591308AFBE768566060C01A60A5F6AC6C78C3766559C835BEF0485628013ADC7D7E7676B0281FB83E788F4BC11E4CA597D1A53AF5F0BB90D555A28B55504"})
+	err = client.Attach()
+	assert.NoError(t, err)
+
+	msig, err := client.GenerateMultisig("pooja")
+	assert.NoError(t, err)
+
+	_, err = client.GenerateMultisig("pooja2")
+	assert.NoError(t, err)
+
+	forwardAddress := &crypto.ForwardInput{
+		msig,
+		common.HexToAddress(test.GRAPHENE_TRUST.TrustContract),
+		"pooja",
+		"",
+		coin.BLOCKCHAIN_LTC,
+	}
+	nodes[0].rDb.AddCrosschainAddress(forwardAddress)
+	nodes[1].rDb.AddCrosschainAddress(forwardAddress)
+
+	pubKey := "pooja"
+	res, err := http.Get("http://localhost:5200/api/address/LTC/" + pubKey)
+	assert.NoError(t, err)
+	assert.Equal(t, res.StatusCode, 200)
+
+	bodyBytes, err := ioutil.ReadAll(res.Body)
+	assert.NoError(t, err)
+
+	println("Address created ", string(bodyBytes))
+
+	amount, err := ltcutil.NewAmount(0.9)
+	address := string(bodyBytes)[13:47]
+	err = ImportAddress(address, "litecoin-cli")
+	assert.NoError(t, err)
+
+	SendLTC(address, amount)
+	GenerateBlock("litecoin-cli")
+
+	cursor := int64(8348073)
+	fmt.Printf("=======================\n[CURSOR %d] BEGIN\n\n", cursor)
+	for i, node := range nodes {
+		refunds, err := node.qTC.DoLoop(cursor)
+		assert.NoError(t, err, "error: cursor #%d [node #%d/%d id=%d]", cursor, i+1, len(nodes), node.nodeID)
+		assert.Equal(t, 1, len(refunds), "refunds: cursor #%d [node #%d/%d id=%d]", cursor, i+1, len(nodes), node.nodeID)
+	}
+
+	fmt.Printf("[CURSOR %d] END\n=======================\n\n", cursor)
+
+	time.Sleep(time.Second * 8)
+
+	var w *control.WithdrawalResult
+	select {
+	case <-time.After(time.Second * 8):
+		w = nil
+	case w_ := <-withdrawResult:
+		w = &w_
+	}
+
+	fmt.Println("w = ", w)
+
+	assert.NotNil(t, w, "We expect withdrawal completed")
+	assert.NoError(t, w.Err, "should not get an error")
+
+	StopNodes(nodes, []int{0, 1})
+	StopRegistry(r)
+}
+
 func TestBTCDeposit(t *testing.T) {
 	r := StartRegistry(2, ":6000")
 	nodes := StartNodes(test.GRAPHENE_ISSUER, test.GRAPHENE_TRUST, test.ETHER_NETWORKS[test.ROPSTEN])
@@ -410,12 +621,12 @@ func TestBTCDeposit(t *testing.T) {
 	println("Address created ", string(bodyBytes))
 
 	address := string(bodyBytes)[13:48]
-	err = ImportAddress(address)
+	err = ImportAddress(address, "bitcoin-cli")
 	assert.NoError(t, err)
 
 	amount, _ := btcutil.NewAmount(0.01)
 	SendBTC(address, amount)
-	GenerateBlock()
+	GenerateBlock("bitcoin-cli")
 
 	client, err := coin.NewBitcoinCoin("localhost:18332", &chaincfg.RegressionNetParams, nil)
 	assert.NoError(t, err)
@@ -457,14 +668,14 @@ func TestBTCDeposit(t *testing.T) {
 	StopRegistry(r)
 }
 
-func ImportAddress(address string) error {
+func ImportAddress(address string, command string) error {
 	args := []string{
 		//"-datadir=../../blockchain/bitcoin/data",
 		"importaddress",
 		address,
 	}
 
-	cmd := exec.Command("bitcoin-cli", args...)
+	cmd := exec.Command(command, args...)
 	var out bytes.Buffer
 	var stderr bytes.Buffer
 	cmd.Stdout = &out
@@ -504,14 +715,14 @@ func SendBTC(address string, amount btcutil.Amount) (string, error) {
 	return out.String(), err
 }
 
-func GenerateBlock() (string, error) {
+func GenerateBlock(command string) (string, error) {
 	args := []string{
 		//"-datadir=../../blockchain/bitcoin/data",
 		"generate",
 		"1",
 	}
 
-	cmd := exec.Command("bitcoin-cli", args...)
+	cmd := exec.Command(command, args...)
 	var out bytes.Buffer
 	var stderr bytes.Buffer
 	cmd.Stdout = &out
@@ -560,11 +771,11 @@ func TestBTCWithdrawal(t *testing.T) {
 
 	amount, err := btcutil.NewAmount(0.9)
 	address := string(bodyBytes)[13:48]
-	err = ImportAddress(address)
+	err = ImportAddress(address, "bitcoin-cli")
 	assert.NoError(t, err)
 
 	SendBTC(address, amount)
-	GenerateBlock()
+	GenerateBlock("bitcoin-cli")
 
 	cursor := int64(5116140)
 	fmt.Printf("=======================\n[CURSOR %d] BEGIN\n\n", cursor)

@@ -19,6 +19,10 @@ type BtcSecrets struct {
 	NodeSecrets []string
 }
 
+type LtcSecrets struct {
+	NodeSecrets []string
+}
+
 var QUANTA_ISSUER = &QuantaNodeSecrets{
 	NodeSecrets: []string{
 		"ZBHK5VE5ZM5MJI3FM7JOW7MMUF3FIRUMV3BTLUTJWQHDFEN7MG3J4VAV",
@@ -53,6 +57,13 @@ var BTCSECRETS = &BtcSecrets{
 		"cNxQax7BfpbikeuCebPGCgTefTah5h1XhVDfaotVdFmXtaLCWLd9",
 		"cUixT9PYjTtNzcVjF8sB7iM9JeEf8tLHm9Wjgo972x8opCRNTasS",
 		"cPXngzEsUFpNCJ9DGYWyFLfCuGjzhsuM8N3sUf5z4HqLUUGuGp2h",
+	},
+}
+
+var LTCSECRETS = &LtcSecrets{
+	NodeSecrets: []string{
+		"92P5DpWDiuttphtXV5qrHjMnFU2nAyiR8NpyEkF5s8uAngVgBFb",
+		"926mkZAmMowq4HaLqpNjwuJuPe3vP6iTVQnt1x9GWdwbnwQjDea",
 	},
 }
 

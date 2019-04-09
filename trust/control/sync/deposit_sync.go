@@ -27,7 +27,7 @@ type DepositSync struct {
 	fnDepositInBlock   func(blockID int64) ([]*coin.Deposit, error)
 	fnPostProcessBlock func(blockID int64) error
 	fnGetWatchAddress  func() map[string]string
-	fnTransformCoin	   func(dep *coin.Deposit) *coin.Deposit
+	fnTransformCoin    func(dep *coin.Deposit) *coin.Deposit
 
 	doneChan chan bool
 }

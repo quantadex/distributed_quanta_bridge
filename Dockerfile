@@ -23,9 +23,11 @@ RUN set -ex \
 ADD node/node /usr/bin/quanta-bridge
 ADD cli/bitcoin/bitcoin /usr/bin/bitcoin_sync
 ADD cli/ethereum/ethereum /usr/bin/ethereum_sync
+ADD cli/litecoin/litecoin /usr/bin/litecoin_sync
 
 RUN ["chmod", "+x", "/usr/bin/quanta-bridge"]
 RUN ["chmod", "+x", "/usr/bin/ethereum_sync"]
 RUN ["chmod", "+x", "/usr/bin/bitcoin_sync"]
+RUN ["chmod", "+x", "/usr/bin/litecoin_sync"]
 
 # ENTRYPOINT ["/usr/bin/quanta-bridge", "-config", "/data/crosschain.yml"]

@@ -1,42 +1,42 @@
 package coin
 
 import (
+	"fmt"
+	"github.com/ethereum/go-ethereum/common"
+	"github.com/gcash/bchd/btcjson"
+	"github.com/gcash/bchd/chaincfg"
+	"github.com/gcash/bchd/chaincfg/chainhash"
+	"github.com/gcash/bchd/rpcclient"
+	"github.com/gcash/bchd/wire"
+	"github.com/gcash/bchutil"
+	"github.com/pkg/errors"
+	common2 "github.com/quantadex/distributed_quanta_bridge/common"
+	"github.com/quantadex/distributed_quanta_bridge/common/crypto"
+
 	"bytes"
 	"crypto/ecdsa"
 	"encoding/hex"
 	"encoding/json"
-	"fmt"
-	"github.com/btcsuite/btcd/btcjson"
-	"github.com/btcsuite/btcd/chaincfg"
-	"github.com/btcsuite/btcd/chaincfg/chainhash"
-	"github.com/btcsuite/btcd/rpcclient"
-	"github.com/btcsuite/btcd/wire"
-	"github.com/btcsuite/btcutil"
-	"github.com/ethereum/go-ethereum/common"
-	"github.com/pkg/errors"
-	common2 "github.com/quantadex/distributed_quanta_bridge/common"
-	"github.com/quantadex/distributed_quanta_bridge/common/crypto"
 	"os/exec"
-	"regexp"
 	"strings"
 )
 
-type BitcoinCoin struct {
+const BLOCKCHAIN_BCH = "BCH"
+
+type BCH struct {
 	Client         *rpcclient.Client
 	rpcHost        string
 	chaincfg       *chaincfg.Params
-	signers        []btcutil.Address
+	signers        []bchutil.Address
 	crosschainAddr map[string]string
 	fee            float64
 }
 
-const BLOCKCHAIN_BTC = "BTC"
-
-func (c *BitcoinCoin) Blockchain() string {
-	return BLOCKCHAIN_BTC
+func (b *BCH) Blockchain() string {
+	return BLOCKCHAIN_BCH
 }
 
-func (b *BitcoinCoin) Attach() error {
+func (b *BCH) Attach() error {
 	var err error
 	b.Client, err = rpcclient.New(&rpcclient.ConnConfig{Host: b.rpcHost,
 		Endpoint:     "http",
@@ -46,15 +46,16 @@ func (b *BitcoinCoin) Attach() error {
 		HTTPPostMode: true,
 	}, nil)
 	b.fee = 0.00001
+
 	if err != nil {
-		return errors.Wrap(err, "Could not attach the client for BTC")
+		return errors.Wrap(err, "Could not attach the client for BCH")
 	}
 
-	err = crypto.ValidateNetwork(b.Client, "Satoshi")
+	err = crypto.ValidateNetwork(b.Client, "Bitcoin ABC")
 	return err
 }
 
-func (b *BitcoinCoin) GetTopBlockID() (int64, error) {
+func (b *BCH) GetTopBlockID() (int64, error) {
 	blockId, err := b.Client.GetBlockCount()
 	if err != nil {
 		return 0, err
@@ -62,8 +63,12 @@ func (b *BitcoinCoin) GetTopBlockID() (int64, error) {
 	return blockId, err
 }
 
-func (b *BitcoinCoin) GenerateMultisig(accountId string) (string, error) {
-	addr := []btcutil.Address{}
+func (b *BCH) GetPendingTx(map[string]string) ([]*Deposit, error) {
+	panic("not implemented")
+}
+
+func (b *BCH) GenerateMultisig(accountId string) (string, error) {
+	addr := []bchutil.Address{}
 	addr = append(addr, b.signers...)
 	btcAddressStr, err := crypto.GenerateGrapheneKeyWithSeed(accountId)
 	if err != nil {
@@ -75,19 +80,25 @@ func (b *BitcoinCoin) GenerateMultisig(accountId string) (string, error) {
 		return "", err
 	}
 
-	btcAddress, err := crypto.GetBitcoinAddressFromGraphene(graphenePK)
+	btcAddress, err := crypto.GetBCHAddressFromGraphene(graphenePK)
 	if err != nil {
 		return "", err
 	}
 
 	addr = append(addr, btcAddress)
 
-	addrx, err := b.Client.AddMultisigAddress(len(addr)-1, addr, "")
-	//fmt.Println("result ", addrx)
-
+	addrx, err := b.Client.CreateMultisig(len(addr)-1, addr)
 	if err != nil {
 		return "", err
 	}
+
+	//addrx, err := b.Client.AddMultisigAddress(len(addr)-1, addr, "")
+	//fmt.Println("error = ", err, addrx)
+	////fmt.Println("result ", addrx)
+	//
+	//if err != nil {
+	//	return "", err
+	//}
 
 	scriptBytes, err := hex.DecodeString(addrx.RedeemScript)
 	if err != nil {
@@ -108,94 +119,21 @@ func (b *BitcoinCoin) GenerateMultisig(accountId string) (string, error) {
 	return res.P2sh, err
 }
 
-func (b *BitcoinCoin) GetTxID(trustAddress common.Address) (uint64, error) {
-	//panic("implement me")
+func (b *BCH) GetTxID(trustAddress common.Address) (uint64, error) {
 	return 0, nil
 }
 
-func (b *BitcoinCoin) GetFromAddress(txHash *chainhash.Hash) (string, error) {
-	currentTx, err := b.Client.GetRawTransactionVerbose(txHash)
-	if err != nil {
-		return "", errors.Wrap(err, "failed to getraw for currentTx")
-	}
-
-	vinLookup := map[string]bool{}
-	vinAddresses := []string{}
-	for _, vin := range currentTx.Vin {
-		if vin.Txid == "" {
-			continue
-		}
-
-		prevTranHash, err := chainhash.NewHashFromStr(vin.Txid)
-		if err != nil {
-			return "", errors.Wrap(err, "failed to build hash")
-		}
-		prevTran, err := b.Client.GetRawTransactionVerbose(prevTranHash)
-		if err != nil {
-			return "", errors.Wrap(err, "failed to getraw for vin")
-		}
-
-		prevVout := prevTran.Vout[vin.Vout]
-		fromAddress := strings.Join(prevVout.ScriptPubKey.Addresses, ",")
-		vinLookup[fromAddress] = true
-		vinAddresses = append(vinAddresses, fromAddress)
-	}
-
-	fromAddr := strings.Join(vinAddresses, ",")
-	return fromAddr, nil
-}
-
-func (b *BitcoinCoin) GetPendingTx(watchMap map[string]string) ([]*Deposit, error) {
-	results, err := b.Client.ListUnspentMinMax(0, 0)
-	if err != nil {
-		return nil, err
-	}
-
-	events := []*Deposit{}
-
-	for _, e := range results {
-		toAddr := e.Address
-
-		txHash, err := chainhash.NewHashFromStr(e.TxID)
-		if err != nil {
-			return nil, errors.Wrap(err, "unable to get chainhash")
-		}
-		fromAddr, err := b.GetFromAddress(txHash)
-		if err != nil {
-			return nil, errors.Wrap(err, "unable to get from address")
-		}
-
-		if fromAddr == toAddr || fromAddr == "" {
-			//println("Ignoring tx when from and to the same ", toAddr)
-			continue
-		}
-
-		amount, err := btcutil.NewAmount(e.Amount)
-		if err != nil {
-			return nil, errors.Wrap(err, "unable to create new amount")
-		}
-
-		if quantaAddr, ok := watchMap[toAddr]; ok {
-			events = append(events, &Deposit{
-				SenderAddr: fromAddr,
-				QuantaAddr: quantaAddr,
-				CoinName:   b.Blockchain(),
-				Amount:     int64(amount),
-				BlockID:    0,
-				Tx:         txHash.String(),
-			})
-		}
-	}
-	return events, nil
-}
-
-func (b *BitcoinCoin) GetDepositsInBlock(blockID int64, trustAddress map[string]string) ([]*Deposit, error) {
+func (b *BCH) GetDepositsInBlock(blockID int64, trustAddress map[string]string) ([]*Deposit, error) {
 	blockHash, err := b.Client.GetBlockHash(blockID)
 	if err != nil {
 		return nil, err
 	}
 
 	block, err := b.Client.GetBlock(blockHash)
+	if err != nil {
+		fmt.Println("error = ", err)
+		return nil, err
+	}
 
 	unspent, err := b.Client.ListUnspent()
 	if err != nil {
@@ -217,7 +155,30 @@ func (b *BitcoinCoin) GetDepositsInBlock(blockID int64, trustAddress map[string]
 				return nil, errors.Wrap(err, "failed to getraw for currentTx")
 			}
 
-			fromAddr, err := b.GetFromAddress(&txHash)
+			vinLookup := map[string]bool{}
+			vinAddresses := []string{}
+			for _, vin := range currentTx.Vin {
+				if vin.Txid == "" {
+					continue
+				}
+
+				prevTranHash, err := chainhash.NewHashFromStr(vin.Txid)
+				if err != nil {
+					return nil, errors.Wrap(err, "failed to build hash")
+				}
+				prevTran, err := b.Client.GetRawTransactionVerbose(prevTranHash)
+				if err != nil {
+					return nil, errors.Wrap(err, "failed to getraw for vin")
+				}
+
+				prevVout := prevTran.Vout[vin.Vout]
+				fromAddress := strings.Join(prevVout.ScriptPubKey.Addresses, ",")
+				vinLookup[fromAddress] = true
+				vinAddresses = append(vinAddresses, fromAddress)
+			}
+
+			fromAddr := strings.Join(vinAddresses, ",")
+
 			if err != nil {
 				return nil, errors.Wrap(err, "failed to from address for currentTx")
 			}
@@ -230,7 +191,7 @@ func (b *BitcoinCoin) GetDepositsInBlock(blockID int64, trustAddress map[string]
 					continue
 				}
 
-				amount, err := btcutil.NewAmount(vout.Value)
+				amount, err := bchutil.NewAmount(vout.Value)
 				if err != nil {
 					return nil, errors.Wrap(err, "unable to create new amount")
 				}
@@ -253,15 +214,15 @@ func (b *BitcoinCoin) GetDepositsInBlock(blockID int64, trustAddress map[string]
 	return events, nil
 }
 
-func (c *BitcoinCoin) FlushCoin(forwarder string, address string) error {
-	panic("not implemented")
+func (b *BCH) FlushCoin(forwarder string, address string) error {
+	panic("implement me")
 }
 
-func (b *BitcoinCoin) GetForwardersInBlock(blockID int64) ([]*crypto.ForwardInput, error) {
-	panic("not needed for bitcoin")
+func (b *BCH) GetForwardersInBlock(blockID int64) ([]*crypto.ForwardInput, error) {
+	panic("implement me")
 }
 
-func (b *BitcoinCoin) CombineSignatures(signs []string) (string, error) {
+func (b *BCH) CombineSignatures(signs []string) (string, error) {
 	sigsByte, err := json.Marshal(signs)
 	args := []string{
 		"combinerawtransaction",
@@ -283,10 +244,9 @@ func (b *BitcoinCoin) CombineSignatures(signs []string) (string, error) {
 	return out.String(), err
 }
 
-func (b *BitcoinCoin) SendWithdrawal(trustAddress common.Address,
+func (b *BCH) SendWithdrawal(trustAddress common.Address,
 	ownerKey *ecdsa.PrivateKey,
 	w *Withdrawal) (string, error) {
-
 	combined, err := b.CombineSignatures(w.Signatures)
 	if err != nil {
 		return "", errors.Wrap(err, "Could not combined sigs")
@@ -312,13 +272,11 @@ func (b *BitcoinCoin) SendWithdrawal(trustAddress common.Address,
 	return hash.String(), err
 }
 
-func (b *BitcoinCoin) FillCrosschainAddress(crosschainAddr map[string]string) {
+func (b *BCH) FillCrosschainAddress(crosschainAddr map[string]string) {
 	b.crosschainAddr = crosschainAddr
 }
 
-// GetUnspentInputs retrieves a list of unspent addresses that meets or exceed the amount, and returns a list of unspent data
-// amount is 8 precision / satoshi / int64
-func (b *BitcoinCoin) GetUnspentInputs(destAddress btcutil.Address, amount btcutil.Amount) (btcutil.Amount, []btcjson.TransactionInput, []btcjson.ListUnspentResult, []btcjson.RawTxInput, error) {
+func (b *BCH) GetUnspentInputs(destAddress bchutil.Address, amount bchutil.Amount) (bchutil.Amount, []btcjson.TransactionInput, []btcjson.ListUnspentResult, []btcjson.RawTxInput, error) {
 	// get latest hash
 	unspent, err := b.Client.ListUnspent()
 	if err != nil {
@@ -328,9 +286,9 @@ func (b *BitcoinCoin) GetUnspentInputs(destAddress btcutil.Address, amount btcut
 	inputs := []btcjson.TransactionInput{}
 	unspentFound := []btcjson.ListUnspentResult{}
 	rawInput := []btcjson.RawTxInput{}
-	totalAmount, _ := btcutil.NewAmount(0)
+	totalAmount, _ := bchutil.NewAmount(0)
 
-	amountWithFee := amount.ToBTC() + (b.fee * 50)
+	amountWithFee := amount.ToBCH() + (b.fee * 50)
 
 	for _, e := range unspent {
 		if _, ok := b.crosschainAddr[e.Address]; ok {
@@ -346,15 +304,16 @@ func (b *BitcoinCoin) GetUnspentInputs(destAddress btcutil.Address, amount btcut
 				Vout:         e.Vout,
 				RedeemScript: e.RedeemScript,
 				ScriptPubKey: e.ScriptPubKey,
+				Amount:       e.Amount,
 			})
-			unspentAmount, err := btcutil.NewAmount(e.Amount)
+			unspentAmount, err := bchutil.NewAmount(e.Amount)
 			if err != nil {
 				return 0, nil, nil, nil, err
 			}
 			totalAmount += unspentAmount
 
 			// we have enough coins, let's get out
-			if totalAmount.ToBTC() >= amountWithFee {
+			if totalAmount.ToBCH() >= amountWithFee {
 				break
 			}
 		}
@@ -362,24 +321,13 @@ func (b *BitcoinCoin) GetUnspentInputs(destAddress btcutil.Address, amount btcut
 	return totalAmount, inputs, unspentFound, rawInput, nil
 }
 
-// TODO: inspect all unspent for addresses that matches the pattern for our multisig
-// gather enough input and create a refund
-// encoding withdrawal with precision of 5.
-// must convert to our system precision
-func (b *BitcoinCoin) EncodeRefund(w Withdrawal) (string, error) {
-	fmt.Printf("Encode refund %v\n", w)
-
-	//sourceAddr, err := btcutil.DecodeAddress(w.SourceAddress, b.chaincfg)
-	//if err != nil {
-	//	return "", err
-	//}
-
-	destinationAddr, err := btcutil.DecodeAddress(w.DestinationAddress, b.chaincfg)
+func (b *BCH) EncodeRefund(w Withdrawal) (string, error) {
+	destinationAddr, err := bchutil.DecodeAddress(w.DestinationAddress, b.chaincfg)
 	if err != nil {
 		return "", err
 	}
-	amount, err := btcutil.NewAmount(float64(w.Amount) / 1e5)
-	println(amount.ToBTC())
+	amount, err := bchutil.NewAmount(float64(w.Amount) / 1e5)
+	println(amount.ToBCH())
 	if err != nil {
 		return "", err
 	}
@@ -396,17 +344,17 @@ func (b *BitcoinCoin) EncodeRefund(w Withdrawal) (string, error) {
 
 	fee := b.fee * float64(len(inputs))
 
-	remain, err := btcutil.NewAmount(totalAmount.ToBTC() - amount.ToBTC() - fee)
+	remain, err := bchutil.NewAmount(totalAmount.ToBCH() - amount.ToBCH() - fee)
 	if err != nil {
 		return "", errors.Wrap(err, "Unable to create new amount")
 	}
 
-	sourceAddrRefund, err := btcutil.DecodeAddress(unspentFound[0].Address, b.chaincfg)
+	sourceAddrRefund, err := bchutil.DecodeAddress(unspentFound[0].Address, b.chaincfg)
 	if err != nil {
 		return "", err
 	}
 
-	tx, err := b.Client.CreateRawTransaction(inputs, map[btcutil.Address]btcutil.Amount{
+	tx, err := b.Client.CreateRawTransaction(inputs, map[bchutil.Address]bchutil.Amount{
 		destinationAddr:  amount,
 		sourceAddrRefund: remain,
 	}, nil)
@@ -422,7 +370,7 @@ func (b *BitcoinCoin) EncodeRefund(w Withdrawal) (string, error) {
 		return "", err
 	}
 
-	res := common2.TransactionBitcoin{
+	res := common2.TransactionBCH{
 		Tx:       hex.EncodeToString(buf.Bytes()),
 		RawInput: rawInput,
 	}
@@ -432,10 +380,7 @@ func (b *BitcoinCoin) EncodeRefund(w Withdrawal) (string, error) {
 	return string(data), err
 }
 
-// DecodeRefund decodes the encodemsg object. If there are multiple withdrawals, then it means the refund did not original from
-// our encode refund, and we fail immediately.
-// TODO: implement test by composing tx from sendmany from bitcoin CLI
-func (b *BitcoinCoin) DecodeRefund(encoded string) (*Withdrawal, error) {
+func (b *BCH) DecodeRefund(encoded string) (*Withdrawal, error) {
 	var decoded EncodedMsg
 	err := json.Unmarshal([]byte(encoded), &decoded)
 	if err != nil {
@@ -495,7 +440,7 @@ func (b *BitcoinCoin) DecodeRefund(encoded string) (*Withdrawal, error) {
 			//println("Ignoring tx when from and to the same ", toAddr)
 			continue
 		}
-		amount, err := btcutil.NewAmount(vout.Value)
+		amount, err := bchutil.NewAmount(vout.Value)
 		if err != nil {
 			return nil, errors.Wrap(err, "unable to create new amount")
 		}
@@ -515,14 +460,10 @@ func (b *BitcoinCoin) DecodeRefund(encoded string) (*Withdrawal, error) {
 	return allWithdrawals[0], nil
 }
 
-func (b *BitcoinCoin) CheckValidAddress(address string) bool {
-	if len(address) > 35 || len(address) < 26 {
-		return false
-	}
-	_, err := btcutil.DecodeAddress(address, b.chaincfg)
+func (b *BCH) CheckValidAddress(address string) bool {
+	_, err := bchutil.DecodeAddress(address, b.chaincfg)
 	if err != nil {
 		return false
 	}
-	var validAddress = regexp.MustCompile(`^[1-9a-zA-NP-Z]`)
-	return validAddress.MatchString(address)
+	return true
 }

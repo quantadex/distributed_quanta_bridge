@@ -19,25 +19,25 @@ import (
 )
 
 type Server struct {
-	url         string
-	publicKey   string
-	listenIp    string
-	handlers    *mux.Router
-	logger      logger.Logger
-	httpService *http.Server
-	kv          kv_store.KVStore
-	db          *db.DB
-	trustNode   *TrustNode
-	coinNames   []string
-	MinBlock    int64
+	url           string
+	publicKey     string
+	listenIp      string
+	handlers      *mux.Router
+	logger        logger.Logger
+	httpService   *http.Server
+	kv            kv_store.KVStore
+	db            *db.DB
+	trustNode     *TrustNode
+	coinNames     []string
+	MinBlock      int64
 	addressChange *AddressConsensus
 }
 
 func NewApiServer(trustNode *TrustNode, coinNames []string, publicKey string, listenIp string, kv kv_store.KVStore, db *db.DB, url string, logger logger.Logger, minBlock int64) *Server {
 	return &Server{trustNode: trustNode, coinNames: coinNames, publicKey: publicKey,
-					listenIp: listenIp, url: url, logger: logger,
-					kv: kv, db: db, httpService: &http.Server{Addr: url},
-					MinBlock: minBlock, addressChange: NewAddressConsensus(logger, trustNode, db, kv, minBlock)}
+		listenIp: listenIp, url: url, logger: logger,
+		kv: kv, db: db, httpService: &http.Server{Addr: url},
+		MinBlock: minBlock, addressChange: NewAddressConsensus(logger, trustNode, db, kv, minBlock)}
 }
 
 func (server *Server) Stop() {
@@ -64,7 +64,7 @@ func (server *Server) setRoute() {
 }
 
 func (server *Server) generateNewAddress(blockchain string, quanta string) (*crypto.ForwardInput, error) {
-	if blockchain == coin.BLOCKCHAIN_BTC {
+	if blockchain == coin.BLOCKCHAIN_BTC || blockchain == coin.BLOCKCHAIN_LTC {
 		forwardInput, err := server.trustNode.CreateMultisig(blockchain, quanta)
 		return forwardInput, err
 	} else {
@@ -106,7 +106,7 @@ func (server *Server) addressHandler(w http.ResponseWriter, r *http.Request) {
 			}
 		}
 	}
-	if !(blockchain == coin.BLOCKCHAIN_BTC || blockchain == coin.BLOCKCHAIN_ETH) {
+	if !(blockchain == coin.BLOCKCHAIN_BTC || blockchain == coin.BLOCKCHAIN_ETH || blockchain == coin.BLOCKCHAIN_LTC) {
 		w.WriteHeader(http.StatusBadRequest)
 		w.Write([]byte("not a supported blockchain"))
 		return
@@ -146,7 +146,7 @@ func (server *Server) addressHandler(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		err = server.addressChange.GetConsensus(AddressChange{ quanta, addr[0].Address})
+		err = server.addressChange.GetConsensus(AddressChange{quanta, addr[0].Address})
 		if err != nil {
 			server.logger.Errorf("Could not agree on address change:", err.Error())
 			w.WriteHeader(http.StatusInternalServerError)
@@ -165,7 +165,7 @@ func (server *Server) addressHandler(w http.ResponseWriter, r *http.Request) {
 		server.logger.Infof("Updated the crosschain address for account : %s to %s", quanta, addr[0].Address)
 	}
 
-	if len(values) == 0 && blockchain == coin.BLOCKCHAIN_BTC {
+	if len(values) == 0 && (blockchain == coin.BLOCKCHAIN_BTC || blockchain == coin.BLOCKCHAIN_LTC) {
 		_, err := server.generateNewAddress(blockchain, quanta)
 		if err != nil {
 			w.WriteHeader(http.StatusInternalServerError)

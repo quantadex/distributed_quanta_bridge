@@ -6,6 +6,7 @@ import (
 	"github.com/quantadex/distributed_quanta_bridge/common/crypto"
 	"github.com/quantadex/distributed_quanta_bridge/common/test"
 	"github.com/quantadex/distributed_quanta_bridge/trust/coin"
+	"github.com/quantadex/distributed_quanta_bridge/trust/control"
 	"github.com/quantadex/distributed_quanta_bridge/trust/db"
 	"github.com/stretchr/testify/assert"
 	"io/ioutil"
@@ -153,7 +154,7 @@ func TestAddress(t *testing.T) {
 	bodyBytes, _ = ioutil.ReadAll(res.Body)
 	println("data", res.StatusCode, string(bodyBytes))
 
-	res, err = http.Post("http://localhost:5200/api/address/eth/pooja","", nil)
+	res, err = http.Post("http://localhost:5200/api/address/eth/pooja", "", nil)
 	assert.NoError(t, err)
 	bodyBytes, _ = ioutil.ReadAll(res.Body)
 	println("data", res.StatusCode, string(bodyBytes))
@@ -163,7 +164,8 @@ func TestAddress(t *testing.T) {
 	bodyBytes, _ = ioutil.ReadAll(res.Body)
 	println("data 3", res.StatusCode, string(bodyBytes))
 	assert.True(t, strings.Contains(string(bodyBytes), "Could not find available crosschain address"))
-	StopNodes(nodes, []int{0, 1})
+
+  StopNodes(nodes, []int{0, 1})
 	StopRegistry(r)
 
 }

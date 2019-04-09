@@ -29,4 +29,9 @@ type Config struct {
 	EthFlush           bool
 	Erc20Mapping       map[string]string
 	MinBlockReuse      int64
+	LtcRpc             string
+	LtcPrivateKey      string
+	LtcSigners         []string
+	LtcNetwork         string
+	LtcBlockStart      int64
 }

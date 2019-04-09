@@ -5,27 +5,27 @@ import (
 	"crypto/ecdsa"
 	"encoding/hex"
 	"encoding/json"
-	"github.com/btcsuite/btcd/chaincfg"
-	"github.com/btcsuite/btcd/rpcclient"
-	"github.com/btcsuite/btcd/wire"
-	"github.com/btcsuite/btcutil"
+	"github.com/ltcsuite/ltcd/chaincfg"
+	"github.com/ltcsuite/ltcd/rpcclient"
+	"github.com/ltcsuite/ltcd/wire"
+	"github.com/ltcsuite/ltcutil"
 	"github.com/pkg/errors"
 	"github.com/quantadex/distributed_quanta_bridge/common"
 	"github.com/quantadex/distributed_quanta_bridge/common/crypto"
 )
 
-type BitcoinKeyManager struct {
-	privateKey *btcutil.WIF
+type LitecoinKeyManager struct {
+	privateKey *ltcutil.WIF
 	client     *rpcclient.Client
 	chaincfg   *chaincfg.Params
 	bitcoinRPC string
 }
 
-func (b *BitcoinKeyManager) CreateNodeKeys() error {
+func (b *LitecoinKeyManager) CreateNodeKeys() error {
 	panic("implement me")
 }
 
-func (b *BitcoinKeyManager) LoadNodeKeys(privKey string) error {
+func (b *LitecoinKeyManager) LoadNodeKeys(privKey string) error {
 	var err error
 	// TODO: make this configurable
 	b.client, err = rpcclient.New(&rpcclient.ConnConfig{Host: b.bitcoinRPC,
@@ -39,42 +39,42 @@ func (b *BitcoinKeyManager) LoadNodeKeys(privKey string) error {
 		return errors.Wrap(err, "Cannot load BTC key")
 	}
 
-	err = crypto.ValidateNetwork(b.client, "Satoshi")
+	err = crypto.ValidateNetwork(b.client, "Litecoin")
 	if err != nil {
 		return err
 	}
 
-	b.privateKey, err = btcutil.DecodeWIF(privKey)
+	b.privateKey, err = ltcutil.DecodeWIF(privKey)
 
 	return err
 }
 
-func (b *BitcoinKeyManager) GetPublicKey() (string, error) {
-	pub, err := btcutil.NewAddressPubKey(b.privateKey.SerializePubKey(), b.chaincfg)
+func (b *LitecoinKeyManager) GetPublicKey() (string, error) {
+	pub, err := ltcutil.NewAddressPubKey(b.privateKey.SerializePubKey(), b.chaincfg)
 	if err != nil {
 		return "", err
 	}
 	return pub.EncodeAddress(), nil
 }
 
-func (b *BitcoinKeyManager) GetPrivateKey() *ecdsa.PrivateKey {
+func (b *LitecoinKeyManager) GetPrivateKey() *ecdsa.PrivateKey {
 	return b.privateKey.PrivKey.ToECDSA()
 }
 
-func (b *BitcoinKeyManager) SignMessage(original []byte) ([]byte, error) {
+func (b *LitecoinKeyManager) SignMessage(original []byte) ([]byte, error) {
 	panic("not required")
 }
 
-func (b *BitcoinKeyManager) SignMessageObj(original interface{}) *string {
+func (b *LitecoinKeyManager) SignMessageObj(original interface{}) *string {
 	panic("not required")
 }
 
-func (b *BitcoinKeyManager) VerifySignatureObj(original interface{}, key string) bool {
+func (b *LitecoinKeyManager) VerifySignatureObj(original interface{}, key string) bool {
 	panic("implement me")
 }
 
-func (b *BitcoinKeyManager) SignTransaction(encoded string) (string, error) {
-	var res common.TransactionBitcoin
+func (b *LitecoinKeyManager) SignTransaction(encoded string) (string, error) {
+	var res common.TransactionLitecoin
 
 	err := json.Unmarshal([]byte(encoded), &res)
 	if err != nil {
@@ -107,6 +107,6 @@ func (b *BitcoinKeyManager) SignTransaction(encoded string) (string, error) {
 	return hex.EncodeToString(buf.Bytes()), err
 }
 
-func (b *BitcoinKeyManager) VerifyTransaction(encoded string) (bool, error) {
+func (b *LitecoinKeyManager) VerifyTransaction(encoded string) (bool, error) {
 	panic("implement me")
 }

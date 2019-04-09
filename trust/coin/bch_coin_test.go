@@ -2,12 +2,11 @@ package coin
 
 import (
 	"bytes"
-	"encoding/hex"
 	"encoding/json"
 	"fmt"
-	"github.com/btcsuite/btcd/chaincfg"
-	"github.com/btcsuite/btcutil"
 	common2 "github.com/ethereum/go-ethereum/common"
+	"github.com/gcash/bchd/chaincfg"
+	"github.com/gcash/bchutil"
 	"github.com/quantadex/distributed_quanta_bridge/common/crypto"
 	"github.com/quantadex/distributed_quanta_bridge/trust/key_manager"
 	"github.com/stretchr/testify/assert"
@@ -15,8 +14,6 @@ import (
 	"os/exec"
 	"testing"
 )
-
-const LOCAL_RPC_HOST = "localhost:18332"
 
 /*
 cSJ2vqDoT9p6PXqNdNzaLNtMKePVjEzvoAryUUN7qAAB4njLKMXa 2018-10-29T23:34:06Z
@@ -28,8 +25,10 @@ reserve=1 # addr=2NF63kkxcegxtMuTKartK4tsyXsoHxhRvpN hdkeypath=m/0'/0'/13'
 
 */
 
-func SendBTC(address string, amount btcutil.Amount) (string, error) {
-	amountStr := fmt.Sprintf("%f", amount.ToBTC())
+const LOCAL_RPC_HOST_BCH = "localhost:18332"
+
+func SendBCH(address string, amount bchutil.Amount) (string, error) {
+	amountStr := fmt.Sprintf("%f", amount.ToBCH())
 	fmt.Printf("Sending to %s amount of %s\n", address, amountStr)
 	args := []string{
 		//"-datadir=../../blockchain/bitcoin/data",
@@ -38,7 +37,7 @@ func SendBTC(address string, amount btcutil.Amount) (string, error) {
 		amountStr,
 	}
 
-	cmd := exec.Command("bitcoin-cli", args...)
+	cmd := exec.Command("../../blockchain/bch-abc/bitcoin-abc-0.19.1/bin/bitcoin-cli", args...)
 	var out bytes.Buffer
 	var stderr bytes.Buffer
 	cmd.Stdout = &out
@@ -53,34 +52,14 @@ func SendBTC(address string, amount btcutil.Amount) (string, error) {
 	return out.String(), err
 }
 
-func ImportAddress(address string) {
-	args := []string{
-		//"-datadir=../../blockchain/bitcoin/data",
-		"importaddress",
-		address,
-	}
-
-	cmd := exec.Command("bitcoin-cli", args...)
-	var out bytes.Buffer
-	var stderr bytes.Buffer
-	cmd.Stdout = &out
-	cmd.Stderr = &stderr
-
-	err := cmd.Run()
-
-	if err != nil {
-		println("err", err.Error(), stderr.String())
-	}
-}
-
-func GenerateBlock() (string, error) {
+func GenerateBCHBlock() (string, error) {
 	args := []string{
 		//"-datadir=../../blockchain/bitcoin/data",
 		"generate",
 		"1",
 	}
 
-	cmd := exec.Command("bitcoin-cli", args...)
+	cmd := exec.Command("../../blockchain/bch-abc/bitcoin-abc-0.19.1/bin/bitcoin-cli", args...)
 	var out bytes.Buffer
 	var stderr bytes.Buffer
 	cmd.Stdout = &out
@@ -95,52 +74,49 @@ func GenerateBlock() (string, error) {
 	return out.String(), err
 }
 
-func TestCheckHash(t *testing.T) {
-	scriptBytes, _ := hex.DecodeString("004730440220304a3f60b7f5510e80b086cee9e88e38672c6031c3c2905b39bf5b180ba463b602205a14fcffee23eda01193e4dd281be474b058cc5d58b523f6bbc882469e05647c01473044022036224d12535cb02d597e1e1d0a6baccca9c27531464935110bab23c7a40f0cdd02206de86e931083484f6c23da41455863e6ff0c6b1359f8edf5f54364b83deea39c0147522103c19460f565d12512ee584685bd8d97eb24d79a2acdf0c5b6af0b24ba29ceba0b210333d415aed3103f49346a3898efa137c42e933bbb16b3e4b56f7751670d2e0b6e52ae")
-	addr, _ := btcutil.NewAddressScriptHash(scriptBytes, &chaincfg.RegressionNetParams)
-	println(addr.EncodeAddress(), addr.String())
-}
-
-func TestBitcoinEncodeRefund(t *testing.T) {
-	client, err := NewBitcoinCoin(LOCAL_RPC_HOST, &chaincfg.RegressionNetParams, []string{"2NENNHR9Y9fpKzjKYobbdbwap7xno7sbf2E", "2NEDF3RBHQuUHQmghWzFf6b6eeEnC7KjAtR"})
+func TestBitcoinEncodeRefundBCH(t *testing.T) {
+	client, err := NewBCHCoin(LOCAL_RPC_HOST_BCH, &chaincfg.RegressionNetParams, []string{"049C8C4647E016C502766C6F5C40CFD37EE86CD02972274CA50DA16D72016CAB5812F867F27C268923E5DE3ADCB268CC8A29B96D0D8972841F286BA6D9CCF61360", "040C9B0D5324CBAF4F40A215C1D87DF1BEB51A0345E0384942FE0D60F8D796F7B7200CC5B70DDCF101E7804EFA26A0CE6EC6622C2FE90BCFD2DA2482006C455FF1"})
 	assert.NoError(t, err)
 
 	err = client.Attach()
 	assert.NoError(t, err)
 
-	bitcoin := client.(*BitcoinCoin)
-	addr1, err := bitcoin.GenerateMultisig("aaa1")
-	ImportAddress(addr1)
-	addr2, err := bitcoin.GenerateMultisig("2")
+	bch := client.(*BCH)
+
+	addr1, err := bch.GenerateMultisig("aaa1")
+	addr2, err := bch.GenerateMultisig("2")
+
 	println(addr1, addr2)
-	ImportAddress(addr2)
 
 	crosschainAddr := make(map[string]string)
 	crosschainAddr[addr1] = "pooja"
 	crosschainAddr[addr2] = "pooja"
-	bitcoin.crosschainAddr = crosschainAddr
-	fmt.Println(bitcoin.crosschainAddr)
 
-	amount, err := btcutil.NewAmount(0.01)
-	res, err := SendBTC(addr1, amount)
+	bch.crosschainAddr = crosschainAddr
+	fmt.Println(bch.crosschainAddr)
+
+	amount, err := bchutil.NewAmount(0.01)
+	res, err := SendBCH(addr1, amount)
 	println(res, err)
-	res, err = SendBTC(addr2, amount)
+
+	amount, err = bchutil.NewAmount(0.02)
+	res, err = SendBCH(addr1, amount)
 	println(res, err)
-	res, err = GenerateBlock()
-	println(res, err)
+
+	_, err = GenerateBCHBlock()
 
 	//btec, err := crypto.NewGraphenePublicKeyFromString("QA5nvEN2S7Dej2C9hrLJTHNeMGeHq6uyjMdoceR74CksyApeZHWS")
 	btec, err := crypto.GenerateGrapheneKeyWithSeed("pooja")
 	assert.NoError(t, err)
-	msig, err := bitcoin.GenerateMultisig(btec)
+	msig, err := bch.GenerateMultisig(btec)
 
 	log.Println("multisig: ", msig, err)
 
-	GenerateBlock()
+	GenerateBCHBlock()
 
 	w := Withdrawal{
-		SourceAddress:      addr1,
-		DestinationAddress: "2NGYCnkuo62kL1QpAzV3bRaf747bSM8suQm",
+		SourceAddress:      msig,
+		DestinationAddress: addr2,
 		Amount:             1000,
 		QuantaBlockID:      0,
 	}
@@ -150,15 +126,15 @@ func TestBitcoinEncodeRefund(t *testing.T) {
 	var encoded EncodedMsg
 	json.Unmarshal([]byte(tx), &encoded)
 
-	km, _ := key_manager.NewBitCoinKeyManager(LOCAL_RPC_HOST, "regnet")
+	km, _ := key_manager.NewBCHCoinKeyManager(LOCAL_RPC_HOST_BCH, "regnet")
 
-	err = km.LoadNodeKeys("cNxQax7BfpbikeuCebPGCgTefTah5h1XhVDfaotVdFmXtaLCWLd9")
+	err = km.LoadNodeKeys("92REaZhgcw6FF2rz8EnY1HMtBvgh3qh4gs9PxnccPrju6ZCFetk")
 	assert.NoError(t, err)
 
 	tx_signed1, err := km.SignTransaction(encoded.Message)
 	assert.NoError(t, err)
 
-	err = km.LoadNodeKeys("cUixT9PYjTtNzcVjF8sB7iM9JeEf8tLHm9Wjgo972x8opCRNTasS")
+	err = km.LoadNodeKeys("923EhimzuuHQvRaRWhTbKtocZSaKjvXkc32jbBiT5NPkCVGKYmf")
 	tx_signed2, err := km.SignTransaction(encoded.Message)
 	assert.NoError(t, err)
 
@@ -167,14 +143,14 @@ func TestBitcoinEncodeRefund(t *testing.T) {
 	fmt.Println(tx_signed2)
 
 	w.Signatures = []string{tx_signed1, tx_signed2}
-	hash, err := bitcoin.SendWithdrawal(common2.HexToAddress("0x0"), nil, &w)
+	hash, err := bch.SendWithdrawal(common2.HexToAddress("0x0"), nil, &w)
 
 	assert.NoError(t, err)
 	fmt.Println("hash", hash, err)
 }
 
-func TestTopBlockId(t *testing.T) {
-	client, err := NewBitcoinCoin(LOCAL_RPC_HOST, &chaincfg.RegressionNetParams, nil)
+func TestTopBlockIdBCH(t *testing.T) {
+	client, err := NewBCHCoin(LOCAL_RPC_HOST_BCH, &chaincfg.RegressionNetParams, nil)
 	assert.NoError(t, err)
 
 	err = client.Attach()
@@ -185,8 +161,8 @@ func TestTopBlockId(t *testing.T) {
 	fmt.Println(blockId)
 }
 
-func TestDeposits(t *testing.T) {
-	client, err := NewBitcoinCoin(LOCAL_RPC_HOST, &chaincfg.RegressionNetParams, nil)
+func TestDepositsBCH(t *testing.T) {
+	client, err := NewBCHCoin(LOCAL_RPC_HOST_BCH, &chaincfg.RegressionNetParams, nil)
 	assert.NoError(t, err)
 
 	err = client.Attach()
@@ -198,28 +174,31 @@ func TestDeposits(t *testing.T) {
 	assert.NoError(t, err)
 }
 
-func TestDecode(t *testing.T) {
-	client, err := NewBitcoinCoin(LOCAL_RPC_HOST, &chaincfg.RegressionNetParams, []string{"2NENNHR9Y9fpKzjKYobbdbwap7xno7sbf2E", "2NEDF3RBHQuUHQmghWzFf6b6eeEnC7KjAtR"})
+func TestDecodeBCH(t *testing.T) {
+	client, err := NewBCHCoin(LOCAL_RPC_HOST_BCH, &chaincfg.RegressionNetParams, []string{"049C8C4647E016C502766C6F5C40CFD37EE86CD02972274CA50DA16D72016CAB5812F867F27C268923E5DE3ADCB268CC8A29B96D0D8972841F286BA6D9CCF61360", "040C9B0D5324CBAF4F40A215C1D87DF1BEB51A0345E0384942FE0D60F8D796F7B7200CC5B70DDCF101E7804EFA26A0CE6EC6622C2FE90BCFD2DA2482006C455FF1"})
 	assert.NoError(t, err)
 
 	err = client.Attach()
 	assert.NoError(t, err)
 
-	bitcoin := client.(*BitcoinCoin)
+	bch := client.(*BCH)
+
+	addr1, err := bch.GenerateMultisig("aaa1")
+	amount, err := bchutil.NewAmount(0.02)
+	res, err := SendBCH(addr1, amount)
+	println(res, err)
+	GenerateBlock()
+
 	crosschainAddr := make(map[string]string)
-	crosschainAddr["n2PNkvCSkkSKvgqLsQXAQACFETQwKvc16X"] = "pooja"
-	bitcoin.crosschainAddr = crosschainAddr
-	//btec, err := crypto.NewGraphenePublicKeyFromString("QA5nvEN2S7Dej2C9hrLJTHNeMGeHq6uyjMdoceR74CksyApeZHWS")
-	btec, err := crypto.GenerateGrapheneKeyWithSeed("pooja")
-	assert.NoError(t, err)
 
-	msig, err := bitcoin.GenerateMultisig(btec)
+	crosschainAddr[addr1] = "pooja"
+	bch.crosschainAddr = crosschainAddr
 
-	log.Println("multisig: ", msig, err)
+	log.Println("multisig: ", addr1, err)
 
 	w := Withdrawal{
-		SourceAddress:      "n2PNkvCSkkSKvgqLsQXAQACFETQwKvc16X",
-		DestinationAddress: "2NGYCnkuo62kL1QpAzV3bRaf747bSM8suQm",
+		SourceAddress:      addr1,
+		DestinationAddress: "2N3Zj2iCe2YuZD7sXRLD6yvAHiz318NTiae",
 		Amount:             1000,
 		Tx:                 "4418603_0",
 		QuantaBlockID:      0,
@@ -232,53 +211,57 @@ func TestDecode(t *testing.T) {
 	assert.NoError(t, err)
 }
 
-func TestEncodeWithMultipleInputs(t *testing.T) {
-	client, err := NewBitcoinCoin(LOCAL_RPC_HOST, &chaincfg.RegressionNetParams, []string{"2NENNHR9Y9fpKzjKYobbdbwap7xno7sbf2E", "2NEDF3RBHQuUHQmghWzFf6b6eeEnC7KjAtR"})
+func TestEncodeWithMultipleInputsBCH(t *testing.T) {
+	client, err := NewBCHCoin(LOCAL_RPC_HOST_BCH, &chaincfg.RegressionNetParams, []string{"03AF8891DA9BBF3CED03F04BC3C17EC4D3AE61D464E9B89A6B6A1FA60E361FDEA4", "038CAFE50CA757FAD36DA592A7C2B19158C0163445BAC2DDF6A59BDDC8F5BF6AD1", "03F8C8D630BB53B2E08FB108E2A951C84E582BB3D585D2127FAE6DE43150A415AE"})
 	assert.NoError(t, err)
 
 	err = client.Attach()
 	assert.NoError(t, err)
 
-	bitcoin := client.(*BitcoinCoin)
-	addr1, err := bitcoin.GenerateMultisig("aaa1")
-	addr2, err := bitcoin.GenerateMultisig("2")
-	println(addr1, addr2)
+	bch := client.(*BCH)
+	addr1, err := bch.GenerateMultisig("aaa1")
+	addr2, err := bch.GenerateMultisig("2")
+	addr3, err := bch.GenerateMultisig("crosschain2")
+	addr4, err := bch.GenerateMultisig("token_sale")
+	println(addr1, addr2, addr3, addr4)
 
 	crosschainAddr := make(map[string]string)
+
 	crosschainAddr[addr1] = "pooja"
 	crosschainAddr[addr2] = "pooja"
-	bitcoin.crosschainAddr = crosschainAddr
+	bch.crosschainAddr = crosschainAddr
 
-	amount, err := btcutil.NewAmount(0.01)
-	res, err := SendBTC(addr1, amount)
+	amount, err := bchutil.NewAmount(0.02)
+	res, err := SendBCH(addr1, amount)
 	println(res, err)
-	res, err = SendBTC(addr2, amount)
+	res, err = SendBCH(addr2, amount)
 	println(res, err)
 	res, err = GenerateBlock()
 	println(res, err)
 
 	w := Withdrawal{
-		SourceAddress:      "n2PNkvCSkkSKvgqLsQXAQACFETQwKvc16X",
-		DestinationAddress: "2NGYCnkuo62kL1QpAzV3bRaf747bSM8suQm",
+		SourceAddress:      addr3,
+		DestinationAddress: addr4,
 		Amount:             3000,
 		Tx:                 "4418603_0",
 		QuantaBlockID:      0,
 	}
 
-	_, err = client.EncodeRefund(w)
+	something, err := client.EncodeRefund(w)
+	fmt.Println(something)
 	assert.NoError(t, err)
 }
 
 /**
  * These are the public keys on testnet, and it failed to generate a key for some instances, fixed by adding more to the seed
  */
-func TestGenerateMultisig(t *testing.T) {
-	client, err := NewBitcoinCoin(LOCAL_RPC_HOST, &chaincfg.TestNet3Params, []string{"03AF8891DA9BBF3CED03F04BC3C17EC4D3AE61D464E9B89A6B6A1FA60E361FDEA4", "038CAFE50CA757FAD36DA592A7C2B19158C0163445BAC2DDF6A59BDDC8F5BF6AD1", "03F8C8D630BB53B2E08FB108E2A951C84E582BB3D585D2127FAE6DE43150A415AE"})
+func TestGenerateMultisigBCH(t *testing.T) {
+	client, err := NewBCHCoin(LOCAL_RPC_HOST_BCH, &chaincfg.RegressionNetParams, []string{"03AF8891DA9BBF3CED03F04BC3C17EC4D3AE61D464E9B89A6B6A1FA60E361FDEA4", "038CAFE50CA757FAD36DA592A7C2B19158C0163445BAC2DDF6A59BDDC8F5BF6AD1", "03F8C8D630BB53B2E08FB108E2A951C84E582BB3D585D2127FAE6DE43150A415AE"})
 	assert.NoError(t, err)
 
 	err = client.Attach()
 	assert.NoError(t, err)
-	bitcoin := client.(*BitcoinCoin)
+	bitcoin := client.(*BCH)
 
 	addr1, err := bitcoin.GenerateMultisig("crosschain2")
 	println(addr1, err)
