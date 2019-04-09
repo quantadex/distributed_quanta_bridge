@@ -121,3 +121,16 @@ func GrapheneToWei(valueInGraphene uint64) *big.Int {
 
 	return valueWei.Mul(stellar, powerDelta).Num()
 }
+
+func GrapheneToERC20(value big.Int, curPrecision int, targetPrecision int) *big.Int {
+	valueEth := new(big.Rat).SetInt(&value)
+	powerDelta := new(big.Rat).SetInt(new(big.Int).Exp(ten, big.NewInt(int64(common2.AbsInt(curPrecision-targetPrecision))), nil))
+	result := new(big.Rat)
+	if targetPrecision < curPrecision {
+		result = result.Quo(valueEth, powerDelta)
+	} else {
+		result = result.Mul(valueEth, powerDelta)
+	}
+	num, _ := new(big.Int).SetString(result.FloatString(0), 10)
+	return num
+}

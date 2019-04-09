@@ -398,9 +398,8 @@ func (l *Listener) SendWithdrawal(conn bind.ContractBackend,
 		if err != nil {
 			return "", err
 		}
-		erc20Amount := PowerDelta(*new(big.Int).SetUint64(w.Amount), 5, int(dec))
+		amount = GrapheneToERC20(*new(big.Int).SetUint64(w.Amount), 5, int(dec))
 
-		amount = new(big.Int).SetInt64(erc20Amount)
 	} else {
 		amount = GrapheneToWei(w.Amount)
 	}
