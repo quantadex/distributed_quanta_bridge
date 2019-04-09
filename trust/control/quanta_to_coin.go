@@ -396,7 +396,7 @@ func (c *QuantaToCoin) ComputeAmountToGraphene(coinName string, amount uint64) u
 	// this is ETH, so we have to convert from system precision standard precision (5)
 	for _, v := range c.coinInfo {
 		if coinName == v.Symbol {
-			return coin.PowerDelta(*big.NewInt(int64(amount)), int(v.Precision), 5).Uint64()
+			return uint64(coin.PowerDelta(*big.NewInt(int64(amount)), int(v.Precision), 5))
 		}
 	}
 
@@ -404,7 +404,7 @@ func (c *QuantaToCoin) ComputeAmountToGraphene(coinName string, amount uint64) u
 	if err != nil {
 		return amount
 	}
-	return coin.PowerDelta(*big.NewInt(int64(amount)), int(asset.Precision), 5).Uint64()
+	return uint64(coin.PowerDelta(*big.NewInt(int64(amount)), int(asset.Precision), 5))
 
 }
 

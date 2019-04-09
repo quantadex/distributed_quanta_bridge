@@ -84,7 +84,7 @@ func WeiToGraphene(valueInWei big.Int) int64 {
 	return num.Int64()
 }
 
-func PowerDelta(value big.Int, curPrecision int, targetPrecision int) *big.Int {
+func PowerDelta(value big.Int, curPrecision int, targetPrecision int) int64 {
 	valueEth := new(big.Rat).SetInt(&value)
 	powerDelta := new(big.Rat).SetInt(new(big.Int).Exp(ten, big.NewInt(int64(common2.AbsInt(curPrecision-targetPrecision))), nil))
 	result := new(big.Rat)
@@ -94,7 +94,7 @@ func PowerDelta(value big.Int, curPrecision int, targetPrecision int) *big.Int {
 		result = result.Mul(valueEth, powerDelta)
 	}
 	num, _ := new(big.Int).SetString(result.FloatString(0), 10)
-	return num
+	return num.Int64()
 }
 
 func Erc20AmountToGraphene(valueInWei big.Int, dec uint8) int64 {
@@ -120,17 +120,4 @@ func GrapheneToWei(valueInGraphene uint64) *big.Int {
 	powerDelta := new(big.Rat).SetInt(new(big.Int).Exp(ten, big.NewInt(13), nil))
 
 	return valueWei.Mul(stellar, powerDelta).Num()
-}
-
-func GrapheneToERC20(value big.Int, curPrecision int, targetPrecision int) *big.Int {
-	valueEth := new(big.Rat).SetInt(&value)
-	powerDelta := new(big.Rat).SetInt(new(big.Int).Exp(ten, big.NewInt(int64(common2.AbsInt(curPrecision-targetPrecision))), nil))
-	result := new(big.Rat)
-	if targetPrecision < curPrecision {
-		result = result.Quo(valueEth, powerDelta)
-	} else {
-		result = result.Mul(valueEth, powerDelta)
-	}
-	num, _ := new(big.Int).SetString(result.FloatString(0), 10)
-	return num
 }
