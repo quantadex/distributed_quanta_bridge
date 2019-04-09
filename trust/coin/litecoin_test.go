@@ -106,19 +106,18 @@ func TestLTCEncodeRefund(t *testing.T) {
 	account := "pooja5"
 	litecoin := client.(*LiteCoin)
 	msig, err := litecoin.GenerateMultisig(account)
+	log.Println("multisig: ", msig, err)
 
 	litecoin.crosschainAddr = map[string]string{msig: account}
-	fmt.Println(litecoin.crosschainAddr)
+	log.Println("crosschain: ", litecoin.crosschainAddr)
 
-	amount, err := ltcutil.NewAmount(10.00)
+	amount, err := ltcutil.NewAmount(1.0)
 	res, err := SendLTC(msig, amount)
 	println(res, err)
 	res, err = GenerateLTCBlock()
 	println(res, err)
 
 	addr1, err := litecoin.GenerateMultisig("crosschain2")
-
-	log.Println("multisig: ", msig, err)
 
 	GenerateLTCBlock()
 
@@ -134,7 +133,7 @@ func TestLTCEncodeRefund(t *testing.T) {
 	var encoded EncodedMsg
 	json.Unmarshal([]byte(tx), &encoded)
 
-	km, _ := key_manager.NewLiteCoinKeyManager(LOCAL_RPC_HOST, "regnet")
+	km, _ := key_manager.NewLiteCoinKeyManager(LOCAL_RPC_HOST_LTC, "regnet")
 
 	err = km.LoadNodeKeys("92P5DpWDiuttphtXV5qrHjMnFU2nAyiR8NpyEkF5s8uAngVgBFb")
 	assert.NoError(t, err)

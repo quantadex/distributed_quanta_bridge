@@ -46,6 +46,11 @@ func (b *BitcoinCoin) Attach() error {
 		HTTPPostMode: true,
 	}, nil)
 	b.fee = 0.00001
+	if err != nil {
+		return errors.Wrap(err, "Could not attach the client for BTC")
+	}
+
+	err = crypto.ValidateNetwork(b.Client, "Satoshi")
 	return err
 }
 

@@ -46,6 +46,12 @@ func (b *BCH) Attach() error {
 		HTTPPostMode: true,
 	}, nil)
 	b.fee = 0.00001
+
+	if err != nil {
+		return errors.Wrap(err, "Could not attach the client for BCH")
+	}
+
+	err = crypto.ValidateNetwork(b.Client, "Bitcoin ABC")
 	return err
 }
 

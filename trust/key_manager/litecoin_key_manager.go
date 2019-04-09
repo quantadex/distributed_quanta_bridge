@@ -11,6 +11,7 @@ import (
 	"github.com/ltcsuite/ltcutil"
 	"github.com/pkg/errors"
 	"github.com/quantadex/distributed_quanta_bridge/common"
+	"github.com/quantadex/distributed_quanta_bridge/common/crypto"
 )
 
 type LitecoinKeyManager struct {
@@ -36,6 +37,11 @@ func (b *LitecoinKeyManager) LoadNodeKeys(privKey string) error {
 
 	if err != nil {
 		return errors.Wrap(err, "Cannot load BTC key")
+	}
+
+	err = crypto.ValidateNetwork(b.client, "Litecoin")
+	if err != nil {
+		return err
 	}
 
 	b.privateKey, err = ltcutil.DecodeWIF(privKey)
@@ -86,7 +92,6 @@ func (b *LitecoinKeyManager) SignTransaction(encoded string) (string, error) {
 		return "", err
 	}
 
-	println("signing with ", b.privateKey.String())
 	txSigned, _, err := b.client.SignRawTransaction3(tx, res.RawInput, []string{b.privateKey.String()})
 	if err != nil {
 		return "", err

@@ -11,6 +11,7 @@ import (
 	"github.com/btcsuite/btcutil"
 	"github.com/pkg/errors"
 	"github.com/quantadex/distributed_quanta_bridge/common"
+	"github.com/quantadex/distributed_quanta_bridge/common/crypto"
 )
 
 type BitcoinKeyManager struct {
@@ -27,7 +28,7 @@ func (b *BitcoinKeyManager) CreateNodeKeys() error {
 func (b *BitcoinKeyManager) LoadNodeKeys(privKey string) error {
 	var err error
 	// TODO: make this configurable
-	b.client, err = rpcclient.New(&rpcclient.ConnConfig{Host:b.bitcoinRPC,
+	b.client, err = rpcclient.New(&rpcclient.ConnConfig{Host: b.bitcoinRPC,
 		User:         "user",
 		Pass:         "123",
 		DisableTLS:   true,
@@ -36,6 +37,11 @@ func (b *BitcoinKeyManager) LoadNodeKeys(privKey string) error {
 
 	if err != nil {
 		return errors.Wrap(err, "Cannot load BTC key")
+	}
+
+	err = crypto.ValidateNetwork(b.client, "Satoshi")
+	if err != nil {
+		return err
 	}
 
 	b.privateKey, err = btcutil.DecodeWIF(privKey)

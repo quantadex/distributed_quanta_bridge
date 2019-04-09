@@ -59,3 +59,21 @@ func NewBitcoinSync(coin coin.Coin,
 
 	return btc
 }
+
+func NewLitecoinSync(coin coin.Coin,
+	issuingSymbol map[string]string,
+	quantaChannel quanta.Quanta,
+	db kv_store.KVStore,
+	rDb *db.DB,
+	logger logger.Logger,
+	blockStartID int64) DepositSyncInterface {
+
+	parent := NewDepositSync(coin, quantaChannel, issuingSymbol, db, rDb, logger, blockStartID)
+	ltc := &LitecoinSync{
+		*parent,
+		issuingSymbol,
+	}
+	ltc.Setup()
+
+	return ltc
+}
