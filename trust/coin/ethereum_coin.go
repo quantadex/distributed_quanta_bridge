@@ -144,8 +144,8 @@ func (c *EthereumCoin) EncodeRefund(w Withdrawal) (string, error) {
 		if err != nil {
 			return "", err
 		}
-		erc20Amount := PowerDelta(*new(big.Int).SetUint64(w.Amount), 5, int(dec))
-		amount = new(big.Int).SetInt64(erc20Amount)
+		amount = GrapheneToERC20(*new(big.Int).SetUint64(w.Amount), 5, int(dec))
+
 	} else {
 		smartAddress = ""
 		amount = GrapheneToWei(w.Amount)

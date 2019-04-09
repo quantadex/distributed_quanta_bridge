@@ -84,7 +84,7 @@ func (server *Server) addressHandler(w http.ResponseWriter, r *http.Request) {
 				if k != server.trustNode.nodeID {
 					peer := server.trustNode.man.Nodes[k]
 					url := fmt.Sprintf("http://%s:%s%s", peer.IP, peer.ExternalPort, r.RequestURI)
-					req, err := http.NewRequest("GET", url, nil)
+					req, err := http.NewRequest("POST", url, nil)
 					println("Broadcast create address message to node", k, url)
 					if err != nil {
 						server.logger.Error("unable to build request: " + err.Error())
@@ -142,7 +142,7 @@ func (server *Server) addressHandler(w http.ResponseWriter, r *http.Request) {
 		if len(addr) == 0 {
 			server.logger.Errorf("Could not find available crosschain address for %s", quanta)
 			w.WriteHeader(http.StatusInternalServerError)
-			w.Write([]byte(err.Error()))
+			w.Write([]byte(fmt.Sprintf("Could not find available crosschain address for %s", quanta)))
 			return
 		}
 
