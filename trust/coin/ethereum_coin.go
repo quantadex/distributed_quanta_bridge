@@ -10,11 +10,13 @@ import (
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	common2 "github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/ethclient"
+	errors2 "github.com/pkg/errors"
 	"github.com/quantadex/distributed_quanta_bridge/common"
 	"github.com/quantadex/distributed_quanta_bridge/common/crypto"
 	"github.com/quantadex/distributed_quanta_bridge/trust/coin/contracts"
 	"math/big"
 	"regexp"
+	"strconv"
 	"strings"
 )
 
@@ -54,6 +56,28 @@ func (c *EthereumCoin) Attach() error {
 	}
 
 	return nil
+}
+
+func (c *EthereumCoin) GetBlockInfo(hash string) (string, int64, error) {
+	_, blockHash, blockNumber, _, err := c.client.GetTransactionbyHash(hash)
+	var blockNum int64
+	if strings.HasPrefix(strings.ToLower(blockNumber), "0x") {
+		blockNum, err = strconv.ParseInt(blockNumber[2:], 16, 64)
+		if err != nil {
+			return "", 0, errors2.Wrap(err, "Could not convert block number")
+		}
+	} else {
+		blockNum, err = strconv.ParseInt(blockNumber[2:], 16, 64)
+		if err != nil {
+			return "", 0, errors2.Wrap(err, "Could not convert block number")
+		}
+	}
+	topBlock, err := c.GetTopBlockID()
+	if err != nil {
+		return "", 0, errors2.Wrap(err, "Could not get top block id")
+	}
+	confirm := topBlock - blockNum
+	return blockHash.String(), confirm, err
 }
 
 func (c *EthereumCoin) GetTopBlockID() (int64, error) {

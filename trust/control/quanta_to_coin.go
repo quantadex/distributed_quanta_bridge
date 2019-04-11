@@ -275,6 +275,7 @@ func (c *QuantaToCoin) DispatchWithdrawal() {
 								DestinationAddress: txs[0].To,
 								QuantaBlockID:      txs[0].BlockId,
 								Amount:             uint64(txs[0].Amount),
+								BlockHash:          txs[0].BlockHash,
 							}
 
 							if len(txs[0].SubmitTx) != 0 {
@@ -332,7 +333,7 @@ func (c *QuantaToCoin) StartConsensus(w *coin.Withdrawal) (string, error) {
 
 	if err != nil {
 		c.logger.Error("Failed to encode refund " + err.Error())
-		db.ChangeSubmitState(c.rDb, w.Tx, db.ENCODE_FAILURE, db.WITHDRAWAL)
+		db.ChangeSubmitState(c.rDb, w.Tx, db.ENCODE_FAILURE, db.WITHDRAWAL, w.BlockHash)
 		return HEX_NULL, err
 	}
 
@@ -354,7 +355,7 @@ func (c *QuantaToCoin) StartConsensus(w *coin.Withdrawal) (string, error) {
 		if err != nil {
 			return "", err
 		}
-		db.ChangeWithdrawalSubmitTx(c.rDb, w.Tx, w.TxId, string(wbytes))
+		db.ChangeWithdrawalSubmitTx(c.rDb, w.Tx, w.TxId, string(wbytes), w.BlockHash)
 		tx, err := c.SubmitWithdrawal(w, blockchain)
 
 		txResult = tx
@@ -369,18 +370,18 @@ func (c *QuantaToCoin) SubmitWithdrawal(w *coin.Withdrawal, blockchain string) (
 	if err != nil {
 		c.logger.Errorf("Error submission: %s", err.Error())
 		if strings.Contains(err.Error(), "known transaction") {
-			db.ChangeSubmitState(c.rDb, w.Tx, db.SUBMIT_FATAL, db.WITHDRAWAL)
+			db.ChangeSubmitState(c.rDb, w.Tx, db.SUBMIT_FATAL, db.WITHDRAWAL, w.BlockHash)
 		} else if strings.Contains(err.Error(), "replacement transaction underpriced") {
-			db.ChangeSubmitState(c.rDb, w.Tx, db.SUBMIT_FATAL, db.WITHDRAWAL)
+			db.ChangeSubmitState(c.rDb, w.Tx, db.SUBMIT_FATAL, db.WITHDRAWAL, w.BlockHash)
 		} else if strings.Contains(err.Error(), "connect: connection refused") {
-			db.ChangeSubmitState(c.rDb, w.Tx, db.SUBMIT_RECOVERABLE, db.WITHDRAWAL)
+			db.ChangeSubmitState(c.rDb, w.Tx, db.SUBMIT_RECOVERABLE, db.WITHDRAWAL, w.BlockHash)
 		} else if strings.Contains(err.Error(), "insufficient funds for gas * price + value") {
-			db.ChangeSubmitState(c.rDb, w.Tx, db.SUBMIT_RECOVERABLE, db.WITHDRAWAL)
+			db.ChangeSubmitState(c.rDb, w.Tx, db.SUBMIT_RECOVERABLE, db.WITHDRAWAL, w.BlockHash)
 		} else if strings.Contains(err.Error(), "transaction failed") {
-			db.ChangeSubmitState(c.rDb, w.Tx, db.SUBMIT_FAILURE, db.WITHDRAWAL)
+			db.ChangeSubmitState(c.rDb, w.Tx, db.SUBMIT_FAILURE, db.WITHDRAWAL, w.BlockHash)
 		}
 	} else {
-		db.ChangeWithdrawalSubmitState(c.rDb, w.Tx, db.SUBMIT_SUCCESS, w.TxId, tx)
+		db.ChangeWithdrawalSubmitState(c.rDb, w.Tx, db.SUBMIT_SUCCESS, w.TxId, tx, w.BlockHash)
 		//db.ChangeSubmitState(c.rDb, w.Tx, db.SUBMIT_SUCCESS, db.WITHDRAWAL)
 		c.logger.Infof("Submitted withdrawal in tx=%s SUCCESS", tx)
 	}
@@ -447,7 +448,8 @@ func (c *QuantaToCoin) DoLoop(cursor int64) ([]quanta.Refund, error) {
 			DestinationAddress: refund.DestinationAddress,
 			QuantaBlockID:      refund.PageTokenID,
 			// TODO: Potentially losing precision when converting to wei
-			Amount: c.ComputeAmountToGraphene(refund.CoinName, refund.Amount),
+			Amount:    c.ComputeAmountToGraphene(refund.CoinName, refund.Amount),
+			BlockHash: refund.BlockHash,
 		}
 
 		db.ConfirmWithdrawal(c.rDb, w)
@@ -462,14 +464,15 @@ func (c *QuantaToCoin) DoLoop(cursor int64) ([]quanta.Refund, error) {
 				QuantaAddr: refund.SourceAddress,
 				Amount:     int64(refund.Amount),
 				BlockID:    int64(refund.LedgerID),
+				BlockHash:  refund.BlockHash,
 			}
-			err = db.ChangeSubmitState(c.rDb, dep.Tx, db.BAD_ADDRESS, db.WITHDRAWAL)
+			err = db.ChangeSubmitState(c.rDb, dep.Tx, db.BAD_ADDRESS, db.WITHDRAWAL, dep.BlockHash)
 			// mark as a bounced transaction
 			err := db.ConfirmDeposit(c.rDb, dep, true)
 			if err != nil {
 				c.logger.Error("Cannot insert into db:" + err.Error())
 			} else if c.nodeID == 0 {
-				err = db.ChangeSubmitState(c.rDb, dep.Tx, db.SUBMIT_CONSENSUS, db.DEPOSIT)
+				err = db.ChangeSubmitState(c.rDb, dep.Tx, db.SUBMIT_CONSENSUS, db.DEPOSIT, dep.BlockHash)
 				if err != nil {
 					c.logger.Error("Cannot change submit state:" + err.Error())
 				}
@@ -479,7 +482,7 @@ func (c *QuantaToCoin) DoLoop(cursor int64) ([]quanta.Refund, error) {
 		} else if w.Amount == 0 {
 			c.logger.Error("Amount is too small")
 		} else if c.nodeID == 0 {
-			db.ChangeSubmitState(c.rDb, w.Tx, db.SUBMIT_CONSENSUS, db.WITHDRAWAL)
+			db.ChangeSubmitState(c.rDb, w.Tx, db.SUBMIT_CONSENSUS, db.WITHDRAWAL, w.BlockHash)
 		}
 	}
 

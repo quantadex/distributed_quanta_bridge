@@ -28,7 +28,8 @@ func NewEthereumSync(coin coin.Coin,
 	rDb *db.DB,
 	logger logger.Logger,
 	blockStartID int64,
-	ethFlush bool) DepositSyncInterface {
+	ethFlush bool,
+	ethMinConfirmation int64) DepositSyncInterface {
 
 	parent := NewDepositSync(coin, quantaChannel, issuingSymbol, db, rDb, logger, blockStartID)
 	eth := &EthereumSync{
@@ -36,6 +37,7 @@ func NewEthereumSync(coin coin.Coin,
 		common.HexToAddress(trustAddress),
 		issuingSymbol,
 		ethFlush,
+		ethMinConfirmation,
 	}
 	eth.Setup()
 
@@ -48,12 +50,14 @@ func NewBitcoinSync(coin coin.Coin,
 	db kv_store.KVStore,
 	rDb *db.DB,
 	logger logger.Logger,
-	blockStartID int64) DepositSyncInterface {
+	blockStartID int64,
+	btcMinConfirmation int64) DepositSyncInterface {
 
 	parent := NewDepositSync(coin, quantaChannel, issuingSymbol, db, rDb, logger, blockStartID)
 	btc := &BitcoinSync{
 		*parent,
 		issuingSymbol,
+		btcMinConfirmation,
 	}
 	btc.Setup()
 
@@ -66,12 +70,14 @@ func NewLitecoinSync(coin coin.Coin,
 	db kv_store.KVStore,
 	rDb *db.DB,
 	logger logger.Logger,
-	blockStartID int64) DepositSyncInterface {
+	blockStartID int64,
+	ltcMinConfirmation int64) DepositSyncInterface {
 
 	parent := NewDepositSync(coin, quantaChannel, issuingSymbol, db, rDb, logger, blockStartID)
 	ltc := &LitecoinSync{
 		*parent,
 		issuingSymbol,
+		ltcMinConfirmation,
 	}
 	ltc.Setup()
 

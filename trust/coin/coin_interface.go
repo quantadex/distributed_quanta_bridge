@@ -31,6 +31,7 @@ type Deposit struct {
 	Amount     int64    // Deposit size
 	BlockID    int64    // The blockID in which this deposit was found
 	Signatures []string // hex signatures via quanta
+	BlockHash  string
 }
 
 /**
@@ -48,6 +49,7 @@ type Withdrawal struct {
 	QuantaBlockID      int64    // Which block this transaction was processed in quanta
 	Amount             uint64   // The withdrawal size
 	Signatures         []string // hex signatures via ethereum
+	BlockHash          string
 }
 
 /**
@@ -124,6 +126,8 @@ type Coin interface {
 	FlushCoin(forwarder string, address string) error
 
 	CheckValidAddress(address string) bool
+
+	GetBlockInfo(hash string) (string, int64, error)
 }
 
 func NewDummyCoin() (Coin, error) {

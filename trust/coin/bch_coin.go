@@ -67,6 +67,10 @@ func (b *BCH) GetPendingTx(map[string]string) ([]*Deposit, error) {
 	panic("not implemented")
 }
 
+func (b *BCH) GetBlockInfo(hash string) (string, int64, error) {
+	panic("not implemented")
+}
+
 func (b *BCH) GenerateMultisig(accountId string) (string, error) {
 	addr := []bchutil.Address{}
 	addr = append(addr, b.signers...)

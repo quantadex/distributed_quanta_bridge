@@ -17,17 +17,18 @@ import (
  * DepositSync is an interface which describes the lifecycle of syncing blockchain deposits into the database.
  */
 type DepositSync struct {
-	coinChannel        coin.Coin
-	quantaChannel      quanta.Quanta // stellar -> graphene
-	coinInfo           map[string]*database.Asset
-	db                 kv_store.KVStore
-	rDb                *db.DB
-	logger             logger.Logger
-	blockStartID       int64
-	fnDepositInBlock   func(blockID int64) ([]*coin.Deposit, error)
-	fnPostProcessBlock func(blockID int64) error
-	fnGetWatchAddress  func() map[string]string
-	fnTransformCoin    func(dep *coin.Deposit) *coin.Deposit
+	coinChannel         coin.Coin
+	quantaChannel       quanta.Quanta // stellar -> graphene
+	coinInfo            map[string]*database.Asset
+	db                  kv_store.KVStore
+	rDb                 *db.DB
+	logger              logger.Logger
+	blockStartID        int64
+	fnDepositInBlock    func(blockID int64) ([]*coin.Deposit, error)
+	fnPostProcessBlock  func(blockID int64) error
+	fnGetWatchAddress   func() map[string]string
+	fnTransformCoin     func(dep *coin.Deposit) *coin.Deposit
+	fnFindAllAndConfirm func() error
 
 	doneChan chan bool
 }
@@ -83,6 +84,11 @@ func (c *DepositSync) DoLoop(blockIDs []int64) []*coin.Deposit {
 		c.logger.Error("could not insert pending transactions to database")
 	}
 	if blockIDs != nil {
+		err := c.fnFindAllAndConfirm()
+		if err != nil {
+			c.logger.Error("Could not get confirm transactions")
+		}
+
 		for _, blockID := range blockIDs {
 			deposits, err := c.fnDepositInBlock(blockID)
 			if err != nil {
@@ -102,7 +108,7 @@ func (c *DepositSync) DoLoop(blockIDs []int64) []*coin.Deposit {
 
 				for _, dep := range deposits {
 					// every node must mark the deposit
-					err = db.ConfirmDeposit(c.rDb, dep, false)
+					err = db.WaitForConfirmation(c.rDb, dep, false)
 					if err != nil {
 						c.logger.Error("Cannot insert into db:" + err.Error())
 					}

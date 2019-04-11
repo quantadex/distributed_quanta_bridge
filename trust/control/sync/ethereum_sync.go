@@ -3,7 +3,9 @@ package sync
 import (
 	"fmt"
 	"github.com/ethereum/go-ethereum/common"
+	"github.com/pkg/errors"
 	"github.com/quantadex/distributed_quanta_bridge/trust/coin"
+	"github.com/quantadex/distributed_quanta_bridge/trust/db"
 	"math/big"
 	"strings"
 )
@@ -13,12 +15,14 @@ type EthereumSync struct {
 	trustAddress  common.Address
 	issuingSymbol map[string]string
 	ethFlush      bool
+	ethMinConfirm int64
 }
 
 func (c *EthereumSync) Setup() {
 	c.fnDepositInBlock = c.GetDepositsInBlock
 	c.fnPostProcessBlock = c.PostProcessBlock
 	c.fnGetWatchAddress = c.GetWatchAddress
+	c.fnFindAllAndConfirm = c.FindAllAndConfirm
 }
 
 /**
@@ -110,5 +114,40 @@ func (c *EthereumSync) PostProcessBlock(blockID int64) error {
 }
 
 func (c *EthereumSync) GetWatchAddress() map[string]string {
+	return nil
+}
+
+func (c *EthereumSync) FindAllAndConfirm() error {
+	txs, err := db.QueryAllWaitForConfirmTx(c.rDb)
+	if err != nil {
+		return err
+	}
+
+	for _, t := range txs {
+		blockHash, confirm, err := c.coinChannel.GetBlockInfo(t.Tx)
+		if err != nil {
+			return errors.Wrap(err, "Could not get the transaction")
+		}
+		tx, err := db.GetAllTransaction(c.rDb, t.Tx, db.DEPOSIT)
+		for _, d := range tx {
+			if d.BlockHash == blockHash {
+				if confirm > c.ethMinConfirm {
+					err := db.ChangeSubmitState(c.rDb, d.Tx, db.SUBMIT_CONSENSUS, db.DEPOSIT, d.BlockHash)
+					if err != nil {
+						return errors.Wrap(err, "Could not change the submit state to consensus")
+					}
+				} else {
+					c.logger.Infof("Transaction %s has %d confirmations", d.Tx, confirm)
+				}
+			} else {
+				c.logger.Infof("BlockHash is different for %s, it is now an orphan", d.Tx)
+				err := db.ChangeSubmitState(c.rDb, d.Tx, db.ORPHAN, db.DEPOSIT, d.BlockHash)
+				if err != nil {
+					return errors.Wrap(err, "Could not change the submit state to orphan")
+				}
+
+			}
+		}
+	}
 	return nil
 }

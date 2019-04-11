@@ -33,7 +33,7 @@ import (
  * DATA DEPENDENT on ROPSTEN
  */
 
-func GetEthSync(node *TrustNode, ethFlush bool) sync.DepositSyncInterface {
+func GetEthSync(node *TrustNode, ethFlush bool, minConfirm int64) sync.DepositSyncInterface {
 	return sync.NewEthereumSync(node.eth,
 		test.GRAPHENE_TRUST.TrustContract,
 		map[string]string{"eth": "TESTETH"},
@@ -42,27 +42,30 @@ func GetEthSync(node *TrustNode, ethFlush bool) sync.DepositSyncInterface {
 		node.rDb,
 		node.log,
 		0,
-		ethFlush)
+		ethFlush,
+		minConfirm)
 }
 
-func GetBtcSync(node *TrustNode) sync.DepositSyncInterface {
+func GetBtcSync(node *TrustNode, minConfirm int64) sync.DepositSyncInterface {
 	return sync.NewBitcoinSync(node.btc,
 		map[string]string{"btc": "TESTISSUE3"},
 		node.q,
 		node.db,
 		node.rDb,
 		node.log,
-		0)
+		0,
+		minConfirm)
 }
 
-func GetLtcSync(node *TrustNode) sync.DepositSyncInterface {
+func GetLtcSync(node *TrustNode, minConfirm int64) sync.DepositSyncInterface {
 	return sync.NewLitecoinSync(node.ltc,
-		map[string]string{"ltc": "TESTISSUE3"},
+		map[string]string{"ltc": "TESTISSUE2"},
 		node.q,
 		node.db,
 		node.rDb,
 		node.log,
-		0)
+		0,
+		minConfirm)
 }
 
 func TestRopstenNativeETH(t *testing.T) {
@@ -76,6 +79,7 @@ func TestRopstenNativeETH(t *testing.T) {
 	nodes[0].cTQ.SuccessCb = func(c control.DepositResult) {
 		depositResult <- c
 	}
+	config := generateConfig(test.GRAPHENE_ISSUER, test.GRAPHENE_TRUST, test.ETHER_NETWORKS[test.ROPSTEN], 0)
 
 	// DEPOSIT to TEST2
 	// 0xba7573C0e805ef71ACB7f1c4a55E7b0af416E96A transfers 0.01 ETH to forward address: 0xb59e4b94e4ed7331ee0520e9377967614ca2dc98 on block 4327101
@@ -85,9 +89,9 @@ func TestRopstenNativeETH(t *testing.T) {
 	for i, node := range nodes {
 		var ethSync sync.DepositSyncInterface
 		if i == 0 {
-			ethSync = GetEthSync(node, true)
+			ethSync = GetEthSync(node, true, config.EthMinConfirmation)
 		} else {
-			ethSync = GetEthSync(node, false)
+			ethSync = GetEthSync(node, false, config.EthMinConfirmation)
 		}
 
 		fmt.Printf("[BLOCK %d] Node[#%d/%d id=%d] calling doLoop...\n", block, i+1, len(nodes), node.nodeID)
@@ -105,9 +109,9 @@ func TestRopstenNativeETH(t *testing.T) {
 	for i, node := range nodes {
 		var ethSync sync.DepositSyncInterface
 		if i == 0 {
-			ethSync = GetEthSync(node, true)
+			ethSync = GetEthSync(node, true, config.EthMinConfirmation)
 		} else {
-			ethSync = GetEthSync(node, false)
+			ethSync = GetEthSync(node, false, config.EthMinConfirmation)
 		}
 
 		fmt.Printf("[BLOCK %d] Node[#%d/%d id=%d] calling doLoop...\n", block, i+1, len(nodes), node.nodeID)
@@ -116,6 +120,25 @@ func TestRopstenNativeETH(t *testing.T) {
 
 		// TODO: inspect the messages for the right content
 		assertMsgCountEqualDoLoop(t, "deposit", 1, len(allDeposits), block, i+1, len(nodes), node)
+	}
+	fmt.Printf("[BLOCK %d] END\n=======================\n\n", block)
+
+	block = int64(5066821)
+	fmt.Printf("=======================\n[BLOCK %d] BEGIN\n\n", block)
+	for i, node := range nodes {
+		var ethSync sync.DepositSyncInterface
+		if i == 0 {
+			ethSync = GetEthSync(node, true, config.EthMinConfirmation)
+		} else {
+			ethSync = GetEthSync(node, false, config.EthMinConfirmation)
+		}
+
+		fmt.Printf("[BLOCK %d] Node[#%d/%d id=%d] calling doLoop...\n", block, i+1, len(nodes), node.nodeID)
+		allDeposits := ethSync.DoLoop([]int64{block})
+		fmt.Printf("...[BLOCK %d] Node[#%d/%d] counts %d [deposit]\n\n", block, i+1, len(nodes), len(allDeposits))
+
+		// TODO: inspect the messages for the right content
+		assertMsgCountEqualDoLoop(t, "deposit", 0, len(allDeposits), block, i+1, len(nodes), node)
 	}
 	fmt.Printf("[BLOCK %d] END\n=======================\n\n", block)
 
@@ -157,15 +180,16 @@ func TestRopstenERC20Token(t *testing.T) {
 	fmt.Printf("[ASSET %s] [ACCOUNT %s] initial_balance = %.9f\n", "SIMPLETOKEN0XDFE1002C2E1AE5E8F4F34BF481900DAAE5351992", "pooja", initialBalance)
 
 	time.Sleep(time.Millisecond * 250)
+	config := generateConfig(test.GRAPHENE_ISSUER, test.GRAPHENE_TRUST, test.ETHER_NETWORKS[test.ROPSTEN], 0)
 
 	block := int64(5066807)
 	fmt.Printf("=======================\n[BLOCK %d] BEGIN\n\n", block)
 	for i, node := range nodes {
 		var ethSync sync.DepositSyncInterface
 		if i == 0 {
-			ethSync = GetEthSync(node, true)
+			ethSync = GetEthSync(node, true, config.EthMinConfirmation)
 		} else {
-			ethSync = GetEthSync(node, false)
+			ethSync = GetEthSync(node, false, config.EthMinConfirmation)
 		}
 
 		fmt.Printf("[BLOCK %d] Node[#%d/%d id=%d] calling doLoop...\n", block, i+1, len(nodes), node.nodeID)
@@ -181,9 +205,9 @@ func TestRopstenERC20Token(t *testing.T) {
 	for i, node := range nodes {
 		var ethSync sync.DepositSyncInterface
 		if i == 0 {
-			ethSync = GetEthSync(node, true)
+			ethSync = GetEthSync(node, true, config.EthMinConfirmation)
 		} else {
-			ethSync = GetEthSync(node, false)
+			ethSync = GetEthSync(node, false, config.EthMinConfirmation)
 		}
 
 		fmt.Printf("[BLOCK %d] Node[#%d/%d id=%d] calling doLoop...\n", block, i+1, len(nodes), node.nodeID)
@@ -200,9 +224,9 @@ func TestRopstenERC20Token(t *testing.T) {
 	for i, node := range nodes {
 		var ethSync sync.DepositSyncInterface
 		if i == 0 {
-			ethSync = GetEthSync(node, true)
+			ethSync = GetEthSync(node, true, config.EthMinConfirmation)
 		} else {
-			ethSync = GetEthSync(node, false)
+			ethSync = GetEthSync(node, false, config.EthMinConfirmation)
 		}
 
 		fmt.Printf("[BLOCK %d] Node[#%d/%d id=%d] calling doLoop...\n", block, i+1, len(nodes), node.nodeID)
@@ -413,7 +437,7 @@ func SendLTC(address string, amount ltcutil.Amount) (string, error) {
 		amountStr,
 	}
 
-	cmd := exec.Command("../blockchain/litecoin/src/litecoin-cli", args...)
+	cmd := exec.Command("litecoin-cli", args...)
 	var out bytes.Buffer
 	var stderr bytes.Buffer
 	cmd.Stdout = &out
@@ -438,6 +462,8 @@ func TestLTCDeposit(t *testing.T) {
 	nodes[0].cTQ.SuccessCb = func(c control.DepositResult) {
 		depositResult <- c
 	}
+
+	config := generateConfig(test.GRAPHENE_ISSUER, test.GRAPHENE_TRUST, test.ETHER_NETWORKS[test.ROPSTEN], 0)
 
 	client, err := coin.NewLitecoinCoin("localhost:19332", &chaincfg2.RegressionNetParams, []string{"047AABB69BBE1B5D9E2EFD10D0215A37AE835EAE08DFDF795E5A8411271F690CC8797CF4DEB3508844920E28A42A67D8A3F56D5B6B65401DEDB1E130F9F9908463", "04851D591308AFBE768566060C01A60A5F6AC6C78C3766559C835BEF0485628013ADC7D7E7676B0281FB83E788F4BC11E4CA597D1A53AF5F0BB90D555A28B55504"})
 	err = client.Attach()
@@ -483,7 +509,24 @@ func TestLTCDeposit(t *testing.T) {
 	block := int64(blockId)
 	fmt.Printf("=======================\n[BLOCK %d] BEGIN\n\n", block)
 	for i, node := range nodes {
-		ltcSync := GetLtcSync(node)
+		ltcSync := GetLtcSync(node, config.LtcMinConfirmation)
+		fmt.Printf("[BLOCK %d] Node[#%d/%d id=%d] calling doLoop...\n", block, i+1, len(nodes), node.nodeID)
+		//allDeposits := node.cTQ.DoLoop([]int64{block})
+		allDeposits := ltcSync.DoLoop([]int64{block})
+		fmt.Printf("...[BLOCK %d] Node[#%d/%d] counts %d [deposit]\n\n", block, i+1, len(nodes), len(allDeposits))
+	}
+	fmt.Printf("[BLOCK %d] END\n=======================\n\n", block)
+
+	GenerateBlock("litecoin-cli")
+
+	blockId, err = client.GetTopBlockID()
+	assert.NoError(t, err)
+	fmt.Println(blockId)
+
+	block = int64(blockId)
+	fmt.Printf("=======================\n[BLOCK %d] BEGIN\n\n", block)
+	for i, node := range nodes {
+		ltcSync := GetLtcSync(node, config.LtcMinConfirmation)
 		fmt.Printf("[BLOCK %d] Node[#%d/%d id=%d] calling doLoop...\n", block, i+1, len(nodes), node.nodeID)
 		//allDeposits := node.cTQ.DoLoop([]int64{block})
 		allDeposits := ltcSync.DoLoop([]int64{block})
@@ -609,6 +652,29 @@ func TestBTCDeposit(t *testing.T) {
 	nodes[0].cTQ.SuccessCb = func(c control.DepositResult) {
 		depositResult <- c
 	}
+	config := generateConfig(test.GRAPHENE_ISSUER, test.GRAPHENE_TRUST, test.ETHER_NETWORKS[test.ROPSTEN], 0)
+
+	client, err := coin.NewBitcoinCoin("localhost:18332", &chaincfg.RegressionNetParams, []string{"2NENNHR9Y9fpKzjKYobbdbwap7xno7sbf2E", "2NEDF3RBHQuUHQmghWzFf6b6eeEnC7KjAtR"})
+	assert.NoError(t, err)
+
+	err = client.Attach()
+	assert.NoError(t, err)
+
+	msig, err := client.GenerateMultisig("pooja")
+	assert.NoError(t, err)
+
+	_, err = client.GenerateMultisig("pooja2")
+	assert.NoError(t, err)
+
+	forwardAddress := &crypto.ForwardInput{
+		msig,
+		common.HexToAddress(test.GRAPHENE_TRUST.TrustContract),
+		"pooja",
+		"",
+		coin.BLOCKCHAIN_BTC,
+	}
+	nodes[0].rDb.AddCrosschainAddress(forwardAddress)
+	nodes[1].rDb.AddCrosschainAddress(forwardAddress)
 
 	pubKey := "pooja"
 	res, err := http.Get("http://localhost:5200/api/address/BTC/" + pubKey)
@@ -628,12 +694,6 @@ func TestBTCDeposit(t *testing.T) {
 	SendBTC(address, amount)
 	GenerateBlock("bitcoin-cli")
 
-	client, err := coin.NewBitcoinCoin("localhost:18332", &chaincfg.RegressionNetParams, nil)
-	assert.NoError(t, err)
-
-	err = client.Attach()
-	assert.NoError(t, err)
-
 	blockId, err := client.GetTopBlockID()
 	assert.NoError(t, err)
 	fmt.Println(blockId)
@@ -641,7 +701,24 @@ func TestBTCDeposit(t *testing.T) {
 	block := int64(blockId)
 	fmt.Printf("=======================\n[BLOCK %d] BEGIN\n\n", block)
 	for i, node := range nodes {
-		btcSync := GetBtcSync(node)
+		btcSync := GetBtcSync(node, config.BtcMinConfirmation)
+		fmt.Printf("[BLOCK %d] Node[#%d/%d id=%d] calling doLoop...\n", block, i+1, len(nodes), node.nodeID)
+		//allDeposits := node.cTQ.DoLoop([]int64{block})
+		allDeposits := btcSync.DoLoop([]int64{block})
+		fmt.Printf("...[BLOCK %d] Node[#%d/%d] counts %d [deposit]\n\n", block, i+1, len(nodes), len(allDeposits))
+	}
+	fmt.Printf("[BLOCK %d] END\n=======================\n\n", block)
+
+	GenerateBlock("bitcoin-cli")
+
+	blockId, err = client.GetTopBlockID()
+	assert.NoError(t, err)
+	fmt.Println(blockId)
+
+	block = int64(blockId)
+	fmt.Printf("=======================\n[BLOCK %d] BEGIN\n\n", block)
+	for i, node := range nodes {
+		btcSync := GetBtcSync(node, config.BtcMinConfirmation)
 		fmt.Printf("[BLOCK %d] Node[#%d/%d id=%d] calling doLoop...\n", block, i+1, len(nodes), node.nodeID)
 		//allDeposits := node.cTQ.DoLoop([]int64{block})
 		allDeposits := btcSync.DoLoop([]int64{block})

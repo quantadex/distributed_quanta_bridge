@@ -68,6 +68,20 @@ func (b *LiteCoin) GetPendingTx(map[string]string) ([]*Deposit, error) {
 	return nil, nil
 }
 
+func (b *LiteCoin) GetBlockInfo(hash string) (string, int64, error) {
+	var res *btcjson.GetBlockVerboseResult
+	chainhash, err := chainhash.NewHashFromStr(hash)
+	if err != nil {
+		return "", 0, err
+	}
+
+	res, err = b.Client.GetBlockVerbose(chainhash)
+	if err != nil {
+		return "", 0, err
+	}
+	return res.Hash, res.Confirmations, nil
+}
+
 func (b *LiteCoin) GenerateMultisig(accountId string) (string, error) {
 	addr := []ltcutil.Address{}
 	addr = append(addr, b.signers...)
@@ -196,6 +210,7 @@ func (b *LiteCoin) GetDepositsInBlock(blockID int64, trustAddress map[string]str
 						Amount:     int64(amount),
 						BlockID:    blockID,
 						Tx:         txHash.String(),
+						BlockHash:  blockHash.String(),
 					})
 				}
 			}

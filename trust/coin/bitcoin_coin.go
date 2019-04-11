@@ -189,6 +189,20 @@ func (b *BitcoinCoin) GetPendingTx(watchMap map[string]string) ([]*Deposit, erro
 	return events, nil
 }
 
+func (b *BitcoinCoin) GetBlockInfo(hash string) (string, int64, error) {
+	var res *btcjson.GetBlockVerboseResult
+	chainhash, err := chainhash.NewHashFromStr(hash)
+	if err != nil {
+		return "", 0, err
+	}
+
+	res, err = b.Client.GetBlockVerbose(chainhash)
+	if err != nil {
+		return "", 0, err
+	}
+	return res.Hash, res.Confirmations, nil
+}
+
 func (b *BitcoinCoin) GetDepositsInBlock(blockID int64, trustAddress map[string]string) ([]*Deposit, error) {
 	blockHash, err := b.Client.GetBlockHash(blockID)
 	if err != nil {
@@ -243,6 +257,7 @@ func (b *BitcoinCoin) GetDepositsInBlock(blockID int64, trustAddress map[string]
 						Amount:     int64(amount),
 						BlockID:    blockID,
 						Tx:         txHash.String(),
+						BlockHash:  blockHash.String(),
 					})
 				}
 			}

@@ -356,7 +356,7 @@ func PostProcessTransaction(network string, base64 string, sigs []string) (strin
 func (q *QuantaClient) ProcessDeposit(deposit *coin.Deposit, proposed string) error {
 	txe, err := PostProcessTransaction(q.QuantaClientOptions.Network, proposed, deposit.Signatures)
 	println(txe, err)
-	return db.ChangeSubmitQueue(q.Db, deposit.Tx, txe, "")
+	return db.ChangeSubmitQueue(q.Db, deposit.Tx, txe, db.DEPOSIT, deposit.BlockHash)
 }
 
 func (q *QuantaClient) GetAsset(assetName string) (*database.Asset, error) {

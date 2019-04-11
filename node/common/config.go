@@ -19,11 +19,13 @@ type Config struct {
 	EthereumRpc        string
 	EthereumTrustAddr  string
 	EthereumKeyStore   string
+	EthMinConfirmation int64
 	BtcRpc             string
 	BtcPrivateKey      string
 	BtcBlockStart      int64
 	BtcSigners         []string
 	BtcNetwork         string
+	BtcMinConfirmation int64
 	LogLevel           string
 	MinNodes           int
 	EthFlush           bool
@@ -34,4 +36,5 @@ type Config struct {
 	LtcSigners         []string
 	LtcNetwork         string
 	LtcBlockStart      int64
+	LtcMinConfirmation int64
 }

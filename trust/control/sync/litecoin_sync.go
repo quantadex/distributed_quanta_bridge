@@ -3,19 +3,23 @@ package sync
 import (
 	"encoding/json"
 	"fmt"
+	"github.com/pkg/errors"
 	"github.com/quantadex/distributed_quanta_bridge/trust/coin"
+	"github.com/quantadex/distributed_quanta_bridge/trust/db"
 	"math/big"
 )
 
 type LitecoinSync struct {
 	DepositSync
 	issuingSymbol map[string]string
+	ltcMinConfirm int64
 }
 
 func (c *LitecoinSync) Setup() {
 	c.fnDepositInBlock = c.GetDepositsInBlock
 	c.fnGetWatchAddress = c.GetWatchAddress
 	c.fnTransformCoin = c.TransformCoin
+	c.fnFindAllAndConfirm = c.FindAllAndConfirm
 }
 
 func (c *LitecoinSync) TransformCoin(dep *coin.Deposit) *coin.Deposit {
@@ -64,4 +68,39 @@ func (c *LitecoinSync) GetWatchAddress() map[string]string {
 
 func (c *LitecoinSync) PostProcessBlock(blockID int64) error {
 	panic("not imp")
+}
+
+func (c *LitecoinSync) FindAndConfirm(tx db.Transaction, blockHash string, confirmations int64) error {
+	if confirmations == -1 {
+		err := db.ChangeSubmitState(c.rDb, tx.Tx, db.ORPHAN, db.DEPOSIT, blockHash)
+		if err != nil {
+			return errors.Wrap(err, "Could not change state to orphan")
+		}
+	} else if confirmations > c.ltcMinConfirm {
+		err := db.ChangeSubmitState(c.rDb, tx.Tx, db.SUBMIT_CONSENSUS, db.DEPOSIT, blockHash)
+		if err != nil {
+			return errors.Wrap(err, "Could not change state to consensus")
+		}
+	} else {
+		c.logger.Infof("Transaction %s has %d confirmations", tx.Tx, confirmations)
+	}
+	return nil
+}
+
+func (c *LitecoinSync) FindAllAndConfirm() error {
+	txs, err := db.QueryAllWaitForConfirmTx(c.rDb)
+	if err != nil {
+		return err
+	}
+	for _, tx := range txs {
+		blockHash, confirmations, err := c.coinChannel.GetBlockInfo(tx.BlockHash)
+		if err != nil {
+			return errors.Wrap(err, "Could not get block info")
+		}
+		err = c.FindAndConfirm(tx, blockHash, confirmations)
+		if err != nil {
+			return err
+		}
+	}
+	return nil
 }

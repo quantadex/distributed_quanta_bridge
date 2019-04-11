@@ -40,15 +40,18 @@ func generateConfig(quanta *test.QuantaNodeSecrets, ethereum *test.EthereumTrust
 		EthereumKeyStore:   ethereum.NodeSecrets[index],
 		EthereumTrustAddr:  ethereum.TrustContract,
 		Erc20Mapping:       map[string]string{strings.ToLower("0xDfE1002c2e1AE5E8F4f34bf481900dAae5351992"): "DAI"},
+		EthMinConfirmation: 1,
 		MinBlockReuse:      43200,
 		BtcPrivateKey:      test.BTCSECRETS.NodeSecrets[index],
 		BtcRpc:             "localhost:18332",
 		BtcSigners:         []string{"2NENNHR9Y9fpKzjKYobbdbwap7xno7sbf2E", "2NEDF3RBHQuUHQmghWzFf6b6eeEnC7KjAtR"},
 		BtcNetwork:         "regnet",
+		BtcMinConfirmation: 1,
 		LtcPrivateKey:      test.LTCSECRETS.NodeSecrets[index],
 		LtcRpc:             "localhost:19332",
 		LtcSigners:         []string{"047AABB69BBE1B5D9E2EFD10D0215A37AE835EAE08DFDF795E5A8411271F690CC8797CF4DEB3508844920E28A42A67D8A3F56D5B6B65401DEDB1E130F9F9908463", "04851D591308AFBE768566060C01A60A5F6AC6C78C3766559C835BEF0485628013ADC7D7E7676B0281FB83E788F4BC11E4CA597D1A53AF5F0BB90D555A28B55504"},
 		LtcNetwork:         "regnet",
+		LtcMinConfirmation: 1,
 	}
 }
 

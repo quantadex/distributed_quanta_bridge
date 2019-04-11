@@ -55,6 +55,15 @@ func (l *Listener) Start(erc20map map[string]string) error {
 	return nil
 }
 
+func (l *Listener) GetTransactionbyHash(hash string) (*types.Transaction, *common.Hash, string, bool, error) {
+	d := time.Now().Add(5 * time.Second)
+	ctx, cancel := context.WithDeadline(context.Background(), d)
+	defer cancel()
+
+	tx, blockHash, blockNumber, isPending, err := l.Client.TransactionBlockHashByHash(ctx, common.HexToHash(hash))
+	return tx, blockHash, blockNumber, isPending, err
+}
+
 func (l *Listener) processBlocks(blockNumber int64) {
 	if blockNumber == 0 {
 		l.log.Info("Starting from the latest block")
@@ -205,6 +214,7 @@ func (l *Listener) GetNativeDeposits(blockNumber int64, toAddress map[string]str
 					Amount:     WeiToGraphene(*tx.Value()),
 					BlockID:    blockNumber,
 					Tx:         tx.Hash().Hex(),
+					BlockHash:  blocks.Hash().String(),
 				})
 			}
 		}
@@ -292,6 +302,7 @@ func (l *Listener) FilterTransferEvent(blockNumber int64, toAddress map[string]s
 					SenderAddr: transferEvent.To.Hex(),
 					Amount:     PowerDelta(*transferEvent.Tokens, int(dec), 5),
 					Tx:         vLog.TxHash.Hex(),
+					BlockHash:  vLog.BlockHash.String(),
 				})
 			}
 

@@ -21,6 +21,7 @@ type Refund struct {
 	SourceAddress      string
 	DestinationAddress string // extract from memo
 	Amount             uint64
+	BlockHash          string
 }
 
 /**

@@ -274,7 +274,7 @@ func TestRandomMissRefund(t *testing.T) {
 		if err != nil {
 			fmt.Println("error ", err)
 		} else {
-			fmt.Printf("Number of refunds # %d r=%d ms\n", len(refunds), r)
+			fmt.Printf("Number of refunds # %d r=%d ms refunds=%v\n", len(refunds), r, refunds)
 			assert.Equal(t, 1, len(refunds))
 		}
 

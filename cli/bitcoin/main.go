@@ -27,6 +27,6 @@ func main() {
 	time.Sleep(3 * time.Second)
 	println("Starting bitcoin deposit sync")
 
-	depositSync := sync.NewBitcoinSync(coin, config.CoinMapping, quanta, kdb, rdb, log, config.BtcBlockStart)
+	depositSync := sync.NewBitcoinSync(coin, config.CoinMapping, quanta, kdb, rdb, log, config.BtcBlockStart, config.BtcMinConfirmation)
 	depositSync.Run()
 }

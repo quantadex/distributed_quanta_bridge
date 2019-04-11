@@ -204,6 +204,7 @@ func (q *QuantaGraphene) GetRefundsInBlock(blockID int64, trustAddress string) (
 						TransactionId:      txId,
 						PageTokenID:        blockID,
 						LedgerID:           int32(blockID),
+						BlockHash:          "",
 					}
 					refunds = append(refunds, newRefund)
 				}
@@ -670,5 +671,5 @@ func (q *QuantaGraphene) ProcessDeposit(deposit *coin.Deposit, proposed string) 
 	if err != nil {
 		return err
 	}
-	return db.ChangeSubmitQueue(q.Db, deposit.Tx, txe, db.DEPOSIT)
+	return db.ChangeSubmitQueue(q.Db, deposit.Tx, txe, db.DEPOSIT, deposit.BlockHash)
 }

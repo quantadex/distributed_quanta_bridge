@@ -225,6 +225,7 @@ func (c *CoinToQuanta) processDeposits() {
 			BlockID:    tx.BlockId,
 			SenderAddr: tx.From,
 			Amount:     tx.Amount,
+			BlockHash:  tx.BlockHash,
 		}
 		// if not a native token, we need to flush it
 		//if tx.Coin != c.coinName {
@@ -240,7 +241,7 @@ func (c *CoinToQuanta) processDeposits() {
 		exist, err := c.quantaChannel.AssetExist(c.quantaOptions.Issuer, tx.Coin)
 		if err != nil {
 			if err.Error() == "issuer do not match" {
-				db.ChangeSubmitState(c.rDb, tx.Tx, db.DUPLICATE_ASSET, db.DEPOSIT)
+				db.ChangeSubmitState(c.rDb, tx.Tx, db.DUPLICATE_ASSET, db.DEPOSIT, tx.BlockHash)
 				return
 			}
 			c.logger.Error(err.Error())
@@ -283,13 +284,13 @@ func (c *CoinToQuanta) processSubmissions() {
 			msg := quanta.ErrorString(err, false)
 			c.logger.Error("could not submit transaction " + msg)
 			if strings.Contains(msg, "tx_bad_seq") || strings.Contains(msg, "op_malformed") {
-				db.ChangeSubmitState(c.rDb, v.Tx, db.SUBMIT_FATAL, db.DEPOSIT)
+				db.ChangeSubmitState(c.rDb, v.Tx, db.SUBMIT_FATAL, db.DEPOSIT, v.BlockHash)
 			}
 		} else {
 			c.logger.Infof("Successful tx submission %s,remove %s", "", k)
 
 			txHash := strconv.Itoa(int(resp.BlockNum)) + "_" + strconv.Itoa(int(resp.TrxNum))
-			err = db.ChangeDepositSubmitState(c.rDb, v.Tx, db.SUBMIT_SUCCESS, int(resp.BlockNum), txHash)
+			err = db.ChangeDepositSubmitState(c.rDb, v.Tx, db.SUBMIT_SUCCESS, int(resp.BlockNum), txHash, v.BlockHash)
 			//err = db.ChangeSubmitState(c.rDb, v.Tx, db.SUBMIT_SUCCESS, db.DEPOSIT)
 			if err != nil {
 				c.logger.Error("Error removing key=" + v.Tx)
@@ -346,7 +347,7 @@ func (c *CoinToQuanta) StartConsensus(tx *coin.Deposit, consensus ConsensusType)
 
 	if err != nil {
 		c.logger.Error("Failed to encode refund 1" + err.Error())
-		db.ChangeSubmitState(c.rDb, tx.Tx, db.ENCODE_FAILURE, db.DEPOSIT)
+		db.ChangeSubmitState(c.rDb, tx.Tx, db.ENCODE_FAILURE, db.DEPOSIT, tx.BlockHash)
 		return HEX_NULL, err
 	}
 
@@ -381,7 +382,7 @@ func (c *CoinToQuanta) StartConsensus(tx *coin.Deposit, consensus ConsensusType)
 			fmt.Println("Asset Created")
 			return HEX_NULL, nil
 		} else {
-			db.ChangeSubmitQueue(c.rDb, tx.Tx, txe, db.DEPOSIT)
+			db.ChangeSubmitQueue(c.rDb, tx.Tx, txe, db.DEPOSIT, tx.BlockHash)
 		}
 
 		txResult = ""

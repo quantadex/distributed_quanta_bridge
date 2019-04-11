@@ -27,6 +27,6 @@ func main() {
 	time.Sleep(3 * time.Second)
 	println("Starting litecoin deposit sync")
 
-	depositSync := sync.NewLitecoinSync(coin, config.CoinMapping, quanta, kdb, rdb, log, config.LtcBlockStart)
+	depositSync := sync.NewLitecoinSync(coin, config.CoinMapping, quanta, kdb, rdb, log, config.LtcBlockStart, config.LtcMinConfirmation)
 	depositSync.Run()
 }
