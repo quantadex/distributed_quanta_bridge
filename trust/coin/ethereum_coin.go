@@ -60,16 +60,21 @@ func (c *EthereumCoin) Attach() error {
 
 func (c *EthereumCoin) GetBlockInfo(hash string) (string, int64, error) {
 	_, blockHash, blockNumber, _, err := c.client.GetTransactionbyHash(hash)
+	if err != nil {
+		return "", 0, err
+	}
 	var blockNum int64
-	if strings.HasPrefix(strings.ToLower(blockNumber), "0x") {
-		blockNum, err = strconv.ParseInt(blockNumber[2:], 16, 64)
-		if err != nil {
-			return "", 0, errors2.Wrap(err, "Could not convert block number")
-		}
-	} else {
-		blockNum, err = strconv.ParseInt(blockNumber[2:], 16, 64)
-		if err != nil {
-			return "", 0, errors2.Wrap(err, "Could not convert block number")
+	if len(blockNumber) != 0 {
+		if strings.HasPrefix(strings.ToLower(blockNumber), "0x") {
+			blockNum, err = strconv.ParseInt(blockNumber[2:], 16, 64)
+			if err != nil {
+				return "", 0, errors2.Wrap(err, "Could not convert block number")
+			}
+		} else {
+			blockNum, err = strconv.ParseInt(blockNumber, 16, 64)
+			if err != nil {
+				return "", 0, errors2.Wrap(err, "Could not convert block number")
+			}
 		}
 	}
 	topBlock, err := c.GetTopBlockID()
