@@ -16,7 +16,6 @@ import (
 	"github.com/pkg/errors"
 	common2 "github.com/quantadex/distributed_quanta_bridge/common"
 	"github.com/quantadex/distributed_quanta_bridge/common/crypto"
-	"os/exec"
 	"regexp"
 	"strings"
 )
@@ -277,25 +276,26 @@ func (b *BitcoinCoin) GetForwardersInBlock(blockID int64) ([]*crypto.ForwardInpu
 }
 
 func (b *BitcoinCoin) CombineSignatures(signs []string) (string, error) {
-	sigsByte, err := json.Marshal(signs)
-	args := []string{
-		"combinerawtransaction",
-		string(sigsByte),
-	}
-
-	cmd := exec.Command("bitcoin-cli", args...)
-	var out bytes.Buffer
-	var stderr bytes.Buffer
-	cmd.Stdout = &out
-	cmd.Stderr = &stderr
-
-	err = cmd.Run()
-
+	marshalledParam, err := json.Marshal(signs)
 	if err != nil {
-		println("err", err.Error(), stderr.String())
+		return "", err
+	}
+	rawMessage := json.RawMessage(marshalledParam)
+	rawParams := []json.RawMessage{rawMessage}
+
+	res, err := b.Client.RawRequest("combinerawtransaction", rawParams)
+	if err != nil {
+		return "", nil
 	}
 
-	return out.String(), err
+	// decode result to string
+	var combinedtx string
+	err = json.Unmarshal(res, &combinedtx)
+	if err != nil {
+		return "", err
+	}
+
+	return combinedtx, nil
 }
 
 func (b *BitcoinCoin) SendWithdrawal(trustAddress common.Address,

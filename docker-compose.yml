@@ -16,6 +16,7 @@ services:
     - "/home/ec2-user/secrets/crosschain.yml:/data/crosschain.yml"
     - "/home/ec2-user/secrets/bitcoin.conf:/root/.bitcoin/bitcoin.conf"
     - "/home/ec2-user/secrets/litecoin.conf:/root/.litecoin/litecoin.conf"
+    - "/home/ec2-user/secrets/bch.conf:/root/.bch/bch.conf"
     command: /usr/bin/quanta-bridge -config /data/crosschain.yml -registry
 
   crosschain_btc:
@@ -79,5 +80,14 @@ services:
     volumes:
     - "/home/ec2-user/litecoin-data:/data"
     command: litecoind testnet -rpcallowip=0.0.0.0/0 -rpcuser=user -rpcpassword=123 -deprecatedrpc=signrawtransaction -txindex -deprecatedrpc=accounts -printtoconsole -rpcport=19332
+
+  bitcoin-abc:
+    image: zquestz/bitcoin-abc:0.19.2
+    ports:
+    - "18332:18332"
+    - "18444:18444"
+    volumes:
+    - "/home/ec2-user/bch-data:/data"
+    command: bitcoind -testnet -rpcallowip=0.0.0.0/0 -rpcuser=user -rpcpassword=123 -deprecatedrpc=signrawtransaction  -txindex -deprecatedrpc=accounts -printtoconsole
 
 

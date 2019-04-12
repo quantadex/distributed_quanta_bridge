@@ -17,7 +17,7 @@ import (
 	"crypto/ecdsa"
 	"encoding/hex"
 	"encoding/json"
-	"os/exec"
+	//"os/exec"
 	"strings"
 )
 
@@ -238,25 +238,27 @@ func (b *BCH) GetForwardersInBlock(blockID int64) ([]*crypto.ForwardInput, error
 }
 
 func (b *BCH) CombineSignatures(signs []string) (string, error) {
-	sigsByte, err := json.Marshal(signs)
-	args := []string{
-		"combinerawtransaction",
-		string(sigsByte),
-	}
 
-	cmd := exec.Command("bitcoin-cli", args...)
-	var out bytes.Buffer
-	var stderr bytes.Buffer
-	cmd.Stdout = &out
-	cmd.Stderr = &stderr
-
-	err = cmd.Run()
-
+	// encode the input as rawmessage
+	marshalledParam, err := json.Marshal(signs)
 	if err != nil {
-		println("err", err.Error(), stderr.String())
+		return "", err
+	}
+	rawMessage := json.RawMessage(marshalledParam)
+	rawParams := []json.RawMessage{rawMessage}
+
+	res, err := b.Client.RawRequest("combinerawtransaction", rawParams)
+	if err != nil {
+		return "", nil
+	}
+	// decode result to string
+	var combinedtx string
+	err = json.Unmarshal(res, &combinedtx)
+	if err != nil {
+		return "", err
 	}
 
-	return out.String(), err
+	return combinedtx, nil
 }
 
 func (b *BCH) SendWithdrawal(trustAddress common.Address,
