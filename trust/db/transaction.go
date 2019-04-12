@@ -41,14 +41,14 @@ const WAIT_FOR_CONFIRMATION = "wait_for_confirmation"
 const ORPHAN = "orphan"
 
 type Transaction struct {
-	Type                string `sql:"unique:type_tx"`
-	Tx                  string `sql:"unique:type_tx"`
+	Type                string `sql:"unique:type_tx_block_hash"`
+	Tx                  string `sql:"unique:type_tx_block_hash"`
 	TxId                uint64
 	Coin                string
 	Created             time.Time
 	Amount              int64
 	BlockId             int64
-	BlockHash           string `sql:"unique:type_tx,notnull"`
+	BlockHash           string `sql:"unique:type_tx_block_hash,notnull"`
 	From                string
 	To                  string
 	Signed              bool `sql:",notnull"`
@@ -94,7 +94,7 @@ func ConfirmDeposit(db *DB, dep *coin.Deposit, isBounced bool) error {
 		SubmitState: SUBMIT_CONSENSUS,
 		BlockHash:   dep.BlockHash,
 	}
-	_, err := db.Model(tx).OnConflict("(Type,Tx) DO UPDATE").Set("Submit_State = EXCLUDED.Submit_State").Insert()
+	_, err := db.Model(tx).OnConflict("(Type,Tx,Block_Hash) DO UPDATE").Set("Submit_State = EXCLUDED.Submit_State").Insert()
 
 	return err
 }
@@ -114,7 +114,7 @@ func WaitForConfirmation(db *DB, dep *coin.Deposit, isBounced bool) error {
 		SubmitState: WAIT_FOR_CONFIRMATION,
 		BlockHash:   dep.BlockHash,
 	}
-	_, err := db.Model(tx).OnConflict("(Type,Tx) DO UPDATE").Set("Submit_State = EXCLUDED.Submit_State").Insert()
+	_, err := db.Model(tx).OnConflict("(Type,Tx,Block_Hash) DO UPDATE").Set("Submit_State = EXCLUDED.Submit_State").Insert()
 
 	return err
 }
@@ -213,7 +213,7 @@ func ConfirmWithdrawal(db *DB, dep *coin.Withdrawal) error {
 	}
 
 	_, err := db.Model(tx).
-		OnConflict("(Type,Tx) DO UPDATE").Set("Submit_State = EXCLUDED.Submit_State").Insert()
+		OnConflict("(Type,Tx,Block_Hash) DO UPDATE").Set("Submit_State = EXCLUDED.Submit_State").Insert()
 
 	return err
 }
@@ -235,6 +235,8 @@ func MigrateTx(db *DB) error {
 
 	db.RunInTransaction(func(tx *pg.Tx) error {
 		_, err := tx.Exec("ALTER TABLE transactions ADD COLUMN block_hash text")
+		_, err = tx.Exec("ALTER TABLE transactions DROP CONSTRAINT transactions_type_tx_key")
+		_, err = tx.Exec("ALTER TABLE transactions ADD CONSTRAINT transactions_type_tx_block_hash_key UNIQUE (type, tx, block_hash)")
 		return err
 	})
 	return err
