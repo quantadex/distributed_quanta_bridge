@@ -83,3 +83,23 @@ func NewLitecoinSync(coin coin.Coin,
 
 	return ltc
 }
+
+func NewBCHSync(coin coin.Coin,
+	issuingSymbol map[string]string,
+	quantaChannel quanta.Quanta,
+	db kv_store.KVStore,
+	rDb *db.DB,
+	logger logger.Logger,
+	blockStartID int64,
+	bchMinConfirmation int64) DepositSyncInterface {
+
+	parent := NewDepositSync(coin, quantaChannel, issuingSymbol, db, rDb, logger, blockStartID)
+	bch := &BCHSync{
+		*parent,
+		issuingSymbol,
+		bchMinConfirmation,
+	}
+	bch.Setup()
+
+	return bch
+}

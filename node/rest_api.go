@@ -64,7 +64,7 @@ func (server *Server) setRoute() {
 }
 
 func (server *Server) generateNewAddress(blockchain string, quanta string) (*crypto.ForwardInput, error) {
-	if blockchain == coin.BLOCKCHAIN_BTC || blockchain == coin.BLOCKCHAIN_LTC {
+	if blockchain == coin.BLOCKCHAIN_BTC || blockchain == coin.BLOCKCHAIN_LTC || blockchain == coin.BLOCKCHAIN_BCH {
 		forwardInput, err := server.trustNode.CreateMultisig(blockchain, quanta)
 		return forwardInput, err
 	} else {
@@ -106,7 +106,7 @@ func (server *Server) addressHandler(w http.ResponseWriter, r *http.Request) {
 			}
 		}
 	}
-	if !(blockchain == coin.BLOCKCHAIN_BTC || blockchain == coin.BLOCKCHAIN_ETH || blockchain == coin.BLOCKCHAIN_LTC) {
+	if !(blockchain == coin.BLOCKCHAIN_BTC || blockchain == coin.BLOCKCHAIN_ETH || blockchain == coin.BLOCKCHAIN_LTC || blockchain == coin.BLOCKCHAIN_BCH) {
 		w.WriteHeader(http.StatusBadRequest)
 		w.Write([]byte("not a supported blockchain"))
 		return
@@ -165,7 +165,7 @@ func (server *Server) addressHandler(w http.ResponseWriter, r *http.Request) {
 		server.logger.Infof("Updated the crosschain address for account : %s to %s", quanta, addr[0].Address)
 	}
 
-	if len(values) == 0 && (blockchain == coin.BLOCKCHAIN_BTC || blockchain == coin.BLOCKCHAIN_LTC) {
+	if len(values) == 0 && (blockchain == coin.BLOCKCHAIN_BTC || blockchain == coin.BLOCKCHAIN_LTC || blockchain == coin.BLOCKCHAIN_BCH) {
 		_, err := server.generateNewAddress(blockchain, quanta)
 		if err != nil {
 			w.WriteHeader(http.StatusInternalServerError)

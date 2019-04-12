@@ -23,6 +23,7 @@ func TestEthereumEncodeDecode(t *testing.T) {
 		12345,
 		5,
 		nil,
+		"",
 	}
 	fmt.Printf("original: %v\n", w)
 
@@ -58,6 +59,7 @@ func TestEthereumEncodeDecodeERC20(t *testing.T) {
 		12345,
 		5,
 		nil,
+		"",
 	}
 	fmt.Printf("original: %v\n", w)
 
@@ -106,6 +108,7 @@ func TestAdhocEncode(t *testing.T) {
 		1,
 		5,
 		nil,
+		"",
 	}
 	encoded, _ := coin.EncodeRefund(w)
 	println(encoded)

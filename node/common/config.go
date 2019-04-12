@@ -37,4 +37,10 @@ type Config struct {
 	LtcNetwork         string
 	LtcBlockStart      int64
 	LtcMinConfirmation int64
+	BchRpc             string
+	BchPrivateKey      string
+	BchSigners         []string
+	BchNetwork         string
+	BchBlockStart      int64
+	BchMinConfirmation int64
 }

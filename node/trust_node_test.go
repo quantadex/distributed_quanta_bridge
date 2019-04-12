@@ -7,6 +7,7 @@ import (
 	"github.com/btcsuite/btcutil"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/ethclient"
+	"github.com/gcash/bchutil"
 	"github.com/ltcsuite/ltcutil"
 	"github.com/quantadex/distributed_quanta_bridge/common/crypto"
 	"github.com/quantadex/distributed_quanta_bridge/common/test"
@@ -21,6 +22,7 @@ import (
 	"testing"
 	"time"
 
+	chaincfg3 "github.com/gcash/bchd/chaincfg"
 	chaincfg2 "github.com/ltcsuite/ltcd/chaincfg"
 )
 
@@ -60,6 +62,17 @@ func GetBtcSync(node *TrustNode, minConfirm int64) sync.DepositSyncInterface {
 func GetLtcSync(node *TrustNode, minConfirm int64) sync.DepositSyncInterface {
 	return sync.NewLitecoinSync(node.ltc,
 		map[string]string{"ltc": "TESTISSUE2"},
+		node.q,
+		node.db,
+		node.rDb,
+		node.log,
+		0,
+		minConfirm)
+}
+
+func GetBchSync(node *TrustNode, minConfirm int64) sync.DepositSyncInterface {
+	return sync.NewBCHSync(node.bch,
+		map[string]string{"bch": "TESTISSUE8"},
 		node.q,
 		node.db,
 		node.rDb,
@@ -425,6 +438,219 @@ func TestWithdrawal(t *testing.T) {
 
 	StopNodes(nodes, []int{0, 1})
 	StopRegistry(r)
+}
+
+func TestBCHDeposit(t *testing.T) {
+	r := StartRegistry(2, ":6000")
+	nodes := StartNodes(test.GRAPHENE_ISSUER, test.GRAPHENE_TRUST, test.ETHER_NETWORKS[test.ROPSTEN])
+	time.Sleep(time.Millisecond * 250)
+
+	depositResult := make(chan control.DepositResult)
+
+	nodes[0].cTQ.SuccessCb = func(c control.DepositResult) {
+		depositResult <- c
+	}
+
+	config := generateConfig(test.GRAPHENE_ISSUER, test.GRAPHENE_TRUST, test.ETHER_NETWORKS[test.ROPSTEN], 0)
+
+	client, err := coin.NewBCHCoin("localhost:18332", &chaincfg3.RegressionNetParams, []string{"049C8C4647E016C502766C6F5C40CFD37EE86CD02972274CA50DA16D72016CAB5812F867F27C268923E5DE3ADCB268CC8A29B96D0D8972841F286BA6D9CCF61360", "040C9B0D5324CBAF4F40A215C1D87DF1BEB51A0345E0384942FE0D60F8D796F7B7200CC5B70DDCF101E7804EFA26A0CE6EC6622C2FE90BCFD2DA2482006C455FF1"})
+	err = client.Attach()
+	assert.NoError(t, err)
+
+	msig, err := client.GenerateMultisig("pooja")
+	assert.NoError(t, err)
+
+	forwardAddress := &crypto.ForwardInput{
+		msig,
+		common.HexToAddress(test.GRAPHENE_TRUST.TrustContract),
+		"pooja",
+		"",
+		coin.BLOCKCHAIN_BCH,
+	}
+	nodes[0].rDb.AddCrosschainAddress(forwardAddress)
+	nodes[1].rDb.AddCrosschainAddress(forwardAddress)
+
+	assert.NoError(t, err)
+
+	pubKey := "pooja"
+	res, err := http.Get("http://localhost:5200/api/address/BCH/" + pubKey)
+	assert.NoError(t, err)
+	assert.Equal(t, res.StatusCode, 200)
+
+	bodyBytes, err := ioutil.ReadAll(res.Body)
+	assert.NoError(t, err)
+
+	println("Address created ", string(bodyBytes))
+
+	address := string(bodyBytes)[13:62]
+	err = ImportAddress(address, "bitcoin-cli")
+	assert.NoError(t, err)
+
+	amount, _ := bchutil.NewAmount(0.01)
+	SendBCH(address, amount)
+	GenerateBlock("bitcoin-cli")
+
+	blockId, err := client.GetTopBlockID()
+	assert.NoError(t, err)
+	fmt.Println(blockId)
+
+	block := int64(blockId)
+	fmt.Printf("=======================\n[BLOCK %d] BEGIN\n\n", block)
+	for i, node := range nodes {
+		ltcSync := GetBchSync(node, config.LtcMinConfirmation)
+		fmt.Printf("[BLOCK %d] Node[#%d/%d id=%d] calling doLoop...\n", block, i+1, len(nodes), node.nodeID)
+		//allDeposits := node.cTQ.DoLoop([]int64{block})
+		allDeposits := ltcSync.DoLoop([]int64{block})
+		fmt.Printf("...[BLOCK %d] Node[#%d/%d] counts %d [deposit]\n\n", block, i+1, len(nodes), len(allDeposits))
+	}
+	fmt.Printf("[BLOCK %d] END\n=======================\n\n", block)
+
+	GenerateBlock("bitcoin-cli")
+
+	blockId, err = client.GetTopBlockID()
+	assert.NoError(t, err)
+	fmt.Println(blockId)
+
+	block = int64(blockId)
+	fmt.Printf("=======================\n[BLOCK %d] BEGIN\n\n", block)
+	for i, node := range nodes {
+		ltcSync := GetBchSync(node, config.LtcMinConfirmation)
+		fmt.Printf("[BLOCK %d] Node[#%d/%d id=%d] calling doLoop...\n", block, i+1, len(nodes), node.nodeID)
+		//allDeposits := node.cTQ.DoLoop([]int64{block})
+		allDeposits := ltcSync.DoLoop([]int64{block})
+		fmt.Printf("...[BLOCK %d] Node[#%d/%d] counts %d [deposit]\n\n", block, i+1, len(nodes), len(allDeposits))
+	}
+	fmt.Printf("[BLOCK %d] END\n=======================\n\n", block)
+
+	time.Sleep(10 * time.Second)
+
+	var w *control.DepositResult
+	select {
+	case <-time.After(time.Second * 8):
+		w = nil
+	case w_ := <-depositResult:
+		w = &w_
+	}
+
+	assert.NotNil(t, w, "We expect withdrawal completed")
+	assert.NoError(t, w.Err, "should not get an error")
+
+	time.Sleep(time.Second * 5)
+
+	StopNodes(nodes, []int{0, 1})
+	StopRegistry(r)
+}
+
+func TestBCHWithdrawal(t *testing.T) {
+	ethereumClient, err := ethclient.Dial(test.ETHER_NETWORKS[test.ROPSTEN].Rpc)
+	assert.Nil(t, err)
+
+	trustAddress := common.HexToAddress(test.GRAPHENE_TRUST.TrustContract)
+	contract, err := contracts.NewTrustContract(trustAddress, ethereumClient)
+	assert.NoError(t, err)
+
+	r := StartRegistry(2, ":6000")
+
+	txId, err := contract.TxIdLast(nil)
+	assert.NoError(t, err)
+	println("latest TXID=", txId)
+
+	nodes := StartNodes(test.GRAPHENE_ISSUER, test.GRAPHENE_TRUST, test.ETHER_NETWORKS[test.ROPSTEN])
+
+	withdrawResult := make(chan control.WithdrawalResult)
+
+	nodes[0].qTC.SuccessCb = func(c control.WithdrawalResult) {
+		withdrawResult <- c
+	}
+
+	client, err := coin.NewBCHCoin("localhost:18332", &chaincfg3.RegressionNetParams, []string{"049C8C4647E016C502766C6F5C40CFD37EE86CD02972274CA50DA16D72016CAB5812F867F27C268923E5DE3ADCB268CC8A29B96D0D8972841F286BA6D9CCF61360", "040C9B0D5324CBAF4F40A215C1D87DF1BEB51A0345E0384942FE0D60F8D796F7B7200CC5B70DDCF101E7804EFA26A0CE6EC6622C2FE90BCFD2DA2482006C455FF1"})
+	err = client.Attach()
+	assert.NoError(t, err)
+
+	btec, err := crypto.GenerateGrapheneKeyWithSeed("pooja")
+	assert.NoError(t, err)
+	msig, err := client.GenerateMultisig(btec)
+
+	forwardAddress := &crypto.ForwardInput{
+		msig,
+		common.HexToAddress(test.GRAPHENE_TRUST.TrustContract),
+		"pooja",
+		"",
+		coin.BLOCKCHAIN_BCH,
+	}
+	nodes[0].rDb.AddCrosschainAddress(forwardAddress)
+	nodes[1].rDb.AddCrosschainAddress(forwardAddress)
+
+	pubKey := "pooja"
+	res, err := http.Get("http://localhost:5200/api/address/BCH/" + pubKey)
+	assert.NoError(t, err)
+	assert.Equal(t, res.StatusCode, 200)
+
+	bodyBytes, err := ioutil.ReadAll(res.Body)
+	assert.NoError(t, err)
+
+	println("Address created ", string(bodyBytes))
+
+	amount, err := bchutil.NewAmount(0.9)
+	address := string(bodyBytes)[13:62]
+	err = ImportAddress(address, "../blockchain/bch-abc/bitcoin-abc-0.19.1/bin/bitcoin-cli")
+	assert.NoError(t, err)
+
+	SendBCH(address, amount)
+	GenerateBlock("../blockchain/bch-abc/bitcoin-abc-0.19.1/bin/bitcoin-cli")
+
+	cursor := int64(8529695)
+	fmt.Printf("=======================\n[CURSOR %d] BEGIN\n\n", cursor)
+	for i, node := range nodes {
+		refunds, err := node.qTC.DoLoop(cursor)
+		assert.NoError(t, err, "error: cursor #%d [node #%d/%d id=%d]", cursor, i+1, len(nodes), node.nodeID)
+		assert.Equal(t, 1, len(refunds), "refunds: cursor #%d [node #%d/%d id=%d]", cursor, i+1, len(nodes), node.nodeID)
+	}
+
+	fmt.Printf("[CURSOR %d] END\n=======================\n\n", cursor)
+
+	time.Sleep(time.Second * 8)
+
+	var w *control.WithdrawalResult
+	select {
+	case <-time.After(time.Second * 8):
+		w = nil
+	case w_ := <-withdrawResult:
+		w = &w_
+	}
+
+	fmt.Println("w = ", w)
+
+	assert.NotNil(t, w, "We expect withdrawal completed")
+	assert.NoError(t, w.Err, "should not get an error")
+
+	StopNodes(nodes, []int{0, 1})
+	StopRegistry(r)
+}
+
+func SendBCH(address string, amount bchutil.Amount) (string, error) {
+	amountStr := fmt.Sprintf("%f", amount.ToBCH())
+	fmt.Printf("Sending to %s amount of %s\n", address, amountStr)
+	args := []string{
+		//"-datadir=../../blockchain/bitcoin/data",
+		"sendtoaddress",
+		address,
+		amountStr,
+	}
+
+	cmd := exec.Command("../blockchain/bch-abc/bitcoin-abc-0.19.1/bin/bitcoin-cli", args...)
+	var out bytes.Buffer
+	var stderr bytes.Buffer
+	cmd.Stdout = &out
+	cmd.Stderr = &stderr
+
+	err := cmd.Run()
+
+	if err != nil {
+		println("err", err.Error(), stderr.String())
+	}
+
+	return out.String(), err
 }
 
 func SendLTC(address string, amount ltcutil.Amount) (string, error) {

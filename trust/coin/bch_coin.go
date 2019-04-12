@@ -64,11 +64,21 @@ func (b *BCH) GetTopBlockID() (int64, error) {
 }
 
 func (b *BCH) GetPendingTx(map[string]string) ([]*Deposit, error) {
-	panic("not implemented")
+	return nil, nil
 }
 
 func (b *BCH) GetBlockInfo(hash string) (string, int64, error) {
-	panic("not implemented")
+	var res *btcjson.GetBlockVerboseResult
+	chainhash, err := chainhash.NewHashFromStr(hash)
+	if err != nil {
+		return "", 0, err
+	}
+
+	res, err = b.Client.GetBlockVerbose(chainhash)
+	if err != nil {
+		return "", 0, err
+	}
+	return res.Hash, res.Confirmations, nil
 }
 
 func (b *BCH) GenerateMultisig(accountId string) (string, error) {
@@ -208,6 +218,7 @@ func (b *BCH) GetDepositsInBlock(blockID int64, trustAddress map[string]string) 
 						Amount:     int64(amount),
 						BlockID:    blockID,
 						Tx:         txHash.String(),
+						BlockHash:  blockHash.String(),
 					})
 				}
 			}

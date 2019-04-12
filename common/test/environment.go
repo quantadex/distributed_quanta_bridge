@@ -23,6 +23,10 @@ type LtcSecrets struct {
 	NodeSecrets []string
 }
 
+type BchSecrets struct {
+	NodeSecrets []string
+}
+
 var QUANTA_ISSUER = &QuantaNodeSecrets{
 	NodeSecrets: []string{
 		"ZBHK5VE5ZM5MJI3FM7JOW7MMUF3FIRUMV3BTLUTJWQHDFEN7MG3J4VAV",
@@ -64,6 +68,13 @@ var LTCSECRETS = &LtcSecrets{
 	NodeSecrets: []string{
 		"92P5DpWDiuttphtXV5qrHjMnFU2nAyiR8NpyEkF5s8uAngVgBFb",
 		"926mkZAmMowq4HaLqpNjwuJuPe3vP6iTVQnt1x9GWdwbnwQjDea",
+	},
+}
+
+var BCHSECRETS = &BchSecrets{
+	NodeSecrets: []string{
+		"92REaZhgcw6FF2rz8EnY1HMtBvgh3qh4gs9PxnccPrju6ZCFetk",
+		"923EhimzuuHQvRaRWhTbKtocZSaKjvXkc32jbBiT5NPkCVGKYmf",
 	},
 }
 

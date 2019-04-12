@@ -86,7 +86,7 @@ func (c *DepositSync) DoLoop(blockIDs []int64) []*coin.Deposit {
 	if blockIDs != nil {
 		err := c.fnFindAllAndConfirm()
 		if err != nil {
-			c.logger.Error("Could not get confirm transactions")
+			c.logger.Errorf("%s : Could not get confirm transactions", err.Error())
 		}
 
 		for _, blockID := range blockIDs {

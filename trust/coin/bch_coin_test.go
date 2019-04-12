@@ -37,7 +37,7 @@ func SendBCH(address string, amount bchutil.Amount) (string, error) {
 		amountStr,
 	}
 
-	cmd := exec.Command("../../blockchain/bch-abc/bitcoin-abc-0.19.1/bin/bitcoin-cli", args...)
+	cmd := exec.Command("bitcoin-cli", args...)
 	var out bytes.Buffer
 	var stderr bytes.Buffer
 	cmd.Stdout = &out
@@ -59,7 +59,7 @@ func GenerateBCHBlock() (string, error) {
 		"1",
 	}
 
-	cmd := exec.Command("../../blockchain/bch-abc/bitcoin-abc-0.19.1/bin/bitcoin-cli", args...)
+	cmd := exec.Command("bitcoin-cli", args...)
 	var out bytes.Buffer
 	var stderr bytes.Buffer
 	cmd.Stdout = &out
