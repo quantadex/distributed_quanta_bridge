@@ -1,7 +1,6 @@
 package coin
 
 import (
-	"fmt"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/gcash/bchd/btcjson"
 	"github.com/gcash/bchd/chaincfg"
@@ -145,7 +144,6 @@ func (b *BCH) GetDepositsInBlock(blockID int64, trustAddress map[string]string) 
 
 	block, err := b.Client.GetBlock(blockHash)
 	if err != nil {
-		fmt.Println("error = ", err)
 		return nil, err
 	}
 

@@ -209,6 +209,9 @@ func (b *BitcoinCoin) GetDepositsInBlock(blockID int64, trustAddress map[string]
 	}
 
 	block, err := b.Client.GetBlock(blockHash)
+	if err != nil {
+		return nil, err
+	}
 
 	unspent, err := b.Client.ListUnspent()
 	if err != nil {
