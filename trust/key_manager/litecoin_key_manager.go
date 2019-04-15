@@ -36,7 +36,7 @@ func (b *LitecoinKeyManager) LoadNodeKeys(privKey string) error {
 	}, nil)
 
 	if err != nil {
-		return errors.Wrap(err, "Cannot load BTC key")
+		return errors.Wrap(err, "Cannot attach client for LTC")
 	}
 
 	err = crypto.ValidateNetwork(b.client, "Litecoin")

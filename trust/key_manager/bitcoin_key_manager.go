@@ -36,7 +36,7 @@ func (b *BitcoinKeyManager) LoadNodeKeys(privKey string) error {
 	}, nil)
 
 	if err != nil {
-		return errors.Wrap(err, "Cannot load BTC key")
+		return errors.Wrap(err, "Cannot attach client for BTC")
 	}
 
 	err = crypto.ValidateNetwork(b.client, "Satoshi")

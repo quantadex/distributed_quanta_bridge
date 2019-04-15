@@ -37,7 +37,7 @@ func (b *BCHKeyManager) LoadNodeKeys(privKey string) error {
 	}, nil)
 
 	if err != nil {
-		return errors.Wrap(err, "Cannot load BTC key")
+		return errors.Wrap(err, "Cannot attach client for BCH")
 	}
 
 	err = crypto.ValidateNetwork(b.client, "Bitcoin ABC")
