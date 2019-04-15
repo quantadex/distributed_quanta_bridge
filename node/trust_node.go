@@ -146,7 +146,7 @@ func initNode(config common.Config, targetCoin coin.Coin) (*TrustNode, bool) {
 	}
 	err = node.bchKM.LoadNodeKeys(config.BchPrivateKey)
 	if err != nil {
-		node.log.Error("Failed to set up bch keys")
+		node.log.Errorf("%s : Failed to set up bch keys", err)
 		return nil, false
 	}
 
