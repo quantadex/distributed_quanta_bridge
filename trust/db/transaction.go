@@ -73,9 +73,15 @@ func QueryAllTXByUser(db *DB, user string, offset int, limit int) ([]Transaction
 	return txs, err
 }
 
-func QueryAllWaitForConfirmTx(db *DB) ([]Transaction, error) {
+func QueryAllWaitForConfirmTx(db *DB, blockchain string) ([]Transaction, error) {
 	var txs []Transaction
-	err := db.Model(&txs).Where("\"submit_state\" = ?", WAIT_FOR_CONFIRMATION).Select()
+	err := db.Model(&txs).Where("\"submit_state\" = ? AND \"coin\" = ?", WAIT_FOR_CONFIRMATION, blockchain).Select()
+	return txs, err
+}
+
+func QueryAllWaitForConfirmTxETH(db *DB) ([]Transaction, error) {
+	var txs []Transaction
+	err := db.Model(&txs).Where("Type=? and Submit_State=? AND (coin = 'ETH' OR coin like'%0X%') ", DEPOSIT, WAIT_FOR_CONFIRMATION).Select()
 	return txs, err
 }
 

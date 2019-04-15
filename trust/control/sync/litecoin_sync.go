@@ -88,7 +88,7 @@ func (c *LitecoinSync) FindAndConfirm(tx db.Transaction, blockHash string, confi
 }
 
 func (c *LitecoinSync) FindAllAndConfirm() error {
-	txs, err := db.QueryAllWaitForConfirmTx(c.rDb)
+	txs, err := db.QueryAllWaitForConfirmTx(c.rDb, coin.BLOCKCHAIN_LTC)
 	if err != nil {
 		return err
 	}
