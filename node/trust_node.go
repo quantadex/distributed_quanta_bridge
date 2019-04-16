@@ -509,11 +509,11 @@ func (n *TrustNode) CreateMultisig(blockchain string, accountId string) (*crypto
 		msig, err = n.ltc.GenerateMultisig(accountId)
 		if err != nil {
 			return nil, err
-		} else {
-			msig, err = n.bch.GenerateMultisig(accountId)
-			if err != nil {
-				return nil, err
-			}
+		}
+	} else {
+		msig, err = n.bch.GenerateMultisig(accountId)
+		if err != nil {
+			return nil, err
 		}
 	}
 
