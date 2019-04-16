@@ -457,18 +457,18 @@ func TestBCHDeposit(t *testing.T) {
 	err = client.Attach()
 	assert.NoError(t, err)
 
-	//msig, err := client.GenerateMultisig("pooja")
-	//assert.NoError(t, err)
+	msig, err := client.GenerateMultisig("pooja")
+	assert.NoError(t, err)
 
-	//forwardAddress := &crypto.ForwardInput{
-	//	msig,
-	//	common.HexToAddress(test.GRAPHENE_TRUST.TrustContract),
-	//	"pooja",
-	//	"",
-	//	coin.BLOCKCHAIN_BCH,
-	//}
-	//nodes[0].rDb.AddCrosschainAddress(forwardAddress)
-	//nodes[1].rDb.AddCrosschainAddress(forwardAddress)
+	forwardAddress := &crypto.ForwardInput{
+		msig,
+		common.HexToAddress(test.GRAPHENE_TRUST.TrustContract),
+		"pooja",
+		"",
+		coin.BLOCKCHAIN_BCH,
+	}
+	nodes[0].rDb.AddCrosschainAddress(forwardAddress)
+	nodes[1].rDb.AddCrosschainAddress(forwardAddress)
 
 	assert.NoError(t, err)
 
@@ -567,9 +567,9 @@ func TestBCHWithdrawal(t *testing.T) {
 	err = client.Attach()
 	assert.NoError(t, err)
 
-	btec, err := crypto.GenerateGrapheneKeyWithSeed("pooja")
-	assert.NoError(t, err)
-	msig, err := client.GenerateMultisig(btec)
+	//btec, err := crypto.GenerateGrapheneKeyWithSeed("pooja")
+	//assert.NoError(t, err)
+	msig, err := client.GenerateMultisig("pooja")
 
 	forwardAddress := &crypto.ForwardInput{
 		msig,

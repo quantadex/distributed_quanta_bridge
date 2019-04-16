@@ -88,6 +88,11 @@ func (b *BCH) GenerateMultisig(accountId string) (string, error) {
 		return "", err
 	}
 
+	btcAddressStr, err = crypto.GenerateGrapheneKeyWithSeed(btcAddressStr)
+	if err != nil {
+		return "", err
+	}
+
 	graphenePK, err := crypto.NewGraphenePublicKeyFromString(btcAddressStr)
 	if err != nil {
 		return "", err
