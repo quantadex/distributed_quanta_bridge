@@ -47,6 +47,7 @@ func NewAddressConsensus(logger logger.Logger, trustNode *TrustNode, db *db.DB,k
 		}
 		for _, a := range addrAvailable {
 			if a.Address == msg.Address {
+				logger.Infof("Address matched %v", a.Address)
 				return nil
 			}
 		}
@@ -60,6 +61,7 @@ func NewAddressConsensus(logger logger.Logger, trustNode *TrustNode, db *db.DB,k
 		if err != nil {
 			return err
 		}
+		logger.Infof("Persisting address %s %s", msg.Address, msg.QuantaAddr)
 		headBlock, _ := control.GetLastBlock(kv, coin.BLOCKCHAIN_ETH)
 		err = db.UpdateShareAddressDestination(msg.Address, msg.QuantaAddr, uint64(headBlock))
 		return err
