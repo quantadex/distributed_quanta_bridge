@@ -42,6 +42,10 @@
   branch = "develop"
 
 [[override]]
+  name = "github.com/ethereum/go-ethereum"
+  version = "v1.8.20"
+
+[[override]]
   name = "github.com/stellar/go"
   branch = "quanta"
   source = "https://github.com/quantadex/stellar_go.git"
