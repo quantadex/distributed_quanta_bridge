@@ -73,7 +73,7 @@ func (q *QuantaGraphene) Reconnect() {
 			q.Logger.Error(err.Error())
 			time.Sleep(5 * time.Second)
 		} else {
-			q.Logger.Error(err.Error())
+			q.Logger.Info("Connected to Quanta")
 		}
 		return true, err
 	})
