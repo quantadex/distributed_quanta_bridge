@@ -117,7 +117,7 @@ func TestRopstenNativeETH(t *testing.T) {
 	fmt.Printf("[BLOCK %d] END\n=======================\n\n", block)
 
 	// Check for the deposit
-	block = int64(5066820)
+	block = int64(5413358)
 	fmt.Printf("=======================\n[BLOCK %d] BEGIN\n\n", block)
 	for i, node := range nodes {
 		var ethSync sync.DepositSyncInterface
@@ -136,7 +136,7 @@ func TestRopstenNativeETH(t *testing.T) {
 	}
 	fmt.Printf("[BLOCK %d] END\n=======================\n\n", block)
 
-	block = int64(5066821)
+	block = int64(5413359)
 	fmt.Printf("=======================\n[BLOCK %d] BEGIN\n\n", block)
 	for i, node := range nodes {
 		var ethSync sync.DepositSyncInterface
@@ -457,18 +457,18 @@ func TestBCHDeposit(t *testing.T) {
 	err = client.Attach()
 	assert.NoError(t, err)
 
-	msig, err := client.GenerateMultisig("pooja")
-	assert.NoError(t, err)
+	//msig, err := client.GenerateMultisig("pooja")
+	//assert.NoError(t, err)
 
-	forwardAddress := &crypto.ForwardInput{
-		msig,
-		common.HexToAddress(test.GRAPHENE_TRUST.TrustContract),
-		"pooja",
-		"",
-		coin.BLOCKCHAIN_BCH,
-	}
-	nodes[0].rDb.AddCrosschainAddress(forwardAddress)
-	nodes[1].rDb.AddCrosschainAddress(forwardAddress)
+	//forwardAddress := &crypto.ForwardInput{
+	//	msig,
+	//	common.HexToAddress(test.GRAPHENE_TRUST.TrustContract),
+	//	"pooja",
+	//	"",
+	//	coin.BLOCKCHAIN_BCH,
+	//}
+	//nodes[0].rDb.AddCrosschainAddress(forwardAddress)
+	//nodes[1].rDb.AddCrosschainAddress(forwardAddress)
 
 	assert.NoError(t, err)
 
