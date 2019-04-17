@@ -567,9 +567,9 @@ func TestBCHWithdrawal(t *testing.T) {
 	err = client.Attach()
 	assert.NoError(t, err)
 
-	//btec, err := crypto.GenerateGrapheneKeyWithSeed("pooja")
-	//assert.NoError(t, err)
-	msig, err := client.GenerateMultisig("pooja")
+	btec, err := crypto.GenerateGrapheneKeyWithSeed("pooja")
+	assert.NoError(t, err)
+	msig, err := client.GenerateMultisig(btec)
 
 	forwardAddress := &crypto.ForwardInput{
 		msig,

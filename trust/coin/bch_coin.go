@@ -88,11 +88,6 @@ func (b *BCH) GenerateMultisig(accountId string) (string, error) {
 		return "", err
 	}
 
-	btcAddressStr, err = crypto.GenerateGrapheneKeyWithSeed(btcAddressStr)
-	if err != nil {
-		return "", err
-	}
-
 	graphenePK, err := crypto.NewGraphenePublicKeyFromString(btcAddressStr)
 	if err != nil {
 		return "", err
@@ -105,36 +100,35 @@ func (b *BCH) GenerateMultisig(accountId string) (string, error) {
 
 	addr = append(addr, btcAddress)
 
-	addrx, err := b.Client.CreateMultisig(len(addr)-1, addr)
-	if err != nil {
-		return "", err
-	}
-
-	//addrx, err := b.Client.AddMultisigAddress(len(addr)-1, addr, "")
-	//fmt.Println("error = ", err, addrx)
-	////fmt.Println("result ", addrx)
-	//
+	//addrx, err := b.Client.CreateMultisig(len(addr)-1, addr)
 	//if err != nil {
 	//	return "", err
 	//}
 
-	scriptBytes, err := hex.DecodeString(addrx.RedeemScript)
-	if err != nil {
-		return "", err
-	}
-
-	res, err := b.Client.DecodeScript(scriptBytes)
+	addrx, err := b.Client.AddMultisigAddress(len(addr)-1, addr, "")
+	//fmt.Println("result ", addrx)
 
 	if err != nil {
 		return "", err
 	}
 
-	err = b.Client.ImportAddressRescan(res.P2sh, "", false)
+	//scriptBytes, err := hex.DecodeString(addrx.RedeemScript)
+	//if err != nil {
+	//	return "", err
+	//}
+	//
+	//res, err := b.Client.DecodeScript(scriptBytes)
+	//
+	//if err != nil {
+	//	return "", err
+	//}
+	res := "bchtest:" + addrx.String()
+	err = b.Client.ImportAddressRescan(res, "", false)
 	if err != nil {
-		return "", errors.Wrap(err, "Unable to import address "+res.P2sh)
+		//return "", errors.Wrap(err, "Unable to import address "+res.P2sh)
 	}
 
-	return res.P2sh, err
+	return res, err
 }
 
 func (b *BCH) GetTxID(trustAddress common.Address) (uint64, error) {
