@@ -122,10 +122,11 @@ func (b *BCH) GenerateMultisig(accountId string) (string, error) {
 	//if err != nil {
 	//	return "", err
 	//}
-	res := "bchtest:" + addrx.String()
+
+	res := b.chaincfg.CashAddressPrefix + ":" + addrx.String()
 	err = b.Client.ImportAddressRescan(res, "", false)
 	if err != nil {
-		//return "", errors.Wrap(err, "Unable to import address "+res.P2sh)
+		return "", errors.Wrap(err, "Unable to import address "+res)
 	}
 
 	return res, err
