@@ -593,11 +593,11 @@ func TestBCHWithdrawal(t *testing.T) {
 
 	amount, err := bchutil.NewAmount(0.9)
 	address := string(bodyBytes)[13:62]
-	err = ImportAddress(address, "../blockchain/bch-abc/bitcoin-abc-0.19.1/bin/bitcoin-cli")
+	err = ImportAddress(address, "bitcoin-cli")
 	assert.NoError(t, err)
 
 	SendBCH(address, amount)
-	GenerateBlock("../blockchain/bch-abc/bitcoin-abc-0.19.1/bin/bitcoin-cli")
+	GenerateBlock("bitcoin-cli")
 
 	cursor := int64(8529695)
 	fmt.Printf("=======================\n[CURSOR %d] BEGIN\n\n", cursor)
@@ -638,7 +638,7 @@ func SendBCH(address string, amount bchutil.Amount) (string, error) {
 		amountStr,
 	}
 
-	cmd := exec.Command("../blockchain/bch-abc/bitcoin-abc-0.19.1/bin/bitcoin-cli", args...)
+	cmd := exec.Command("bitcoin-cli", args...)
 	var out bytes.Buffer
 	var stderr bytes.Buffer
 	cmd.Stdout = &out
