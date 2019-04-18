@@ -68,15 +68,19 @@ func (c *DepositSync) DoLoop(blockIDs []int64) []*coin.Deposit {
 
 	watchMap := c.fnGetWatchAddress
 	pending, err := c.coinChannel.GetPendingTx(watchMap())
+	if err != nil {
+		c.logger.Errorf("%s : could not get pending transactions", err)
+	}
+
+	tx, _ := db.QueryAllWaitForConfirmTx(c.rDb, c.coinChannel.Blockchain())
+	for _, t := range tx {
+		db.RemovePending(c.rDb, t.Tx)
+	}
 
 	if c.fnTransformCoin != nil {
 		for _, p := range pending {
 			p = c.fnTransformCoin(p)
 		}
-	}
-
-	if err != nil {
-		c.logger.Error("Could not get pending transactions")
 	}
 
 	err = db.AddPendingDeposits(c.rDb, pending)

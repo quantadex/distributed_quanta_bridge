@@ -148,6 +148,11 @@ func AddPendingDeposits(db *DB, deposits []*coin.Deposit) error {
 	return nil
 }
 
+func RemovePending(db *DB, txHash string) error {
+	_, err := db.Model(&Transaction{}).Where("Tx=? AND Type=? and Submit_State=?", txHash, DEPOSIT, PENDING).Delete()
+	return err
+}
+
 func SignDeposit(db *DB, dep *coin.Deposit) error {
 	tx := &Transaction{Type: DEPOSIT, Tx: dep.Tx}
 	tx.SubmitDate = time.Now()
