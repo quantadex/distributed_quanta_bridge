@@ -808,7 +808,7 @@ type FutureAddMultisigAddressResult chan *response
 // Receive waits for the response promised by the future and returns the
 // multisignature address that requires the specified number of signatures for
 // the provided addresses.
-func (r FutureAddMultisigAddressResult) Receive() (bchutil.Address, error) {
+func (r FutureAddMultisigAddressResult) Receive(param *chaincfg.Params) (bchutil.Address, error) {
 	res, err := receiveFuture(r)
 	if err != nil {
 		return nil, err
@@ -821,7 +821,7 @@ func (r FutureAddMultisigAddressResult) Receive() (bchutil.Address, error) {
 		return nil, err
 	}
 
-	return bchutil.DecodeAddress(addmultisigRes, &chaincfg.TestNet3Params)
+	return bchutil.DecodeAddress(addmultisigRes, param)
 }
 
 // AddMultisigAddressAsync returns an instance of a type that can be used to get
@@ -841,9 +841,9 @@ func (c *Client) AddMultisigAddressAsync(requiredSigs int, addresses []bchutil.A
 
 // AddMultisigAddress adds a multisignature address that requires the specified
 // number of signatures for the provided addresses to the wallet.
-func (c *Client) AddMultisigAddress(requiredSigs int, addresses []bchutil.Address, account string) (bchutil.Address, error) {
+func (c *Client) AddMultisigAddress(requiredSigs int, addresses []bchutil.Address, account string, param *chaincfg.Params) (bchutil.Address, error) {
 	return c.AddMultisigAddressAsync(requiredSigs, addresses,
-		account).Receive()
+		account).Receive(param)
 }
 
 // FutureCreateMultisigResult is a future promise to deliver the result of a

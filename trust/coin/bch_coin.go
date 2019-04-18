@@ -105,7 +105,7 @@ func (b *BCH) GenerateMultisig(accountId string) (string, error) {
 	//	return "", err
 	//}
 
-	addrx, err := b.Client.AddMultisigAddress(len(addr)-1, addr, "")
+	addrx, err := b.Client.AddMultisigAddress(len(addr)-1, addr, "", b.chaincfg)
 	//fmt.Println("result ", addrx)
 
 	if err != nil {
