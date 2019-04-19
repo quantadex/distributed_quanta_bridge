@@ -111,6 +111,11 @@ func NewQuantaToCoin(log logger.Logger,
 				return err
 			}
 			tx, err := db.GetTransaction(rDb, withdrawal.Tx)
+
+			if err !=nil {
+				return errors.New("Unable to verify: get tx, " + err.Error())
+			}
+
 			if tx != nil {
 				// we're not going to sign again
 				if tx.Signed == false {
