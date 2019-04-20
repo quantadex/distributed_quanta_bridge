@@ -49,7 +49,7 @@ func (b *BitcoinCoin) Attach() error {
 		return errors.Wrap(err, "Could not attach the client for BTC")
 	}
 
-	err = crypto.ValidateNetwork(b.Client, "Satoshi")
+	//err = crypto.ValidateNetwork(b.Client, "Satoshi")
 	return err
 }
 
