@@ -11,7 +11,6 @@ import (
 	"github.com/btcsuite/btcutil"
 	"github.com/pkg/errors"
 	"github.com/quantadex/distributed_quanta_bridge/common"
-	"github.com/quantadex/distributed_quanta_bridge/common/crypto"
 )
 
 type BitcoinKeyManager struct {
@@ -39,10 +38,10 @@ func (b *BitcoinKeyManager) LoadNodeKeys(privKey string) error {
 		return errors.Wrap(err, "Cannot attach client for BTC")
 	}
 
-	err = crypto.ValidateNetwork(b.client, "Satoshi")
-	if err != nil {
-		return err
-	}
+	//err = crypto.ValidateNetwork(b.client, "Satoshi")
+	//if err != nil {
+	//	return err
+	//}
 
 	b.privateKey, err = btcutil.DecodeWIF(privKey)
 
