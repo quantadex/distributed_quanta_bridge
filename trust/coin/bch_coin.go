@@ -1,6 +1,7 @@
 package coin
 
 import (
+	"fmt"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/gcash/bchd/btcjson"
 	"github.com/gcash/bchd/chaincfg"
@@ -445,13 +446,14 @@ func (b *BCH) EncodeRefund(w Withdrawal) (string, error) {
 }
 
 func (b *BCH) DecodeRefund(encoded string) (*Withdrawal, error) {
+	fmt.Println("encoded string = ", encoded)
 	var decoded EncodedMsg
 	err := json.Unmarshal([]byte(encoded), &decoded)
 	if err != nil {
 		return nil, err
 	}
 
-	var res common2.TransactionBitcoin
+	var res common2.TransactionBCH
 	err = json.Unmarshal([]byte(decoded.Message), &res)
 	if err != nil {
 		return nil, err
@@ -472,6 +474,7 @@ func (b *BCH) DecodeRefund(encoded string) (*Withdrawal, error) {
 	if err != nil {
 		return nil, err
 	}
+	fmt.Printf("decoded tx = ", decodedTx)
 
 	vinLookup := map[string]bool{}
 	vinAddresses := []string{}
@@ -484,7 +487,10 @@ func (b *BCH) DecodeRefund(encoded string) (*Withdrawal, error) {
 		if err != nil {
 			return nil, errors.Wrap(err, "failed to build hash")
 		}
+		fmt.Println("PrevTransaction hash = ", prevTranHash.String())
+
 		prevTran, err := b.Client.GetRawTransactionVerbose(prevTranHash)
+		fmt.Println("Previos transaction = ", prevTran)
 		if err != nil {
 			return nil, errors.Wrap(err, "failed to getraw for vin")
 		}

@@ -266,7 +266,6 @@ func (c *QuantaToCoin) DispatchWithdrawal() {
 						}
 						//to avoid multiple transactions in one block
 						if currentBlock > prevBlock {
-							c.blockInfo[blockchain] = currentBlock
 							w := &coin.Withdrawal{
 								Tx:                 txs[0].Tx,
 								TxId:               txs[0].TxId,
@@ -281,7 +280,10 @@ func (c *QuantaToCoin) DispatchWithdrawal() {
 							if len(txs[0].SubmitTx) != 0 {
 								c.SubmitWithdrawal(w, blockchain)
 							} else {
-								c.StartConsensus(w)
+								_, err = c.StartConsensus(w)
+								if err == nil {
+									c.blockInfo[blockchain] = currentBlock
+								}
 							}
 						}
 					}
