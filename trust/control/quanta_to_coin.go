@@ -112,7 +112,7 @@ func NewQuantaToCoin(log logger.Logger,
 			}
 			tx, err := db.GetTransaction(rDb, withdrawal.Tx)
 
-			if err !=nil {
+			if err != nil {
 				return errors.New("Unable to verify: get tx, " + err.Error())
 			}
 
@@ -283,7 +283,10 @@ func (c *QuantaToCoin) DispatchWithdrawal() {
 							}
 
 							if len(txs[0].SubmitTx) != 0 {
-								c.SubmitWithdrawal(w, blockchain)
+								_, err := c.SubmitWithdrawal(w, blockchain)
+								if err == nil {
+									c.blockInfo[blockchain] = currentBlock
+								}
 							} else {
 								_, err = c.StartConsensus(w)
 								if err == nil {

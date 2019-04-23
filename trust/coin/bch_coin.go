@@ -474,7 +474,7 @@ func (b *BCH) DecodeRefund(encoded string) (*Withdrawal, error) {
 	if err != nil {
 		return nil, err
 	}
-	fmt.Printf("decoded tx = ", decodedTx)
+	fmt.Println("Transaction = ", decodedTx.Txid)
 
 	vinLookup := map[string]bool{}
 	vinAddresses := []string{}
@@ -482,6 +482,7 @@ func (b *BCH) DecodeRefund(encoded string) (*Withdrawal, error) {
 		if vin.Txid == "" {
 			continue
 		}
+		fmt.Println("vin txid = ", vin.Txid)
 
 		prevTranHash, err := chainhash.NewHashFromStr(vin.Txid)
 		if err != nil {
@@ -490,7 +491,7 @@ func (b *BCH) DecodeRefund(encoded string) (*Withdrawal, error) {
 		fmt.Println("PrevTransaction hash = ", prevTranHash.String())
 
 		prevTran, err := b.Client.GetRawTransactionVerbose(prevTranHash)
-		fmt.Println("Previos transaction = ", prevTran)
+		fmt.Println("Previous transaction = ", prevTran)
 		if err != nil {
 			return nil, errors.Wrap(err, "failed to getraw for vin")
 		}
