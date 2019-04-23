@@ -63,10 +63,6 @@ func (b *LiteCoin) GetTopBlockID() (int64, error) {
 	return blockId, err
 }
 
-func (b *LiteCoin) GetPendingTx(map[string]string) ([]*Deposit, error) {
-	return nil, nil
-}
-
 func (b *LiteCoin) GetBlockInfo(hash string) (string, int64, error) {
 	var res *btcjson.GetBlockVerboseResult
 	chainhash, err := chainhash.NewHashFromStr(hash)
@@ -132,6 +128,82 @@ func (b *LiteCoin) GetTxID(trustAddress common.Address) (uint64, error) {
 	return 0, nil
 }
 
+func (b *LiteCoin) GetFromAddress(txHash *chainhash.Hash) (string, error) {
+	currentTx, err := b.Client.GetRawTransactionVerbose(txHash)
+	if err != nil {
+		return "", errors.Wrap(err, "failed to getraw for currentTx")
+	}
+
+	vinLookup := map[string]bool{}
+	vinAddresses := []string{}
+	for _, vin := range currentTx.Vin {
+		if vin.Txid == "" {
+			continue
+		}
+
+		prevTranHash, err := chainhash.NewHashFromStr(vin.Txid)
+		if err != nil {
+			return "", errors.Wrap(err, "failed to build hash")
+		}
+		prevTran, err := b.Client.GetRawTransactionVerbose(prevTranHash)
+		if err != nil {
+			return "", errors.Wrap(err, "failed to getraw for vin")
+		}
+
+		prevVout := prevTran.Vout[vin.Vout]
+		fromAddress := strings.Join(prevVout.ScriptPubKey.Addresses, ",")
+		vinLookup[fromAddress] = true
+		vinAddresses = append(vinAddresses, fromAddress)
+	}
+
+	fromAddr := strings.Join(vinAddresses, ",")
+	return fromAddr, nil
+}
+
+func (b *LiteCoin) GetPendingTx(watchMap map[string]string) ([]*Deposit, error) {
+	results, err := b.Client.ListUnspentMinMax(0, 0)
+	if err != nil {
+		return nil, err
+	}
+
+	events := []*Deposit{}
+
+	for _, e := range results {
+		toAddr := e.Address
+
+		txHash, err := chainhash.NewHashFromStr(e.TxID)
+		if err != nil {
+			return nil, errors.Wrap(err, "unable to get chainhash")
+		}
+		fromAddr, err := b.GetFromAddress(txHash)
+		if err != nil {
+			return nil, errors.Wrap(err, "unable to get from address")
+		}
+
+		if fromAddr == toAddr || fromAddr == "" {
+			//println("Ignoring tx when from and to the same ", toAddr)
+			continue
+		}
+
+		amount, err := ltcutil.NewAmount(e.Amount)
+		if err != nil {
+			return nil, errors.Wrap(err, "unable to create new amount")
+		}
+
+		if quantaAddr, ok := watchMap[toAddr]; ok {
+			events = append(events, &Deposit{
+				SenderAddr: fromAddr,
+				QuantaAddr: quantaAddr,
+				CoinName:   b.Blockchain(),
+				Amount:     int64(amount),
+				BlockID:    0,
+				Tx:         txHash.String(),
+			})
+		}
+	}
+	return events, nil
+}
+
 func (b *LiteCoin) GetDepositsInBlock(blockID int64, trustAddress map[string]string) ([]*Deposit, error) {
 	blockHash, err := b.Client.GetBlockHash(blockID)
 	if err != nil {
@@ -163,29 +235,10 @@ func (b *LiteCoin) GetDepositsInBlock(blockID int64, trustAddress map[string]str
 				return nil, errors.Wrap(err, "failed to getraw for currentTx")
 			}
 
-			vinLookup := map[string]bool{}
-			vinAddresses := []string{}
-			for _, vin := range currentTx.Vin {
-				if vin.Txid == "" {
-					continue
-				}
-
-				prevTranHash, err := chainhash.NewHashFromStr(vin.Txid)
-				if err != nil {
-					return nil, errors.Wrap(err, "failed to build hash")
-				}
-				prevTran, err := b.Client.GetRawTransactionVerbose(prevTranHash)
-				if err != nil {
-					return nil, errors.Wrap(err, "failed to getraw for vin")
-				}
-
-				prevVout := prevTran.Vout[vin.Vout]
-				fromAddress := strings.Join(prevVout.ScriptPubKey.Addresses, ",")
-				vinLookup[fromAddress] = true
-				vinAddresses = append(vinAddresses, fromAddress)
+			fromAddr, err := b.GetFromAddress(&txHash)
+			if err != nil {
+				return nil, errors.Wrap(err, "failed to get from address for currentTx")
 			}
-
-			fromAddr := strings.Join(vinAddresses, ",")
 
 			if err != nil {
 				return nil, errors.Wrap(err, "failed to from address for currentTx")
@@ -218,8 +271,8 @@ func (b *LiteCoin) GetDepositsInBlock(blockID int64, trustAddress map[string]str
 			}
 		}
 	}
-	msg, _ := json.Marshal(events)
-	fmt.Printf("events = %v\n", string(msg))
+	//msg, _ := json.Marshal(events)
+	//fmt.Printf("events = %v\n", string(msg))
 	return events, nil
 }
 
