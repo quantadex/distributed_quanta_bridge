@@ -79,6 +79,16 @@ func (q *QuantaGraphene) Reconnect() {
 	})
 }
 
+func (q *QuantaGraphene) GetBlockTime(blockId int64) (time.Time, error) {
+	var t time.Time
+	block, err := q.Database.GetBlock(uint32(blockId))
+	if err != nil {
+		return t, err
+	}
+
+	return *block.Timestamp.Time, nil
+}
+
 func (q *QuantaGraphene) AssetExist(issuer string, symbol string) (bool, error) {
 	asset, err := q.Database.LookupAssetSymbols(symbol)
 	if err != nil {

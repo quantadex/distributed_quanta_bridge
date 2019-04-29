@@ -13,6 +13,7 @@ import (
 	"github.com/quantadex/distributed_quanta_bridge/common"
 	"github.com/quantadex/distributed_quanta_bridge/common/crypto"
 	"github.com/scorum/bitshares-go/types"
+	"time"
 )
 
 const BLOCKCHAIN_ETH = "ETH"
@@ -128,6 +129,8 @@ type Coin interface {
 	CheckValidAddress(address string) bool
 
 	GetBlockInfo(hash string) (string, int64, error)
+
+	GetBlockTime(blockId int64) (time.Time, error)
 }
 
 func NewDummyCoin() (Coin, error) {

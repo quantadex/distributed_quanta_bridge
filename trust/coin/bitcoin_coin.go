@@ -18,6 +18,7 @@ import (
 	"github.com/quantadex/distributed_quanta_bridge/common/crypto"
 	"regexp"
 	"strings"
+	"time"
 )
 
 type BitcoinCoin struct {
@@ -51,6 +52,21 @@ func (b *BitcoinCoin) Attach() error {
 
 	//err = crypto.ValidateNetwork(b.Client, "Satoshi")
 	return err
+}
+
+func (b *BitcoinCoin) GetBlockTime(blockId int64) (time.Time, error) {
+	var t time.Time
+	blockHash, err := b.Client.GetBlockHash(blockId)
+	if err != nil {
+		return t, err
+	}
+
+	block, err := b.Client.GetBlockVerbose(blockHash)
+	if err != nil {
+		return t, err
+	}
+
+	return time.Unix(block.Time, 0), err
 }
 
 func (b *BitcoinCoin) GetTopBlockID() (int64, error) {

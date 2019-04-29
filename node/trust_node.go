@@ -62,6 +62,7 @@ type TrustNode struct {
 	queue    queue.Queue
 	listener listener.Listener
 	restApi  *Server
+	config   common.Config
 
 	doneChan chan bool
 }
@@ -273,6 +274,8 @@ func initNode(config common.Config, targetCoin coin.Coin) (*TrustNode, bool) {
 		return nil, false
 	}
 
+	node.config = config
+
 	return node, true
 }
 
@@ -358,7 +361,7 @@ func (n *TrustNode) registerNode(config common.Config) bool {
 		blockchain[i] = v
 		i = i + 1
 	}
-	n.restApi = NewApiServer(n, blockchain, pubKey, config.ListenIp, n.db, n.rDb, fmt.Sprintf(":%d", config.ExternalListenPort), n.log, config.MinBlockReuse)
+	n.restApi = NewApiServer(n, blockchain, pubKey, config.ListenIp, n.db, n.rDb, fmt.Sprintf(":%d", config.ExternalListenPort), n.log)
 	go n.restApi.Start()
 
 	return true

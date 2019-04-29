@@ -1,6 +1,10 @@
 package coin
 
 import (
+	"bytes"
+	"crypto/ecdsa"
+	"encoding/hex"
+	"encoding/json"
 	"fmt"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/gcash/bchd/btcjson"
@@ -12,11 +16,8 @@ import (
 	"github.com/pkg/errors"
 	common2 "github.com/quantadex/distributed_quanta_bridge/common"
 	"github.com/quantadex/distributed_quanta_bridge/common/crypto"
+	"time"
 
-	"bytes"
-	"crypto/ecdsa"
-	"encoding/hex"
-	"encoding/json"
 	//"os/exec"
 	"strings"
 )
@@ -55,6 +56,21 @@ func (b *BCH) Attach() error {
 	return err
 }
 
+func (b *BCH) GetBlockTime(blockId int64) (time.Time, error) {
+	var t time.Time
+	blockHash, err := b.Client.GetBlockHash(blockId)
+	if err != nil {
+		return t, err
+	}
+
+	block, err := b.Client.GetBlockVerbose(blockHash)
+	if err != nil {
+		return t, err
+	}
+
+	return time.Unix(block.Time, 0), err
+}
+
 func (b *BCH) GetTopBlockID() (int64, error) {
 	blockId, err := b.Client.GetBlockCount()
 	if err != nil {
@@ -71,6 +87,7 @@ func (b *BCH) GetBlockInfo(hash string) (string, int64, error) {
 	}
 
 	res, err = b.Client.GetBlockVerbose(chainhash)
+
 	if err != nil {
 		return "", 0, err
 	}

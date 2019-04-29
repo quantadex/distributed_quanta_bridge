@@ -2,13 +2,16 @@ package main
 
 import (
 	"encoding/json"
+	"fmt"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/quantadex/distributed_quanta_bridge/common/crypto"
+	metric2 "github.com/quantadex/distributed_quanta_bridge/common/metric"
 	"github.com/quantadex/distributed_quanta_bridge/common/test"
 	"github.com/quantadex/distributed_quanta_bridge/trust/coin"
 	"github.com/quantadex/distributed_quanta_bridge/trust/control"
 	"github.com/quantadex/distributed_quanta_bridge/trust/db"
 	"github.com/stretchr/testify/assert"
+	"github.com/zserge/metric"
 	"io/ioutil"
 	"net/http"
 	"strconv"
@@ -167,4 +170,85 @@ func TestAddress(t *testing.T) {
 	StopNodes(nodes, []int{0, 1})
 	StopRegistry(r)
 
+}
+
+func TestStatus(t *testing.T) {
+	fmt.Println(time.Now())
+	r := StartRegistry(2, ":6000")
+	nodes := StartNodes(test.GRAPHENE_ISSUER, test.GRAPHENE_TRUST, test.ETHER_NETWORKS[test.ROPSTEN])
+	time.Sleep(time.Millisecond * 250)
+
+	address := &crypto.ForwardInput{
+		"hdfvh",
+		common.HexToAddress(test.GRAPHENE_TRUST.TrustContract),
+		"address-pool",
+		"0x01",
+		coin.BLOCKCHAIN_LTC,
+	}
+
+	// test crosschain
+	nodes[0].rDb.AddCrosschainAddress(address)
+	nodes[1].rDb.AddCrosschainAddress(address)
+
+	address = &crypto.ForwardInput{
+		"0xba420ef5d725361d8fdc58cb1e4fa62eda9ec999",
+		common.HexToAddress(test.GRAPHENE_TRUST.TrustContract),
+		"pooja",
+		"0x01",
+		coin.BLOCKCHAIN_LTC,
+	}
+
+	nodes[0].rDb.AddCrosschainAddress(address)
+	nodes[1].rDb.AddCrosschainAddress(address)
+
+	control.SetLastBlock(nodes[0].db, control.QUANTA, 9593474)
+	control.SetLastBlock(nodes[1].db, control.QUANTA, 9593474)
+
+	control.SetLastBlock(nodes[0].db, coin.BLOCKCHAIN_LTC, 386)
+	control.SetLastBlock(nodes[1].db, coin.BLOCKCHAIN_LTC, 386)
+
+	time.Sleep(time.Millisecond * 2000)
+
+	// test crosschain
+	res, err := http.Get("http://localhost:5200/api/status")
+	assert.NoError(t, err)
+	bodyBytes, _ := ioutil.ReadAll(res.Body)
+	println("data", res.StatusCode, string(bodyBytes))
+
+	StopNodes(nodes, []int{0, 1})
+	StopRegistry(r)
+	fmt.Println(time.Now())
+
+}
+
+type Metric struct {
+	M metric.Metric
+}
+
+func (s Metric) Print(i int) {
+	s.M.Add(1)
+	fmt.Println(s.M.String())
+	var t *metric2.Counter
+	json.Unmarshal([]byte(s.M.String()), &t)
+	fmt.Println(t.Samples[0].Count)
+
+	if i == 10 {
+		fmt.Println("Resetting")
+		//s.M.Reset()
+	}
+}
+
+func TestMetric(t *testing.T) {
+	s := Metric{
+		M: metric.NewCounter("1m"),
+	}
+
+	for i := 0; i < 70; i++ {
+		if i == 10 {
+			s.Print(i)
+		} else {
+			s.Print(0)
+		}
+
+	}
 }

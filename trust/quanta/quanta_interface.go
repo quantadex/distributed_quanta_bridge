@@ -5,6 +5,7 @@ import (
 	"github.com/quantadex/distributed_quanta_bridge/trust/coin"
 	"github.com/scorum/bitshares-go/apis/database"
 	"github.com/scorum/bitshares-go/apis/networkbroadcast"
+	"time"
 )
 
 /**
@@ -82,6 +83,8 @@ type Quanta interface {
 	GetAsset(assetName string) (*database.Asset, error)
 	GetIssuer() string
 	Reconnect()
+
+	GetBlockTime(blockId int64) (time.Time, error)
 }
 
 func NewQuanta(options QuantaClientOptions) (Quanta, error) {

@@ -6,6 +6,7 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/quantadex/distributed_quanta_bridge/common/crypto"
 	"sync"
+	"time"
 )
 
 type DummyCoin struct {
@@ -21,6 +22,10 @@ func GetDummyInstance() *DummyCoin {
 		instance = &DummyCoin{deposits: map[int][]*Deposit{}}
 	})
 	return instance
+}
+
+func (c *DummyCoin) GetBlockTime(blockId int64) (time.Time, error) {
+	panic("Not implemented")
 }
 
 func (c *DummyCoin) GetBlockInfo(hash string) (string, int64, error) {

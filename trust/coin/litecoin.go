@@ -11,6 +11,7 @@ import (
 	"github.com/pkg/errors"
 	common2 "github.com/quantadex/distributed_quanta_bridge/common"
 	"github.com/quantadex/distributed_quanta_bridge/common/crypto"
+	"time"
 
 	"bytes"
 	"crypto/ecdsa"
@@ -53,6 +54,21 @@ func (b *LiteCoin) Attach() error {
 	err = crypto.ValidateNetwork(b.Client, "Litecoin")
 
 	return err
+}
+
+func (b *LiteCoin) GetBlockTime(blockId int64) (time.Time, error) {
+	var t time.Time
+	blockHash, err := b.Client.GetBlockHash(blockId)
+	if err != nil {
+		return t, err
+	}
+
+	block, err := b.Client.GetBlockVerbose(blockHash)
+	if err != nil {
+		return t, err
+	}
+
+	return time.Unix(block.Time, 0), err
 }
 
 func (b *LiteCoin) GetTopBlockID() (int64, error) {

@@ -3,6 +3,7 @@ package control
 import (
 	"encoding/json"
 	"errors"
+	"expvar"
 	"fmt"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/quantadex/distributed_quanta_bridge/common/kv_store"
@@ -16,6 +17,7 @@ import (
 	"github.com/quantadex/distributed_quanta_bridge/trust/quanta"
 	"github.com/quantadex/quanta_book/consensus/cosi"
 	"github.com/scorum/bitshares-go/types"
+	"github.com/zserge/metric"
 	"strconv"
 	"strings"
 	"time"
@@ -50,6 +52,7 @@ type CoinToQuanta struct {
 	peer          peer_contact.PeerContact
 	trustPeer     *peer_contact.TrustPeerNode
 	cosi          *cosi.Cosi
+	counter       metric.Metric
 
 	readyChan chan bool
 	doneChan  chan bool
@@ -96,6 +99,10 @@ func NewCoinToQuanta(log logger.Logger,
 	res.doneChan = make(chan bool, 1)
 	res.readyChan = make(chan bool, 1)
 	res.quantaOptions = quantaOptions
+	res.counter = metric.NewCounter("24h1m")
+	if res.nodeID == 0 {
+		expvar.Publish("deposit_status", res.counter)
+	}
 
 	res.trustPeer = peer_contact.NewTrustPeerNode(man, peer, nodeID, queue_, queue.PEERMSG_QUEUE, "/node/api/peer")
 	res.cosi = cosi.NewProtocol(res.trustPeer, nodeID == 0, time.Second*3)
@@ -217,6 +224,7 @@ func (c *CoinToQuanta) processDeposits() {
 	// only leader - pick up  deposits with empty or null submit_state
 	txs := db.QueryDepositByAge(c.rDb, time.Now().Add(-time.Second*5), []string{db.SUBMIT_CONSENSUS})
 	if len(txs) > 0 {
+		c.counter.Add(1)
 		tx := txs[0]
 		w := &coin.Deposit{
 			Tx:         tx.Tx,

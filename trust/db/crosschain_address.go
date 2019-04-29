@@ -37,6 +37,25 @@ func (db *DB) GetCrosschainByBlockchain(blockchain string) []crypto.CrosschainAd
 	return tx
 }
 
+func (db *DB) GetAddressCountByBlockchain(blockchain string) (int, error) {
+	var tx []crypto.CrosschainAddress
+	n, err := db.Model(&tx).Where("blockchain=?", blockchain).Count()
+	if err != nil {
+		return 0, err
+	}
+	return n, nil
+}
+
+func (db *DB) GetAddressCountByBlockchainAndTime(blockchain string) (int, error) {
+	t := time.Now().AddDate(0, 0, -1)
+	var tx []crypto.CrosschainAddress
+	n, err := db.Model(&tx).Where("blockchain=? and updated>?", blockchain, t).Count()
+	if err != nil {
+		return 0, err
+	}
+	return n, nil
+}
+
 func GetCrosschainByBlockchainAndUser(db *DB, blockchain string, quantaAddr string) ([]CrosschainAddress, error) {
 	var tx []CrosschainAddress
 	err := db.Model(&tx).Where("blockchain=? and quanta_addr=?", blockchain, quantaAddr).Select()

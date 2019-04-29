@@ -3,6 +3,7 @@ package control
 import "C"
 import (
 	"encoding/json"
+	"expvar"
 	"fmt"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/pkg/errors"
@@ -18,6 +19,7 @@ import (
 	"github.com/quantadex/distributed_quanta_bridge/trust/quanta"
 	"github.com/quantadex/quanta_book/consensus/cosi"
 	"github.com/scorum/bitshares-go/apis/database"
+	"github.com/zserge/metric"
 	"math/big"
 	"strings"
 	"time"
@@ -51,6 +53,7 @@ type QuantaToCoin struct {
 	coinMapping         map[string]string
 	coinInfo            map[string]*database.Asset
 	blockInfo           map[string]int64
+	counter             metric.Metric
 
 	rr        *RoundRobinSigner
 	cosi      *cosi.Cosi
@@ -94,6 +97,10 @@ func NewQuantaToCoin(log logger.Logger,
 	res.doneChan = make(chan bool, 1)
 	res.trustPeer = peer_contact.NewTrustPeerNode(man, peer, nodeID, queue_, queue.REFUNDMSG_QUEUE, "/node/api/refund")
 	res.cosi = cosi.NewProtocol(res.trustPeer, nodeID == 0, time.Second*3)
+	res.counter = metric.NewCounter("24h1m")
+	if res.nodeID == 0 {
+		expvar.Publish("withdrawal_status", res.counter)
+	}
 
 	res.coinInfo = coinInfo
 	res.blockInfo = blockInfo
@@ -255,6 +262,8 @@ func (c *QuantaToCoin) DispatchWithdrawal() {
 			txs := db.QueryWithdrawalByAge(c.rDb, time.Now().Add(-time.Second*5), []string{db.SUBMIT_CONSENSUS})
 
 			if len(txs) > 0 {
+				c.counter.Add(1)
+
 				blockchain, ok := c.getBlockchainForCoin(txs[0].Coin)
 				if !ok {
 					c.logger.Errorf("Blockchain not found for %s", txs[0].Coin)

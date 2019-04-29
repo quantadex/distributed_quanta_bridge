@@ -18,6 +18,7 @@ import (
 	"regexp"
 	"strconv"
 	"strings"
+	"time"
 )
 
 const sign_prefix = "\x19Ethereum Signed Message:\n"
@@ -58,11 +59,22 @@ func (c *EthereumCoin) Attach() error {
 	return nil
 }
 
+func (c *EthereumCoin) GetBlockTime(blockId int64) (time.Time, error) {
+	var t time.Time
+	block, err := c.client.GetBlock(blockId)
+	if err != nil {
+		return t, err
+	}
+
+	return time.Unix(block.Time().Int64(), 0), nil
+}
+
 func (c *EthereumCoin) GetBlockInfo(hash string) (string, int64, error) {
 	_, blockHash, blockNumber, _, err := c.client.GetTransactionbyHash(hash)
 	if err != nil {
 		return "", 0, err
 	}
+
 	var blockNum int64
 	if len(blockNumber) != 0 {
 		if strings.HasPrefix(strings.ToLower(blockNumber), "0x") {
@@ -82,6 +94,7 @@ func (c *EthereumCoin) GetBlockInfo(hash string) (string, int64, error) {
 		return "", 0, errors2.Wrap(err, "Could not get top block id")
 	}
 	confirm := topBlock - blockNum
+
 	return blockHash.String(), confirm, err
 }
 

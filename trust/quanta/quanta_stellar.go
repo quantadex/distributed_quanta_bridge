@@ -81,6 +81,10 @@ type Balance struct {
 	AssetIssuer string `json:"asset_issuer"`
 }
 
+func (q *QuantaClient) GetBlockTime(blockId int64) (time.Time, error) {
+	panic("not implemented")
+}
+
 func (q *QuantaClient) Broadcast(stx string) (*networkbroadcast.BroadcastResponse, error) {
 	// broadcast here
 	panic("Not implemented")
