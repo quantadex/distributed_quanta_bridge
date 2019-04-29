@@ -123,10 +123,6 @@ func (c *DepositSync) DoLoop(blockIDs []int64) []*coin.Deposit {
 					} else if dep.Amount == 0 {
 						c.logger.Error("Amount is too small")
 					}
-					// have leader pick up automatically
-					//else if c.nodeID == 0 {
-					//	db.ChangeSubmitState(c.rDb, dep.Tx, db.SUBMIT_CONSENSUS, db.DEPOSIT)
-					//}
 				}
 			}
 
