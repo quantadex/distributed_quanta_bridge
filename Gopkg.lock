@@ -3,6 +3,22 @@
 
 [[projects]]
   branch = "master"
+  digest = "1:1a7e4b5bedcd24c5513ad6cb0987bd0209a5378d59684c996c95009e84c7fb32"
+  name = "github.com/FactomProject/basen"
+  packages = ["."]
+  pruneopts = "T"
+  revision = "fe3947df716ebfda9847eb1b9a48f9592e06478c"
+
+[[projects]]
+  branch = "master"
+  digest = "1:2e4626d33e9ff3ca8ced52a94768647fcb5102505b2bf66a9da4135826396688"
+  name = "github.com/FactomProject/btcutilecc"
+  packages = ["."]
+  pruneopts = "T"
+  revision = "d3a63a5752ecf3fbc06bd97365da752111c263df"
+
+[[projects]]
+  branch = "master"
   digest = "1:7996950d6e7d367ff77af55a45a5f59aba0d15ecd4ae74697b1bda8e9f2e66ab"
   name = "github.com/agl/ed25519"
   packages = [
@@ -53,12 +69,22 @@
   name = "github.com/btcsuite/btcd"
   packages = [
     "btcec",
+    "btcjson",
     "chaincfg",
     "chaincfg/chainhash",
+    "rpcclient",
     "wire",
   ]
   pruneopts = "T"
   revision = "ed77733ec07dfc8a513741138419b8d9d3de9d2d"
+
+[[projects]]
+  branch = "master"
+  digest = "1:30d4a548e09bca4a0c77317c58e7407e2a65c15325e944f9c08a7b7992f8a59e"
+  name = "github.com/btcsuite/btclog"
+  packages = ["."]
+  pruneopts = "T"
+  revision = "84c8d2346e9fc8c7b947e243b9c24e6df9fd206a"
 
 [[projects]]
   branch = "master"
@@ -68,9 +94,34 @@
     ".",
     "base58",
     "bech32",
+    "hdkeychain",
   ]
   pruneopts = "T"
   revision = "bf1e1be935893b7c8ac9f020195f6b0dfd1f14e0"
+
+[[projects]]
+  branch = "master"
+  digest = "1:422f38d57f1bc0fdc34f26d0f1026869a3710400b09b5478c9288efa13573cfa"
+  name = "github.com/btcsuite/go-socks"
+  packages = ["socks"]
+  pruneopts = "T"
+  revision = "4720035b7bfd2a9bb130b1c184f8bbe41b6f0d0f"
+
+[[projects]]
+  branch = "master"
+  digest = "1:690a83dc945a219bceb223c2881392edd9fcf25f42b14b0b81e16a6e77e4c5c6"
+  name = "github.com/btcsuite/golangcrypto"
+  packages = ["ripemd160"]
+  pruneopts = "T"
+  revision = "53f62d9b43e87a6c56975cf862af7edf33a8d0df"
+
+[[projects]]
+  branch = "master"
+  digest = "1:0c86bb908769e764c918826ff3809c1ecc3a7a41f715dbac69ef2bd5c1357c3c"
+  name = "github.com/btcsuite/websocket"
+  packages = ["."]
+  pruneopts = "T"
+  revision = "31079b6807923eb23992c421b114992b95131b55"
 
 [[projects]]
   digest = "1:fed1f537c2f1269fe475a8556c393fe466641682d73ef8fd0491cd3aa1e47bad"
@@ -87,6 +138,14 @@
   pruneopts = "T"
   revision = "8991bc29aa16c548c550c7ff78260e27b9ab7c73"
   version = "v1.1.1"
+
+[[projects]]
+  digest = "1:1e9a0ec4f7e852123fefad9aadd7647eed1e9fd3716118e99a4b3dc463705c82"
+  name = "github.com/dchest/siphash"
+  packages = ["."]
+  pruneopts = "T"
+  revision = "34f201214d993633bb24f418ba11736ab8b55aa7"
+  version = "v1.2.1"
 
 [[projects]]
   digest = "1:e47d51dab652d26c3fba6f8cba403f922d02757a82abdc77e90df7948daf296e"
@@ -172,6 +231,40 @@
   version = "v1.4.7"
 
 [[projects]]
+  digest = "1:6727dbb4ed1e0230978cd93c1e1a378c86b44f3146d44758bb07bdaa42d957e6"
+  name = "github.com/gcash/bchd"
+  packages = [
+    "bchec",
+    "btcjson",
+    "chaincfg",
+    "chaincfg/chainhash",
+    "rpcclient",
+    "wire",
+  ]
+  pruneopts = "T"
+  revision = "a7da940fa7acd911411389d5bc738f747e68a44a"
+  version = "v0.14.2"
+
+[[projects]]
+  branch = "master"
+  digest = "1:b1053b781e9090dab5d3e916eb04c8d85b63a7f6911007c2cd1dd82fb22f7f6a"
+  name = "github.com/gcash/bchlog"
+  packages = ["."]
+  pruneopts = "T"
+  revision = "b4f036f92fa66c88eec458f4531ff14ff87704d6"
+
+[[projects]]
+  branch = "master"
+  digest = "1:667fda946d04efc90c1fb9270c26e4620dd5b51f5aff458650a9dff6204ea4b8"
+  name = "github.com/gcash/bchutil"
+  packages = [
+    ".",
+    "base58",
+  ]
+  pruneopts = "T"
+  revision = "050b747bffa06a2effb1af5454753130c41069ab"
+
+[[projects]]
   digest = "1:4c183be9fd1680d917006bb4884c1ac3d00a6bd33b0d36c8439c8cbd011e5aac"
   name = "github.com/getsentry/raven-go"
   packages = ["."]
@@ -254,6 +347,17 @@
   version = "v1.6.2"
 
 [[projects]]
+  branch = "master"
+  digest = "1:f2a90b26392dce30cd10425545709815f38cf07a2ae21f5b3060f9276491555d"
+  name = "github.com/haltingstate/secp256k1-go"
+  packages = [
+    ".",
+    "secp256k1-go2",
+  ]
+  pruneopts = "T"
+  revision = "572209b26df66a638573023571b5ce80983214eb"
+
+[[projects]]
   digest = "1:8ec8d88c248041a6df5f6574b87bc00e7e0b493881dad2e7ef47b11dc69093b5"
   name = "github.com/hashicorp/golang-lru"
   packages = [
@@ -284,6 +388,14 @@
   version = "v1.0.0"
 
 [[projects]]
+  digest = "1:e82d7be1f730c38d869506a633cbbc7b98a154be6dcf22c236269b49d3cd8eda"
+  name = "github.com/jamiealquiza/tachymeter"
+  packages = ["."]
+  pruneopts = "T"
+  revision = "648c1d0993ac51f0da5166710106f4c373423e13"
+  version = "v1.1.2"
+
+[[projects]]
   branch = "master"
   digest = "1:fd97437fbb6b7dce04132cf06775bd258cce305c44add58eb55ca86c6c325160"
   name = "github.com/jinzhu/inflection"
@@ -309,6 +421,33 @@
   pruneopts = "T"
   revision = "4ded0e9383f75c197b3a2aaa6d590ac52df6fd79"
   version = "v1.0.0"
+
+[[projects]]
+  branch = "master"
+  digest = "1:40fd4344363bba497067191d9a8fd067897d42faa7a9f46d573bf227d290c78a"
+  name = "github.com/ltcsuite/ltcd"
+  packages = [
+    "btcec",
+    "btcjson",
+    "chaincfg",
+    "chaincfg/chainhash",
+    "rpcclient",
+    "wire",
+  ]
+  pruneopts = "T"
+  revision = "14cea604277a737f41d2abbdd4b18356cb8ed584"
+
+[[projects]]
+  branch = "master"
+  digest = "1:b60b626fbc3834ed92483fed05d94f80373c6a13eb3920f0d7cadd32ac40455c"
+  name = "github.com/ltcsuite/ltcutil"
+  packages = [
+    ".",
+    "base58",
+    "bech32",
+  ]
+  pruneopts = "T"
+  revision = "17f3b04680b6521349067fb99d9f7495a9e96d60"
 
 [[projects]]
   digest = "1:53e8c5c79716437e601696140e8b1801aae4204f4ec54a504333702a49572c4f"
@@ -386,8 +525,7 @@
   version = "v1.0.0"
 
 [[projects]]
-  branch = "develop"
-  digest = "1:760027f611b07e1b3f309c1a3a00ba0092e5c979f8b42b40ac03a6ddd9c178a6"
+  digest = "1:b102bc94147ae8370b6189c1430c0610fee4a05ac0b8997bc55566231e7627ae"
   name = "github.com/quantadex/quanta_book"
   packages = [
     "common",
@@ -396,7 +534,7 @@
     "storage/pb",
   ]
   pruneopts = "T"
-  revision = "12533dbe72b7f9892bf969e80b9c4da7d81d523d"
+  revision = "e1f0da37c58106da0f2eac2a40c4d2cf114f0f77"
 
 [[projects]]
   digest = "1:9787d2d3220cbfd444596afd03ab0abcf391df169b789fbe3eae27fa2e426cf6"
@@ -567,6 +705,22 @@
 
 [[projects]]
   branch = "master"
+  digest = "1:ec528a786fa75556deed44de7118a74ced456360e782786a20aed292a03955a5"
+  name = "github.com/tyler-smith/go-bip32"
+  packages = ["."]
+  pruneopts = "T"
+  revision = "2c9cfd17756470a0b7c3e4b7954bae7d11035504"
+
+[[projects]]
+  digest = "1:09477db8b485c414c3350e3014007e751a3e19002997b0ffceef0397bad164be"
+  name = "github.com/zserge/metric"
+  packages = ["."]
+  pruneopts = "T"
+  revision = "0941fa223948f2050fcc7d13ee7369327faf6c11"
+  version = "v0.1.0"
+
+[[projects]]
+  branch = "master"
   digest = "1:5f6a40f74aa9639cfcdaccb526d14a6a7c18900ea8f339416a43a580beb32c34"
   name = "golang.org/x/crypto"
   packages = [
@@ -617,6 +771,14 @@
   version = "v0.3.0"
 
 [[projects]]
+  digest = "1:cc9f0c72e45707522afc156b3d715443e2021acedff165a4803f72a0d2ed170f"
+  name = "gopkg.in/matryer/try.v1"
+  packages = ["."]
+  pruneopts = "T"
+  revision = "312d2599e12e89ca89b52a09597394f449235d80"
+  version = "v1"
+
+[[projects]]
   branch = "v2"
   digest = "1:3d3f9391ab615be8655ae0d686a1564f3fec413979bb1aaf018bac1ec1bb1cc7"
   name = "gopkg.in/natefinch/npipe.v2"
@@ -647,8 +809,14 @@
     "github.com/agl/ed25519",
     "github.com/boltdb/bolt",
     "github.com/btcsuite/btcd/btcec",
+    "github.com/btcsuite/btcd/btcjson",
+    "github.com/btcsuite/btcd/chaincfg",
+    "github.com/btcsuite/btcd/chaincfg/chainhash",
+    "github.com/btcsuite/btcd/rpcclient",
+    "github.com/btcsuite/btcd/wire",
     "github.com/btcsuite/btcutil",
     "github.com/btcsuite/btcutil/base58",
+    "github.com/btcsuite/btcutil/hdkeychain",
     "github.com/emirpasic/gods/lists/doublylinkedlist",
     "github.com/ethereum/go-ethereum",
     "github.com/ethereum/go-ethereum/accounts/abi",
@@ -662,11 +830,25 @@
     "github.com/ethereum/go-ethereum/crypto",
     "github.com/ethereum/go-ethereum/ethclient",
     "github.com/ethereum/go-ethereum/event",
+    "github.com/gcash/bchd/btcjson",
+    "github.com/gcash/bchd/chaincfg",
+    "github.com/gcash/bchd/chaincfg/chainhash",
+    "github.com/gcash/bchd/rpcclient",
+    "github.com/gcash/bchd/wire",
+    "github.com/gcash/bchutil",
     "github.com/go-errors/errors",
     "github.com/go-pg/pg",
     "github.com/go-pg/pg/orm",
     "github.com/gorilla/mux",
+    "github.com/haltingstate/secp256k1-go",
+    "github.com/jamiealquiza/tachymeter",
     "github.com/juju/errors",
+    "github.com/ltcsuite/ltcd/btcjson",
+    "github.com/ltcsuite/ltcd/chaincfg",
+    "github.com/ltcsuite/ltcd/chaincfg/chainhash",
+    "github.com/ltcsuite/ltcd/rpcclient",
+    "github.com/ltcsuite/ltcd/wire",
+    "github.com/ltcsuite/ltcutil",
     "github.com/magiconair/properties/assert",
     "github.com/op/go-logging",
     "github.com/pkg/errors",
@@ -688,7 +870,10 @@
     "github.com/stellar/go/support/log",
     "github.com/stellar/go/xdr",
     "github.com/stretchr/testify/assert",
+    "github.com/tyler-smith/go-bip32",
+    "github.com/zserge/metric",
     "golang.org/x/crypto/ripemd160",
+    "gopkg.in/matryer/try.v1",
   ]
   solver-name = "gps-cdcl"
   solver-version = 1
