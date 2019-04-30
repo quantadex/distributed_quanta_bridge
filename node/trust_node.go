@@ -513,11 +513,13 @@ func (n *TrustNode) CreateMultisig(blockchain string, accountId string) (*crypto
 		if err != nil {
 			return nil, err
 		}
-	} else {
+	} else if blockchain == coin.BLOCKCHAIN_BCH  {
 		msig, err = n.bch.GenerateMultisig(accountId)
 		if err != nil {
 			return nil, err
 		}
+	} else {
+		return nil, errors.New("Unexpected multisig creation")
 	}
 
 	//TODO: should we validate user?
