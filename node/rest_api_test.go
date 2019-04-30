@@ -209,10 +209,29 @@ func TestStatus(t *testing.T) {
 
 	time.Sleep(time.Millisecond * 2000)
 
+	deposit := &coin.Deposit{
+		Tx:         "jhvdjh ",
+		CoinName:   "TESTETH",
+		SenderAddr: "Sender",
+		QuantaAddr: "pooja",
+		Amount:     45,
+		BlockID:    454,
+	}
+	db.ConfirmDeposit(nodes[0].rDb, deposit, false)
+	db.ConfirmDeposit(nodes[1].rDb, deposit, false)
+
+	time.Sleep(time.Second * 7)
+
 	// test crosschain
 	res, err := http.Get("http://localhost:5200/api/status")
+	//res, err = http.Get("http://localhost:5201/api/status")
 	assert.NoError(t, err)
 	bodyBytes, _ := ioutil.ReadAll(res.Body)
+	println("data", res.StatusCode, string(bodyBytes))
+
+	res, err = http.Get("http://localhost:5201/api/status")
+	assert.NoError(t, err)
+	bodyBytes, _ = ioutil.ReadAll(res.Body)
 	println("data", res.StatusCode, string(bodyBytes))
 
 	StopNodes(nodes, []int{0, 1})
@@ -244,6 +263,7 @@ func TestMetric(t *testing.T) {
 	}
 
 	for i := 0; i < 70; i++ {
+		time.Sleep(time.Second * 1)
 		if i == 10 {
 			s.Print(i)
 		} else {

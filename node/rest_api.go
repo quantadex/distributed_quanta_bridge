@@ -278,7 +278,7 @@ func (server *Server) statusHandler(w http.ResponseWriter, r *http.Request) {
 	metric.IncrFailuresAndDegraded(res.State, &totalDegraded, &totalFailure)
 	status[control.QUANTA] = res
 
-	depStatus, err := metric.GetDepositOrWithdrawalStatus(db.DEPOSIT, server.trustNode.config.DepDegradedThreshold, server.trustNode.config.DepFailureThreshold)
+	depStatus, err := metric.GetDepositOrWithdrawalStatus(db.DEPOSIT, server.trustNode.config.DepDegradedThreshold, server.trustNode.config.DepFailureThreshold, server.trustNode.nodeID)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 		w.Write([]byte("Unable to get deposit status" + err.Error()))
@@ -287,7 +287,7 @@ func (server *Server) statusHandler(w http.ResponseWriter, r *http.Request) {
 	metric.IncrFailuresAndDegraded(depStatus.State, &totalDegraded, &totalFailure)
 	status["DEPOSIT"] = depStatus
 
-	withdrawStatus, err := metric.GetDepositOrWithdrawalStatus(db.WITHDRAWAL, server.trustNode.config.WithdrawDegradedThreshold, server.trustNode.config.WithdrawFailureThreshold)
+	withdrawStatus, err := metric.GetDepositOrWithdrawalStatus(db.WITHDRAWAL, server.trustNode.config.WithdrawDegradedThreshold, server.trustNode.config.WithdrawFailureThreshold, server.trustNode.nodeID)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 		w.Write([]byte("Unable to get withdrawal status" + err.Error()))

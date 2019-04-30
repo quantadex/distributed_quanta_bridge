@@ -118,7 +118,7 @@ func IncrFailuresAndDegraded(state string, totalDegraded, totalFailure *int64) {
 	}
 }
 
-func GetDepositOrWithdrawalStatus(txType string, degradedThreshold, failureThreshold int64) (TransactionStatus, error) {
+func GetDepositOrWithdrawalStatus(txType string, degradedThreshold, failureThreshold int64, nodeId int) (TransactionStatus, error) {
 	var v expvar.Var
 	res := TransactionStatus{}
 
@@ -126,9 +126,23 @@ func GetDepositOrWithdrawalStatus(txType string, degradedThreshold, failureThres
 	res.FailureThreshold = failureThreshold
 
 	if txType == db.DEPOSIT {
-		v = expvar.Get("deposit_status")
+		if nodeId == 0 {
+			v = expvar.Get(control.DEPOSIT_STATUS_0)
+		} else if nodeId == 1 {
+			v = expvar.Get(control.DEPOSIT_STATUS_1)
+		} else if nodeId == 2 {
+			v = expvar.Get(control.DEPOSIT_STATUS_2)
+		}
+
 	} else if txType == db.WITHDRAWAL {
-		v = expvar.Get("withdrawal_status")
+		if nodeId == 0 {
+			v = expvar.Get(control.WITHDRAWAL_STATUS_0)
+		} else if nodeId == 1 {
+			v = expvar.Get(control.WITHDRAWAL_STATUS_1)
+		} else if nodeId == 2 {
+			v = expvar.Get(control.WITHDRAWAL_STATUS_2)
+		}
+
 	} else {
 		return res, errors.New("unknown transaction type")
 	}

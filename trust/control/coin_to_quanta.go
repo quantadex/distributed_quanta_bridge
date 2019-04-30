@@ -37,6 +37,10 @@ const (
 	ISSUE_CONSENSUS
 )
 
+const DEPOSIT_STATUS_0 = "deposit_status_0"
+const DEPOSIT_STATUS_1 = "deposit_status_1"
+const DEPOSIT_STATUS_2 = "deposit_status_2"
+
 /**
  * CoinToQuanta
  *
@@ -52,7 +56,9 @@ type CoinToQuanta struct {
 	peer          peer_contact.PeerContact
 	trustPeer     *peer_contact.TrustPeerNode
 	cosi          *cosi.Cosi
-	counter       metric.Metric
+	counter0      metric.Metric
+	counter1      metric.Metric
+	counter2      metric.Metric
 
 	readyChan chan bool
 	doneChan  chan bool
@@ -99,9 +105,15 @@ func NewCoinToQuanta(log logger.Logger,
 	res.doneChan = make(chan bool, 1)
 	res.readyChan = make(chan bool, 1)
 	res.quantaOptions = quantaOptions
-	res.counter = metric.NewCounter("24h1m")
+	res.counter0 = metric.NewCounter("24h1m")
+	res.counter1 = metric.NewCounter("24h1m")
+	res.counter2 = metric.NewCounter("24h1m")
 	if res.nodeID == 0 {
-		expvar.Publish("deposit_status", res.counter)
+		expvar.Publish(DEPOSIT_STATUS_0, res.counter0)
+	} else if res.nodeID == 1 {
+		expvar.Publish(DEPOSIT_STATUS_1, res.counter1)
+	} else if res.nodeID == 2 {
+		expvar.Publish(DEPOSIT_STATUS_2, res.counter2)
 	}
 
 	res.trustPeer = peer_contact.NewTrustPeerNode(man, peer, nodeID, queue_, queue.PEERMSG_QUEUE, "/node/api/peer")
@@ -117,6 +129,7 @@ func NewCoinToQuanta(log logger.Logger,
 
 		deposit, err := res.quantaChannel.DecodeTransaction(msg.Message)
 		if err != nil {
+			res.incrementCounter(res.nodeID)
 			log.Error("Unable to decode quanta tx")
 			return err
 		}
@@ -124,12 +137,14 @@ func NewCoinToQuanta(log logger.Logger,
 		deposit.Tx = msg.Tx
 
 		if err != nil {
+			res.incrementCounter(res.nodeID)
 			log.Error("Unable to decode quanta tx")
 			return err
 		}
 
 		tx, err := db.GetTransaction(rDb, deposit.Tx)
 		if err != nil {
+			res.incrementCounter(res.nodeID)
 			return err
 		}
 
@@ -141,6 +156,7 @@ func NewCoinToQuanta(log logger.Logger,
 			log.Error("Unable to verify refund " + tx.Tx)
 		}
 
+		res.incrementCounter(res.nodeID)
 		return errors.New("Unable to verify: " + deposit.Tx)
 	}
 
@@ -149,11 +165,13 @@ func NewCoinToQuanta(log logger.Logger,
 		msg := &coin.EncodedMsg{}
 		err := json.Unmarshal(decoded, msg)
 		if err != nil {
+			res.incrementCounter(res.nodeID)
 			return err
 		}
 
 		deposit, err := res.quantaChannel.DecodeTransaction(msg.Message)
 		if err != nil {
+			res.incrementCounter(res.nodeID)
 			log.Error("Unable to decode quanta tx")
 			return err
 		}
@@ -170,6 +188,7 @@ func NewCoinToQuanta(log logger.Logger,
 		if deposit.Type != types.CreateAssetOpType {
 			err = db.SignDeposit(rDb, deposit)
 			if err != nil {
+				res.incrementCounter(res.nodeID)
 				return errors.New("Failed to confirm transaction: " + err.Error())
 			}
 		}
@@ -182,6 +201,7 @@ func NewCoinToQuanta(log logger.Logger,
 		msg := &coin.EncodedMsg{}
 		err := json.Unmarshal(decoded, msg)
 		if err != nil {
+			res.incrementCounter(res.nodeID)
 			return "", err
 		}
 
@@ -189,6 +209,7 @@ func NewCoinToQuanta(log logger.Logger,
 		log.Infof("Sign msg %s", encodedSig)
 
 		if err != nil {
+			res.incrementCounter(res.nodeID)
 			log.Error("Unable to Sign/encode refund msg")
 			return "", err
 		}
@@ -220,11 +241,19 @@ func NewCoinToQuanta(log logger.Logger,
 	return res
 }
 
+func (c *CoinToQuanta) incrementCounter(nodeId int) {
+	if nodeId == 1 {
+		c.counter1.Add(1)
+	} else if nodeId == 2 {
+		c.counter2.Add(1)
+	}
+}
+
 func (c *CoinToQuanta) processDeposits() {
 	// only leader - pick up  deposits with empty or null submit_state
 	txs := db.QueryDepositByAge(c.rDb, time.Now().Add(-time.Second*5), []string{db.SUBMIT_CONSENSUS})
 	if len(txs) > 0 {
-		c.counter.Add(1)
+		c.counter0.Add(1)
 		tx := txs[0]
 		w := &coin.Deposit{
 			Tx:         tx.Tx,
