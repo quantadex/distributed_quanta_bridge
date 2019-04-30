@@ -285,7 +285,7 @@ func (server *Server) statusHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	metric.IncrFailuresAndDegraded(depStatus.State, &totalDegraded, &totalFailure)
-	status[db.DEPOSIT] = depStatus
+	status["DEPOSIT"] = depStatus
 
 	withdrawStatus, err := metric.GetDepositOrWithdrawalStatus(db.WITHDRAWAL, server.trustNode.config.WithdrawDegradedThreshold, server.trustNode.config.WithdrawFailureThreshold)
 	if err != nil {
@@ -294,7 +294,7 @@ func (server *Server) statusHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	metric.IncrFailuresAndDegraded(withdrawStatus.State, &totalDegraded, &totalFailure)
-	status[db.WITHDRAWAL] = withdrawStatus
+	status["WITHDRAWAL"] = withdrawStatus
 
 	if totalFailure > 0 {
 		w.WriteHeader(http.StatusServiceUnavailable)

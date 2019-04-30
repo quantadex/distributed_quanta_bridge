@@ -132,22 +132,24 @@ func GetDepositOrWithdrawalStatus(txType string, degradedThreshold, failureThres
 	} else {
 		return res, errors.New("unknown transaction type")
 	}
-	var counter *Counter
-	err := json.Unmarshal([]byte(v.String()), &counter)
-	if err != nil {
-		return res, err
-	}
-	count := counter.Samples[0].Count
-	res.ConsensusRetries = count
+	if v != nil {
+		var counter *Counter
+		err := json.Unmarshal([]byte(v.String()), &counter)
+		if err != nil {
+			return res, err
+		}
+		count := counter.Samples[0].Count
+		res.ConsensusRetries = count
 
-	state := ""
-	if count > failureThreshold {
-		state = FAILURE
-	} else if count > degradedThreshold {
-		state = DEGRADED
-	} else {
-		state = NORMAL
+		state := ""
+		if count > failureThreshold {
+			state = FAILURE
+		} else if count > degradedThreshold {
+			state = DEGRADED
+		} else {
+			state = NORMAL
+		}
+		res.State = state
 	}
-	res.State = state
 	return res, nil
 }
