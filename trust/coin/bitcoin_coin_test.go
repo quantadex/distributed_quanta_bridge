@@ -38,6 +38,7 @@ func TestBitcoinEncodeRefund(t *testing.T) {
 	assert.NoError(t, err)
 
 	bitcoin := client.(*BitcoinCoin)
+	bitcoin.Client.Generate(101)
 	addr1, err := bitcoin.GenerateMultisig("aaa1")
 	assert.NoError(t, err)
 	addr2, err := bitcoin.GenerateMultisig("2")

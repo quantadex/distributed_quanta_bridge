@@ -107,11 +107,20 @@ func NewQuantaToCoin(log logger.Logger,
 	res.counter1 = metric.NewCounter("24h1m")
 	res.counter2 = metric.NewCounter("24h1m")
 	if res.nodeID == 0 {
-		expvar.Publish(WITHDRAWAL_STATUS_0, res.counter0)
+		v := expvar.Get(WITHDRAWAL_STATUS_0)
+		if v == nil {
+			expvar.Publish(WITHDRAWAL_STATUS_0, res.counter0)
+		}
 	} else if res.nodeID == 1 {
-		expvar.Publish(WITHDRAWAL_STATUS_1, res.counter1)
+		v := expvar.Get(WITHDRAWAL_STATUS_1)
+		if v == nil {
+			expvar.Publish(WITHDRAWAL_STATUS_1, res.counter1)
+		}
 	} else if res.nodeID == 2 {
-		expvar.Publish(WITHDRAWAL_STATUS_2, res.counter2)
+		v := expvar.Get(WITHDRAWAL_STATUS_2)
+		if v == nil {
+			expvar.Publish(WITHDRAWAL_STATUS_2, res.counter2)
+		}
 	}
 
 	res.coinInfo = coinInfo
@@ -146,7 +155,7 @@ func NewQuantaToCoin(log logger.Logger,
 			}
 
 			res.incrementCounter(res.nodeID)
-			return errors.New("Unable to verify: " + withdrawal.Tx + " " + err.Error())
+			return errors.New("Unable to verify: " + withdrawal.Tx)
 		}
 		return nil
 	}

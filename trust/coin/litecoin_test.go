@@ -32,6 +32,7 @@ func TestLTCEncodeRefund(t *testing.T) {
 
 	account := "pooja5"
 	litecoin := client.(*LiteCoin)
+	litecoin.Client.Generate(101)
 	msig, err := litecoin.GenerateMultisig(account)
 
 	litecoin.crosschainAddr = map[string]string{msig: account}
