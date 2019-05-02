@@ -1,90 +1,17 @@
 package coin
 
 import (
-	"bytes"
 	"encoding/json"
 	"fmt"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ltcsuite/ltcd/chaincfg"
 	"github.com/ltcsuite/ltcutil"
-	"github.com/quantadex/distributed_quanta_bridge/common/crypto"
 	"github.com/quantadex/distributed_quanta_bridge/trust/key_manager"
 	"github.com/stretchr/testify/assert"
-	"log"
-	"os/exec"
 	"testing"
 )
 
 const LOCAL_RPC_HOST_LTC = "localhost:19332"
-
-func SendLTC(address string, amount ltcutil.Amount) (string, error) {
-	amountStr := fmt.Sprintf("%f", amount.ToBTC())
-	fmt.Printf("Sending to %s amount of %s\n", address, amountStr)
-	args := []string{
-		//"-datadir=../../blockchain/bitcoin/data",
-		"sendtoaddress",
-		address,
-		amountStr,
-	}
-
-	cmd := exec.Command("litecoin-cli", args...)
-	var out bytes.Buffer
-	var stderr bytes.Buffer
-	cmd.Stdout = &out
-	cmd.Stderr = &stderr
-
-	err := cmd.Run()
-
-	if err != nil {
-		fmt.Println("err is here 1")
-		println("err", err.Error(), stderr.String())
-	}
-
-	return out.String(), err
-}
-
-func ImportLTCAddress(address string) {
-	args := []string{
-		//"-datadir=../../blockchain/bitcoin/data",
-		"importaddress",
-		address,
-	}
-
-	cmd := exec.Command("litecoin-cli", args...)
-	var out bytes.Buffer
-	var stderr bytes.Buffer
-	cmd.Stdout = &out
-	cmd.Stderr = &stderr
-
-	err := cmd.Run()
-
-	if err != nil {
-		fmt.Println("error is here 2")
-		println("err", err.Error(), stderr.String())
-	}
-}
-
-func GenerateLTCBlock() (string, error) {
-	args := []string{
-		//"-datadir=../../blockchain/bitcoin/data",
-		"generate",
-		"1",
-	}
-
-	cmd := exec.Command("litecoin-cli", args...)
-	var out bytes.Buffer
-	var stderr bytes.Buffer
-	cmd.Stdout = &out
-	cmd.Stderr = &stderr
-
-	err := cmd.Run()
-
-	if err != nil {
-		println("err", err.Error(), stderr.String())
-	}
-
-	return out.String(), err
-}
 
 /**
 
@@ -106,20 +33,22 @@ func TestLTCEncodeRefund(t *testing.T) {
 	account := "pooja5"
 	litecoin := client.(*LiteCoin)
 	msig, err := litecoin.GenerateMultisig(account)
-	log.Println("multisig: ", msig, err)
 
 	litecoin.crosschainAddr = map[string]string{msig: account}
-	log.Println("crosschain: ", litecoin.crosschainAddr)
 
 	amount, err := ltcutil.NewAmount(1.0)
-	res, err := SendLTC(msig, amount)
-	println(res, err)
-	res, err = GenerateLTCBlock()
-	println(res, err)
+	assert.NoError(t, err)
 
 	addr1, err := litecoin.GenerateMultisig("crosschain2")
+	assert.NoError(t, err)
 
-	GenerateLTCBlock()
+	ltcAddr, err := ltcutil.DecodeAddress(msig, &chaincfg.RegressionNetParams)
+	assert.NoError(t, err)
+
+	_, err = litecoin.Client.SendToAddress(ltcAddr, amount)
+	assert.NoError(t, err)
+
+	litecoin.Client.Generate(1)
 
 	w := Withdrawal{
 		SourceAddress:      msig,
@@ -138,16 +67,10 @@ func TestLTCEncodeRefund(t *testing.T) {
 	err = km.LoadNodeKeys("92P5DpWDiuttphtXV5qrHjMnFU2nAyiR8NpyEkF5s8uAngVgBFb")
 	assert.NoError(t, err)
 
-	pub, _ := km.GetPublicKey()
-	fmt.Println("loaded public key signer=", pub)
-
 	tx_signed1, err := km.SignTransaction(encoded.Message)
 	assert.NoError(t, err)
 
 	err = km.LoadNodeKeys("926mkZAmMowq4HaLqpNjwuJuPe3vP6iTVQnt1x9GWdwbnwQjDea")
-
-	pub, _ = km.GetPublicKey()
-	fmt.Println("loaded public key signer 2=", pub)
 
 	tx_signed2, err := km.SignTransaction(encoded.Message)
 	assert.NoError(t, err)
@@ -184,7 +107,7 @@ func TestDepositsLTC(t *testing.T) {
 
 	blockId, err := client.GetTopBlockID()
 
-	_, err = client.GetDepositsInBlock(blockId, map[string]string{"QfLb3gv7pmgwsd4NBZkeZXY73i1QKiS3RW": "pooja"})
+	_, err = client.GetDepositsInBlock(blockId, nil)
 	assert.NoError(t, err)
 }
 
@@ -197,28 +120,26 @@ func TestDecodeLTC(t *testing.T) {
 
 	litecoin := client.(*LiteCoin)
 	addr1, err := litecoin.GenerateMultisig("crosschain2")
-	ImportLTCAddress(addr1)
+	assert.NoError(t, err)
 	addr2, err := litecoin.GenerateMultisig("token_sale")
-	ImportLTCAddress(addr2)
+	assert.NoError(t, err)
 
 	amount, err := ltcutil.NewAmount(0.1)
-	res, err := SendLTC(addr1, amount)
-	println(res, err)
-	GenerateLTCBlock()
+
+	ltcAddr, err := ltcutil.DecodeAddress(addr1, &chaincfg.RegressionNetParams)
+	assert.NoError(t, err)
+
+	_, err = litecoin.Client.SendToAddress(ltcAddr, amount)
+	assert.NoError(t, err)
+
+	litecoin.Client.Generate(1)
 
 	crosschainAddr := make(map[string]string)
 	crosschainAddr[addr1] = "pooja"
 	litecoin.crosschainAddr = crosschainAddr
-	//btec, err := crypto.NewGraphenePublicKeyFromString("QA5nvEN2S7Dej2C9hrLJTHNeMGeHq6uyjMdoceR74CksyApeZHWS")
-	btec, err := crypto.GenerateGrapheneKeyWithSeed("pooja")
-	assert.NoError(t, err)
-
-	msig, err := litecoin.GenerateMultisig(btec)
-
-	log.Println("multisig: ", msig, err)
 
 	w := Withdrawal{
-		SourceAddress:      msig,
+		SourceAddress:      addr1,
 		DestinationAddress: addr2,
 		Amount:             1000,
 		Tx:                 "4418603_0",
@@ -241,32 +162,41 @@ func TestEncodeWithMultipleInputsLTC(t *testing.T) {
 
 	litecoin := client.(*LiteCoin)
 
-	addr1, err := litecoin.GenerateMultisig("crosschain2")
-	addr2, err := litecoin.GenerateMultisig("token_sale")
-	println(addr1, addr2)
+	addr1, err := litecoin.GenerateMultisig("aaa1")
+	assert.NoError(t, err)
+	addr2, err := litecoin.GenerateMultisig("2")
+	assert.NoError(t, err)
+	addr3, err := litecoin.GenerateMultisig("crosschain2")
+	assert.NoError(t, err)
 
 	crosschainAddr := make(map[string]string)
+
 	crosschainAddr[addr1] = "pooja"
 	crosschainAddr[addr2] = "pooja"
 	litecoin.crosschainAddr = crosschainAddr
 
-	amount, err := ltcutil.NewAmount(0.01)
-	res, err := SendLTC(addr1, amount)
-	println(res, err)
-	res, err = SendLTC(addr2, amount)
-	println(res, err)
-	res, err = GenerateLTCBlock()
-	println(res, err)
+	amount, err := ltcutil.NewAmount(0.02)
+	bchAddr, err := ltcutil.DecodeAddress(addr1, &chaincfg.RegressionNetParams)
+	assert.NoError(t, err)
+
+	_, err = litecoin.Client.SendToAddress(bchAddr, amount)
+	assert.NoError(t, err)
+
+	bchAddr, err = ltcutil.DecodeAddress(addr1, &chaincfg.RegressionNetParams)
+	_, err = litecoin.Client.SendToAddress(bchAddr, amount)
+	assert.NoError(t, err)
+	litecoin.Client.Generate(1)
 
 	w := Withdrawal{
-		SourceAddress:      "n2PNkvCSkkSKvgqLsQXAQACFETQwKvc16X",
-		DestinationAddress: "2NGYCnkuo62kL1QpAzV3bRaf747bSM8suQm",
+		SourceAddress:      addr2,
+		DestinationAddress: addr3,
 		Amount:             3000,
 		Tx:                 "4418603_0",
 		QuantaBlockID:      0,
 	}
 
-	_, err = client.EncodeRefund(w)
+	encoded, err := client.EncodeRefund(w)
+	fmt.Println(encoded)
 	assert.NoError(t, err)
 }
 

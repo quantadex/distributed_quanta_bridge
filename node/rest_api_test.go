@@ -251,10 +251,6 @@ func (s Metric) Print(i int) {
 	json.Unmarshal([]byte(s.M.String()), &t)
 	fmt.Println(t.Samples[0].Count)
 
-	if i == 10 {
-		fmt.Println("Resetting")
-		//s.M.Reset()
-	}
 }
 
 func TestMetric(t *testing.T) {
@@ -262,13 +258,78 @@ func TestMetric(t *testing.T) {
 		M: metric.NewCounter("1m"),
 	}
 
-	for i := 0; i < 70; i++ {
+	for i := 0; i < 10; i++ {
 		time.Sleep(time.Second * 1)
 		if i == 10 {
 			s.Print(i)
 		} else {
 			s.Print(0)
 		}
-
 	}
+}
+
+func TestAddressAllNodes(t *testing.T) {
+	r := StartRegistry(2, ":6000")
+	nodes := StartNodes(test.GRAPHENE_ISSUER, test.GRAPHENE_TRUST, test.ETHER_NETWORKS[test.ROPSTEN])
+	time.Sleep(time.Millisecond * 250)
+
+	//btc
+	res, err := http.Post("http://localhost:5200/api/address/btc/pooja", "", nil)
+	assert.NoError(t, err)
+	bodyBytes, _ := ioutil.ReadAll(res.Body)
+	println("data", res.StatusCode, string(bodyBytes))
+	assert.Equal(t, 200, res.StatusCode)
+
+	res, err = http.Get("http://localhost:5200/api/address/btc/pooja")
+	assert.NoError(t, err)
+	bodyBytes, _ = ioutil.ReadAll(res.Body)
+	println("data", res.StatusCode, string(bodyBytes))
+	assert.Equal(t, 200, res.StatusCode)
+
+	res, err = http.Get("http://localhost:5201/api/address/btc/pooja")
+	assert.NoError(t, err)
+	bodyBytes, _ = ioutil.ReadAll(res.Body)
+	println("data", res.StatusCode, string(bodyBytes))
+	assert.Equal(t, 200, res.StatusCode)
+
+	//bch
+	res, err = http.Post("http://localhost:5200/api/address/bch/pooja", "", nil)
+	assert.NoError(t, err)
+	bodyBytes, _ = ioutil.ReadAll(res.Body)
+	println("data", res.StatusCode, string(bodyBytes))
+	assert.Equal(t, 200, res.StatusCode)
+
+	res, err = http.Get("http://localhost:5200/api/address/bch/pooja")
+	assert.NoError(t, err)
+	bodyBytes, _ = ioutil.ReadAll(res.Body)
+	println("data", res.StatusCode, string(bodyBytes))
+	assert.Equal(t, 200, res.StatusCode)
+
+	res, err = http.Get("http://localhost:5201/api/address/bch/pooja")
+	assert.NoError(t, err)
+	bodyBytes, _ = ioutil.ReadAll(res.Body)
+	println("data", res.StatusCode, string(bodyBytes))
+	assert.Equal(t, 200, res.StatusCode)
+
+	//ltc
+	res, err = http.Post("http://localhost:5200/api/address/ltc/pooja", "", nil)
+	assert.NoError(t, err)
+	bodyBytes, _ = ioutil.ReadAll(res.Body)
+	println("data", res.StatusCode, string(bodyBytes))
+	assert.Equal(t, 200, res.StatusCode)
+
+	res, err = http.Get("http://localhost:5200/api/address/ltc/pooja")
+	assert.NoError(t, err)
+	bodyBytes, _ = ioutil.ReadAll(res.Body)
+	println("data", res.StatusCode, string(bodyBytes))
+	assert.Equal(t, 200, res.StatusCode)
+
+	res, err = http.Get("http://localhost:5201/api/address/ltc/pooja")
+	assert.NoError(t, err)
+	bodyBytes, _ = ioutil.ReadAll(res.Body)
+	println("data", res.StatusCode, string(bodyBytes))
+	assert.Equal(t, 200, res.StatusCode)
+
+	StopNodes(nodes, []int{0, 1})
+	StopRegistry(r)
 }

@@ -58,9 +58,8 @@ var ROPSTEN_TRUST = &EthereumTrustSecrets{
 
 var BTCSECRETS = &BtcSecrets{
 	NodeSecrets: []string{
-		"cNxQax7BfpbikeuCebPGCgTefTah5h1XhVDfaotVdFmXtaLCWLd9",
-		"cUixT9PYjTtNzcVjF8sB7iM9JeEf8tLHm9Wjgo972x8opCRNTasS",
-		"cPXngzEsUFpNCJ9DGYWyFLfCuGjzhsuM8N3sUf5z4HqLUUGuGp2h",
+		"92REaZhgcw6FF2rz8EnY1HMtBvgh3qh4gs9PxnccPrju6ZCFetk",
+		"923EhimzuuHQvRaRWhTbKtocZSaKjvXkc32jbBiT5NPkCVGKYmf",
 	},
 }
 

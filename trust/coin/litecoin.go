@@ -373,10 +373,6 @@ func (b *LiteCoin) GetUnspentInputs(amount ltcutil.Amount) (ltcutil.Amount, []bt
 	amountWithFee := amount.ToBTC() + (b.fee * 50)
 
 	for _, e := range unspent {
-		if e.Address == "QMmJjkHxUhLxRd73jk75qbFDuh72D22jHT" || e.Address == "QU5bHWP9os3CwMAbTVkJQQ4K8df43Vb4ru" {
-			fmt.Println("address = ", e.Address)
-			fmt.Println("map = ", b.crosschainAddr)
-		}
 		if _, ok := b.crosschainAddr[e.Address]; ok {
 			//unspentAddr, err := btcutil.DecodeAddress(e.Address, b.chaincfg)
 			//if unspentAddr.String() == destAddress.String() {

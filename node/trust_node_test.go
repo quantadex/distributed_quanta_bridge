@@ -1,7 +1,6 @@
 package main
 
 import (
-	"bytes"
 	"fmt"
 	"github.com/btcsuite/btcd/chaincfg"
 	"github.com/btcsuite/btcutil"
@@ -18,7 +17,6 @@ import (
 	"github.com/stretchr/testify/assert"
 	"io/ioutil"
 	"net/http"
-	"os/exec"
 	"testing"
 	"time"
 
@@ -453,9 +451,12 @@ func TestBCHDeposit(t *testing.T) {
 
 	config := generateConfig(test.GRAPHENE_ISSUER, test.GRAPHENE_TRUST, test.ETHER_NETWORKS[test.ROPSTEN], 0)
 
-	client, err := coin.NewBCHCoin("localhost:18332", &chaincfg3.RegressionNetParams, []string{"049C8C4647E016C502766C6F5C40CFD37EE86CD02972274CA50DA16D72016CAB5812F867F27C268923E5DE3ADCB268CC8A29B96D0D8972841F286BA6D9CCF61360", "040C9B0D5324CBAF4F40A215C1D87DF1BEB51A0345E0384942FE0D60F8D796F7B7200CC5B70DDCF101E7804EFA26A0CE6EC6622C2FE90BCFD2DA2482006C455FF1"})
+	client, err := coin.NewBCHCoin("localhost:18333", &chaincfg3.RegressionNetParams, []string{"049C8C4647E016C502766C6F5C40CFD37EE86CD02972274CA50DA16D72016CAB5812F867F27C268923E5DE3ADCB268CC8A29B96D0D8972841F286BA6D9CCF61360", "040C9B0D5324CBAF4F40A215C1D87DF1BEB51A0345E0384942FE0D60F8D796F7B7200CC5B70DDCF101E7804EFA26A0CE6EC6622C2FE90BCFD2DA2482006C455FF1"})
 	err = client.Attach()
 	assert.NoError(t, err)
+
+	bch := client.(*coin.BCH)
+	bch.Client.Generate(101)
 
 	msig, err := client.GenerateMultisig("pooja")
 	assert.NoError(t, err)
@@ -483,12 +484,16 @@ func TestBCHDeposit(t *testing.T) {
 	println("Address created ", string(bodyBytes))
 
 	address := string(bodyBytes)[13:62]
-	err = ImportAddress(address, "bitcoin-cli")
-	assert.NoError(t, err)
+	bch.Client.ImportAddressRescanAsync(address, "", false)
 
 	amount, _ := bchutil.NewAmount(0.01)
-	SendBCH(address, amount)
-	GenerateBlock("bitcoin-cli")
+	bchAddr, err := bchutil.DecodeAddress(address, &chaincfg3.RegressionNetParams)
+	assert.NoError(t, err)
+
+	_, err = bch.Client.SendToAddress(bchAddr, amount)
+	assert.NoError(t, err)
+
+	bch.Client.Generate(1)
 
 	blockId, err := client.GetTopBlockID()
 	assert.NoError(t, err)
@@ -505,7 +510,7 @@ func TestBCHDeposit(t *testing.T) {
 	}
 	fmt.Printf("[BLOCK %d] END\n=======================\n\n", block)
 
-	GenerateBlock("bitcoin-cli")
+	bch.Client.Generate(1)
 
 	blockId, err = client.GetTopBlockID()
 	assert.NoError(t, err)
@@ -563,13 +568,14 @@ func TestBCHWithdrawal(t *testing.T) {
 		withdrawResult <- c
 	}
 
-	client, err := coin.NewBCHCoin("localhost:18332", &chaincfg3.RegressionNetParams, []string{"049C8C4647E016C502766C6F5C40CFD37EE86CD02972274CA50DA16D72016CAB5812F867F27C268923E5DE3ADCB268CC8A29B96D0D8972841F286BA6D9CCF61360", "040C9B0D5324CBAF4F40A215C1D87DF1BEB51A0345E0384942FE0D60F8D796F7B7200CC5B70DDCF101E7804EFA26A0CE6EC6622C2FE90BCFD2DA2482006C455FF1"})
+	client, err := coin.NewBCHCoin("localhost:18333", &chaincfg3.RegressionNetParams, []string{"049C8C4647E016C502766C6F5C40CFD37EE86CD02972274CA50DA16D72016CAB5812F867F27C268923E5DE3ADCB268CC8A29B96D0D8972841F286BA6D9CCF61360", "040C9B0D5324CBAF4F40A215C1D87DF1BEB51A0345E0384942FE0D60F8D796F7B7200CC5B70DDCF101E7804EFA26A0CE6EC6622C2FE90BCFD2DA2482006C455FF1"})
 	err = client.Attach()
 	assert.NoError(t, err)
 
-	btec, err := crypto.GenerateGrapheneKeyWithSeed("pooja")
+	bch := client.(*coin.BCH)
+
+	msig, err := client.GenerateMultisig("pooja")
 	assert.NoError(t, err)
-	msig, err := client.GenerateMultisig(btec)
 
 	forwardAddress := &crypto.ForwardInput{
 		msig,
@@ -593,11 +599,15 @@ func TestBCHWithdrawal(t *testing.T) {
 
 	amount, err := bchutil.NewAmount(0.9)
 	address := string(bodyBytes)[13:62]
-	err = ImportAddress(address, "bitcoin-cli")
+	bch.Client.ImportAddressRescanAsync(address, "", false)
+
+	bchAddr, err := bchutil.DecodeAddress(address, &chaincfg3.RegressionNetParams)
 	assert.NoError(t, err)
 
-	SendBCH(address, amount)
-	GenerateBlock("bitcoin-cli")
+	_, err = bch.Client.SendToAddress(bchAddr, amount)
+	assert.NoError(t, err)
+
+	bch.Client.Generate(1)
 
 	cursor := int64(8529695)
 	fmt.Printf("=======================\n[CURSOR %d] BEGIN\n\n", cursor)
@@ -628,56 +638,6 @@ func TestBCHWithdrawal(t *testing.T) {
 	StopRegistry(r)
 }
 
-func SendBCH(address string, amount bchutil.Amount) (string, error) {
-	amountStr := fmt.Sprintf("%f", amount.ToBCH())
-	fmt.Printf("Sending to %s amount of %s\n", address, amountStr)
-	args := []string{
-		//"-datadir=../../blockchain/bitcoin/data",
-		"sendtoaddress",
-		address,
-		amountStr,
-	}
-
-	cmd := exec.Command("bitcoin-cli", args...)
-	var out bytes.Buffer
-	var stderr bytes.Buffer
-	cmd.Stdout = &out
-	cmd.Stderr = &stderr
-
-	err := cmd.Run()
-
-	if err != nil {
-		println("err", err.Error(), stderr.String())
-	}
-
-	return out.String(), err
-}
-
-func SendLTC(address string, amount ltcutil.Amount) (string, error) {
-	amountStr := fmt.Sprintf("%f", amount.ToBTC())
-	fmt.Printf("Sending to %s amount of %s\n", address, amountStr)
-	args := []string{
-		//"-datadir=../../blockchain/bitcoin/data",
-		"sendtoaddress",
-		address,
-		amountStr,
-	}
-
-	cmd := exec.Command("litecoin-cli", args...)
-	var out bytes.Buffer
-	var stderr bytes.Buffer
-	cmd.Stdout = &out
-	cmd.Stderr = &stderr
-
-	err := cmd.Run()
-
-	if err != nil {
-		println("err", err.Error(), stderr.String())
-	}
-
-	return out.String(), err
-}
-
 func TestLTCDeposit(t *testing.T) {
 	r := StartRegistry(2, ":6000")
 	nodes := StartNodes(test.GRAPHENE_ISSUER, test.GRAPHENE_TRUST, test.ETHER_NETWORKS[test.ROPSTEN])
@@ -694,6 +654,9 @@ func TestLTCDeposit(t *testing.T) {
 	client, err := coin.NewLitecoinCoin("localhost:19332", &chaincfg2.RegressionNetParams, []string{"047AABB69BBE1B5D9E2EFD10D0215A37AE835EAE08DFDF795E5A8411271F690CC8797CF4DEB3508844920E28A42A67D8A3F56D5B6B65401DEDB1E130F9F9908463", "04851D591308AFBE768566060C01A60A5F6AC6C78C3766559C835BEF0485628013ADC7D7E7676B0281FB83E788F4BC11E4CA597D1A53AF5F0BB90D555A28B55504"})
 	err = client.Attach()
 	assert.NoError(t, err)
+
+	ltc := client.(*coin.LiteCoin)
+	ltc.Client.Generate(101)
 
 	msig, err := client.GenerateMultisig("pooja")
 	assert.NoError(t, err)
@@ -721,12 +684,16 @@ func TestLTCDeposit(t *testing.T) {
 	println("Address created ", string(bodyBytes))
 
 	address := string(bodyBytes)[13:47]
-	err = ImportAddress(address, "litecoin-cli")
+	amount, _ := ltcutil.NewAmount(0.01)
+	ltc.Client.ImportAddressRescanAsync(address, "", false)
+
+	bchAddr, err := ltcutil.DecodeAddress(address, &chaincfg2.RegressionNetParams)
 	assert.NoError(t, err)
 
-	amount, _ := ltcutil.NewAmount(0.01)
-	SendLTC(address, amount)
-	GenerateBlock("litecoin-cli")
+	_, err = ltc.Client.SendToAddress(bchAddr, amount)
+	assert.NoError(t, err)
+
+	ltc.Client.Generate(1)
 
 	blockId, err := client.GetTopBlockID()
 	assert.NoError(t, err)
@@ -743,7 +710,7 @@ func TestLTCDeposit(t *testing.T) {
 	}
 	fmt.Printf("[BLOCK %d] END\n=======================\n\n", block)
 
-	GenerateBlock("litecoin-cli")
+	ltc.Client.Generate(1)
 
 	blockId, err = client.GetTopBlockID()
 	assert.NoError(t, err)
@@ -805,10 +772,9 @@ func TestLTCWithdrawal(t *testing.T) {
 	err = client.Attach()
 	assert.NoError(t, err)
 
-	msig, err := client.GenerateMultisig("pooja")
-	assert.NoError(t, err)
+	ltc := client.(*coin.LiteCoin)
 
-	_, err = client.GenerateMultisig("pooja2")
+	msig, err := client.GenerateMultisig("pooja")
 	assert.NoError(t, err)
 
 	forwardAddress := &crypto.ForwardInput{
@@ -833,11 +799,15 @@ func TestLTCWithdrawal(t *testing.T) {
 
 	amount, err := ltcutil.NewAmount(0.9)
 	address := string(bodyBytes)[13:47]
-	err = ImportAddress(address, "litecoin-cli")
+	ltc.Client.ImportAddressRescanAsync(address, "", false)
+
+	bchAddr, err := ltcutil.DecodeAddress(address, &chaincfg2.RegressionNetParams)
 	assert.NoError(t, err)
 
-	SendLTC(address, amount)
-	GenerateBlock("litecoin-cli")
+	_, err = ltc.Client.SendToAddress(bchAddr, amount)
+	assert.NoError(t, err)
+
+	ltc.Client.Generate(1)
 
 	cursor := int64(8348073)
 	fmt.Printf("=======================\n[CURSOR %d] BEGIN\n\n", cursor)
@@ -880,16 +850,17 @@ func TestBTCDeposit(t *testing.T) {
 	}
 	config := generateConfig(test.GRAPHENE_ISSUER, test.GRAPHENE_TRUST, test.ETHER_NETWORKS[test.ROPSTEN], 0)
 
-	client, err := coin.NewBitcoinCoin("localhost:18332", &chaincfg.RegressionNetParams, []string{"2NENNHR9Y9fpKzjKYobbdbwap7xno7sbf2E", "2NEDF3RBHQuUHQmghWzFf6b6eeEnC7KjAtR"})
+	client, err := coin.NewBitcoinCoin("localhost:18332", &chaincfg.RegressionNetParams, []string{"049C8C4647E016C502766C6F5C40CFD37EE86CD02972274CA50DA16D72016CAB5812F867F27C268923E5DE3ADCB268CC8A29B96D0D8972841F286BA6D9CCF61360", "040C9B0D5324CBAF4F40A215C1D87DF1BEB51A0345E0384942FE0D60F8D796F7B7200CC5B70DDCF101E7804EFA26A0CE6EC6622C2FE90BCFD2DA2482006C455FF1"})
 	assert.NoError(t, err)
+
+	btc := client.(*coin.BitcoinCoin)
 
 	err = client.Attach()
 	assert.NoError(t, err)
 
-	msig, err := client.GenerateMultisig("pooja")
-	assert.NoError(t, err)
+	btc.Client.Generate(101)
 
-	_, err = client.GenerateMultisig("pooja2")
+	msig, err := client.GenerateMultisig("pooja")
 	assert.NoError(t, err)
 
 	forwardAddress := &crypto.ForwardInput{
@@ -913,16 +884,19 @@ func TestBTCDeposit(t *testing.T) {
 	println("Address created ", string(bodyBytes))
 
 	address := string(bodyBytes)[13:48]
-	err = ImportAddress(address, "bitcoin-cli")
+	amount, _ := btcutil.NewAmount(0.01)
+	btc.Client.ImportAddressRescanAsync(address, "", false)
+
+	btcAddr, err := btcutil.DecodeAddress(address, &chaincfg.RegressionNetParams)
 	assert.NoError(t, err)
 
-	amount, _ := btcutil.NewAmount(0.01)
-	SendBTC(address, amount)
-	GenerateBlock("bitcoin-cli")
+	_, err = btc.Client.SendToAddress(btcAddr, amount)
+	assert.NoError(t, err)
+
+	btc.Client.Generate(1)
 
 	blockId, err := client.GetTopBlockID()
 	assert.NoError(t, err)
-	fmt.Println(blockId)
 
 	block := int64(blockId)
 	fmt.Printf("=======================\n[BLOCK %d] BEGIN\n\n", block)
@@ -935,7 +909,7 @@ func TestBTCDeposit(t *testing.T) {
 	}
 	fmt.Printf("[BLOCK %d] END\n=======================\n\n", block)
 
-	GenerateBlock("bitcoin-cli")
+	btc.Client.Generate(1)
 
 	blockId, err = client.GetTopBlockID()
 	assert.NoError(t, err)
@@ -971,75 +945,6 @@ func TestBTCDeposit(t *testing.T) {
 	StopRegistry(r)
 }
 
-func ImportAddress(address string, command string) error {
-	args := []string{
-		//"-datadir=../../blockchain/bitcoin/data",
-		"importaddress",
-		address,
-	}
-
-	cmd := exec.Command(command, args...)
-	var out bytes.Buffer
-	var stderr bytes.Buffer
-	cmd.Stdout = &out
-	cmd.Stderr = &stderr
-
-	err := cmd.Run()
-
-	if err != nil {
-		println("err", err.Error(), stderr.String())
-		return err
-	}
-	return nil
-}
-
-func SendBTC(address string, amount btcutil.Amount) (string, error) {
-	amountStr := fmt.Sprintf("%f", amount.ToBTC())
-	fmt.Printf("Sending to %s amount of %s\n", address, amountStr)
-	args := []string{
-		//"-datadir=../../blockchain/bitcoin/data",
-		"sendtoaddress",
-		address,
-		amountStr,
-	}
-
-	cmd := exec.Command("bitcoin-cli", args...)
-	var out bytes.Buffer
-	var stderr bytes.Buffer
-	cmd.Stdout = &out
-	cmd.Stderr = &stderr
-
-	err := cmd.Run()
-
-	if err != nil {
-		println("err", err.Error(), stderr.String())
-	}
-
-	return out.String(), err
-}
-
-func GenerateBlock(command string) (string, error) {
-	args := []string{
-		//"-datadir=../../blockchain/bitcoin/data",
-		"generate",
-		"1",
-	}
-
-	cmd := exec.Command(command, args...)
-	var out bytes.Buffer
-	var stderr bytes.Buffer
-	cmd.Stdout = &out
-	cmd.Stderr = &stderr
-
-	err := cmd.Run()
-
-	if err != nil {
-		println("err", err.Error(), stderr.String())
-	}
-
-	return out.String(), err
-}
-
 func TestBTCWithdrawal(t *testing.T) {
 	ethereumClient, err := ethclient.Dial(test.ETHER_NETWORKS[test.ROPSTEN].Rpc)
 	assert.Nil(t, err)
@@ -1062,8 +967,13 @@ func TestBTCWithdrawal(t *testing.T) {
 		withdrawResult <- c
 	}
 
-	pubKey := "pooja"
-	res, err := http.Get("http://localhost:5200/api/address/BTC/" + pubKey)
+	client, err := coin.NewBitcoinCoin("localhost:18332", &chaincfg.RegressionNetParams, []string{"049C8C4647E016C502766C6F5C40CFD37EE86CD02972274CA50DA16D72016CAB5812F867F27C268923E5DE3ADCB268CC8A29B96D0D8972841F286BA6D9CCF61360", "040C9B0D5324CBAF4F40A215C1D87DF1BEB51A0345E0384942FE0D60F8D796F7B7200CC5B70DDCF101E7804EFA26A0CE6EC6622C2FE90BCFD2DA2482006C455FF1"})
+	err = client.Attach()
+	assert.NoError(t, err)
+
+	btc := client.(*coin.BitcoinCoin)
+
+	res, err := http.Post("http://localhost:5200/api/address/BTC/pooja", "", nil)
 	assert.NoError(t, err)
 	assert.Equal(t, res.StatusCode, 200)
 
@@ -1074,11 +984,13 @@ func TestBTCWithdrawal(t *testing.T) {
 
 	amount, err := btcutil.NewAmount(0.9)
 	address := string(bodyBytes)[13:48]
-	err = ImportAddress(address, "bitcoin-cli")
+	bchAddr, err := btcutil.DecodeAddress(address, &chaincfg.RegressionNetParams)
 	assert.NoError(t, err)
 
-	SendBTC(address, amount)
-	GenerateBlock("bitcoin-cli")
+	_, err = btc.Client.SendToAddress(bchAddr, amount)
+	assert.NoError(t, err)
+
+	btc.Client.Generate(1)
 
 	cursor := int64(5116140)
 	fmt.Printf("=======================\n[CURSOR %d] BEGIN\n\n", cursor)

@@ -21,12 +21,12 @@ func TestStressTest(t *testing.T) {
 	meter := tachymeter.New(&tachymeter.Config{Size: 100})
 	var waitgroup sync.WaitGroup
 
-	for i := 0; i < 1000; i++ {
+	for i := 0; i < 100; i++ {
 		waitgroup.Add(1)
 
 		go func(waitgroup *sync.WaitGroup) {
 			api := QuantaGraphene{}
-			api.NetworkUrl = "ws://testnet-01.quantachain.io:8096"
+			api.NetworkUrl = "ws://testnet-01.quantachain.io:8090"
 			instances = append(instances, &api)
 
 			start := time.Now()

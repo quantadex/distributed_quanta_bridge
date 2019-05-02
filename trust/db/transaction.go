@@ -79,9 +79,9 @@ func QueryAllWaitForConfirmTx(db *DB, blockchain string) ([]Transaction, error) 
 	return txs, err
 }
 
-func QueryAllWaitForConfirmTxETH(db *DB) ([]Transaction, error) {
+func QueryAllWaitForConfirmTxETH(db *DB, coin string) ([]Transaction, error) {
 	var txs []Transaction
-	err := db.Model(&txs).Where("Type=? and Submit_State=? AND (coin = 'ETH' OR coin like'%0X%') ", DEPOSIT, WAIT_FOR_CONFIRMATION).Select()
+	err := db.Model(&txs).Where("Type=? and Submit_State=? AND (coin =? OR coin like'%0X%') ", DEPOSIT, WAIT_FOR_CONFIRMATION, coin).Select()
 	return txs, err
 }
 

@@ -88,7 +88,7 @@ func (c *BitcoinSync) FindAndConfirm(tx db.Transaction, blockHash string, confir
 }
 
 func (c *BitcoinSync) FindAllAndConfirm() error {
-	txs, err := db.QueryAllWaitForConfirmTx(c.rDb, coin.BLOCKCHAIN_BTC)
+	txs, err := db.QueryAllWaitForConfirmTx(c.rDb, c.issuingSymbol["btc"])
 	if err != nil {
 		return err
 	}

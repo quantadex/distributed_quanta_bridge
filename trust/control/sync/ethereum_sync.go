@@ -118,7 +118,7 @@ func (c *EthereumSync) GetWatchAddress() map[string]string {
 }
 
 func (c *EthereumSync) FindAllAndConfirm() error {
-	txs, err := db.QueryAllWaitForConfirmTxETH(c.rDb)
+	txs, err := db.QueryAllWaitForConfirmTxETH(c.rDb, c.issuingSymbol["eth"])
 	if err != nil {
 		return err
 	}
