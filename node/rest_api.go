@@ -243,7 +243,6 @@ func (server *Server) statusHandler(w http.ResponseWriter, r *http.Request) {
 	status["VERSION"] = Version
 	status["BUILDTIME"] = BuildStamp
 	status["GITHASH"] = GitHash
-	status["LISTEN_IP"] = server.listenIp
 	status["PUBLIC_KEY"] = server.publicKey
 
 	totalDegraded := int64(0)

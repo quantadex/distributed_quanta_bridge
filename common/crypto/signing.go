@@ -55,10 +55,7 @@ func NewGraphenePublicKeyFromString(key string) (*btcec.PublicKey, error) {
 	return pub, nil
 }
 
-//TODO: Try to incorporate the seed back into the private key
-const prefix = "threaten weakness lovely presence common endless travel hop ground illusion anyway nod"
-
-func GenerateGrapheneKeyWithSeed(str string) (string, error) {
+func GenerateGrapheneKeyWithSeed(str string, prefix string) (string, error) {
 	digest := sha256.Sum256([]byte(prefix + ":" + str))
 	//digest2 := bytes.NewBuffer([]byte{0x2})
 	//digest2.Write(digest[:])

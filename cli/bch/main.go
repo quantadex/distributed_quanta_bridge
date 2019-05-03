@@ -13,7 +13,7 @@ func main() {
 	config, quanta, rdb, kdb, log := cli.Setup()
 
 	// setup coin
-	coin, err := coin.NewBCHCoin(config.BchRpc, crypto.GetChainCfgByStringBCH(config.BchNetwork), config.BchSigners)
+	coin, err := coin.NewBCHCoin(config.BchRpc, crypto.GetChainCfgByStringBCH(config.BchNetwork), config.BchSigners, config.BchRpcUser, config.BchRpcPassword, config.GrapheneSeedPrefix)
 	if err != nil {
 		panic(fmt.Errorf("cannot create bch coin"))
 	}

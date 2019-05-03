@@ -24,12 +24,15 @@ import (
 const BLOCKCHAIN_LTC = "LTC"
 
 type LiteCoin struct {
-	Client         *rpcclient.Client
-	rpcHost        string
-	chaincfg       *chaincfg2.Params
-	signers        []ltcutil.Address
-	crosschainAddr map[string]string
-	fee            float64
+	Client             *rpcclient.Client
+	rpcHost            string
+	chaincfg           *chaincfg2.Params
+	signers            []ltcutil.Address
+	crosschainAddr     map[string]string
+	fee                float64
+	rpcUser            string
+	rpcPassword        string
+	grapheneSeedPrefix string
 }
 
 func (b *LiteCoin) Blockchain() string {
@@ -40,8 +43,8 @@ func (b *LiteCoin) Attach() error {
 	var err error
 	b.Client, err = rpcclient.New(&rpcclient.ConnConfig{Host: b.rpcHost,
 		Endpoint:     "http",
-		User:         "user",
-		Pass:         "123",
+		User:         b.rpcUser,
+		Pass:         b.rpcPassword,
 		DisableTLS:   true,
 		HTTPPostMode: true,
 	}, nil)
@@ -96,7 +99,7 @@ func (b *LiteCoin) GetBlockInfo(hash string) (string, int64, error) {
 func (b *LiteCoin) GenerateMultisig(accountId string) (string, error) {
 	addr := []ltcutil.Address{}
 	addr = append(addr, b.signers...)
-	btcAddressStr, err := crypto.GenerateGrapheneKeyWithSeed(accountId)
+	btcAddressStr, err := crypto.GenerateGrapheneKeyWithSeed(accountId, b.grapheneSeedPrefix)
 	if err != nil {
 		return "", err
 	}

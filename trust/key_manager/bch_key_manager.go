@@ -16,10 +16,12 @@ import (
 )
 
 type BCHKeyManager struct {
-	privateKey *bchutil.WIF
-	client     *rpcclient.Client
-	chaincfg   *chaincfg.Params
-	bitcoinRPC string
+	privateKey  *bchutil.WIF
+	client      *rpcclient.Client
+	chaincfg    *chaincfg.Params
+	bitcoinRPC  string
+	rpcUser     string
+	rpcPassword string
 }
 
 func (b *BCHKeyManager) CreateNodeKeys() error {
@@ -30,8 +32,8 @@ func (b *BCHKeyManager) LoadNodeKeys(privKey string) error {
 	var err error
 	// TODO: make this configurable
 	b.client, err = rpcclient.New(&rpcclient.ConnConfig{Host: b.bitcoinRPC,
-		User:         "user",
-		Pass:         "123",
+		User:         b.rpcUser,
+		Pass:         b.rpcPassword,
 		DisableTLS:   true,
 		HTTPPostMode: true,
 	}, nil)

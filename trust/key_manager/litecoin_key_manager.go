@@ -15,10 +15,12 @@ import (
 )
 
 type LitecoinKeyManager struct {
-	privateKey *ltcutil.WIF
-	client     *rpcclient.Client
-	chaincfg   *chaincfg.Params
-	bitcoinRPC string
+	privateKey  *ltcutil.WIF
+	client      *rpcclient.Client
+	chaincfg    *chaincfg.Params
+	bitcoinRPC  string
+	rpcUser     string
+	rpcPassword string
 }
 
 func (b *LitecoinKeyManager) CreateNodeKeys() error {
@@ -29,8 +31,8 @@ func (b *LitecoinKeyManager) LoadNodeKeys(privKey string) error {
 	var err error
 	// TODO: make this configurable
 	b.client, err = rpcclient.New(&rpcclient.ConnConfig{Host: b.bitcoinRPC,
-		User:         "user",
-		Pass:         "123",
+		User:         b.rpcUser,
+		Pass:         b.rpcPassword,
 		DisableTLS:   true,
 		HTTPPostMode: true,
 	}, nil)

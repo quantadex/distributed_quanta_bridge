@@ -13,7 +13,7 @@ func main() {
 	config, quanta, rdb, kdb, log := cli.Setup()
 
 	// setup coin
-	coin, err := coin.NewLitecoinCoin(config.LtcRpc, crypto.GetChainCfgByStringLTC(config.LtcNetwork), config.LtcSigners)
+	coin, err := coin.NewLitecoinCoin(config.LtcRpc, crypto.GetChainCfgByStringLTC(config.LtcNetwork), config.LtcSigners, config.LtcRpcUser, config.LtcRpcPassword, config.GrapheneSeedPrefix)
 	if err != nil {
 		panic(fmt.Errorf("cannot create litecoin coin"))
 	}

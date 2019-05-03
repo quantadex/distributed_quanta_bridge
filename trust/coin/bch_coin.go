@@ -25,12 +25,15 @@ import (
 const BLOCKCHAIN_BCH = "BCH"
 
 type BCH struct {
-	Client         *rpcclient.Client
-	rpcHost        string
-	chaincfg       *chaincfg.Params
-	signers        []bchutil.Address
-	crosschainAddr map[string]string
-	fee            float64
+	Client             *rpcclient.Client
+	rpcHost            string
+	chaincfg           *chaincfg.Params
+	signers            []bchutil.Address
+	crosschainAddr     map[string]string
+	fee                float64
+	rpcUser            string
+	rpcPassword        string
+	grapheneSeedPrefix string
 }
 
 func (b *BCH) Blockchain() string {
@@ -41,8 +44,8 @@ func (b *BCH) Attach() error {
 	var err error
 	b.Client, err = rpcclient.New(&rpcclient.ConnConfig{Host: b.rpcHost,
 		Endpoint:     "http",
-		User:         "user",
-		Pass:         "123",
+		User:         b.rpcUser,
+		Pass:         b.rpcPassword,
 		DisableTLS:   true,
 		HTTPPostMode: true,
 	}, nil)
@@ -97,7 +100,7 @@ func (b *BCH) GetBlockInfo(hash string) (string, int64, error) {
 func (b *BCH) GenerateMultisig(accountId string) (string, error) {
 	addr := []bchutil.Address{}
 	addr = append(addr, b.signers...)
-	btcAddressStr, err := crypto.GenerateGrapheneKeyWithSeed(accountId)
+	btcAddressStr, err := crypto.GenerateGrapheneKeyWithSeed(accountId, b.grapheneSeedPrefix)
 	if err != nil {
 		return "", err
 	}

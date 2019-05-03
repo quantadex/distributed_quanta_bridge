@@ -31,7 +31,7 @@ func TestCheckHash(t *testing.T) {
 }
 
 func TestBitcoinEncodeRefund(t *testing.T) {
-	client, err := NewBitcoinCoin(LOCAL_RPC_HOST, &chaincfg.RegressionNetParams, []string{"049C8C4647E016C502766C6F5C40CFD37EE86CD02972274CA50DA16D72016CAB5812F867F27C268923E5DE3ADCB268CC8A29B96D0D8972841F286BA6D9CCF61360", "040C9B0D5324CBAF4F40A215C1D87DF1BEB51A0345E0384942FE0D60F8D796F7B7200CC5B70DDCF101E7804EFA26A0CE6EC6622C2FE90BCFD2DA2482006C455FF1"})
+	client, err := NewBitcoinCoin(LOCAL_RPC_HOST, &chaincfg.RegressionNetParams, []string{"049C8C4647E016C502766C6F5C40CFD37EE86CD02972274CA50DA16D72016CAB5812F867F27C268923E5DE3ADCB268CC8A29B96D0D8972841F286BA6D9CCF61360", "040C9B0D5324CBAF4F40A215C1D87DF1BEB51A0345E0384942FE0D60F8D796F7B7200CC5B70DDCF101E7804EFA26A0CE6EC6622C2FE90BCFD2DA2482006C455FF1"}, "user", "123", "")
 	assert.NoError(t, err)
 
 	err = client.Attach()
@@ -72,7 +72,7 @@ func TestBitcoinEncodeRefund(t *testing.T) {
 	var encoded EncodedMsg
 	json.Unmarshal([]byte(tx), &encoded)
 
-	km, _ := key_manager.NewBitCoinKeyManager(LOCAL_RPC_HOST, "regnet")
+	km, _ := key_manager.NewBitCoinKeyManager(LOCAL_RPC_HOST, "regnet", "user", "123")
 
 	err = km.LoadNodeKeys("92REaZhgcw6FF2rz8EnY1HMtBvgh3qh4gs9PxnccPrju6ZCFetk")
 	assert.NoError(t, err)
@@ -96,7 +96,7 @@ func TestBitcoinEncodeRefund(t *testing.T) {
 }
 
 func TestTopBlockId(t *testing.T) {
-	client, err := NewBitcoinCoin(LOCAL_RPC_HOST, &chaincfg.RegressionNetParams, nil)
+	client, err := NewBitcoinCoin(LOCAL_RPC_HOST, &chaincfg.RegressionNetParams, nil, "user", "123", "")
 	assert.NoError(t, err)
 
 	err = client.Attach()
@@ -108,7 +108,7 @@ func TestTopBlockId(t *testing.T) {
 }
 
 func TestDeposits(t *testing.T) {
-	client, err := NewBitcoinCoin(LOCAL_RPC_HOST, &chaincfg.RegressionNetParams, nil)
+	client, err := NewBitcoinCoin(LOCAL_RPC_HOST, &chaincfg.RegressionNetParams, nil, "user", "123", "")
 	assert.NoError(t, err)
 
 	err = client.Attach()
@@ -121,7 +121,7 @@ func TestDeposits(t *testing.T) {
 }
 
 func TestDecode(t *testing.T) {
-	client, err := NewBitcoinCoin(LOCAL_RPC_HOST, &chaincfg.RegressionNetParams, []string{"0240A0DD4FAAED21462FF9721B83B40E78554D725AFF8D55325309709ED7E024DF", "037CC0B9F91B42827294424167663ADC1BE9A75EA87F57107AAA474E8AAAF4FEEE"})
+	client, err := NewBitcoinCoin(LOCAL_RPC_HOST, &chaincfg.RegressionNetParams, []string{"0240A0DD4FAAED21462FF9721B83B40E78554D725AFF8D55325309709ED7E024DF", "037CC0B9F91B42827294424167663ADC1BE9A75EA87F57107AAA474E8AAAF4FEEE"}, "user", "123", "")
 	assert.NoError(t, err)
 
 	err = client.Attach()
@@ -163,7 +163,7 @@ func TestDecode(t *testing.T) {
 }
 
 func TestEncodeWithMultipleInputs(t *testing.T) {
-	client, err := NewBitcoinCoin(LOCAL_RPC_HOST, &chaincfg.RegressionNetParams, []string{"0240A0DD4FAAED21462FF9721B83B40E78554D725AFF8D55325309709ED7E024DF", "037CC0B9F91B42827294424167663ADC1BE9A75EA87F57107AAA474E8AAAF4FEEE"})
+	client, err := NewBitcoinCoin(LOCAL_RPC_HOST, &chaincfg.RegressionNetParams, []string{"0240A0DD4FAAED21462FF9721B83B40E78554D725AFF8D55325309709ED7E024DF", "037CC0B9F91B42827294424167663ADC1BE9A75EA87F57107AAA474E8AAAF4FEEE"}, "user", "123", "")
 	assert.NoError(t, err)
 
 	err = client.Attach()
@@ -212,7 +212,7 @@ func TestEncodeWithMultipleInputs(t *testing.T) {
  * These are the public keys on testnet, and it failed to generate a key for some instances, fixed by adding more to the seed
  */
 func TestGenerateMultisig(t *testing.T) {
-	client, err := NewBitcoinCoin(LOCAL_RPC_HOST, &chaincfg.TestNet3Params, []string{"03AF8891DA9BBF3CED03F04BC3C17EC4D3AE61D464E9B89A6B6A1FA60E361FDEA4", "038CAFE50CA757FAD36DA592A7C2B19158C0163445BAC2DDF6A59BDDC8F5BF6AD1", "03F8C8D630BB53B2E08FB108E2A951C84E582BB3D585D2127FAE6DE43150A415AE"})
+	client, err := NewBitcoinCoin(LOCAL_RPC_HOST, &chaincfg.TestNet3Params, []string{"03AF8891DA9BBF3CED03F04BC3C17EC4D3AE61D464E9B89A6B6A1FA60E361FDEA4", "038CAFE50CA757FAD36DA592A7C2B19158C0163445BAC2DDF6A59BDDC8F5BF6AD1", "03F8C8D630BB53B2E08FB108E2A951C84E582BB3D585D2127FAE6DE43150A415AE"}, "user", "123", "")
 	assert.NoError(t, err)
 
 	err = client.Attach()

@@ -145,7 +145,7 @@ func NewEthereumCoin(networkId string, ethereumRpc string, secret string, erc20m
 	return &EthereumCoin{maxRange: common.MaxNumberInt64, networkId: networkId, ethereumRpc: ethereumRpc, ethereumSecret: key, erc20map: erc20map}, nil
 }
 
-func NewBitcoinCoin(rpcHost string, params *chaincfg.Params, signers []string) (Coin, error) {
+func NewBitcoinCoin(rpcHost string, params *chaincfg.Params, signers []string, rpcUser, rpcPassword, grapheneSeedPrefix string) (Coin, error) {
 	signersA := []btcutil.Address{}
 	for _, s := range signers {
 		addr, err := btcutil.DecodeAddress(s, params)
@@ -155,10 +155,10 @@ func NewBitcoinCoin(rpcHost string, params *chaincfg.Params, signers []string) (
 		signersA = append(signersA, addr)
 	}
 
-	return &BitcoinCoin{rpcHost: rpcHost, chaincfg: params, signers: signersA}, nil
+	return &BitcoinCoin{rpcHost: rpcHost, chaincfg: params, signers: signersA, rpcUser: rpcUser, rpcPassword: rpcPassword, grapheneSeedPrefix: grapheneSeedPrefix}, nil
 }
 
-func NewLitecoinCoin(rpcHost string, params *chaincfg2.Params, signers []string) (Coin, error) {
+func NewLitecoinCoin(rpcHost string, params *chaincfg2.Params, signers []string, rpcUser, rpcPassword, grapheneSeedPrefix string) (Coin, error) {
 	signersA := []ltcutil.Address{}
 	for _, s := range signers {
 		addr, err := ltcutil.DecodeAddress(s, params)
@@ -168,10 +168,10 @@ func NewLitecoinCoin(rpcHost string, params *chaincfg2.Params, signers []string)
 		signersA = append(signersA, addr)
 	}
 
-	return &LiteCoin{rpcHost: rpcHost, chaincfg: params, signers: signersA}, nil
+	return &LiteCoin{rpcHost: rpcHost, chaincfg: params, signers: signersA, rpcUser: rpcUser, rpcPassword: rpcPassword, grapheneSeedPrefix: grapheneSeedPrefix}, nil
 }
 
-func NewBCHCoin(rpcHost string, params *chaincfg3.Params, signers []string) (Coin, error) {
+func NewBCHCoin(rpcHost string, params *chaincfg3.Params, signers []string, rpcUser, rpcPassword, grapheneSeedPrefix string) (Coin, error) {
 	signersA := []bchutil.Address{}
 	for _, s := range signers {
 		addr, err := bchutil.DecodeAddress(s, params)
@@ -181,7 +181,7 @@ func NewBCHCoin(rpcHost string, params *chaincfg3.Params, signers []string) (Coi
 		signersA = append(signersA, addr)
 	}
 
-	return &BCH{rpcHost: rpcHost, chaincfg: params, signers: signersA}, nil
+	return &BCH{rpcHost: rpcHost, chaincfg: params, signers: signersA, rpcUser: rpcUser, rpcPassword: rpcPassword, grapheneSeedPrefix: grapheneSeedPrefix}, nil
 }
 
 /**

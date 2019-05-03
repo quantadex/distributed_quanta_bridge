@@ -118,7 +118,7 @@ func initNode(config common.Config, targetCoin coin.Coin) (*TrustNode, bool) {
 		return nil, false
 	}
 
-	node.btcKM, err = key_manager.NewBitCoinKeyManager(config.BtcRpc, config.BtcNetwork)
+	node.btcKM, err = key_manager.NewBitCoinKeyManager(config.BtcRpc, config.BtcNetwork, config.BtcRpcUser, config.BtcRpcPassword)
 	if err != nil {
 		node.log.Error("Failed to create BTC key manager")
 		return nil, false
@@ -129,7 +129,7 @@ func initNode(config common.Config, targetCoin coin.Coin) (*TrustNode, bool) {
 		return nil, false
 	}
 
-	node.ltcKM, err = key_manager.NewLiteCoinKeyManager(config.LtcRpc, config.LtcNetwork)
+	node.ltcKM, err = key_manager.NewLiteCoinKeyManager(config.LtcRpc, config.LtcNetwork, config.LtcRpcUser, config.LtcRpcPassword)
 	if err != nil {
 		node.log.Error("Failed to create LTC key manager")
 		return nil, false
@@ -140,7 +140,7 @@ func initNode(config common.Config, targetCoin coin.Coin) (*TrustNode, bool) {
 		return nil, false
 	}
 
-	node.bchKM, err = key_manager.NewBCHCoinKeyManager(config.BchRpc, config.BchNetwork)
+	node.bchKM, err = key_manager.NewBCHCoinKeyManager(config.BchRpc, config.BchNetwork, config.BchRpcUser, config.BchRpcPassword)
 	if err != nil {
 		node.log.Error("Failed to create BCH key manager")
 		return nil, false
@@ -193,7 +193,7 @@ func initNode(config common.Config, targetCoin coin.Coin) (*TrustNode, bool) {
 		return nil, false
 	}
 
-	ltccoin, err := coin.NewLitecoinCoin(config.LtcRpc, crypto.GetChainCfgByStringLTC(config.LtcNetwork), config.LtcSigners)
+	ltccoin, err := coin.NewLitecoinCoin(config.LtcRpc, crypto.GetChainCfgByStringLTC(config.LtcNetwork), config.LtcSigners, config.LtcRpcUser, config.LtcRpcPassword, config.GrapheneSeedPrefix)
 	if err != nil {
 		panic(fmt.Errorf("cannot create litecoin coin"))
 	}
@@ -204,7 +204,7 @@ func initNode(config common.Config, targetCoin coin.Coin) (*TrustNode, bool) {
 	}
 	node.ltc = ltccoin
 
-	bchcoin, err := coin.NewBCHCoin(config.BchRpc, crypto.GetChainCfgByStringBCH(config.BchNetwork), config.BchSigners)
+	bchcoin, err := coin.NewBCHCoin(config.BchRpc, crypto.GetChainCfgByStringBCH(config.BchNetwork), config.BchSigners, config.BchRpcUser, config.BchRpcPassword, config.GrapheneSeedPrefix)
 	if err != nil {
 		panic(fmt.Errorf("cannot create litecoin coin"))
 	}
@@ -216,7 +216,7 @@ func initNode(config common.Config, targetCoin coin.Coin) (*TrustNode, bool) {
 	node.bch = bchcoin
 
 	// attach bitcoin
-	coin, err := coin.NewBitcoinCoin(config.BtcRpc, crypto.GetChainCfgByString(config.BtcNetwork), config.BtcSigners)
+	coin, err := coin.NewBitcoinCoin(config.BtcRpc, crypto.GetChainCfgByString(config.BtcNetwork), config.BtcSigners, config.BtcRpcUser, config.BtcRpcPassword, config.GrapheneSeedPrefix)
 	if err != nil {
 		panic(fmt.Errorf("cannot create ethereum listener"))
 	}
@@ -513,7 +513,7 @@ func (n *TrustNode) CreateMultisig(blockchain string, accountId string) (*crypto
 		if err != nil {
 			return nil, err
 		}
-	} else if blockchain == coin.BLOCKCHAIN_BCH  {
+	} else if blockchain == coin.BLOCKCHAIN_BCH {
 		msig, err = n.bch.GenerateMultisig(accountId)
 		if err != nil {
 			return nil, err

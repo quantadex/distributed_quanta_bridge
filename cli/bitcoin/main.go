@@ -13,7 +13,7 @@ func main() {
 	config, quanta, rdb, kdb, log := cli.Setup()
 
 	// setup coin
-	coin, err := coin.NewBitcoinCoin(config.BtcRpc, crypto.GetChainCfgByString(config.BtcNetwork), config.BtcSigners)
+	coin, err := coin.NewBitcoinCoin(config.BtcRpc, crypto.GetChainCfgByString(config.BtcNetwork), config.BtcSigners, config.BtcRpcUser, config.BtcRpcPassword, config.GrapheneSeedPrefix)
 	if err != nil {
 		panic(fmt.Errorf("cannot create ethereum listener"))
 	}

@@ -30,6 +30,8 @@ type Config struct {
 	BtcMinConfirmation        int64
 	BtcDegradedThreshold      int64
 	BtcFailureThreshold       int64
+	BtcRpcUser                string
+	BtcRpcPassword            string
 	LogLevel                  string
 	MinNodes                  int
 	EthFlush                  bool
@@ -43,6 +45,8 @@ type Config struct {
 	LtcMinConfirmation        int64
 	LtcDegradedThreshold      int64
 	LtcFailureThreshold       int64
+	LtcRpcUser                string
+	LtcRpcPassword            string
 	BchRpc                    string
 	BchPrivateKey             string
 	BchSigners                []string
@@ -51,10 +55,13 @@ type Config struct {
 	BchMinConfirmation        int64
 	BchDegradedThreshold      int64
 	BchFailureThreshold       int64
+	BchRpcUser                string
+	BchRpcPassword            string
 	QuantaDegradedThreshold   int64
 	QuantaFailureThreshold    int64
 	DepDegradedThreshold      int64
 	DepFailureThreshold       int64
 	WithdrawDegradedThreshold int64
 	WithdrawFailureThreshold  int64
+	GrapheneSeedPrefix        string
 }

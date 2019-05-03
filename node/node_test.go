@@ -51,6 +51,8 @@ func generateConfig(quanta *test.QuantaNodeSecrets, ethereum *test.EthereumTrust
 		BtcMinConfirmation:        1,
 		BtcDegradedThreshold:      2000,
 		BtcFailureThreshold:       4000,
+		BtcRpcUser:                "user",
+		BtcRpcPassword:            "123",
 		LtcPrivateKey:             test.LTCSECRETS.NodeSecrets[index],
 		LtcRpc:                    "localhost:19332",
 		LtcSigners:                []string{"047AABB69BBE1B5D9E2EFD10D0215A37AE835EAE08DFDF795E5A8411271F690CC8797CF4DEB3508844920E28A42A67D8A3F56D5B6B65401DEDB1E130F9F9908463", "04851D591308AFBE768566060C01A60A5F6AC6C78C3766559C835BEF0485628013ADC7D7E7676B0281FB83E788F4BC11E4CA597D1A53AF5F0BB90D555A28B55504"},
@@ -58,6 +60,8 @@ func generateConfig(quanta *test.QuantaNodeSecrets, ethereum *test.EthereumTrust
 		LtcMinConfirmation:        1,
 		LtcDegradedThreshold:      2000,
 		LtcFailureThreshold:       4000,
+		LtcRpcUser:                "user",
+		LtcRpcPassword:            "123",
 		BchPrivateKey:             test.BCHSECRETS.NodeSecrets[index],
 		BchRpc:                    "localhost:18333",
 		BchSigners:                []string{"049C8C4647E016C502766C6F5C40CFD37EE86CD02972274CA50DA16D72016CAB5812F867F27C268923E5DE3ADCB268CC8A29B96D0D8972841F286BA6D9CCF61360", "040C9B0D5324CBAF4F40A215C1D87DF1BEB51A0345E0384942FE0D60F8D796F7B7200CC5B70DDCF101E7804EFA26A0CE6EC6622C2FE90BCFD2DA2482006C455FF1"},
@@ -65,12 +69,15 @@ func generateConfig(quanta *test.QuantaNodeSecrets, ethereum *test.EthereumTrust
 		BchMinConfirmation:        1,
 		BchDegradedThreshold:      2000,
 		BchFailureThreshold:       4000,
+		BchRpcUser:                "user",
+		BchRpcPassword:            "123",
 		QuantaDegradedThreshold:   2000,
 		QuantaFailureThreshold:    4000,
 		DepDegradedThreshold:      10,
 		DepFailureThreshold:       20,
 		WithdrawDegradedThreshold: 10,
 		WithdrawFailureThreshold:  20,
+		GrapheneSeedPrefix:        "",
 	}
 }
 

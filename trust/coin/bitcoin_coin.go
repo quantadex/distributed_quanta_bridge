@@ -22,12 +22,15 @@ import (
 )
 
 type BitcoinCoin struct {
-	Client         *rpcclient.Client
-	rpcHost        string
-	chaincfg       *chaincfg.Params
-	signers        []btcutil.Address
-	crosschainAddr map[string]string
-	fee            float64
+	Client             *rpcclient.Client
+	rpcHost            string
+	chaincfg           *chaincfg.Params
+	signers            []btcutil.Address
+	crosschainAddr     map[string]string
+	fee                float64
+	rpcUser            string
+	rpcPassword        string
+	grapheneSeedPrefix string
 }
 
 const BLOCKCHAIN_BTC = "BTC"
@@ -40,8 +43,8 @@ func (b *BitcoinCoin) Attach() error {
 	var err error
 	b.Client, err = rpcclient.New(&rpcclient.ConnConfig{Host: b.rpcHost,
 		Endpoint:     "http",
-		User:         "user",
-		Pass:         "123",
+		User:         b.rpcUser,
+		Pass:         b.rpcPassword,
 		DisableTLS:   true,
 		HTTPPostMode: true,
 	}, nil)
@@ -80,7 +83,7 @@ func (b *BitcoinCoin) GetTopBlockID() (int64, error) {
 func (b *BitcoinCoin) GenerateMultisig(accountId string) (string, error) {
 	addr := []btcutil.Address{}
 	addr = append(addr, b.signers...)
-	btcAddressStr, err := crypto.GenerateGrapheneKeyWithSeed(accountId)
+	btcAddressStr, err := crypto.GenerateGrapheneKeyWithSeed(accountId, b.grapheneSeedPrefix)
 	if err != nil {
 		return "", err
 	}
