@@ -12,7 +12,6 @@ import (
 	"github.com/gcash/bchutil"
 	"github.com/pkg/errors"
 	"github.com/quantadex/distributed_quanta_bridge/common"
-	"github.com/quantadex/distributed_quanta_bridge/common/crypto"
 )
 
 type BCHKeyManager struct {
@@ -42,10 +41,10 @@ func (b *BCHKeyManager) LoadNodeKeys(privKey string) error {
 		return errors.Wrap(err, "Cannot attach client for BCH")
 	}
 
-	err = crypto.ValidateNetwork(b.client, "Bitcoin ABC")
-	if err != nil {
-		return err
-	}
+	//err = crypto.ValidateNetwork(b.client, "Bitcoin ABC")
+	//if err != nil {
+	//	return err
+	//}
 
 	b.privateKey, err = bchutil.DecodeWIF(privKey)
 

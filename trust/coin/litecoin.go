@@ -54,7 +54,7 @@ func (b *LiteCoin) Attach() error {
 
 	b.fee = 0.00001
 
-	err = crypto.ValidateNetwork(b.Client, "Litecoin")
+	//err = crypto.ValidateNetwork(b.Client, "Litecoin")
 
 	return err
 }
