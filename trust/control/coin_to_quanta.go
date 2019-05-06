@@ -397,7 +397,7 @@ func (c *CoinToQuanta) StartConsensus(tx *coin.Deposit, consensus ConsensusType)
 		return HEX_NULL, err
 	}
 
-	data, err := json.Marshal(&coin.EncodedMsg{encoded, tx.Tx, tx.BlockID, tx.CoinName})
+	data, err := json.Marshal(&coin.EncodedMsg{encoded, tx.Tx, tx.BlockID, tx.CoinName, tx.QuantaAddr})
 
 	if err != nil {
 		c.logger.Error("Failed to encode refund 2" + err.Error())

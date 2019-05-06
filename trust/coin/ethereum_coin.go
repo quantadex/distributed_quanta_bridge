@@ -33,10 +33,11 @@ type EthereumCoin struct {
 }
 
 type EncodedMsg struct {
-	Message     string
-	Tx          string
-	BlockNumber int64
-	CoinName    string
+	Message         string
+	Tx              string
+	BlockNumber     int64
+	CoinName        string
+	DestinationAddr string
 }
 
 func (c *EthereumCoin) Blockchain() string {
@@ -204,7 +205,7 @@ func (c *EthereumCoin) EncodeRefund(w Withdrawal) (string, error) {
 	//binary.Write(&encoded, binary.BigEndian, abi.U256(new(big.Int).SetUint64(uint64(w.Amount))))
 
 	//println("# of bytes " , encoded.Len(), common2.Bytes2Hex(encoded.Bytes()))
-	data, err := json.Marshal(&EncodedMsg{common2.Bytes2Hex(encoded.Bytes()), w.Tx, w.QuantaBlockID, w.CoinName})
+	data, err := json.Marshal(&EncodedMsg{common2.Bytes2Hex(encoded.Bytes()), w.Tx, w.QuantaBlockID, w.CoinName, w.DestinationAddress})
 	//return common2.Bytes2Hex(data), err
 	return string(data), err
 }

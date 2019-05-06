@@ -11,6 +11,7 @@ import (
 	"github.com/pkg/errors"
 	common2 "github.com/quantadex/distributed_quanta_bridge/common"
 	"github.com/quantadex/distributed_quanta_bridge/common/crypto"
+	"math"
 	"time"
 
 	"bytes"
@@ -194,32 +195,44 @@ func (b *LiteCoin) GetPendingTx(watchMap map[string]string) ([]*Deposit, error) 
 		if err != nil {
 			return nil, errors.Wrap(err, "unable to get chainhash")
 		}
-		fromAddr, err := b.GetFromAddress(txHash)
+		//fromAddr, err := b.GetFromAddress(txHash)
+		//if err != nil {
+		//	return nil, errors.Wrap(err, "unable to get from address")
+		//}
+
+		//if fromAddr == toAddr || fromAddr == "" {
+		//	//println("Ignoring tx when from and to the same ", toAddr)
+		//	continue
+		//}
+
+		//amount, err := btcutil.NewAmount(e.Amount)
+		//if err != nil {
+		//	return nil, errors.Wrap(err, "unable to create new amount")
+		//}
+
+		currentTx, err := b.Client.GetTransaction(txHash)
 		if err != nil {
-			return nil, errors.Wrap(err, "unable to get from address")
+			return nil, errors.Wrap(err, "failed to getraw for currentTx")
 		}
 
-		if fromAddr == toAddr || fromAddr == "" {
-			//println("Ignoring tx when from and to the same ", toAddr)
-			continue
-		}
+		for _, details := range currentTx.Details {
+			amount, err := ltcutil.NewAmount(math.Abs(details.Amount))
+			if err != nil {
+				return nil, errors.Wrap(err, "unable to create new amount")
+			}
 
-		amount, err := ltcutil.NewAmount(e.Amount)
-		if err != nil {
-			return nil, errors.Wrap(err, "unable to create new amount")
-		}
-
-		if quantaAddr, ok := watchMap[toAddr]; ok {
-			events = append(events, &Deposit{
-				SenderAddr: fromAddr,
-				QuantaAddr: quantaAddr,
-				CoinName:   b.Blockchain(),
-				Amount:     int64(amount),
-				BlockID:    0,
-				Tx:         txHash.String(),
-			})
+			if quantaAddr, ok := watchMap[toAddr]; ok {
+				events = append(events, &Deposit{
+					QuantaAddr: quantaAddr,
+					CoinName:   b.Blockchain(),
+					Amount:     int64(amount),
+					Tx:         txHash.String(),
+				})
+			}
 		}
 	}
+	msg, _ := json.Marshal(events)
+	fmt.Printf("pending events = %v\n", string(msg))
 	return events, nil
 }
 
@@ -249,36 +262,56 @@ func (b *LiteCoin) GetDepositsInBlock(blockID int64, trustAddress map[string]str
 	for _, tx := range block.Transactions {
 		if _, ok := txidMap[tx.TxHash().String()]; ok {
 			txHash := tx.TxHash()
-			currentTx, err := b.Client.GetRawTransactionVerbose(&txHash)
+			//currentTx, err := b.Client.GetRawTransactionVerbose(&txHash)
+			//if err != nil {
+			//	return nil, errors.Wrap(err, "failed to getraw for currentTx")
+			//}
+			//
+			//fromAddr, err := b.GetFromAddress(&txHash)
+			//if err != nil {
+			//	return nil, errors.Wrap(err, "failed to from address for currentTx")
+			//}
+			//
+			//for _, vout := range currentTx.Vout {
+			//	toAddr := strings.Join(vout.ScriptPubKey.Addresses, ",")
+			//
+			//	if fromAddr == toAddr || fromAddr == "" {
+			//		//println("Ignoring tx when from and to the same ", toAddr)
+			//		continue
+			//	}
+			//
+			//	amount, err := btcutil.NewAmount(vout.Value)
+			//	if err != nil {
+			//		return nil, errors.Wrap(err, "unable to create new amount")
+			//	}
+			//
+			//	if quantaAddr, ok := trustAddress[toAddr]; ok {
+			//		events = append(events, &Deposit{
+			//			SenderAddr: fromAddr,
+			//			QuantaAddr: quantaAddr,
+			//			CoinName:   b.Blockchain(),
+			//			Amount:     int64(amount),
+			//			BlockID:    blockID,
+			//			Tx:         txHash.String(),
+			//			BlockHash:  blockHash.String(),
+			//		})
+			//	}
+			//}
+
+			currentTx, err := b.Client.GetTransaction(&txHash)
 			if err != nil {
 				return nil, errors.Wrap(err, "failed to getraw for currentTx")
 			}
 
-			fromAddr, err := b.GetFromAddress(&txHash)
-			if err != nil {
-				return nil, errors.Wrap(err, "failed to get from address for currentTx")
-			}
-
-			if err != nil {
-				return nil, errors.Wrap(err, "failed to from address for currentTx")
-			}
-
-			for _, vout := range currentTx.Vout {
-				toAddr := strings.Join(vout.ScriptPubKey.Addresses, ",")
-
-				if fromAddr == toAddr || fromAddr == "" {
-					//println("Ignoring tx when from and to the same ", toAddr)
-					continue
-				}
-
-				amount, err := ltcutil.NewAmount(vout.Value)
+			for _, details := range currentTx.Details {
+				amount, err := ltcutil.NewAmount(math.Abs(details.Amount))
 				if err != nil {
 					return nil, errors.Wrap(err, "unable to create new amount")
 				}
+				toAddr := details.Address
 
 				if quantaAddr, ok := trustAddress[toAddr]; ok {
 					events = append(events, &Deposit{
-						SenderAddr: fromAddr,
 						QuantaAddr: quantaAddr,
 						CoinName:   b.Blockchain(),
 						Amount:     int64(amount),
@@ -290,8 +323,8 @@ func (b *LiteCoin) GetDepositsInBlock(blockID int64, trustAddress map[string]str
 			}
 		}
 	}
-	//msg, _ := json.Marshal(events)
-	//fmt.Printf("events = %v\n", string(msg))
+	msg, _ := json.Marshal(events)
+	fmt.Printf("events = %v\n", string(msg))
 	return events, nil
 }
 
@@ -466,7 +499,7 @@ func (b *LiteCoin) EncodeRefund(w Withdrawal) (string, error) {
 	}
 
 	resJson, err := json.Marshal(res)
-	data, err := json.Marshal(&EncodedMsg{string(resJson), w.Tx, w.QuantaBlockID, w.CoinName})
+	data, err := json.Marshal(&EncodedMsg{string(resJson), w.Tx, w.QuantaBlockID, w.CoinName, w.DestinationAddress})
 	return string(data), err
 }
 
@@ -502,55 +535,70 @@ func (b *LiteCoin) DecodeRefund(encoded string) (*Withdrawal, error) {
 		return nil, err
 	}
 
-	vinLookup := map[string]bool{}
-	vinAddresses := []string{}
-	for _, vin := range decodedTx.Vin {
-		if vin.Txid == "" {
-			continue
-		}
-
-		prevTranHash, err := chainhash.NewHashFromStr(vin.Txid)
-		if err != nil {
-			return nil, errors.Wrap(err, "failed to build hash")
-		}
-		prevTran, err := b.Client.GetRawTransactionVerbose(prevTranHash)
-		if err != nil {
-			return nil, errors.Wrap(err, "failed to getraw for vin")
-		}
-
-		prevVout := prevTran.Vout[vin.Vout]
-		fromAddress := strings.Join(prevVout.ScriptPubKey.Addresses, ",")
-		vinLookup[fromAddress] = true
-		vinAddresses = append(vinAddresses, fromAddress)
-	}
-
-	fromAddr := strings.Join(vinAddresses, ",")
-	allWithdrawals := []*Withdrawal{}
+	w := &Withdrawal{}
 	for _, vout := range decodedTx.Vout {
 		destAddr := strings.Join(vout.ScriptPubKey.Addresses, ",")
-
-		if vinLookup[destAddr] || fromAddr == "" {
-			//println("Ignoring tx when from and to the same ", toAddr)
-			continue
+		if destAddr == decoded.DestinationAddr {
+			amount, _ := ltcutil.NewAmount(vout.Value)
+			w = &Withdrawal{
+				Amount:             uint64(amount),
+				DestinationAddress: destAddr,
+				Tx:                 decoded.Tx,
+				QuantaBlockID:      decoded.BlockNumber,
+			}
 		}
-		amount, err := ltcutil.NewAmount(vout.Value)
-		if err != nil {
-			return nil, errors.Wrap(err, "unable to create new amount")
-		}
-		w := &Withdrawal{
-			Amount:             uint64(amount),
-			SourceAddress:      fromAddr,
-			DestinationAddress: destAddr,
-			Tx:                 decoded.Tx,
-			QuantaBlockID:      decoded.BlockNumber,
-		}
-		allWithdrawals = append(allWithdrawals, w)
 	}
 
-	if len(allWithdrawals) != 1 {
-		return nil, errors.New("Expect to have only 1 withdrawal")
-	}
-	return allWithdrawals[0], nil
+	//vinLookup := map[string]bool{}
+	//vinAddresses := []string{}
+	//for _, vin := range decodedTx.Vin {
+	//	if vin.Txid == "" {
+	//		continue
+	//	}
+	//
+	//	prevTranHash, err := chainhash.NewHashFromStr(vin.Txid)
+	//	if err != nil {
+	//		return nil, errors.Wrap(err, "failed to build hash")
+	//	}
+	//	prevTran, err := b.Client.GetRawTransactionVerbose(prevTranHash)
+	//	if err != nil {
+	//		return nil, errors.Wrap(err, "failed to getraw for vin")
+	//	}
+	//
+	//	prevVout := prevTran.Vout[vin.Vout]
+	//	fromAddress := strings.Join(prevVout.ScriptPubKey.Addresses, ",")
+	//	vinLookup[fromAddress] = true
+	//	vinAddresses = append(vinAddresses, fromAddress)
+	//}
+	//
+	//fromAddr := strings.Join(vinAddresses, ",")
+	//allWithdrawals := []*Withdrawal{}
+	//for _, vout := range decodedTx.Vout {
+	//	destAddr := strings.Join(vout.ScriptPubKey.Addresses, ",")
+	//
+	//	if vinLookup[destAddr] || fromAddr == "" {
+	//		//println("Ignoring tx when from and to the same ", toAddr)
+	//		continue
+	//	}
+	//	amount, err := ltcutil.NewAmount(vout.Value)
+	//	if err != nil {
+	//		return nil, errors.Wrap(err, "unable to create new amount")
+	//	}
+	//	w := &Withdrawal{
+	//		Amount:             uint64(amount),
+	//		SourceAddress:      fromAddr,
+	//		DestinationAddress: destAddr,
+	//		Tx:                 decoded.Tx,
+	//		QuantaBlockID:      decoded.BlockNumber,
+	//	}
+	//	allWithdrawals = append(allWithdrawals, w)
+	//}
+	//
+	//if len(allWithdrawals) != 1 {
+	//	return nil, errors.New("Expect to have only 1 withdrawal")
+	//}
+	//return allWithdrawals[0], nil
+	return w, nil
 }
 
 func (b *LiteCoin) CheckValidAddress(address string) bool {
