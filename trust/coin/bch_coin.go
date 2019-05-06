@@ -16,7 +16,6 @@ import (
 	"github.com/pkg/errors"
 	common2 "github.com/quantadex/distributed_quanta_bridge/common"
 	"github.com/quantadex/distributed_quanta_bridge/common/crypto"
-	"math"
 	"time"
 
 	//"os/exec"
@@ -216,29 +215,21 @@ func (b *BCH) GetPendingTx(watchMap map[string]string) ([]*Deposit, error) {
 		//	return nil, errors.Wrap(err, "unable to create new amount")
 		//}
 
-		currentTx, err := b.Client.GetTransaction(txHash)
-		if err != nil {
-			return nil, errors.Wrap(err, "failed to getraw for currentTx")
-		}
-
-		for _, details := range currentTx.Details {
-			amount, err := bchutil.NewAmount(math.Abs(details.Amount))
+		if quantaAddr, ok := watchMap[toAddr]; ok {
+			amount, err := bchutil.NewAmount(e.Amount)
 			if err != nil {
 				return nil, errors.Wrap(err, "unable to create new amount")
 			}
-
-			if quantaAddr, ok := watchMap[toAddr]; ok {
-				events = append(events, &Deposit{
-					QuantaAddr: quantaAddr,
-					CoinName:   b.Blockchain(),
-					Amount:     int64(amount),
-					Tx:         txHash.String(),
-				})
-			}
+			events = append(events, &Deposit{
+				QuantaAddr: quantaAddr,
+				CoinName:   b.Blockchain(),
+				Amount:     int64(amount),
+				Tx:         txHash.String(),
+			})
 		}
 	}
-	msg, _ := json.Marshal(events)
-	fmt.Printf("pending events = %v\n", string(msg))
+	//msg, _ := json.Marshal(events)
+	//fmt.Printf("pending events = %v\n", string(msg))
 	return events, nil
 }
 
@@ -258,9 +249,9 @@ func (b *BCH) GetDepositsInBlock(blockID int64, trustAddress map[string]string) 
 		return nil, errors.Wrap(err, "failed to get unspent")
 	}
 
-	txidMap := make(map[string]string)
+	txidMap := make(map[string]btcjson.ListUnspentResult)
 	for _, e := range unspent {
-		txidMap[e.TxID] = e.Address
+		txidMap[e.TxID] = e
 	}
 
 	events := []*Deposit{}
@@ -304,33 +295,25 @@ func (b *BCH) GetDepositsInBlock(blockID int64, trustAddress map[string]string) 
 			//	}
 			//}
 
-			currentTx, err := b.Client.GetTransaction(&txHash)
-			if err != nil {
-				return nil, errors.Wrap(err, "failed to getraw for currentTx")
-			}
+			unspent := txidMap[tx.TxHash().String()]
+			toAddr := unspent.Address
 
-			for _, details := range currentTx.Details {
-				amount, err := bchutil.NewAmount(math.Abs(details.Amount))
+			if quantaAddr, ok := trustAddress[toAddr]; ok {
+				amount, err := bchutil.NewAmount(unspent.Amount)
 				if err != nil {
 					return nil, errors.Wrap(err, "unable to create new amount")
 				}
-				toAddr := details.Address
-
-				if quantaAddr, ok := trustAddress[toAddr]; ok {
-					events = append(events, &Deposit{
-						QuantaAddr: quantaAddr,
-						CoinName:   b.Blockchain(),
-						Amount:     int64(amount),
-						BlockID:    blockID,
-						Tx:         txHash.String(),
-						BlockHash:  blockHash.String(),
-					})
-				}
+				events = append(events, &Deposit{
+					QuantaAddr: quantaAddr,
+					CoinName:   b.Blockchain(),
+					Amount:     int64(amount),
+					BlockID:    blockID,
+					Tx:         txHash.String(),
+					BlockHash:  blockHash.String(),
+				})
 			}
 		}
 	}
-	msg, _ := json.Marshal(events)
-	fmt.Printf("events = %v\n", string(msg))
 	return events, nil
 }
 

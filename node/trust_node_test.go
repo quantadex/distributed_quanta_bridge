@@ -658,7 +658,7 @@ func TestLTCDeposit(t *testing.T) {
 	assert.NoError(t, err)
 
 	ltc := client.(*coin.LiteCoin)
-	//ltc.Client.Generate(101)
+	ltc.Client.Generate(101)
 
 	msig, err := client.GenerateMultisig("pooja")
 	assert.NoError(t, err)
