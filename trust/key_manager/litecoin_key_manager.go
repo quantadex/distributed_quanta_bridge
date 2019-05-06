@@ -11,7 +11,6 @@ import (
 	"github.com/ltcsuite/ltcutil"
 	"github.com/pkg/errors"
 	"github.com/quantadex/distributed_quanta_bridge/common"
-	"github.com/quantadex/distributed_quanta_bridge/common/crypto"
 )
 
 type LitecoinKeyManager struct {
@@ -41,10 +40,10 @@ func (b *LitecoinKeyManager) LoadNodeKeys(privKey string) error {
 		return errors.Wrap(err, "Cannot attach client for LTC")
 	}
 
-	err = crypto.ValidateNetwork(b.client, "Litecoin")
-	if err != nil {
-		return err
-	}
+	//err = crypto.ValidateNetwork(b.client, "Litecoin")
+	//if err != nil {
+	//	return err
+	//}
 
 	b.privateKey, err = ltcutil.DecodeWIF(privKey)
 

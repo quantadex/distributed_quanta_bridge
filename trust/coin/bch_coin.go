@@ -56,7 +56,7 @@ func (b *BCH) Attach() error {
 		return errors.Wrap(err, "Could not attach the client for BCH")
 	}
 
-	err = crypto.ValidateNetwork(b.Client, "Bitcoin ABC")
+	//err = crypto.ValidateNetwork(b.Client, "Bitcoin ABC")
 	return err
 }
 
