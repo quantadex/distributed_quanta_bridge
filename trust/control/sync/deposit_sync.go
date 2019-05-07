@@ -17,17 +17,18 @@ import (
  * DepositSync is an interface which describes the lifecycle of syncing blockchain deposits into the database.
  */
 type DepositSync struct {
-	coinChannel        coin.Coin
-	quantaChannel      quanta.Quanta // stellar -> graphene
-	coinInfo           map[string]*database.Asset
-	db                 kv_store.KVStore
-	rDb                *db.DB
-	logger             logger.Logger
-	blockStartID       int64
-	fnDepositInBlock   func(blockID int64) ([]*coin.Deposit, error)
-	fnPostProcessBlock func(blockID int64) error
-	fnGetWatchAddress  func() map[string]string
-	fnTransformCoin	   func(dep *coin.Deposit) *coin.Deposit
+	coinChannel         coin.Coin
+	quantaChannel       quanta.Quanta // stellar -> graphene
+	coinInfo            map[string]*database.Asset
+	db                  kv_store.KVStore
+	rDb                 *db.DB
+	logger              logger.Logger
+	blockStartID        int64
+	fnDepositInBlock    func(blockID int64) ([]*coin.Deposit, error)
+	fnPostProcessBlock  func(blockID int64) error
+	fnGetWatchAddress   func() map[string]string
+	fnTransformCoin     func(dep *coin.Deposit) *coin.Deposit
+	fnFindAllAndConfirm func() error
 
 	doneChan chan bool
 }
@@ -67,6 +68,14 @@ func (c *DepositSync) DoLoop(blockIDs []int64) []*coin.Deposit {
 
 	watchMap := c.fnGetWatchAddress
 	pending, err := c.coinChannel.GetPendingTx(watchMap())
+	if err != nil {
+		c.logger.Errorf("%s : could not get pending transactions", err)
+	}
+
+	tx, _ := db.QueryAllWaitForConfirmTx(c.rDb, c.coinChannel.Blockchain())
+	for _, t := range tx {
+		db.RemovePending(c.rDb, t.Tx)
+	}
 
 	if c.fnTransformCoin != nil {
 		for _, p := range pending {
@@ -74,15 +83,16 @@ func (c *DepositSync) DoLoop(blockIDs []int64) []*coin.Deposit {
 		}
 	}
 
-	if err != nil {
-		c.logger.Error("Could not get pending transactions")
-	}
-
 	err = db.AddPendingDeposits(c.rDb, pending)
 	if err != nil {
 		c.logger.Error("could not insert pending transactions to database")
 	}
 	if blockIDs != nil {
+		err := c.fnFindAllAndConfirm()
+		if err != nil {
+			c.logger.Errorf("%s : Could not get confirm transactions", err.Error())
+		}
+
 		for _, blockID := range blockIDs {
 			deposits, err := c.fnDepositInBlock(blockID)
 			if err != nil {
@@ -102,7 +112,7 @@ func (c *DepositSync) DoLoop(blockIDs []int64) []*coin.Deposit {
 
 				for _, dep := range deposits {
 					// every node must mark the deposit
-					err = db.ConfirmDeposit(c.rDb, dep, false)
+					err = db.WaitForConfirmation(c.rDb, dep, false)
 					if err != nil {
 						c.logger.Error("Cannot insert into db:" + err.Error())
 					}
@@ -113,10 +123,6 @@ func (c *DepositSync) DoLoop(blockIDs []int64) []*coin.Deposit {
 					} else if dep.Amount == 0 {
 						c.logger.Error("Amount is too small")
 					}
-					// have leader pick up automatically
-					//else if c.nodeID == 0 {
-					//	db.ChangeSubmitState(c.rDb, dep.Tx, db.SUBMIT_CONSENSUS, db.DEPOSIT)
-					//}
 				}
 			}
 

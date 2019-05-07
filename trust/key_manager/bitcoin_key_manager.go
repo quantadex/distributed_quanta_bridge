@@ -14,10 +14,12 @@ import (
 )
 
 type BitcoinKeyManager struct {
-	privateKey *btcutil.WIF
-	client     *rpcclient.Client
-	chaincfg   *chaincfg.Params
-	bitcoinRPC string
+	privateKey  *btcutil.WIF
+	client      *rpcclient.Client
+	chaincfg    *chaincfg.Params
+	bitcoinRPC  string
+	rpcUser     string
+	rpcPassword string
 }
 
 func (b *BitcoinKeyManager) CreateNodeKeys() error {
@@ -27,16 +29,21 @@ func (b *BitcoinKeyManager) CreateNodeKeys() error {
 func (b *BitcoinKeyManager) LoadNodeKeys(privKey string) error {
 	var err error
 	// TODO: make this configurable
-	b.client, err = rpcclient.New(&rpcclient.ConnConfig{Host:b.bitcoinRPC,
-		User:         "user",
-		Pass:         "123",
+	b.client, err = rpcclient.New(&rpcclient.ConnConfig{Host: b.bitcoinRPC,
+		User:         b.rpcUser,
+		Pass:         b.rpcPassword,
 		DisableTLS:   true,
 		HTTPPostMode: true,
 	}, nil)
 
 	if err != nil {
-		return errors.Wrap(err, "Cannot load BTC key")
+		return errors.Wrap(err, "Cannot attach client for BTC")
 	}
+
+	//err = crypto.ValidateNetwork(b.client, "Satoshi")
+	//if err != nil {
+	//	return err
+	//}
 
 	b.privateKey, err = btcutil.DecodeWIF(privKey)
 

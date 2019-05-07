@@ -3,19 +3,23 @@ package sync
 import (
 	"encoding/json"
 	"fmt"
+	"github.com/pkg/errors"
 	"github.com/quantadex/distributed_quanta_bridge/trust/coin"
+	"github.com/quantadex/distributed_quanta_bridge/trust/db"
 	"math/big"
 )
 
 type BitcoinSync struct {
 	DepositSync
 	issuingSymbol map[string]string //TODO: pass in only neccessary data (eg. issuingSymbol)
+	btcMinConfirm int64
 }
 
 func (c *BitcoinSync) Setup() {
 	c.fnDepositInBlock = c.GetDepositsInBlock
 	c.fnGetWatchAddress = c.GetWatchAddress
 	c.fnTransformCoin = c.TransformCoin
+	c.fnFindAllAndConfirm = c.FindAllAndConfirm
 }
 
 func (c *BitcoinSync) TransformCoin(dep *coin.Deposit) *coin.Deposit {
@@ -64,4 +68,39 @@ func (c *BitcoinSync) GetWatchAddress() map[string]string {
 
 func (c *BitcoinSync) PostProcessBlock(blockID int64) error {
 	panic("not imp")
+}
+
+func (c *BitcoinSync) FindAndConfirm(tx db.Transaction, blockHash string, confirmations int64) error {
+	if confirmations == -1 {
+		err := db.ChangeSubmitState(c.rDb, tx.Tx, db.ORPHAN, db.DEPOSIT, blockHash)
+		if err != nil {
+			return errors.Wrap(err, "Could not change state to orphan")
+		}
+	} else if confirmations > c.btcMinConfirm {
+		err := db.ChangeSubmitState(c.rDb, tx.Tx, db.SUBMIT_CONSENSUS, db.DEPOSIT, blockHash)
+		if err != nil {
+			return errors.Wrap(err, "Could not change state to consensus")
+		}
+	} else {
+		c.logger.Infof("Transaction %s has %d confirmations", tx.Tx, confirmations)
+	}
+	return nil
+}
+
+func (c *BitcoinSync) FindAllAndConfirm() error {
+	txs, err := db.QueryAllWaitForConfirmTx(c.rDb, c.issuingSymbol["btc"])
+	if err != nil {
+		return err
+	}
+	for _, tx := range txs {
+		blockHash, confirmations, err := c.coinChannel.GetBlockInfo(tx.BlockHash)
+		if err != nil {
+			return errors.Wrap(err, "Could not get block info")
+		}
+		err = c.FindAndConfirm(tx, blockHash, confirmations)
+		if err != nil {
+			return err
+		}
+	}
+	return nil
 }

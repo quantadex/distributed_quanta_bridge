@@ -1,6 +1,10 @@
 package crypto
 
-import "github.com/btcsuite/btcd/chaincfg"
+import (
+	"github.com/btcsuite/btcd/chaincfg"
+	chaincfg3 "github.com/gcash/bchd/chaincfg"
+	chaincfg2 "github.com/ltcsuite/ltcd/chaincfg"
+)
 
 /**
  * Checks whether the set of addresses match with the
@@ -23,6 +27,30 @@ func GetChainCfgByString(network string) *chaincfg.Params {
 		return &chaincfg.TestNet3Params
 	} else if network == "mainnet" {
 		return &chaincfg.MainNetParams
+	} else {
+		panic("invalid chain cfg")
+	}
+}
+
+func GetChainCfgByStringLTC(network string) *chaincfg2.Params {
+	if network == "regnet" {
+		return &chaincfg2.RegressionNetParams
+	} else if network == "testnet" {
+		return &chaincfg2.TestNet4Params
+	} else if network == "mainnet" {
+		return &chaincfg2.MainNetParams
+	} else {
+		panic("invalid chain cfg")
+	}
+}
+
+func GetChainCfgByStringBCH(network string) *chaincfg3.Params {
+	if network == "regnet" {
+		return &chaincfg3.RegressionNetParams
+	} else if network == "testnet" {
+		return &chaincfg3.TestNet3Params
+	} else if network == "mainnet" {
+		return &chaincfg3.MainNetParams
 	} else {
 		panic("invalid chain cfg")
 	}

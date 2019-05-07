@@ -39,7 +39,7 @@
 
 [[override]]
   name = "github.com/quantadex/quanta_book"
-  branch = "develop"
+  revision="e1f0da37c58106da0f2eac2a40c4d2cf114f0f77"
 
 [[override]]
   name = "github.com/ethereum/go-ethereum"

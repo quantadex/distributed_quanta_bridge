@@ -1,33 +1,33 @@
 package main
 
 import (
-	"github.com/quantadex/distributed_quanta_bridge/trust/peer_contact"
+	"encoding/json"
+	"fmt"
+	"github.com/ethereum/go-ethereum/common"
+	"github.com/go-errors/errors"
+	"github.com/quantadex/distributed_quanta_bridge/common/kv_store"
+	"github.com/quantadex/distributed_quanta_bridge/common/logger"
 	"github.com/quantadex/distributed_quanta_bridge/common/queue"
+	"github.com/quantadex/distributed_quanta_bridge/trust/coin"
+	"github.com/quantadex/distributed_quanta_bridge/trust/control"
+	"github.com/quantadex/distributed_quanta_bridge/trust/db"
+	"github.com/quantadex/distributed_quanta_bridge/trust/peer_contact"
 	"github.com/quantadex/quanta_book/consensus/cosi"
 	"time"
-	"github.com/quantadex/distributed_quanta_bridge/common/logger"
-	"encoding/json"
-	"github.com/quantadex/distributed_quanta_bridge/trust/db"
-	"github.com/ethereum/go-ethereum/common"
-	"github.com/quantadex/distributed_quanta_bridge/trust/control"
-	"github.com/quantadex/distributed_quanta_bridge/trust/coin"
-	"github.com/quantadex/distributed_quanta_bridge/common/kv_store"
-	"github.com/go-errors/errors"
-	"fmt"
 )
 
 type AddressConsensus struct {
-	logger        logger.Logger
-	trustPeer	  *peer_contact.TrustPeerNode
-	cosi		  *cosi.Cosi
+	logger    logger.Logger
+	trustPeer *peer_contact.TrustPeerNode
+	cosi      *cosi.Cosi
 }
 
 type AddressChange struct {
 	QuantaAddr string
-	Address string
+	Address    string
 }
 
-func NewAddressConsensus(logger logger.Logger, trustNode *TrustNode, db *db.DB,kv kv_store.KVStore, minBlock int64) *AddressConsensus {
+func NewAddressConsensus(logger logger.Logger, trustNode *TrustNode, db *db.DB, kv kv_store.KVStore, minBlock int64) *AddressConsensus {
 	var res AddressConsensus
 	res.trustPeer = peer_contact.NewTrustPeerNode(trustNode.man, trustNode.peer, trustNode.nodeID, trustNode.queue, queue.ADDR_MSG_QUEUE, "/node/api/address")
 	res.cosi = cosi.NewProtocol(res.trustPeer, trustNode.nodeID == 0, time.Second*3)
@@ -51,7 +51,7 @@ func NewAddressConsensus(logger logger.Logger, trustNode *TrustNode, db *db.DB,k
 				return nil
 			}
 		}
-		return errors.New(fmt.Sprintf("Address available not match - %v msg=%s",addrAvailable,msg.Address))
+		return errors.New(fmt.Sprintf("Address available not match - %v msg=%s", addrAvailable, msg.Address))
 	}
 
 	res.cosi.Persist = func(encoded string) error {

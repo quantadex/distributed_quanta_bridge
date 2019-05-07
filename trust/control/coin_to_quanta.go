@@ -3,6 +3,7 @@ package control
 import (
 	"encoding/json"
 	"errors"
+	"expvar"
 	"fmt"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/quantadex/distributed_quanta_bridge/common/kv_store"
@@ -16,6 +17,7 @@ import (
 	"github.com/quantadex/distributed_quanta_bridge/trust/quanta"
 	"github.com/quantadex/quanta_book/consensus/cosi"
 	"github.com/scorum/bitshares-go/types"
+	"github.com/zserge/metric"
 	"strconv"
 	"strings"
 	"time"
@@ -35,6 +37,10 @@ const (
 	ISSUE_CONSENSUS
 )
 
+const DEPOSIT_STATUS_0 = "deposit_status_0"
+const DEPOSIT_STATUS_1 = "deposit_status_1"
+const DEPOSIT_STATUS_2 = "deposit_status_2"
+
 /**
  * CoinToQuanta
  *
@@ -50,6 +56,9 @@ type CoinToQuanta struct {
 	peer          peer_contact.PeerContact
 	trustPeer     *peer_contact.TrustPeerNode
 	cosi          *cosi.Cosi
+	counter0      metric.Metric
+	counter1      metric.Metric
+	counter2      metric.Metric
 
 	readyChan chan bool
 	doneChan  chan bool
@@ -96,6 +105,25 @@ func NewCoinToQuanta(log logger.Logger,
 	res.doneChan = make(chan bool, 1)
 	res.readyChan = make(chan bool, 1)
 	res.quantaOptions = quantaOptions
+	res.counter0 = metric.NewCounter("24h1m")
+	res.counter1 = metric.NewCounter("24h1m")
+	res.counter2 = metric.NewCounter("24h1m")
+	if res.nodeID == 0 {
+		v := expvar.Get(DEPOSIT_STATUS_0)
+		if v == nil {
+			expvar.Publish(DEPOSIT_STATUS_0, res.counter0)
+		}
+	} else if res.nodeID == 1 {
+		v := expvar.Get(DEPOSIT_STATUS_1)
+		if v == nil {
+			expvar.Publish(DEPOSIT_STATUS_1, res.counter1)
+		}
+	} else if res.nodeID == 2 {
+		v := expvar.Get(DEPOSIT_STATUS_2)
+		if v == nil {
+			expvar.Publish(DEPOSIT_STATUS_2, res.counter2)
+		}
+	}
 
 	res.trustPeer = peer_contact.NewTrustPeerNode(man, peer, nodeID, queue_, queue.PEERMSG_QUEUE, "/node/api/peer")
 	res.cosi = cosi.NewProtocol(res.trustPeer, nodeID == 0, time.Second*3)
@@ -110,6 +138,7 @@ func NewCoinToQuanta(log logger.Logger,
 
 		deposit, err := res.quantaChannel.DecodeTransaction(msg.Message)
 		if err != nil {
+			res.incrementCounter(res.nodeID)
 			log.Error("Unable to decode quanta tx")
 			return err
 		}
@@ -117,12 +146,14 @@ func NewCoinToQuanta(log logger.Logger,
 		deposit.Tx = msg.Tx
 
 		if err != nil {
+			res.incrementCounter(res.nodeID)
 			log.Error("Unable to decode quanta tx")
 			return err
 		}
 
 		tx, err := db.GetTransaction(rDb, deposit.Tx)
 		if err != nil {
+			res.incrementCounter(res.nodeID)
 			return err
 		}
 
@@ -134,6 +165,7 @@ func NewCoinToQuanta(log logger.Logger,
 			log.Error("Unable to verify refund " + tx.Tx)
 		}
 
+		res.incrementCounter(res.nodeID)
 		return errors.New("Unable to verify: " + deposit.Tx)
 	}
 
@@ -142,11 +174,13 @@ func NewCoinToQuanta(log logger.Logger,
 		msg := &coin.EncodedMsg{}
 		err := json.Unmarshal(decoded, msg)
 		if err != nil {
+			res.incrementCounter(res.nodeID)
 			return err
 		}
 
 		deposit, err := res.quantaChannel.DecodeTransaction(msg.Message)
 		if err != nil {
+			res.incrementCounter(res.nodeID)
 			log.Error("Unable to decode quanta tx")
 			return err
 		}
@@ -163,6 +197,7 @@ func NewCoinToQuanta(log logger.Logger,
 		if deposit.Type != types.CreateAssetOpType {
 			err = db.SignDeposit(rDb, deposit)
 			if err != nil {
+				res.incrementCounter(res.nodeID)
 				return errors.New("Failed to confirm transaction: " + err.Error())
 			}
 		}
@@ -175,6 +210,7 @@ func NewCoinToQuanta(log logger.Logger,
 		msg := &coin.EncodedMsg{}
 		err := json.Unmarshal(decoded, msg)
 		if err != nil {
+			res.incrementCounter(res.nodeID)
 			return "", err
 		}
 
@@ -182,6 +218,7 @@ func NewCoinToQuanta(log logger.Logger,
 		log.Infof("Sign msg %s", encodedSig)
 
 		if err != nil {
+			res.incrementCounter(res.nodeID)
 			log.Error("Unable to Sign/encode refund msg")
 			return "", err
 		}
@@ -213,10 +250,19 @@ func NewCoinToQuanta(log logger.Logger,
 	return res
 }
 
+func (c *CoinToQuanta) incrementCounter(nodeId int) {
+	if nodeId == 1 {
+		c.counter1.Add(1)
+	} else if nodeId == 2 {
+		c.counter2.Add(1)
+	}
+}
+
 func (c *CoinToQuanta) processDeposits() {
 	// only leader - pick up  deposits with empty or null submit_state
 	txs := db.QueryDepositByAge(c.rDb, time.Now().Add(-time.Second*5), []string{db.SUBMIT_CONSENSUS})
 	if len(txs) > 0 {
+		c.counter0.Add(1)
 		tx := txs[0]
 		w := &coin.Deposit{
 			Tx:         tx.Tx,
@@ -225,6 +271,7 @@ func (c *CoinToQuanta) processDeposits() {
 			BlockID:    tx.BlockId,
 			SenderAddr: tx.From,
 			Amount:     tx.Amount,
+			BlockHash:  tx.BlockHash,
 		}
 		// if not a native token, we need to flush it
 		//if tx.Coin != c.coinName {
@@ -240,7 +287,7 @@ func (c *CoinToQuanta) processDeposits() {
 		exist, err := c.quantaChannel.AssetExist(c.quantaOptions.Issuer, tx.Coin)
 		if err != nil {
 			if err.Error() == "issuer do not match" {
-				db.ChangeSubmitState(c.rDb, tx.Tx, db.DUPLICATE_ASSET, db.DEPOSIT)
+				db.ChangeSubmitState(c.rDb, tx.Tx, db.DUPLICATE_ASSET, db.DEPOSIT, tx.BlockHash)
 				return
 			}
 			c.logger.Error(err.Error())
@@ -283,13 +330,13 @@ func (c *CoinToQuanta) processSubmissions() {
 			msg := quanta.ErrorString(err, false)
 			c.logger.Error("could not submit transaction " + msg)
 			if strings.Contains(msg, "tx_bad_seq") || strings.Contains(msg, "op_malformed") {
-				db.ChangeSubmitState(c.rDb, v.Tx, db.SUBMIT_FATAL, db.DEPOSIT)
+				db.ChangeSubmitState(c.rDb, v.Tx, db.SUBMIT_FATAL, db.DEPOSIT, v.BlockHash)
 			}
 		} else {
 			c.logger.Infof("Successful tx submission %s,remove %s", "", k)
 
 			txHash := strconv.Itoa(int(resp.BlockNum)) + "_" + strconv.Itoa(int(resp.TrxNum))
-			err = db.ChangeDepositSubmitState(c.rDb, v.Tx, db.SUBMIT_SUCCESS, int(resp.BlockNum), txHash)
+			err = db.ChangeDepositSubmitState(c.rDb, v.Tx, db.SUBMIT_SUCCESS, int(resp.BlockNum), txHash, v.BlockHash)
 			//err = db.ChangeSubmitState(c.rDb, v.Tx, db.SUBMIT_SUCCESS, db.DEPOSIT)
 			if err != nil {
 				c.logger.Error("Error removing key=" + v.Tx)
@@ -346,11 +393,11 @@ func (c *CoinToQuanta) StartConsensus(tx *coin.Deposit, consensus ConsensusType)
 
 	if err != nil {
 		c.logger.Error("Failed to encode refund 1" + err.Error())
-		db.ChangeSubmitState(c.rDb, tx.Tx, db.ENCODE_FAILURE, db.DEPOSIT)
+		db.ChangeSubmitState(c.rDb, tx.Tx, db.ENCODE_FAILURE, db.DEPOSIT, tx.BlockHash)
 		return HEX_NULL, err
 	}
 
-	data, err := json.Marshal(&coin.EncodedMsg{encoded, tx.Tx, tx.BlockID, tx.CoinName})
+	data, err := json.Marshal(&coin.EncodedMsg{encoded, tx.Tx, tx.BlockID, tx.CoinName, tx.QuantaAddr})
 
 	if err != nil {
 		c.logger.Error("Failed to encode refund 2" + err.Error())
@@ -381,7 +428,7 @@ func (c *CoinToQuanta) StartConsensus(tx *coin.Deposit, consensus ConsensusType)
 			fmt.Println("Asset Created")
 			return HEX_NULL, nil
 		} else {
-			db.ChangeSubmitQueue(c.rDb, tx.Tx, txe, db.DEPOSIT)
+			db.ChangeSubmitQueue(c.rDb, tx.Tx, txe, db.DEPOSIT, tx.BlockHash)
 		}
 
 		txResult = ""

@@ -15,6 +15,8 @@ services:
     - "/home/ec2-user/crosschain:/data"
     - "/home/ec2-user/secrets/crosschain.yml:/data/crosschain.yml"
     - "/home/ec2-user/secrets/bitcoin.conf:/root/.bitcoin/bitcoin.conf"
+    - "/home/ec2-user/secrets/litecoin.conf:/root/.litecoin/litecoin.conf"
+    - "/home/ec2-user/secrets/bch.conf:/root/.bch/bch.conf"
     command: /usr/bin/quanta-bridge -config /data/crosschain.yml -registry
 
   crosschain_btc:
@@ -28,6 +30,18 @@ services:
     - "/home/ec2-user/crosschain:/data"
     - "/home/ec2-user/secrets/crosschain.yml:/data/crosschain.yml"
     command: /usr/bin/bitcoin_sync -config /data/crosschain.yml
+
+  crosschain_ltc:
+    image: 691216021071.dkr.ecr.us-east-1.amazonaws.com/quanta-bridge:latest
+    ulimits:
+      nproc: 65535
+      nofile:
+        soft: 20000
+        hard: 40000
+    volumes:
+    - "/home/ec2-user/crosschain:/data"
+    - "/home/ec2-user/secrets/crosschain.yml:/data/crosschain.yml"
+    command: /usr/bin/litecoin_sync -config /data/crosschain.yml
 
   crosschain_eth:
     image: 691216021071.dkr.ecr.us-east-1.amazonaws.com/quanta-bridge:latest
@@ -56,7 +70,24 @@ services:
       BITCOIN_EXTRA_ARGS: "rpcpassword=123\nrpcport=18332\nrpcuser=user"
     volumes:
     - "/home/ec2-user/bitcoin-data:/data"
-    - "/Users/quoc/Projects/cryptodex/docker-stellar/secrets/crosschain1.yml:/data/crosschain.yml"
     command: bitcoind -testnet -deprecatedrpc=signrawtransaction -txindex -deprecatedrpc=accounts
+
+  litecoind:
+    image: litecoin-core
+    ports:
+    - "19332:19332"
+    - "19444:19444"
+    volumes:
+    - "/home/ec2-user/litecoin-data:/data"
+    command: litecoind testnet -rpcallowip=0.0.0.0/0 -rpcuser=user -rpcpassword=123 -deprecatedrpc=signrawtransaction -txindex -deprecatedrpc=accounts -printtoconsole -rpcport=19332
+
+  bitcoin-abc:
+    image: zquestz/bitcoin-abc:0.19.2
+    ports:
+    - "18332:18332"
+    - "18444:18444"
+    volumes:
+    - "/home/ec2-user/bch-data:/data"
+    command: bitcoind -testnet -rpcallowip=0.0.0.0/0 -rpcuser=user -rpcpassword=123 -deprecatedrpc=signrawtransaction  -txindex -deprecatedrpc=accounts -printtoconsole
 
 

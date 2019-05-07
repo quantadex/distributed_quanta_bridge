@@ -43,10 +43,14 @@ type TrustNode struct {
 	quantakM key_manager.KeyManager
 	coinkM   key_manager.KeyManager
 	btcKM    key_manager.KeyManager
+	ltcKM    key_manager.KeyManager
+	bchKM    key_manager.KeyManager
 	man      *manifest.Manifest
 	q        quanta.Quanta
 	eth      coin.Coin
 	btc      coin.Coin
+	ltc      coin.Coin
+	bch      coin.Coin
 	db       kv_store.KVStore
 	rDb      *db.DB
 	peer     peer_contact.PeerContact
@@ -58,6 +62,7 @@ type TrustNode struct {
 	queue    queue.Queue
 	listener listener.Listener
 	restApi  *Server
+	config   common.Config
 
 	doneChan chan bool
 }
@@ -113,7 +118,7 @@ func initNode(config common.Config, targetCoin coin.Coin) (*TrustNode, bool) {
 		return nil, false
 	}
 
-	node.btcKM, err = key_manager.NewBitCoinKeyManager(config.BtcRpc, config.BtcNetwork)
+	node.btcKM, err = key_manager.NewBitCoinKeyManager(config.BtcRpc, config.BtcNetwork, config.BtcRpcUser, config.BtcRpcPassword)
 	if err != nil {
 		node.log.Error("Failed to create BTC key manager")
 		return nil, false
@@ -121,6 +126,28 @@ func initNode(config common.Config, targetCoin coin.Coin) (*TrustNode, bool) {
 	err = node.btcKM.LoadNodeKeys(config.BtcPrivateKey)
 	if err != nil {
 		node.log.Error("Failed to set up btc keys")
+		return nil, false
+	}
+
+	node.ltcKM, err = key_manager.NewLiteCoinKeyManager(config.LtcRpc, config.LtcNetwork, config.LtcRpcUser, config.LtcRpcPassword)
+	if err != nil {
+		node.log.Error("Failed to create LTC key manager")
+		return nil, false
+	}
+	err = node.ltcKM.LoadNodeKeys(config.LtcPrivateKey)
+	if err != nil {
+		node.log.Error("Failed to set up ltc keys")
+		return nil, false
+	}
+
+	node.bchKM, err = key_manager.NewBCHCoinKeyManager(config.BchRpc, config.BchNetwork, config.BchRpcUser, config.BchRpcPassword)
+	if err != nil {
+		node.log.Error("Failed to create BCH key manager")
+		return nil, false
+	}
+	err = node.bchKM.LoadNodeKeys(config.BchPrivateKey)
+	if err != nil {
+		node.log.Errorf("%s : Failed to set up bch keys", err)
 		return nil, false
 	}
 
@@ -166,8 +193,30 @@ func initNode(config common.Config, targetCoin coin.Coin) (*TrustNode, bool) {
 		return nil, false
 	}
 
+	ltccoin, err := coin.NewLitecoinCoin(config.LtcRpc, crypto.GetChainCfgByStringLTC(config.LtcNetwork), config.LtcSigners, config.LtcRpcUser, config.LtcRpcPassword, config.GrapheneSeedPrefix)
+	if err != nil {
+		panic(fmt.Errorf("cannot create litecoin coin"))
+	}
+
+	err = ltccoin.Attach()
+	if err != nil {
+		panic(err)
+	}
+	node.ltc = ltccoin
+
+	bchcoin, err := coin.NewBCHCoin(config.BchRpc, crypto.GetChainCfgByStringBCH(config.BchNetwork), config.BchSigners, config.BchRpcUser, config.BchRpcPassword, config.GrapheneSeedPrefix)
+	if err != nil {
+		panic(fmt.Errorf("cannot create litecoin coin"))
+	}
+
+	err = bchcoin.Attach()
+	if err != nil {
+		panic(err)
+	}
+	node.bch = bchcoin
+
 	// attach bitcoin
-	coin, err := coin.NewBitcoinCoin(config.BtcRpc, crypto.GetChainCfgByString(config.BtcNetwork), config.BtcSigners)
+	coin, err := coin.NewBitcoinCoin(config.BtcRpc, crypto.GetChainCfgByString(config.BtcNetwork), config.BtcSigners, config.BtcRpcUser, config.BtcRpcPassword, config.GrapheneSeedPrefix)
 	if err != nil {
 		panic(fmt.Errorf("cannot create ethereum listener"))
 	}
@@ -225,6 +274,8 @@ func initNode(config common.Config, targetCoin coin.Coin) (*TrustNode, bool) {
 		return nil, false
 	}
 
+	node.config = config
+
 	return node, true
 }
 
@@ -250,9 +301,23 @@ func (n *TrustNode) registerNode(config common.Config) bool {
 		return false
 	}
 
+	ltcPub, err := n.ltcKM.GetPublicKey()
+	if err != nil {
+		n.log.Error("Failed to get ltc public key")
+		return false
+	}
+
+	bchPub, err := n.bchKM.GetPublicKey()
+	if err != nil {
+		n.log.Error("Failed to get bch public key")
+		return false
+	}
+
 	btcPub, err := n.btcKM.GetPublicKey()
 	chainAddress := map[string]string{
 		"BTC": btcPub,
+		"LTC": ltcPub,
+		"BCH": bchPub,
 	}
 
 	err = n.reg.RegisterNode(nodeIP, strconv.Itoa(nodePort), strconv.Itoa(config.ExternalListenPort), n.quantakM, chainAddress)
@@ -296,7 +361,7 @@ func (n *TrustNode) registerNode(config common.Config) bool {
 		blockchain[i] = v
 		i = i + 1
 	}
-	n.restApi = NewApiServer(n, blockchain, pubKey, config.ListenIp, n.db, n.rDb, fmt.Sprintf(":%d", config.ExternalListenPort), n.log, config.MinBlockReuse)
+	n.restApi = NewApiServer(n, blockchain, pubKey, config.ListenIp, n.db, n.rDb, fmt.Sprintf(":%d", config.ExternalListenPort), n.log)
 	go n.restApi.Start()
 
 	return true
@@ -320,18 +385,18 @@ func (n *TrustNode) initTrust(config common.Config) {
 	n.qTC = control.NewQuantaToCoin(n.log,
 		n.db,
 		n.rDb,
-		map[string]coin.Coin{coin.BLOCKCHAIN_ETH: n.eth, coin.BLOCKCHAIN_BTC: n.btc},
+		map[string]coin.Coin{coin.BLOCKCHAIN_ETH: n.eth, coin.BLOCKCHAIN_BTC: n.btc, coin.BLOCKCHAIN_LTC: n.ltc, coin.BLOCKCHAIN_BCH: n.bch},
 		n.q,
 		n.man,
 		config.IssuerAddress,
 		config.EthereumTrustAddr,
-		map[string]key_manager.KeyManager{coin.BLOCKCHAIN_ETH: n.coinkM, coin.BLOCKCHAIN_BTC: n.btcKM},
+		map[string]key_manager.KeyManager{coin.BLOCKCHAIN_ETH: n.coinkM, coin.BLOCKCHAIN_BTC: n.btcKM, coin.BLOCKCHAIN_LTC: n.ltcKM, coin.BLOCKCHAIN_BCH: n.bchKM},
 		config.CoinMapping,
 		n.peer,
 		n.queue,
 		n.nodeID,
 		coinInfo,
-		map[string]int64{coin.BLOCKCHAIN_ETH: 0, coin.BLOCKCHAIN_BTC: 0})
+		map[string]int64{coin.BLOCKCHAIN_ETH: 0, coin.BLOCKCHAIN_BTC: 0, coin.BLOCKCHAIN_LTC: 0, coin.BLOCKCHAIN_BCH: 0})
 
 	n.cTQ = control.NewCoinToQuanta(n.log,
 		n.db,
@@ -436,9 +501,25 @@ func registerNode(config common.Config, node *TrustNode) error {
 }
 
 func (n *TrustNode) CreateMultisig(blockchain string, accountId string) (*crypto.ForwardInput, error) {
-	msig, err := n.btc.GenerateMultisig(accountId)
-	if err != nil {
-		return nil, err
+	var msig string
+	var err error
+	if blockchain == coin.BLOCKCHAIN_BTC {
+		msig, err = n.btc.GenerateMultisig(accountId)
+		if err != nil {
+			return nil, err
+		}
+	} else if blockchain == coin.BLOCKCHAIN_LTC {
+		msig, err = n.ltc.GenerateMultisig(accountId)
+		if err != nil {
+			return nil, err
+		}
+	} else if blockchain == coin.BLOCKCHAIN_BCH {
+		msig, err = n.bch.GenerateMultisig(accountId)
+		if err != nil {
+			return nil, err
+		}
+	} else {
+		return nil, errors.New("Unexpected multisig creation")
 	}
 
 	//TODO: should we validate user?
@@ -448,7 +529,7 @@ func (n *TrustNode) CreateMultisig(blockchain string, accountId string) (*crypto
 		common2.HexToAddress("0x0"),
 		accountId,
 		"",
-		n.btc.Blockchain(),
+		blockchain,
 	}
 	err = n.rDb.AddCrosschainAddress(&addr)
 	return &addr, err

@@ -3,15 +3,15 @@ package quanta
 import (
 	"fmt"
 	"github.com/ethereum/go-ethereum/crypto"
+	"github.com/jamiealquiza/tachymeter"
 	"github.com/quantadex/distributed_quanta_bridge/trust/coin"
 	"github.com/quantadex/distributed_quanta_bridge/trust/key_manager"
 	"github.com/stretchr/testify/assert"
-	"github.com/jamiealquiza/tachymeter"
 	"math/rand"
 	"strings"
+	"sync"
 	"testing"
 	"time"
-	"sync"
 )
 
 const url = "ws://testnet-01.quantachain.io:8090"
@@ -21,12 +21,12 @@ func TestStressTest(t *testing.T) {
 	meter := tachymeter.New(&tachymeter.Config{Size: 100})
 	var waitgroup sync.WaitGroup
 
-	for i:=0 ; i < 1000; i++ {
+	for i := 0; i < 100; i++ {
 		waitgroup.Add(1)
 
 		go func(waitgroup *sync.WaitGroup) {
 			api := QuantaGraphene{}
-			api.NetworkUrl = "ws://testnet-01.quantachain.io:8096"
+			api.NetworkUrl = "ws://testnet-01.quantachain.io:8090"
 			instances = append(instances, &api)
 
 			start := time.Now()
@@ -48,7 +48,7 @@ func TestStressTest(t *testing.T) {
 
 		time.Sleep(time.Millisecond * 50)
 
-		if i % 10 == 0 {
+		if i%10 == 0 {
 			fmt.Printf("Completed %d instances\n", i)
 		}
 	}
@@ -57,7 +57,6 @@ func TestStressTest(t *testing.T) {
 	fmt.Println(meter.Calc().String())
 
 }
-
 
 func TestDynamicGlobalProperties(t *testing.T) {
 	api := QuantaGraphene{}
@@ -275,7 +274,7 @@ func TestRandomMissRefund(t *testing.T) {
 		if err != nil {
 			fmt.Println("error ", err)
 		} else {
-			fmt.Printf("Number of refunds # %d r=%d ms\n", len(refunds), r)
+			fmt.Printf("Number of refunds # %d r=%d ms refunds=%v\n", len(refunds), r, refunds)
 			assert.Equal(t, 1, len(refunds))
 		}
 

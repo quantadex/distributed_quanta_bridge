@@ -3,9 +3,10 @@ package coin
 import (
 	"crypto/ecdsa"
 	"fmt"
-	common2 "github.com/ethereum/go-ethereum/common"
+	"github.com/ethereum/go-ethereum/common"
 	"github.com/quantadex/distributed_quanta_bridge/common/crypto"
 	"sync"
+	"time"
 )
 
 type DummyCoin struct {
@@ -21,6 +22,14 @@ func GetDummyInstance() *DummyCoin {
 		instance = &DummyCoin{deposits: map[int][]*Deposit{}}
 	})
 	return instance
+}
+
+func (c *DummyCoin) GetBlockTime(blockId int64) (time.Time, error) {
+	panic("Not implemented")
+}
+
+func (c *DummyCoin) GetBlockInfo(hash string) (string, int64, error) {
+	panic("not implememnted")
 }
 
 func (c *DummyCoin) GetPendingTx(map[string]string) ([]*Deposit, error) {
@@ -53,7 +62,7 @@ func (c *DummyCoin) GetTopBlockID() (int64, error) {
 	return c.index, nil
 }
 
-func (c *DummyCoin) GetTxID(trustAddress common2.Address) (uint64, error) {
+func (c *DummyCoin) GetTxID(trustAddress common.Address) (uint64, error) {
 	return 0, nil
 }
 
@@ -61,7 +70,7 @@ func (c *DummyCoin) GetDepositsInBlock(blockID int64, trustAddress map[string]st
 	return c.deposits[int(blockID)], nil
 }
 
-func (c *DummyCoin) SendWithdrawal(trustAddress common2.Address,
+func (c *DummyCoin) SendWithdrawal(trustAddress common.Address,
 	ownerKey *ecdsa.PrivateKey,
 	w *Withdrawal) (string, error) {
 	panic("implement me")

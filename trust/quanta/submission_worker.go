@@ -61,7 +61,7 @@ func (s *SubmitWorkerImpl) Dispatch() {
 				s.Logger.Error("could not submit transaction " + ErrorString(err, false))
 			} else {
 				s.Logger.Infof("Successful tx submission %s,remove %s", res.Hash, k)
-				err = db.ChangeSubmitState(s.Db, v.Tx, db.SUBMIT_SUCCESS, "")
+				err = db.ChangeSubmitState(s.Db, v.Tx, db.SUBMIT_SUCCESS, "", "")
 				if err != nil {
 					s.Logger.Error("Error removing key=" + v.Tx)
 				}

@@ -12,6 +12,7 @@ import (
 	"github.com/quantadex/quanta_book/consensus/cosi"
 	"net/http"
 	"time"
+	"github.com/quantadex/distributed_quanta_bridge/trust/key_manager"
 )
 
 type TrustPeerNode struct {
@@ -21,9 +22,10 @@ type TrustPeerNode struct {
 	q      queue.Queue
 	queueName string
 	apiUrl string
+	km key_manager.KeyManager
 }
 
-func NewTrustPeerNode(man *manifest.Manifest, peer PeerContact, nodeID int, q queue.Queue, queueName string, apiUrl string) *TrustPeerNode {
+func NewTrustPeerNode(man *manifest.Manifest, peer PeerContact, nodeID int, q queue.Queue, queueName string, apiUrl string, km key_manager.KeyManager) *TrustPeerNode {
 	//fmt.Printf("setup peer node\n")
 	//for _, p := range man.Nodes {
 	//	println(p.Port)
@@ -35,6 +37,7 @@ func NewTrustPeerNode(man *manifest.Manifest, peer PeerContact, nodeID int, q qu
 		q:      q,
 		queueName: queueName,
 		apiUrl: apiUrl,
+		km: km,
 	}
 }
 
@@ -59,14 +62,18 @@ func (t *TrustPeerNode) SendMsg(destinationNodeID int, msg interface{}) error {
 	url := fmt.Sprintf("http://%s:%s%s", peer.IP, peer.Port, t.apiUrl)
 	//fmt.Println("Send to peer " + url)
 
-	//if signature := crypto.SignMessage(msg, t.peer.privateKey); signature != nil {
-	//msg.Signature = *signature
-	//println(signature)
-
 	data, err := json.Marshal(&msg)
 	if err != nil {
 		return errors.New("unable to marshall")
 	}
+
+	signature, err := t.km.SignMessage(data);
+	if err != nil {
+		return err
+	}
+	println(signature)
+
+
 	_, err = http.Post(url, "application/json", bytes.NewReader(data))
 	if err != nil {
 		println("Error! " + err.Error())

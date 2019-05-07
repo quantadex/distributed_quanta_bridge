@@ -2,19 +2,22 @@ package main
 
 import (
 	"encoding/json"
+	"fmt"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/quantadex/distributed_quanta_bridge/common/crypto"
+	metric2 "github.com/quantadex/distributed_quanta_bridge/common/metric"
 	"github.com/quantadex/distributed_quanta_bridge/common/test"
 	"github.com/quantadex/distributed_quanta_bridge/trust/coin"
+	"github.com/quantadex/distributed_quanta_bridge/trust/control"
 	"github.com/quantadex/distributed_quanta_bridge/trust/db"
 	"github.com/stretchr/testify/assert"
+	"github.com/zserge/metric"
 	"io/ioutil"
 	"net/http"
 	"strconv"
+	"strings"
 	"testing"
 	"time"
-	"github.com/quantadex/distributed_quanta_bridge/trust/control"
-	"strings"
 )
 
 func TestAPI(t *testing.T) {
@@ -153,17 +156,180 @@ func TestAddress(t *testing.T) {
 	bodyBytes, _ = ioutil.ReadAll(res.Body)
 	println("data", res.StatusCode, string(bodyBytes))
 
-	res, err = http.Post("http://localhost:5200/api/address/eth/pooja","", nil)
+	res, err = http.Post("http://localhost:5200/api/address/eth/pooja", "", nil)
 	assert.NoError(t, err)
 	bodyBytes, _ = ioutil.ReadAll(res.Body)
 	println("data", res.StatusCode, string(bodyBytes))
 
-	res, err = http.Post("http://localhost:5200/api/address/eth/charlie","", nil)
+	res, err = http.Post("http://localhost:5200/api/address/eth/charlie", "", nil)
 	assert.NoError(t, err)
 	bodyBytes, _ = ioutil.ReadAll(res.Body)
 	println("data 3", res.StatusCode, string(bodyBytes))
 	assert.True(t, strings.Contains(string(bodyBytes), "Could not find available crosschain address"))
+
 	StopNodes(nodes, []int{0, 1})
 	StopRegistry(r)
 
+}
+
+func TestStatus(t *testing.T) {
+	fmt.Println(time.Now())
+	r := StartRegistry(2, ":6000")
+	nodes := StartNodes(test.GRAPHENE_ISSUER, test.GRAPHENE_TRUST, test.ETHER_NETWORKS[test.ROPSTEN])
+	time.Sleep(time.Millisecond * 250)
+
+	address := &crypto.ForwardInput{
+		"hdfvh",
+		common.HexToAddress(test.GRAPHENE_TRUST.TrustContract),
+		"address-pool",
+		"0x01",
+		coin.BLOCKCHAIN_LTC,
+	}
+
+	// test crosschain
+	nodes[0].rDb.AddCrosschainAddress(address)
+	nodes[1].rDb.AddCrosschainAddress(address)
+
+	address = &crypto.ForwardInput{
+		"0xba420ef5d725361d8fdc58cb1e4fa62eda9ec999",
+		common.HexToAddress(test.GRAPHENE_TRUST.TrustContract),
+		"pooja",
+		"0x01",
+		coin.BLOCKCHAIN_LTC,
+	}
+
+	nodes[0].rDb.AddCrosschainAddress(address)
+	nodes[1].rDb.AddCrosschainAddress(address)
+
+	control.SetLastBlock(nodes[0].db, control.QUANTA, 9593474)
+	control.SetLastBlock(nodes[1].db, control.QUANTA, 9593474)
+
+	control.SetLastBlock(nodes[0].db, coin.BLOCKCHAIN_LTC, 386)
+	control.SetLastBlock(nodes[1].db, coin.BLOCKCHAIN_LTC, 386)
+
+	time.Sleep(time.Millisecond * 2000)
+
+	deposit := &coin.Deposit{
+		Tx:         "jhvdjh ",
+		CoinName:   "TESTETH",
+		SenderAddr: "Sender",
+		QuantaAddr: "pooja",
+		Amount:     45,
+		BlockID:    454,
+	}
+	db.ConfirmDeposit(nodes[0].rDb, deposit, false)
+	db.ConfirmDeposit(nodes[1].rDb, deposit, false)
+
+	time.Sleep(time.Second * 7)
+
+	// test crosschain
+	res, err := http.Get("http://localhost:5200/api/status")
+	//res, err = http.Get("http://localhost:5201/api/status")
+	assert.NoError(t, err)
+	bodyBytes, _ := ioutil.ReadAll(res.Body)
+	println("data", res.StatusCode, string(bodyBytes))
+
+	res, err = http.Get("http://localhost:5201/api/status")
+	assert.NoError(t, err)
+	bodyBytes, _ = ioutil.ReadAll(res.Body)
+	println("data", res.StatusCode, string(bodyBytes))
+
+	StopNodes(nodes, []int{0, 1})
+	StopRegistry(r)
+	fmt.Println(time.Now())
+
+}
+
+type Metric struct {
+	M metric.Metric
+}
+
+func (s Metric) Print(i int) {
+	s.M.Add(1)
+	fmt.Println(s.M.String())
+	var t *metric2.Counter
+	json.Unmarshal([]byte(s.M.String()), &t)
+	fmt.Println(t.Samples[0].Count)
+
+}
+
+func TestMetric(t *testing.T) {
+	s := Metric{
+		M: metric.NewCounter("1m"),
+	}
+
+	for i := 0; i < 10; i++ {
+		time.Sleep(time.Second * 1)
+		if i == 10 {
+			s.Print(i)
+		} else {
+			s.Print(0)
+		}
+	}
+}
+
+func TestAddressAllNodes(t *testing.T) {
+	r := StartRegistry(2, ":6000")
+	nodes := StartNodes(test.GRAPHENE_ISSUER, test.GRAPHENE_TRUST, test.ETHER_NETWORKS[test.ROPSTEN])
+	time.Sleep(time.Millisecond * 250)
+
+	//btc
+	res, err := http.Post("http://localhost:5200/api/address/btc/pooja", "", nil)
+	assert.NoError(t, err)
+	bodyBytes, _ := ioutil.ReadAll(res.Body)
+	println("data", res.StatusCode, string(bodyBytes))
+	assert.Equal(t, 200, res.StatusCode)
+
+	res, err = http.Get("http://localhost:5200/api/address/btc/pooja")
+	assert.NoError(t, err)
+	bodyBytes, _ = ioutil.ReadAll(res.Body)
+	println("data", res.StatusCode, string(bodyBytes))
+	assert.Equal(t, 200, res.StatusCode)
+
+	res, err = http.Get("http://localhost:5201/api/address/btc/pooja")
+	assert.NoError(t, err)
+	bodyBytes, _ = ioutil.ReadAll(res.Body)
+	println("data", res.StatusCode, string(bodyBytes))
+	assert.Equal(t, 200, res.StatusCode)
+
+	//bch
+	res, err = http.Post("http://localhost:5200/api/address/bch/pooja", "", nil)
+	assert.NoError(t, err)
+	bodyBytes, _ = ioutil.ReadAll(res.Body)
+	println("data", res.StatusCode, string(bodyBytes))
+	assert.Equal(t, 200, res.StatusCode)
+
+	res, err = http.Get("http://localhost:5200/api/address/bch/pooja")
+	assert.NoError(t, err)
+	bodyBytes, _ = ioutil.ReadAll(res.Body)
+	println("data", res.StatusCode, string(bodyBytes))
+	assert.Equal(t, 200, res.StatusCode)
+
+	res, err = http.Get("http://localhost:5201/api/address/bch/pooja")
+	assert.NoError(t, err)
+	bodyBytes, _ = ioutil.ReadAll(res.Body)
+	println("data", res.StatusCode, string(bodyBytes))
+	assert.Equal(t, 200, res.StatusCode)
+
+	//ltc
+	res, err = http.Post("http://localhost:5200/api/address/ltc/pooja", "", nil)
+	assert.NoError(t, err)
+	bodyBytes, _ = ioutil.ReadAll(res.Body)
+	println("data", res.StatusCode, string(bodyBytes))
+	assert.Equal(t, 200, res.StatusCode)
+
+	res, err = http.Get("http://localhost:5200/api/address/ltc/pooja")
+	assert.NoError(t, err)
+	bodyBytes, _ = ioutil.ReadAll(res.Body)
+	println("data", res.StatusCode, string(bodyBytes))
+	assert.Equal(t, 200, res.StatusCode)
+
+	res, err = http.Get("http://localhost:5201/api/address/ltc/pooja")
+	assert.NoError(t, err)
+	bodyBytes, _ = ioutil.ReadAll(res.Body)
+	println("data", res.StatusCode, string(bodyBytes))
+	assert.Equal(t, 200, res.StatusCode)
+
+	StopNodes(nodes, []int{0, 1})
+	StopRegistry(r)
 }

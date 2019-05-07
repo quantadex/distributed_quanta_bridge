@@ -49,7 +49,7 @@ func TestTransactionQuery(t *testing.T) {
 	}
 
 	// updated at time 0
-	err = ChangeSubmitState(rDb, w.Tx, SUBMIT_QUEUE, WITHDRAWAL)
+	err = ChangeSubmitState(rDb, w.Tx, SUBMIT_QUEUE, WITHDRAWAL, "")
 	if err != nil {
 		t.Error(err)
 	}
@@ -70,11 +70,10 @@ func TestTransactionQuery(t *testing.T) {
 
 	println(txs)
 
-
 	d := &coin.Deposit{
-		Tx:                 "123_pending",
-		CoinName:           "ETH",
-		Amount:             0,
+		Tx:       "123_pending",
+		CoinName: "ETH",
+		Amount:   0,
 	}
 	err = AddPendingDeposits(rDb, []*coin.Deposit{d})
 	if err != nil {

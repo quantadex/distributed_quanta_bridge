@@ -1,0 +1,1 @@
+docker-compose -f /opt/bitnami/apps/jenkins/jenkins_home/workspace/distributed_quanta_bridge/src/github.com/quantadex/distributed_quanta_bridge/blockchain/docker-compose.yml up

@@ -42,6 +42,7 @@ type Client interface {
 	SendTransaction(ctx context.Context, tx *types.Transaction) error
 	TransactionReceipt(ctx context.Context, txHash common.Hash) (*types.Receipt, error)
 	EstimateGas(ctx context.Context, msg ethereum.CallMsg) (uint64, error)
+	TransactionBlockHashByHash(ctx context.Context, hash common.Hash) (tx *types.Transaction, blockhash *common.Hash, s string, isPending bool, err error)
 }
 
 // Storage is an interface that must be implemented by an object using

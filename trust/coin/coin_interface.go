@@ -6,9 +6,14 @@ import (
 	"github.com/btcsuite/btcutil"
 	common2 "github.com/ethereum/go-ethereum/common"
 	crypto2 "github.com/ethereum/go-ethereum/crypto"
+	chaincfg3 "github.com/gcash/bchd/chaincfg"
+	"github.com/gcash/bchutil"
+	chaincfg2 "github.com/ltcsuite/ltcd/chaincfg"
+	"github.com/ltcsuite/ltcutil"
 	"github.com/quantadex/distributed_quanta_bridge/common"
 	"github.com/quantadex/distributed_quanta_bridge/common/crypto"
 	"github.com/scorum/bitshares-go/types"
+	"time"
 )
 
 const BLOCKCHAIN_ETH = "ETH"
@@ -27,6 +32,7 @@ type Deposit struct {
 	Amount     int64    // Deposit size
 	BlockID    int64    // The blockID in which this deposit was found
 	Signatures []string // hex signatures via quanta
+	BlockHash  string
 }
 
 /**
@@ -44,6 +50,7 @@ type Withdrawal struct {
 	QuantaBlockID      int64    // Which block this transaction was processed in quanta
 	Amount             uint64   // The withdrawal size
 	Signatures         []string // hex signatures via ethereum
+	BlockHash          string
 }
 
 /**
@@ -120,6 +127,10 @@ type Coin interface {
 	FlushCoin(forwarder string, address string) error
 
 	CheckValidAddress(address string) bool
+
+	GetBlockInfo(hash string) (string, int64, error)
+
+	GetBlockTime(blockId int64) (time.Time, error)
 }
 
 func NewDummyCoin() (Coin, error) {
@@ -134,7 +145,7 @@ func NewEthereumCoin(networkId string, ethereumRpc string, secret string, erc20m
 	return &EthereumCoin{maxRange: common.MaxNumberInt64, networkId: networkId, ethereumRpc: ethereumRpc, ethereumSecret: key, erc20map: erc20map}, nil
 }
 
-func NewBitcoinCoin(rpcHost string, params *chaincfg.Params, signers []string) (Coin, error) {
+func NewBitcoinCoin(rpcHost string, params *chaincfg.Params, signers []string, rpcUser, rpcPassword, grapheneSeedPrefix string) (Coin, error) {
 	signersA := []btcutil.Address{}
 	for _, s := range signers {
 		addr, err := btcutil.DecodeAddress(s, params)
@@ -144,7 +155,33 @@ func NewBitcoinCoin(rpcHost string, params *chaincfg.Params, signers []string) (
 		signersA = append(signersA, addr)
 	}
 
-	return &BitcoinCoin{rpcHost: rpcHost, chaincfg: params, signers: signersA}, nil
+	return &BitcoinCoin{rpcHost: rpcHost, chaincfg: params, signers: signersA, rpcUser: rpcUser, rpcPassword: rpcPassword, grapheneSeedPrefix: grapheneSeedPrefix}, nil
+}
+
+func NewLitecoinCoin(rpcHost string, params *chaincfg2.Params, signers []string, rpcUser, rpcPassword, grapheneSeedPrefix string) (Coin, error) {
+	signersA := []ltcutil.Address{}
+	for _, s := range signers {
+		addr, err := ltcutil.DecodeAddress(s, params)
+		if err != nil {
+			panic("corrupted ltc address")
+		}
+		signersA = append(signersA, addr)
+	}
+
+	return &LiteCoin{rpcHost: rpcHost, chaincfg: params, signers: signersA, rpcUser: rpcUser, rpcPassword: rpcPassword, grapheneSeedPrefix: grapheneSeedPrefix}, nil
+}
+
+func NewBCHCoin(rpcHost string, params *chaincfg3.Params, signers []string, rpcUser, rpcPassword, grapheneSeedPrefix string) (Coin, error) {
+	signersA := []bchutil.Address{}
+	for _, s := range signers {
+		addr, err := bchutil.DecodeAddress(s, params)
+		if err != nil {
+			panic("corrupted bch address")
+		}
+		signersA = append(signersA, addr)
+	}
+
+	return &BCH{rpcHost: rpcHost, chaincfg: params, signers: signersA, rpcUser: rpcUser, rpcPassword: rpcPassword, grapheneSeedPrefix: grapheneSeedPrefix}, nil
 }
 
 /**

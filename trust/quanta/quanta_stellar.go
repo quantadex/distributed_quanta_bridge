@@ -81,6 +81,10 @@ type Balance struct {
 	AssetIssuer string `json:"asset_issuer"`
 }
 
+func (q *QuantaClient) GetBlockTime(blockId int64) (time.Time, error) {
+	panic("not implemented")
+}
+
 func (q *QuantaClient) Broadcast(stx string) (*networkbroadcast.BroadcastResponse, error) {
 	// broadcast here
 	panic("Not implemented")
@@ -356,7 +360,7 @@ func PostProcessTransaction(network string, base64 string, sigs []string) (strin
 func (q *QuantaClient) ProcessDeposit(deposit *coin.Deposit, proposed string) error {
 	txe, err := PostProcessTransaction(q.QuantaClientOptions.Network, proposed, deposit.Signatures)
 	println(txe, err)
-	return db.ChangeSubmitQueue(q.Db, deposit.Tx, txe, "")
+	return db.ChangeSubmitQueue(q.Db, deposit.Tx, txe, db.DEPOSIT, deposit.BlockHash)
 }
 
 func (q *QuantaClient) GetAsset(assetName string) (*database.Asset, error) {

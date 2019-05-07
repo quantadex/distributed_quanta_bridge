@@ -5,6 +5,7 @@ import (
 	"github.com/quantadex/distributed_quanta_bridge/trust/coin"
 	"github.com/scorum/bitshares-go/apis/database"
 	"github.com/scorum/bitshares-go/apis/networkbroadcast"
+	"time"
 )
 
 /**
@@ -21,6 +22,7 @@ type Refund struct {
 	SourceAddress      string
 	DestinationAddress string // extract from memo
 	Amount             uint64
+	BlockHash          string
 }
 
 /**
@@ -81,6 +83,8 @@ type Quanta interface {
 	GetAsset(assetName string) (*database.Asset, error)
 	GetIssuer() string
 	Reconnect()
+
+	GetBlockTime(blockId int64) (time.Time, error)
 }
 
 func NewQuanta(options QuantaClientOptions) (Quanta, error) {

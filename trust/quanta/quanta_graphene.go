@@ -73,10 +73,20 @@ func (q *QuantaGraphene) Reconnect() {
 			q.Logger.Error(err.Error())
 			time.Sleep(5 * time.Second)
 		} else {
-			q.Logger.Error(err.Error())
+			q.Logger.Info("Connected to Quanta")
 		}
 		return true, err
 	})
+}
+
+func (q *QuantaGraphene) GetBlockTime(blockId int64) (time.Time, error) {
+	var t time.Time
+	block, err := q.Database.GetBlock(uint32(blockId))
+	if err != nil {
+		return t, err
+	}
+
+	return *block.Timestamp.Time, nil
 }
 
 func (q *QuantaGraphene) AssetExist(issuer string, symbol string) (bool, error) {
@@ -204,6 +214,7 @@ func (q *QuantaGraphene) GetRefundsInBlock(blockID int64, trustAddress string) (
 						TransactionId:      txId,
 						PageTokenID:        blockID,
 						LedgerID:           int32(blockID),
+						BlockHash:          "",
 					}
 					refunds = append(refunds, newRefund)
 				}
@@ -670,5 +681,5 @@ func (q *QuantaGraphene) ProcessDeposit(deposit *coin.Deposit, proposed string) 
 	if err != nil {
 		return err
 	}
-	return db.ChangeSubmitQueue(q.Db, deposit.Tx, txe, db.DEPOSIT)
+	return db.ChangeSubmitQueue(q.Db, deposit.Tx, txe, db.DEPOSIT, deposit.BlockHash)
 }

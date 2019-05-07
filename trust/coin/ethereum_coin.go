@@ -10,12 +10,15 @@ import (
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	common2 "github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/ethclient"
+	errors2 "github.com/pkg/errors"
 	"github.com/quantadex/distributed_quanta_bridge/common"
 	"github.com/quantadex/distributed_quanta_bridge/common/crypto"
 	"github.com/quantadex/distributed_quanta_bridge/trust/coin/contracts"
 	"math/big"
 	"regexp"
+	"strconv"
 	"strings"
+	"time"
 )
 
 const sign_prefix = "\x19Ethereum Signed Message:\n"
@@ -30,10 +33,11 @@ type EthereumCoin struct {
 }
 
 type EncodedMsg struct {
-	Message     string
-	Tx          string
-	BlockNumber int64
-	CoinName    string
+	Message         string
+	Tx              string
+	BlockNumber     int64
+	CoinName        string
+	DestinationAddr string
 }
 
 func (c *EthereumCoin) Blockchain() string {
@@ -54,6 +58,45 @@ func (c *EthereumCoin) Attach() error {
 	}
 
 	return nil
+}
+
+func (c *EthereumCoin) GetBlockTime(blockId int64) (time.Time, error) {
+	var t time.Time
+	block, err := c.client.GetBlock(blockId)
+	if err != nil {
+		return t, err
+	}
+
+	return time.Unix(block.Time().Int64(), 0), nil
+}
+
+func (c *EthereumCoin) GetBlockInfo(hash string) (string, int64, error) {
+	_, blockHash, blockNumber, _, err := c.client.GetTransactionbyHash(hash)
+	if err != nil {
+		return "", 0, err
+	}
+
+	var blockNum int64
+	if len(blockNumber) != 0 {
+		if strings.HasPrefix(strings.ToLower(blockNumber), "0x") {
+			blockNum, err = strconv.ParseInt(blockNumber[2:], 16, 64)
+			if err != nil {
+				return "", 0, errors2.Wrap(err, "Could not convert block number")
+			}
+		} else {
+			blockNum, err = strconv.ParseInt(blockNumber, 16, 64)
+			if err != nil {
+				return "", 0, errors2.Wrap(err, "Could not convert block number")
+			}
+		}
+	}
+	topBlock, err := c.GetTopBlockID()
+	if err != nil {
+		return "", 0, errors2.Wrap(err, "Could not get top block id")
+	}
+	confirm := topBlock - blockNum
+
+	return blockHash.String(), confirm, err
 }
 
 func (c *EthereumCoin) GetTopBlockID() (int64, error) {
@@ -162,7 +205,7 @@ func (c *EthereumCoin) EncodeRefund(w Withdrawal) (string, error) {
 	//binary.Write(&encoded, binary.BigEndian, abi.U256(new(big.Int).SetUint64(uint64(w.Amount))))
 
 	//println("# of bytes " , encoded.Len(), common2.Bytes2Hex(encoded.Bytes()))
-	data, err := json.Marshal(&EncodedMsg{common2.Bytes2Hex(encoded.Bytes()), w.Tx, w.QuantaBlockID, w.CoinName})
+	data, err := json.Marshal(&EncodedMsg{common2.Bytes2Hex(encoded.Bytes()), w.Tx, w.QuantaBlockID, w.CoinName, w.DestinationAddress})
 	//return common2.Bytes2Hex(data), err
 	return string(data), err
 }

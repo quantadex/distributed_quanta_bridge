@@ -10,7 +10,7 @@ package queue
 type Queue interface {
     Connect(name string) error
     CreateQueue(queueName string) error
-    Put(queueName string, data []byte) error
+    Put(queueName string, data interface{}) error
     Empty(queueName string) error
-    Get(queueName string) (data []byte, err error)
+    Get(queueName string) (data interface{}, err error)
 }
