@@ -5,24 +5,25 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/quantadex/distributed_quanta_bridge/common/listener"
 	"github.com/quantadex/distributed_quanta_bridge/common/manifest"
 	"github.com/quantadex/distributed_quanta_bridge/common/queue"
+	"github.com/quantadex/distributed_quanta_bridge/trust/key_manager"
 	"github.com/quantadex/quanta_book/common"
 	"github.com/quantadex/quanta_book/consensus"
 	"github.com/quantadex/quanta_book/consensus/cosi"
 	"net/http"
 	"time"
-	"github.com/quantadex/distributed_quanta_bridge/trust/key_manager"
 )
 
 type TrustPeerNode struct {
-	man    *manifest.Manifest
-	peer   PeerContact
-	nodeID int
-	q      queue.Queue
+	man       *manifest.Manifest
+	peer      PeerContact
+	nodeID    int
+	q         queue.Queue
 	queueName string
-	apiUrl string
-	km key_manager.KeyManager
+	apiUrl    string
+	km        key_manager.KeyManager
 }
 
 func NewTrustPeerNode(man *manifest.Manifest, peer PeerContact, nodeID int, q queue.Queue, queueName string, apiUrl string, km key_manager.KeyManager) *TrustPeerNode {
@@ -31,13 +32,13 @@ func NewTrustPeerNode(man *manifest.Manifest, peer PeerContact, nodeID int, q qu
 	//	println(p.Port)
 	//}
 	return &TrustPeerNode{
-		man:    man,
-		peer:   peer,
-		nodeID: nodeID,
-		q:      q,
+		man:       man,
+		peer:      peer,
+		nodeID:    nodeID,
+		q:         q,
 		queueName: queueName,
-		apiUrl: apiUrl,
-		km: km,
+		apiUrl:    apiUrl,
+		km:        km,
 	}
 }
 
@@ -47,13 +48,15 @@ func (t *TrustPeerNode) GetMsg() *cosi.CosiMessage {
 		//fmt.Printf("queue is empty\n")
 		return nil
 	}
+	listenerData := data.(listener.ListenerData)
 
 	msg := &cosi.CosiMessage{}
-	err = json.Unmarshal(data, msg)
+	err = json.Unmarshal(listenerData.Body, msg)
 	if err != nil {
 		fmt.Printf("Unable to parse json\n")
 		return nil
 	}
+
 	return msg
 }
 
@@ -67,12 +70,11 @@ func (t *TrustPeerNode) SendMsg(destinationNodeID int, msg interface{}) error {
 		return errors.New("unable to marshall")
 	}
 
-	signature, err := t.km.SignMessage(data);
+	signature, err := t.km.SignMessage(data)
 	if err != nil {
 		return err
 	}
-	println(signature)
-
+	println(string(signature))
 
 	_, err = http.Post(url, "application/json", bytes.NewReader(data))
 	if err != nil {

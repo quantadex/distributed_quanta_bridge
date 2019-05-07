@@ -29,7 +29,7 @@ type AddressChange struct {
 
 func NewAddressConsensus(logger logger.Logger, trustNode *TrustNode, db *db.DB, kv kv_store.KVStore, minBlock int64) *AddressConsensus {
 	var res AddressConsensus
-	res.trustPeer = peer_contact.NewTrustPeerNode(trustNode.man, trustNode.peer, trustNode.nodeID, trustNode.queue, queue.ADDR_MSG_QUEUE, "/node/api/address")
+	res.trustPeer = peer_contact.NewTrustPeerNode(trustNode.man, trustNode.peer, trustNode.nodeID, trustNode.queue, queue.ADDR_MSG_QUEUE, "/node/api/address", trustNode.quantakM)
 	res.cosi = cosi.NewProtocol(res.trustPeer, trustNode.nodeID == 0, time.Second*3)
 	res.logger = logger
 	res.cosi.Verify = func(encoded string) error {

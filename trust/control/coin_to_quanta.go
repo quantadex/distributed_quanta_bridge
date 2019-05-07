@@ -125,7 +125,7 @@ func NewCoinToQuanta(log logger.Logger,
 		}
 	}
 
-	res.trustPeer = peer_contact.NewTrustPeerNode(man, peer, nodeID, queue_, queue.PEERMSG_QUEUE, "/node/api/peer")
+	res.trustPeer = peer_contact.NewTrustPeerNode(man, peer, nodeID, queue_, queue.PEERMSG_QUEUE, "/node/api/peer", kM)
 	res.cosi = cosi.NewProtocol(res.trustPeer, nodeID == 0, time.Second*3)
 
 	res.cosi.Verify = func(encoded string) error {
@@ -273,6 +273,7 @@ func (c *CoinToQuanta) processDeposits() {
 			Amount:     tx.Amount,
 			BlockHash:  tx.BlockHash,
 		}
+
 		// if not a native token, we need to flush it
 		//if tx.Coin != c.coinName {
 		//	parts := strings.Split(c.coinName, "0X")

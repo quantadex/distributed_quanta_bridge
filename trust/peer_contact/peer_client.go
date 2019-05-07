@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"github.com/quantadex/distributed_quanta_bridge/common/crypto"
+	"github.com/quantadex/distributed_quanta_bridge/common/listener"
 	"github.com/quantadex/distributed_quanta_bridge/common/manifest"
 	"github.com/quantadex/distributed_quanta_bridge/common/queue"
 	"net/http"
@@ -48,9 +49,10 @@ func (p *PeerClient) GetMsg() *PeerMessage {
 		//fmt.Printf("queue is empty\n")
 		return nil
 	}
+	listenerData := data.(listener.ListenerData)
 
 	msg := &PeerMsgRequest{}
-	err = json.Unmarshal(data, msg)
+	err = json.Unmarshal(listenerData.Body, msg)
 	if err != nil {
 		fmt.Printf("Unable to parse json\n")
 		return nil

@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/quantadex/distributed_quanta_bridge/common/listener"
 	"github.com/quantadex/distributed_quanta_bridge/common/manifest"
 	"github.com/quantadex/distributed_quanta_bridge/common/msgs"
 	"github.com/quantadex/distributed_quanta_bridge/common/queue"
@@ -98,8 +99,9 @@ func (r *RegistrarClient) GetManifest() *manifest.Manifest {
 	if err != nil {
 		return nil
 	}
+	listenerData := bodyBytes.(listener.ListenerData)
 
-	manifest, err := manifest.CreateManifestFromJSON(bodyBytes)
+	manifest, err := manifest.CreateManifestFromJSON(listenerData.Body)
 	if err != nil {
 		return nil
 	}
