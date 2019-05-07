@@ -258,7 +258,7 @@ func initNode(config common.Config, targetCoin coin.Coin) (*TrustNode, bool) {
 		return nil, false
 	}
 
-	node.reg, err = registrar_client.NewRegistrar(config.RegistrarIp, config.RegistrarPort)
+	node.reg, err = registrar_client.NewRegistrar(config.RegistrarIp)
 	if err != nil {
 		node.log.Error("Failed to create registrar interface")
 		return nil, false

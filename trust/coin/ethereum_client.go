@@ -144,7 +144,7 @@ func (l *Listener) GetBlock(blockNumber int64) (*types.Block, error) {
 
 func (l *Listener) processBlock(block *types.Block) error {
 	transactions := block.Transactions()
-	blockTime := time.Unix(int64(block.Time()), 0)
+	blockTime := time.Unix(int64(block.Time().Uint64()), 0)
 
 	localLog := l.log.WithFields(log.F{
 		"blockNumber":  block.NumberU64(),
