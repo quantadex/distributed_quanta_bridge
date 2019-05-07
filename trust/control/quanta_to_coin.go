@@ -106,6 +106,7 @@ func NewQuantaToCoin(log logger.Logger,
 	res.counter0 = metric.NewCounter("24h1m")
 	res.counter1 = metric.NewCounter("24h1m")
 	res.counter2 = metric.NewCounter("24h1m")
+
 	if res.nodeID == 0 {
 		v := expvar.Get(WITHDRAWAL_STATUS_0)
 		if v == nil {
@@ -198,6 +199,22 @@ func NewQuantaToCoin(log logger.Logger,
 		if !b {
 			res.incrementCounter(res.nodeID)
 			return "", nil
+		}
+
+		// verify the before we sign
+		withdrawal, err := res.coinChannel[blockchain].DecodeRefund(msg.Message)
+		if err != nil {
+			res.incrementCounter(res.nodeID)
+			log.Error("Unable to decode refund")
+			return "", err
+		}
+		tx, err := db.GetTransaction(rDb, withdrawal.Tx)
+		if tx != nil {
+			// we're not going to sign again
+			if tx.Signed == false {
+				return "", errors.New("message already signed")
+			}
+			log.Error("Unable to verify refund " + tx.Tx)
 		}
 
 		encodedSig, err := res.coinkM[blockchain].SignTransaction(msg.Message)

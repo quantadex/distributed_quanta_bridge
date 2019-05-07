@@ -22,7 +22,7 @@ type RegistrarClient struct {
 }
 
 func (r *RegistrarClient) GetRegistrar() error {
-	r.url = fmt.Sprintf("http://%s", r.address)
+	r.url = fmt.Sprintf("http://%s:%d", r.address, r.port)
 	r.healthQueueName = queue.HEALTH_QUEUE
 
 	return nil
