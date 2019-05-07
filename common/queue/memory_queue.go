@@ -29,7 +29,7 @@ func (q *MemoryQueue) CreateQueue(queueName string) error {
 	return nil
 }
 
-func (q *MemoryQueue) Put(queueName string, data []byte) error {
+func (q *MemoryQueue) Put(queueName string, data interface{}) error {
 	q.Lock()
 	defer q.Unlock()
 	if q := q.queues[queueName]; q != nil {
@@ -50,7 +50,7 @@ func (q *MemoryQueue) Empty(queueName string) error {
 	return errors.New("queue not found")
 }
 
-func (q *MemoryQueue) Get(queueName string) (data []byte, err error) {
+func (q *MemoryQueue) Get(queueName string) (interface{}, error) {
 	q.Lock()
 	defer q.Unlock()
 
@@ -60,7 +60,7 @@ func (q *MemoryQueue) Get(queueName string) (data []byte, err error) {
 			return nil, errors.New("no item")
 		}
 		q.Remove(0)
-		return data.([]byte), nil
+		return data, nil
 	}
 	return nil, errors.New("queue not found")
 }

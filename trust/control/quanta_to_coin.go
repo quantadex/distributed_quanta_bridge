@@ -101,7 +101,7 @@ func NewQuantaToCoin(log logger.Logger,
 	res.coinMapping = coinMapping
 	res.nodeID = nodeID
 	res.doneChan = make(chan bool, 1)
-	res.trustPeer = peer_contact.NewTrustPeerNode(man, peer, nodeID, queue_, queue.REFUNDMSG_QUEUE, "/node/api/refund")
+	res.trustPeer = peer_contact.NewTrustPeerNode(man, peer, nodeID, queue_, queue.REFUNDMSG_QUEUE, "/node/api/refund", kM[QUANTA])
 	res.cosi = cosi.NewProtocol(res.trustPeer, nodeID == 0, time.Second*3)
 	res.counter0 = metric.NewCounter("24h1m")
 	res.counter1 = metric.NewCounter("24h1m")
