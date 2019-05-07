@@ -1,7 +1,6 @@
 package listener
 
 import "github.com/quantadex/distributed_quanta_bridge/common/queue"
-import "net/http"
 
 /**
  * Listener
@@ -51,11 +50,6 @@ type Listener interface {
 	Run(host string, port int) error
 
 	Stop()
-}
-
-type ListenerData struct {
-	Body []byte
-	Headers http.Header
 }
 
 func NewListener() (Listener, error) {

@@ -29,7 +29,7 @@ func (h *HttpListener) AddEndpoint(name string, route string) error {
 	h.handlers.HandleFunc(route, func(w http.ResponseWriter, r *http.Request) {
 		//fmt.Println("http data on " + route)
 		bodyBytes, _ := ioutil.ReadAll(r.Body)
-		h.queue.Put(name, ListenerData{ bodyBytes, r.Header})
+		h.queue.Put(name, bodyBytes)
 	})
 
 	return nil
