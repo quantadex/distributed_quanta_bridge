@@ -390,7 +390,7 @@ func (n *TrustNode) initTrust(config common.Config) {
 		n.man,
 		config.IssuerAddress,
 		config.EthereumTrustAddr,
-		map[string]key_manager.KeyManager{coin.BLOCKCHAIN_ETH: n.coinkM, coin.BLOCKCHAIN_BTC: n.btcKM, coin.BLOCKCHAIN_LTC: n.ltcKM, coin.BLOCKCHAIN_BCH: n.bchKM},
+		map[string]key_manager.KeyManager{coin.BLOCKCHAIN_ETH: n.coinkM, coin.BLOCKCHAIN_BTC: n.btcKM, coin.BLOCKCHAIN_LTC: n.ltcKM, coin.BLOCKCHAIN_BCH: n.bchKM, control.QUANTA: n.quantakM},
 		config.CoinMapping,
 		n.peer,
 		n.queue,
