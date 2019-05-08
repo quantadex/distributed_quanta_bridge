@@ -13,7 +13,6 @@ import (
 	"github.com/quantadex/distributed_quanta_bridge/trust/coin"
 	"github.com/quantadex/distributed_quanta_bridge/trust/control"
 	"github.com/quantadex/distributed_quanta_bridge/trust/db"
-	"io/ioutil"
 	"net/http"
 	"strconv"
 	"strings"
@@ -80,35 +79,6 @@ func (server *Server) addressHandler(w http.ResponseWriter, r *http.Request) {
 	blockchain := strings.ToUpper(vars["blockchain"])
 	quanta := vars["quanta"]
 
-	BroadcastIfNeeded := func() {
-		// if client, broadcast it
-		if r.Header.Get("IS_PEER") != "true" {
-			for k, _ := range server.trustNode.man.Nodes {
-				if k != server.trustNode.nodeID {
-					peer := server.trustNode.man.Nodes[k]
-					url := fmt.Sprintf("http://%s:%s%s", peer.IP, peer.ExternalPort, r.RequestURI)
-					req, err := http.NewRequest("POST", url, nil)
-					println("Broadcast create address message to node", k, url)
-					if err != nil {
-						server.logger.Error("unable to build request: " + err.Error())
-						continue
-					}
-					req.Header.Set("IS_PEER", "true")
-					client := &http.Client{}
-					res, err := client.Do(req)
-					if err != nil {
-						server.logger.Error("unable to broadcast: " + err.Error())
-						continue
-					}
-					//if res.StatusCode != 200
-					{
-						bodyBytes, _ := ioutil.ReadAll(res.Body)
-						server.logger.Errorf("Broadcast got code %s %s", res.Status, string(bodyBytes))
-					}
-				}
-			}
-		}
-	}
 	if !(blockchain == coin.BLOCKCHAIN_BTC || blockchain == coin.BLOCKCHAIN_ETH || blockchain == coin.BLOCKCHAIN_LTC || blockchain == coin.BLOCKCHAIN_BCH) {
 		w.WriteHeader(http.StatusBadRequest)
 		w.Write([]byte("not a supported blockchain"))
@@ -131,9 +101,23 @@ func (server *Server) addressHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if len(values) == 0 && blockchain == coin.BLOCKCHAIN_ETH {
-		headBlock, _ := control.GetLastBlock(server.kv, coin.BLOCKCHAIN_ETH)
-		addr, err := server.db.GetAvailableShareAddress(headBlock, server.trustNode.config.MinBlockReuse)
+	if len(values) == 0 {
+		var addr []db.CrosschainAddress
+		var err error
+
+		if blockchain == coin.BLOCKCHAIN_ETH {
+			headBlock, _ := control.GetLastBlock(server.kv, coin.BLOCKCHAIN_ETH)
+			addr, err = server.db.GetAvailableShareAddress(headBlock, server.trustNode.config.MinBlockReuse)
+		} else {
+			forwardInput, err := server.generateNewAddress(blockchain, quanta)
+			if err != nil {
+				w.WriteHeader(http.StatusInternalServerError)
+				w.Write([]byte("Unable to generate address for " + blockchain + "," + err.Error()))
+				return
+			}
+
+			addr = []db.CrosschainAddress{ {Address: forwardInput.ContractAddress,QuantaAddr: forwardInput.QuantaAddr }}
+		}
 
 		if err != nil {
 			server.logger.Errorf("Could not find available crosschain address for %s error: %s", quanta, err.Error())
@@ -149,7 +133,7 @@ func (server *Server) addressHandler(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		err = server.addressChange.GetConsensus(AddressChange{quanta, addr[0].Address})
+		err = server.addressChange.GetConsensus(AddressChange{blockchain, quanta, addr[0].Address})
 		if err != nil {
 			server.logger.Errorf("Could not agree on address change:", err.Error())
 			w.WriteHeader(http.StatusInternalServerError)
@@ -166,22 +150,6 @@ func (server *Server) addressHandler(w http.ResponseWriter, r *http.Request) {
 		}
 
 		server.logger.Infof("Updated the crosschain address for account : %s to %s", quanta, addr[0].Address)
-	}
-
-	if len(values) == 0 && (blockchain == coin.BLOCKCHAIN_BTC || blockchain == coin.BLOCKCHAIN_LTC || blockchain == coin.BLOCKCHAIN_BCH) {
-		_, err := server.generateNewAddress(blockchain, quanta)
-		if err != nil {
-			w.WriteHeader(http.StatusInternalServerError)
-			w.Write([]byte("Unable to generate address for " + blockchain + "," + err.Error()))
-			return
-		}
-		values, err = db.GetCrosschainByBlockchainAndUser(server.db, blockchain, quanta)
-		if err != nil {
-			w.WriteHeader(http.StatusInternalServerError)
-			w.Write([]byte("Unable to fetch address for " + blockchain))
-			return
-		}
-		BroadcastIfNeeded()
 	}
 
 	data, _ := json.Marshal(values)

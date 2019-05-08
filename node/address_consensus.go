@@ -23,6 +23,7 @@ type AddressConsensus struct {
 }
 
 type AddressChange struct {
+	Blockchain string
 	QuantaAddr string
 	Address    string
 }
@@ -40,17 +41,29 @@ func NewAddressConsensus(logger logger.Logger, trustNode *TrustNode, db *db.DB, 
 			return err
 		}
 
-		headBlock, _ := control.GetLastBlock(kv, coin.BLOCKCHAIN_ETH)
-		addrAvailable, err := db.GetAvailableShareAddress(headBlock, minBlock)
-		if err != nil {
-			return err
-		}
-		for _, a := range addrAvailable {
-			if a.Address == msg.Address {
-				return nil
+		if msg.Blockchain == coin.BLOCKCHAIN_ETH {
+			headBlock, _ := control.GetLastBlock(kv, coin.BLOCKCHAIN_ETH)
+			addrAvailable, err := db.GetAvailableShareAddress(headBlock, minBlock)
+			if err != nil {
+				return err
 			}
+			for _, a := range addrAvailable {
+				if a.Address == msg.Address {
+					return nil
+				}
+			}
+			return errors.New(fmt.Sprintf("Address available not match - msg=%s", msg.Address))
+
+		} else {
+			addr, err := trustNode.CreateMultisig(msg.Blockchain, msg.QuantaAddr)
+			if err != nil {
+				return errors.New("Unable to generate address for " + msg.Blockchain + "," + err.Error())
+			}
+			if addr.ContractAddress != msg.Address || addr.QuantaAddr != msg.QuantaAddr {
+				return errors.New("Unable to generate address for " + msg.Blockchain + ", somethign don't match")
+			}
+			return nil
 		}
-		return errors.New(fmt.Sprintf("Address available not match - %v msg=%s", addrAvailable, msg.Address))
 	}
 
 	res.cosi.Persist = func(encoded string) error {
@@ -60,8 +73,17 @@ func NewAddressConsensus(logger logger.Logger, trustNode *TrustNode, db *db.DB, 
 		if err != nil {
 			return err
 		}
-		headBlock, _ := control.GetLastBlock(kv, coin.BLOCKCHAIN_ETH)
-		err = db.UpdateShareAddressDestination(msg.Address, msg.QuantaAddr, uint64(headBlock))
+
+		if msg.Blockchain == coin.BLOCKCHAIN_ETH {
+			headBlock, _ := control.GetLastBlock(kv, coin.BLOCKCHAIN_ETH)
+			err = db.UpdateShareAddressDestination(msg.Address, msg.QuantaAddr, uint64(headBlock))
+		} else {
+			addr, err := trustNode.CreateMultisig(msg.Blockchain, msg.QuantaAddr)
+			if err != nil {
+				return errors.New("Cannot persist due to error : " + err.Error())
+			}
+			err = db.AddCrosschainAddress(addr)
+		}
 		return err
 	}
 

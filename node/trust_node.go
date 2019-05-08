@@ -531,7 +531,6 @@ func (n *TrustNode) CreateMultisig(blockchain string, accountId string) (*crypto
 		"",
 		blockchain,
 	}
-	err = n.rDb.AddCrosschainAddress(&addr)
 	return &addr, err
 }
 
