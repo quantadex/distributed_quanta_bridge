@@ -1,13 +1,11 @@
 package cli
 
 import (
-	"bufio"
 	"bytes"
 	"flag"
 	"fmt"
 	"github.com/go-pg/pg"
 	"github.com/op/go-logging"
-	"github.com/quantadex/distributed_quanta_bridge/common/crypto"
 	"github.com/quantadex/distributed_quanta_bridge/common/kv_store"
 	"github.com/quantadex/distributed_quanta_bridge/common/logger"
 	"github.com/quantadex/distributed_quanta_bridge/node/common"
@@ -16,8 +14,10 @@ import (
 	"github.com/quantadex/distributed_quanta_bridge/trust/quanta"
 	"github.com/spf13/viper"
 	"io/ioutil"
-	"os"
 	"strconv"
+	"syscall"
+	"github.com/quantadex/distributed_quanta_bridge/common/crypto"
+	"golang.org/x/crypto/ssh/terminal"
 )
 
 func Setup() (*common.Config, quanta.Quanta, *db.DB, kv_store.KVStore, logger.Logger, *common.Secrets) {
@@ -27,12 +27,11 @@ func Setup() (*common.Config, quanta.Quanta, *db.DB, kv_store.KVStore, logger.Lo
 	flag.Parse()
 
 	viper.SetConfigType("yaml")
-	reader := bufio.NewReader(os.Stdin)
 
-	fmt.Print("Password:")
-	password, err := reader.ReadString('\n')
+	fmt.Print("Password: ")
+	password, err := terminal.ReadPassword(int(syscall.Stdin))
+	secrets, err := crypto.DecryptSecretsFile(*secretsFile, string(password))
 
-	secrets, err := crypto.DecryptSecretsFile(*secretsFile, password)
 	if err != nil {
 		panic(fmt.Errorf("Fatal error secrets file: %s \n", err))
 	}

@@ -1,7 +1,6 @@
 package main
 
 import (
-	"bufio"
 	"bytes"
 	"flag"
 	"fmt"
@@ -12,8 +11,9 @@ import (
 	"github.com/quantadex/distributed_quanta_bridge/trust/coin"
 	"github.com/spf13/viper"
 	"io/ioutil"
-	"os"
 	"path/filepath"
+	"syscall"
+	"golang.org/x/crypto/ssh/terminal"
 )
 
 /**
@@ -37,12 +37,9 @@ func main() {
 			panic(err)
 		}
 
-		reader := bufio.NewReader(os.Stdin)
-
-		fmt.Print("Key for encryption: ")
-		password, err := reader.ReadString('\n')
-
-		err = crypto.EncryptSecretsFile(password, data, *encryptOutFile)
+		fmt.Print("Password: ")
+		password, err := terminal.ReadPassword(int(syscall.Stdin))
+		err = crypto.EncryptSecretsFile(string(password), data, *encryptOutFile)
 		if err != nil {
 			panic(err)
 		}
@@ -51,10 +48,9 @@ func main() {
 		flag.Parse()
 		viper.SetConfigType("yaml")
 
-		reader := bufio.NewReader(os.Stdin)
 		fmt.Print("Password: ")
-		password, err := reader.ReadString('\n')
-		secrets, err := crypto.DecryptSecretsFile(*secretsFile, password)
+		password, err := terminal.ReadPassword(int(syscall.Stdin))
+		secrets, err := crypto.DecryptSecretsFile(*secretsFile, string(password))
 
 		path, err := filepath.Abs(filepath.Dir(*configFile))
 		if err != nil {
