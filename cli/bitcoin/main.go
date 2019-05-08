@@ -10,10 +10,10 @@ import (
 )
 
 func main() {
-	config, quanta, rdb, kdb, log := cli.Setup()
+	config, quanta, rdb, kdb, log, secrets := cli.Setup()
 
 	// setup coin
-	coin, err := coin.NewBitcoinCoin(config.BtcRpc, crypto.GetChainCfgByString(config.BtcNetwork), config.BtcSigners, config.BtcRpcUser, config.BtcRpcPassword, config.GrapheneSeedPrefix)
+	coin, err := coin.NewBitcoinCoin(config.BtcRpc, crypto.GetChainCfgByString(config.BtcNetwork), secrets.BtcSigners, secrets.BtcRpcUser, secrets.BtcRpcPassword, secrets.GrapheneSeedPrefix)
 	if err != nil {
 		panic(fmt.Errorf("cannot create ethereum listener"))
 	}

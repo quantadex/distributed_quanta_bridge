@@ -72,7 +72,7 @@ type TrustNode struct {
  *
  * Initialize all sub-modules. Attach to databases.
  */
-func initNode(config common.Config, targetCoin coin.Coin) (*TrustNode, bool) {
+func initNode(config common.Config, targetCoin coin.Coin, secrets common.Secrets) (*TrustNode, bool) {
 	var err error
 	node := &TrustNode{}
 	node.doneChan = make(chan bool, 1)
@@ -97,7 +97,7 @@ func initNode(config common.Config, targetCoin coin.Coin) (*TrustNode, bool) {
 	}
 	reuseKeys := config.UsePrevKeys
 	if reuseKeys == true {
-		err = node.quantakM.LoadNodeKeys(config.NodeKey)
+		err = node.quantakM.LoadNodeKeys(secrets.NodeKey)
 	} else {
 		err = node.quantakM.CreateNodeKeys()
 	}
@@ -112,40 +112,40 @@ func initNode(config common.Config, targetCoin coin.Coin) (*TrustNode, bool) {
 		return nil, false
 	}
 
-	err = node.coinkM.LoadNodeKeys(config.EthereumKeyStore)
+	err = node.coinkM.LoadNodeKeys(secrets.EthereumKeyStore)
 	if err != nil {
 		node.log.Error("Failed to set up ethereum keys")
 		return nil, false
 	}
 
-	node.btcKM, err = key_manager.NewBitCoinKeyManager(config.BtcRpc, config.BtcNetwork, config.BtcRpcUser, config.BtcRpcPassword)
+	node.btcKM, err = key_manager.NewBitCoinKeyManager(config.BtcRpc, config.BtcNetwork, secrets.BtcRpcUser, secrets.BtcRpcPassword)
 	if err != nil {
 		node.log.Error("Failed to create BTC key manager")
 		return nil, false
 	}
-	err = node.btcKM.LoadNodeKeys(config.BtcPrivateKey)
+	err = node.btcKM.LoadNodeKeys(secrets.BtcPrivateKey)
 	if err != nil {
 		node.log.Error("Failed to set up btc keys")
 		return nil, false
 	}
 
-	node.ltcKM, err = key_manager.NewLiteCoinKeyManager(config.LtcRpc, config.LtcNetwork, config.LtcRpcUser, config.LtcRpcPassword)
+	node.ltcKM, err = key_manager.NewLiteCoinKeyManager(config.LtcRpc, config.LtcNetwork, secrets.LtcRpcUser, secrets.LtcRpcPassword)
 	if err != nil {
 		node.log.Error("Failed to create LTC key manager")
 		return nil, false
 	}
-	err = node.ltcKM.LoadNodeKeys(config.LtcPrivateKey)
+	err = node.ltcKM.LoadNodeKeys(secrets.LtcPrivateKey)
 	if err != nil {
 		node.log.Error("Failed to set up ltc keys")
 		return nil, false
 	}
 
-	node.bchKM, err = key_manager.NewBCHCoinKeyManager(config.BchRpc, config.BchNetwork, config.BchRpcUser, config.BchRpcPassword)
+	node.bchKM, err = key_manager.NewBCHCoinKeyManager(config.BchRpc, config.BchNetwork, secrets.BchRpcUser, secrets.BchRpcPassword)
 	if err != nil {
 		node.log.Error("Failed to create BCH key manager")
 		return nil, false
 	}
-	err = node.bchKM.LoadNodeKeys(config.BchPrivateKey)
+	err = node.bchKM.LoadNodeKeys(secrets.BchPrivateKey)
 	if err != nil {
 		node.log.Errorf("%s : Failed to set up bch keys", err)
 		return nil, false
@@ -159,8 +159,8 @@ func initNode(config common.Config, targetCoin coin.Coin) (*TrustNode, bool) {
 		return nil, false
 	}
 
-	println(config.DatabaseUrl)
-	err = node.db.Connect(config.DatabaseUrl)
+	println(secrets.DatabaseUrl)
+	err = node.db.Connect(secrets.DatabaseUrl)
 	if err != nil {
 		node.log.Error("Failed to connect to database")
 		return nil, false
@@ -173,7 +173,7 @@ func initNode(config common.Config, targetCoin coin.Coin) (*TrustNode, bool) {
 
 	// connect to do
 	node.rDb = &db.DB{}
-	info, err := pg.ParseURL(config.DatabaseUrl)
+	info, err := pg.ParseURL(secrets.DatabaseUrl)
 	if err != nil {
 		node.log.Error(err.Error())
 	}
@@ -193,7 +193,7 @@ func initNode(config common.Config, targetCoin coin.Coin) (*TrustNode, bool) {
 		return nil, false
 	}
 
-	ltccoin, err := coin.NewLitecoinCoin(config.LtcRpc, crypto.GetChainCfgByStringLTC(config.LtcNetwork), config.LtcSigners, config.LtcRpcUser, config.LtcRpcPassword, config.GrapheneSeedPrefix)
+	ltccoin, err := coin.NewLitecoinCoin(config.LtcRpc, crypto.GetChainCfgByStringLTC(config.LtcNetwork), secrets.LtcSigners, secrets.LtcRpcUser, secrets.LtcRpcPassword, secrets.GrapheneSeedPrefix)
 	if err != nil {
 		panic(fmt.Errorf("cannot create litecoin coin"))
 	}
@@ -204,7 +204,7 @@ func initNode(config common.Config, targetCoin coin.Coin) (*TrustNode, bool) {
 	}
 	node.ltc = ltccoin
 
-	bchcoin, err := coin.NewBCHCoin(config.BchRpc, crypto.GetChainCfgByStringBCH(config.BchNetwork), config.BchSigners, config.BchRpcUser, config.BchRpcPassword, config.GrapheneSeedPrefix)
+	bchcoin, err := coin.NewBCHCoin(config.BchRpc, crypto.GetChainCfgByStringBCH(config.BchNetwork), secrets.BchSigners, secrets.BchRpcUser, secrets.BchRpcPassword, secrets.GrapheneSeedPrefix)
 	if err != nil {
 		panic(fmt.Errorf("cannot create litecoin coin"))
 	}
@@ -216,7 +216,7 @@ func initNode(config common.Config, targetCoin coin.Coin) (*TrustNode, bool) {
 	node.bch = bchcoin
 
 	// attach bitcoin
-	coin, err := coin.NewBitcoinCoin(config.BtcRpc, crypto.GetChainCfgByString(config.BtcNetwork), config.BtcSigners, config.BtcRpcUser, config.BtcRpcPassword, config.GrapheneSeedPrefix)
+	coin, err := coin.NewBitcoinCoin(config.BtcRpc, crypto.GetChainCfgByString(config.BtcNetwork), secrets.BtcSigners, secrets.BtcRpcUser, secrets.BtcRpcPassword, secrets.GrapheneSeedPrefix)
 	if err != nil {
 		panic(fmt.Errorf("cannot create ethereum listener"))
 	}
@@ -246,7 +246,7 @@ func initNode(config common.Config, targetCoin coin.Coin) (*TrustNode, bool) {
 		return nil, false
 	}
 
-	node.peer, err = peer_contact.NewPeerContact(config.NodeKey)
+	node.peer, err = peer_contact.NewPeerContact(secrets.NodeKey)
 	if err != nil {
 		node.log.Error("Failed to create peer interface")
 		return nil, false
@@ -469,8 +469,8 @@ func (n *TrustNode) run() {
 	}
 }
 
-func bootstrapNode(config common.Config, targetCoin coin.Coin) *TrustNode {
-	node, success := initNode(config, targetCoin)
+func bootstrapNode(config common.Config, targetCoin coin.Coin, secrets common.Secrets) *TrustNode {
+	node, success := initNode(config, targetCoin, secrets)
 	if !success {
 		panic("Failed to init node")
 		return nil

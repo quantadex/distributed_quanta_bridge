@@ -90,7 +90,7 @@ func TestRopstenNativeETH(t *testing.T) {
 	nodes[0].cTQ.SuccessCb = func(c control.DepositResult) {
 		depositResult <- c
 	}
-	config := generateConfig(test.GRAPHENE_ISSUER, test.GRAPHENE_TRUST, test.ETHER_NETWORKS[test.ROPSTEN], 0)
+	config, _ := generateConfig(test.GRAPHENE_ISSUER, test.GRAPHENE_TRUST, test.ETHER_NETWORKS[test.ROPSTEN], 0)
 
 	// DEPOSIT to TEST2
 	// 0xba7573C0e805ef71ACB7f1c4a55E7b0af416E96A transfers 0.01 ETH to forward address: 0xb59e4b94e4ed7331ee0520e9377967614ca2dc98 on block 4327101
@@ -191,7 +191,7 @@ func TestRopstenERC20Token(t *testing.T) {
 	fmt.Printf("[ASSET %s] [ACCOUNT %s] initial_balance = %.9f\n", "SIMPLETOKEN0XDFE1002C2E1AE5E8F4F34BF481900DAAE5351992", "pooja", initialBalance)
 
 	time.Sleep(time.Millisecond * 250)
-	config := generateConfig(test.GRAPHENE_ISSUER, test.GRAPHENE_TRUST, test.ETHER_NETWORKS[test.ROPSTEN], 0)
+	config, _ := generateConfig(test.GRAPHENE_ISSUER, test.GRAPHENE_TRUST, test.ETHER_NETWORKS[test.ROPSTEN], 0)
 
 	block := int64(5066807)
 	fmt.Printf("=======================\n[BLOCK %d] BEGIN\n\n", block)
@@ -255,6 +255,7 @@ func TestRopstenERC20Token(t *testing.T) {
 	//assert.Equal(t, initialBalance+float64(0.1), newBalance)
 	fmt.Printf("Initial balance=%f , expecting final balance = %f\n", initialBalance, newBalance)
 	time.Sleep(time.Second * 5)
+
 	StopNodes(nodes, []int{0, 1})
 	StopRegistry(r)
 }
@@ -449,14 +450,19 @@ func TestBCHDeposit(t *testing.T) {
 		depositResult <- c
 	}
 
-	config := generateConfig(test.GRAPHENE_ISSUER, test.GRAPHENE_TRUST, test.ETHER_NETWORKS[test.ROPSTEN], 0)
+	config, secrets := generateConfig(test.GRAPHENE_ISSUER, test.GRAPHENE_TRUST, test.ETHER_NETWORKS[test.ROPSTEN], 0)
 
-	client, err := coin.NewBCHCoin("localhost:18333", &chaincfg3.RegressionNetParams, []string{"049C8C4647E016C502766C6F5C40CFD37EE86CD02972274CA50DA16D72016CAB5812F867F27C268923E5DE3ADCB268CC8A29B96D0D8972841F286BA6D9CCF61360", "040C9B0D5324CBAF4F40A215C1D87DF1BEB51A0345E0384942FE0D60F8D796F7B7200CC5B70DDCF101E7804EFA26A0CE6EC6622C2FE90BCFD2DA2482006C455FF1"}, config.BchRpcUser, config.BchRpcPassword, config.GrapheneSeedPrefix)
+	client, err := coin.NewBCHCoin("localhost:18333", &chaincfg3.RegressionNetParams, []string{"049C8C4647E016C502766C6F5C40CFD37EE86CD02972274CA50DA16D72016CAB5812F867F27C268923E5DE3ADCB268CC8A29B96D0D8972841F286BA6D9CCF61360", "040C9B0D5324CBAF4F40A215C1D87DF1BEB51A0345E0384942FE0D60F8D796F7B7200CC5B70DDCF101E7804EFA26A0CE6EC6622C2FE90BCFD2DA2482006C455FF1"}, secrets.BchRpcUser, secrets.BchRpcPassword, secrets.GrapheneSeedPrefix)
 	err = client.Attach()
 	assert.NoError(t, err)
 
 	bch := client.(*coin.BCH)
-	bch.Client.Generate(101)
+	blockId, err := bch.GetTopBlockID()
+	assert.NoError(t, err)
+
+	if blockId < 101 {
+		bch.Client.Generate(101)
+	}
 
 	msig, err := client.GenerateMultisig("pooja")
 	assert.NoError(t, err)
@@ -495,7 +501,7 @@ func TestBCHDeposit(t *testing.T) {
 
 	bch.Client.Generate(1)
 
-	blockId, err := client.GetTopBlockID()
+	blockId, err = client.GetTopBlockID()
 	assert.NoError(t, err)
 	fmt.Println(blockId)
 
@@ -568,13 +574,19 @@ func TestBCHWithdrawal(t *testing.T) {
 		withdrawResult <- c
 	}
 
-	config := generateConfig(test.GRAPHENE_ISSUER, test.GRAPHENE_TRUST, test.ETHER_NETWORKS[test.ROPSTEN], 0)
+	_, secrets := generateConfig(test.GRAPHENE_ISSUER, test.GRAPHENE_TRUST, test.ETHER_NETWORKS[test.ROPSTEN], 0)
 
-	client, err := coin.NewBCHCoin("localhost:18333", &chaincfg3.RegressionNetParams, []string{"049C8C4647E016C502766C6F5C40CFD37EE86CD02972274CA50DA16D72016CAB5812F867F27C268923E5DE3ADCB268CC8A29B96D0D8972841F286BA6D9CCF61360", "040C9B0D5324CBAF4F40A215C1D87DF1BEB51A0345E0384942FE0D60F8D796F7B7200CC5B70DDCF101E7804EFA26A0CE6EC6622C2FE90BCFD2DA2482006C455FF1"}, config.BchRpcUser, config.BchRpcPassword, config.GrapheneSeedPrefix)
+	client, err := coin.NewBCHCoin("localhost:18333", &chaincfg3.RegressionNetParams, []string{"049C8C4647E016C502766C6F5C40CFD37EE86CD02972274CA50DA16D72016CAB5812F867F27C268923E5DE3ADCB268CC8A29B96D0D8972841F286BA6D9CCF61360", "040C9B0D5324CBAF4F40A215C1D87DF1BEB51A0345E0384942FE0D60F8D796F7B7200CC5B70DDCF101E7804EFA26A0CE6EC6622C2FE90BCFD2DA2482006C455FF1"}, secrets.BchRpcUser, secrets.BchRpcPassword, secrets.GrapheneSeedPrefix)
 	err = client.Attach()
 	assert.NoError(t, err)
 
 	bch := client.(*coin.BCH)
+	blockId, err := bch.GetTopBlockID()
+	assert.NoError(t, err)
+
+	if blockId < 101 {
+		bch.Client.Generate(101)
+	}
 
 	msig, err := client.GenerateMultisig("pooja")
 	assert.NoError(t, err)
@@ -651,14 +663,19 @@ func TestLTCDeposit(t *testing.T) {
 		depositResult <- c
 	}
 
-	config := generateConfig(test.GRAPHENE_ISSUER, test.GRAPHENE_TRUST, test.ETHER_NETWORKS[test.ROPSTEN], 0)
+	config, secrets := generateConfig(test.GRAPHENE_ISSUER, test.GRAPHENE_TRUST, test.ETHER_NETWORKS[test.ROPSTEN], 0)
 
-	client, err := coin.NewLitecoinCoin("localhost:19332", &chaincfg2.RegressionNetParams, []string{"047AABB69BBE1B5D9E2EFD10D0215A37AE835EAE08DFDF795E5A8411271F690CC8797CF4DEB3508844920E28A42A67D8A3F56D5B6B65401DEDB1E130F9F9908463", "04851D591308AFBE768566060C01A60A5F6AC6C78C3766559C835BEF0485628013ADC7D7E7676B0281FB83E788F4BC11E4CA597D1A53AF5F0BB90D555A28B55504"}, config.LtcRpcUser, config.LtcRpcPassword, config.GrapheneSeedPrefix)
+	client, err := coin.NewLitecoinCoin("localhost:19332", &chaincfg2.RegressionNetParams, []string{"047AABB69BBE1B5D9E2EFD10D0215A37AE835EAE08DFDF795E5A8411271F690CC8797CF4DEB3508844920E28A42A67D8A3F56D5B6B65401DEDB1E130F9F9908463", "04851D591308AFBE768566060C01A60A5F6AC6C78C3766559C835BEF0485628013ADC7D7E7676B0281FB83E788F4BC11E4CA597D1A53AF5F0BB90D555A28B55504"}, secrets.LtcRpcUser, secrets.LtcRpcPassword, secrets.GrapheneSeedPrefix)
 	err = client.Attach()
 	assert.NoError(t, err)
 
 	ltc := client.(*coin.LiteCoin)
-	ltc.Client.Generate(101)
+	blockId, err := ltc.GetTopBlockID()
+	assert.NoError(t, err)
+
+	if blockId < 101 {
+		ltc.Client.Generate(101)
+	}
 
 	msig, err := client.GenerateMultisig("pooja")
 	assert.NoError(t, err)
@@ -697,7 +714,7 @@ func TestLTCDeposit(t *testing.T) {
 
 	ltc.Client.Generate(1)
 
-	blockId, err := client.GetTopBlockID()
+	blockId, err = client.GetTopBlockID()
 	assert.NoError(t, err)
 	fmt.Println(blockId)
 
@@ -770,13 +787,19 @@ func TestLTCWithdrawal(t *testing.T) {
 		withdrawResult <- c
 	}
 
-	config := generateConfig(test.GRAPHENE_ISSUER, test.GRAPHENE_TRUST, test.ETHER_NETWORKS[test.ROPSTEN], 0)
+	_, sercets := generateConfig(test.GRAPHENE_ISSUER, test.GRAPHENE_TRUST, test.ETHER_NETWORKS[test.ROPSTEN], 0)
 
-	client, err := coin.NewLitecoinCoin("localhost:19332", &chaincfg2.RegressionNetParams, []string{"047AABB69BBE1B5D9E2EFD10D0215A37AE835EAE08DFDF795E5A8411271F690CC8797CF4DEB3508844920E28A42A67D8A3F56D5B6B65401DEDB1E130F9F9908463", "04851D591308AFBE768566060C01A60A5F6AC6C78C3766559C835BEF0485628013ADC7D7E7676B0281FB83E788F4BC11E4CA597D1A53AF5F0BB90D555A28B55504"}, config.LtcRpcUser, config.LtcRpcPassword, config.GrapheneSeedPrefix)
+	client, err := coin.NewLitecoinCoin("localhost:19332", &chaincfg2.RegressionNetParams, []string{"047AABB69BBE1B5D9E2EFD10D0215A37AE835EAE08DFDF795E5A8411271F690CC8797CF4DEB3508844920E28A42A67D8A3F56D5B6B65401DEDB1E130F9F9908463", "04851D591308AFBE768566060C01A60A5F6AC6C78C3766559C835BEF0485628013ADC7D7E7676B0281FB83E788F4BC11E4CA597D1A53AF5F0BB90D555A28B55504"}, sercets.LtcRpcUser, sercets.LtcRpcPassword, sercets.GrapheneSeedPrefix)
 	err = client.Attach()
 	assert.NoError(t, err)
 
 	ltc := client.(*coin.LiteCoin)
+	blockId, err := ltc.GetTopBlockID()
+	assert.NoError(t, err)
+
+	if blockId < 101 {
+		ltc.Client.Generate(101)
+	}
 
 	msig, err := client.GenerateMultisig("pooja")
 	assert.NoError(t, err)
@@ -838,6 +861,10 @@ func TestLTCWithdrawal(t *testing.T) {
 	assert.NotNil(t, w, "We expect withdrawal completed")
 	assert.NoError(t, w.Err, "should not get an error")
 
+	//nodes[0].rDb.Close()
+	//nodes[1].rDb.Close()
+	//nodes[0].db.CloseDB()
+	//nodes[1].db.CloseDB()
 	StopNodes(nodes, []int{0, 1})
 	StopRegistry(r)
 }
@@ -852,9 +879,9 @@ func TestBTCDeposit(t *testing.T) {
 	nodes[0].cTQ.SuccessCb = func(c control.DepositResult) {
 		depositResult <- c
 	}
-	config := generateConfig(test.GRAPHENE_ISSUER, test.GRAPHENE_TRUST, test.ETHER_NETWORKS[test.ROPSTEN], 0)
+	config, secrets := generateConfig(test.GRAPHENE_ISSUER, test.GRAPHENE_TRUST, test.ETHER_NETWORKS[test.ROPSTEN], 0)
 
-	client, err := coin.NewBitcoinCoin("localhost:18332", &chaincfg.RegressionNetParams, []string{"049C8C4647E016C502766C6F5C40CFD37EE86CD02972274CA50DA16D72016CAB5812F867F27C268923E5DE3ADCB268CC8A29B96D0D8972841F286BA6D9CCF61360", "040C9B0D5324CBAF4F40A215C1D87DF1BEB51A0345E0384942FE0D60F8D796F7B7200CC5B70DDCF101E7804EFA26A0CE6EC6622C2FE90BCFD2DA2482006C455FF1"}, config.BtcRpcUser, config.BtcRpcPassword, config.GrapheneSeedPrefix)
+	client, err := coin.NewBitcoinCoin("localhost:18332", &chaincfg.RegressionNetParams, []string{"049C8C4647E016C502766C6F5C40CFD37EE86CD02972274CA50DA16D72016CAB5812F867F27C268923E5DE3ADCB268CC8A29B96D0D8972841F286BA6D9CCF61360", "040C9B0D5324CBAF4F40A215C1D87DF1BEB51A0345E0384942FE0D60F8D796F7B7200CC5B70DDCF101E7804EFA26A0CE6EC6622C2FE90BCFD2DA2482006C455FF1"}, secrets.BtcRpcUser, secrets.BtcRpcPassword, secrets.GrapheneSeedPrefix)
 	assert.NoError(t, err)
 
 	btc := client.(*coin.BitcoinCoin)
@@ -862,23 +889,28 @@ func TestBTCDeposit(t *testing.T) {
 	err = client.Attach()
 	assert.NoError(t, err)
 
-	btc.Client.Generate(101)
-
-	msig, err := client.GenerateMultisig("pooja")
+	blockId, err := btc.GetTopBlockID()
 	assert.NoError(t, err)
 
-	forwardAddress := &crypto.ForwardInput{
-		msig,
-		common.HexToAddress(test.GRAPHENE_TRUST.TrustContract),
-		"pooja",
-		"",
-		coin.BLOCKCHAIN_BTC,
+	if blockId < 101 {
+		btc.Client.Generate(101)
 	}
-	nodes[0].rDb.AddCrosschainAddress(forwardAddress)
-	nodes[1].rDb.AddCrosschainAddress(forwardAddress)
 
-	pubKey := "pooja"
-	res, err := http.Get("http://localhost:5200/api/address/BTC/" + pubKey)
+	//msig, err := client.GenerateMultisig("pooja")
+	//assert.NoError(t, err)
+
+	//forwardAddress := &crypto.ForwardInput{
+	//	msig,
+	//	common.HexToAddress(test.GRAPHENE_TRUST.TrustContract),
+	//	"pooja",
+	//	"",
+	//	coin.BLOCKCHAIN_BTC,
+	//}
+	//nodes[0].rDb.AddCrosschainAddress(forwardAddress)
+	//nodes[1].rDb.AddCrosschainAddress(forwardAddress)
+
+	//pubKey := "pooja"
+	res, err := http.Post("http://localhost:5200/api/address/BTC/pooja", "", nil)
 	assert.NoError(t, err)
 	assert.Equal(t, res.StatusCode, 200)
 
@@ -899,7 +931,7 @@ func TestBTCDeposit(t *testing.T) {
 
 	btc.Client.Generate(1)
 
-	blockId, err := client.GetTopBlockID()
+	blockId, err = client.GetTopBlockID()
 	assert.NoError(t, err)
 
 	block := int64(blockId)
@@ -971,13 +1003,19 @@ func TestBTCWithdrawal(t *testing.T) {
 		withdrawResult <- c
 	}
 
-	config := generateConfig(test.GRAPHENE_ISSUER, test.GRAPHENE_TRUST, test.ETHER_NETWORKS[test.ROPSTEN], 0)
+	_, secrets := generateConfig(test.GRAPHENE_ISSUER, test.GRAPHENE_TRUST, test.ETHER_NETWORKS[test.ROPSTEN], 0)
 
-	client, err := coin.NewBitcoinCoin("localhost:18332", &chaincfg.RegressionNetParams, []string{"049C8C4647E016C502766C6F5C40CFD37EE86CD02972274CA50DA16D72016CAB5812F867F27C268923E5DE3ADCB268CC8A29B96D0D8972841F286BA6D9CCF61360", "040C9B0D5324CBAF4F40A215C1D87DF1BEB51A0345E0384942FE0D60F8D796F7B7200CC5B70DDCF101E7804EFA26A0CE6EC6622C2FE90BCFD2DA2482006C455FF1"}, config.BtcRpcUser, config.BtcRpcPassword, config.GrapheneSeedPrefix)
+	client, err := coin.NewBitcoinCoin("localhost:18332", &chaincfg.RegressionNetParams, []string{"049C8C4647E016C502766C6F5C40CFD37EE86CD02972274CA50DA16D72016CAB5812F867F27C268923E5DE3ADCB268CC8A29B96D0D8972841F286BA6D9CCF61360", "040C9B0D5324CBAF4F40A215C1D87DF1BEB51A0345E0384942FE0D60F8D796F7B7200CC5B70DDCF101E7804EFA26A0CE6EC6622C2FE90BCFD2DA2482006C455FF1"}, secrets.BtcRpcUser, secrets.BtcRpcPassword, secrets.GrapheneSeedPrefix)
 	err = client.Attach()
 	assert.NoError(t, err)
 
 	btc := client.(*coin.BitcoinCoin)
+	blockId, err := btc.GetTopBlockID()
+	assert.NoError(t, err)
+
+	if blockId < 101 {
+		btc.Client.Generate(101)
+	}
 
 	res, err := http.Post("http://localhost:5200/api/address/BTC/pooja", "", nil)
 	assert.NoError(t, err)

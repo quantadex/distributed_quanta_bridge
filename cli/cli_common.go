@@ -1,11 +1,13 @@
 package cli
 
 import (
+	"bufio"
 	"bytes"
 	"flag"
 	"fmt"
 	"github.com/go-pg/pg"
 	"github.com/op/go-logging"
+	"github.com/quantadex/distributed_quanta_bridge/common/crypto"
 	"github.com/quantadex/distributed_quanta_bridge/common/kv_store"
 	"github.com/quantadex/distributed_quanta_bridge/common/logger"
 	"github.com/quantadex/distributed_quanta_bridge/node/common"
@@ -14,13 +16,26 @@ import (
 	"github.com/quantadex/distributed_quanta_bridge/trust/quanta"
 	"github.com/spf13/viper"
 	"io/ioutil"
+	"os"
 	"strconv"
 )
 
-func Setup() (*common.Config, quanta.Quanta, *db.DB, kv_store.KVStore, logger.Logger) {
+func Setup() (*common.Config, quanta.Quanta, *db.DB, kv_store.KVStore, logger.Logger, *common.Secrets) {
 	viper.SetConfigType("yaml")
 	configFile := flag.String("config", "config.yml", "configuration file")
+	secretsFile := flag.String("secrets", "secrets.yml", "secrets file")
 	flag.Parse()
+
+	viper.SetConfigType("yaml")
+	reader := bufio.NewReader(os.Stdin)
+
+	fmt.Print("Password:")
+	password, err := reader.ReadString('\n')
+
+	secrets, err := crypto.DecryptSecretsFile(*secretsFile, password)
+	if err != nil {
+		panic(fmt.Errorf("Fatal error secrets file: %s \n", err))
+	}
 
 	data, err := ioutil.ReadFile(*configFile)
 	if err != nil {
@@ -61,7 +76,7 @@ func Setup() (*common.Config, quanta.Quanta, *db.DB, kv_store.KVStore, logger.Lo
 		panic(err)
 	}
 
-	err = kdb.Connect(config.DatabaseUrl)
+	err = kdb.Connect(secrets.DatabaseUrl)
 	if err != nil {
 		log.Error("Failed to connect to database")
 		panic(err)
@@ -74,7 +89,7 @@ func Setup() (*common.Config, quanta.Quanta, *db.DB, kv_store.KVStore, logger.Lo
 
 	// setup db
 	rDb := &db.DB{}
-	info, err := pg.ParseURL(config.DatabaseUrl)
+	info, err := pg.ParseURL(secrets.DatabaseUrl)
 	if err != nil {
 		log.Error(err.Error())
 	}
@@ -103,5 +118,5 @@ func Setup() (*common.Config, quanta.Quanta, *db.DB, kv_store.KVStore, logger.Lo
 		panic(err)
 	}
 
-	return &config, quanta, rDb, kdb, log
+	return &config, quanta, rDb, kdb, log, &secrets
 }

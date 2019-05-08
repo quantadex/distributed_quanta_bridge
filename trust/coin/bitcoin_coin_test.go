@@ -38,7 +38,12 @@ func TestBitcoinEncodeRefund(t *testing.T) {
 	assert.NoError(t, err)
 
 	bitcoin := client.(*BitcoinCoin)
-	bitcoin.Client.Generate(101)
+	blockId, err := bitcoin.GetTopBlockID()
+	assert.NoError(t, err)
+
+	if blockId < 101 {
+		bitcoin.Client.Generate(101)
+	}
 	addr1, err := bitcoin.GenerateMultisig("aaa1")
 	assert.NoError(t, err)
 	addr2, err := bitcoin.GenerateMultisig("2")
@@ -128,6 +133,11 @@ func TestDecode(t *testing.T) {
 	assert.NoError(t, err)
 
 	bitcoin := client.(*BitcoinCoin)
+	blockId, err := bitcoin.GetTopBlockID()
+	assert.NoError(t, err)
+	if blockId < 101 {
+		bitcoin.Client.Generate(101)
+	}
 	addr1, err := bitcoin.GenerateMultisig("aaa1")
 	assert.NoError(t, err)
 
@@ -170,6 +180,12 @@ func TestEncodeWithMultipleInputs(t *testing.T) {
 	assert.NoError(t, err)
 
 	bitcoin := client.(*BitcoinCoin)
+	blockId, err := bitcoin.GetTopBlockID()
+	assert.NoError(t, err)
+	if blockId < 101 {
+		bitcoin.Client.Generate(101)
+	}
+
 	addr1, err := bitcoin.GenerateMultisig("aaa1")
 	assert.NoError(t, err)
 	addr2, err := bitcoin.GenerateMultisig("2")

@@ -10,10 +10,10 @@ import (
 )
 
 func main() {
-	config, quanta, rdb, kdb, log := cli.Setup()
+	config, quanta, rdb, kdb, log, secrets := cli.Setup()
 
 	// setup coin
-	coin, err := coin.NewLitecoinCoin(config.LtcRpc, crypto.GetChainCfgByStringLTC(config.LtcNetwork), config.LtcSigners, config.LtcRpcUser, config.LtcRpcPassword, config.GrapheneSeedPrefix)
+	coin, err := coin.NewLitecoinCoin(config.LtcRpc, crypto.GetChainCfgByStringLTC(config.LtcNetwork), secrets.LtcSigners, secrets.LtcRpcUser, secrets.LtcRpcPassword, secrets.GrapheneSeedPrefix)
 	if err != nil {
 		panic(fmt.Errorf("cannot create litecoin coin"))
 	}

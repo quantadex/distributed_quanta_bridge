@@ -70,11 +70,11 @@ func (t *TrustPeerNode) SendMsg(destinationNodeID int, msg interface{}) error {
 		return errors.New("unable to marshall")
 	}
 
-	signature, err := t.km.SignMessage(data)
+	_, err = t.km.SignMessage(data)
 	if err != nil {
 		return err
 	}
-	println(string(signature))
+	//println(string(signature))
 
 	_, err = http.Post(url, "application/json", bytes.NewReader(data))
 	if err != nil {

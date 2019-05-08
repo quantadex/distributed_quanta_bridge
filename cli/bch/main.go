@@ -10,10 +10,10 @@ import (
 )
 
 func main() {
-	config, quanta, rdb, kdb, log := cli.Setup()
+	config, quanta, rdb, kdb, log, secrets := cli.Setup()
 
 	// setup coin
-	coin, err := coin.NewBCHCoin(config.BchRpc, crypto.GetChainCfgByStringBCH(config.BchNetwork), config.BchSigners, config.BchRpcUser, config.BchRpcPassword, config.GrapheneSeedPrefix)
+	coin, err := coin.NewBCHCoin(config.BchRpc, crypto.GetChainCfgByStringBCH(config.BchNetwork), secrets.BchSigners, secrets.BchRpcUser, secrets.BchRpcPassword, secrets.GrapheneSeedPrefix)
 	if err != nil {
 		panic(fmt.Errorf("cannot create bch coin"))
 	}

@@ -32,7 +32,12 @@ func TestLTCEncodeRefund(t *testing.T) {
 
 	account := "pooja5"
 	litecoin := client.(*LiteCoin)
-	litecoin.Client.Generate(101)
+	blockId, err := litecoin.GetTopBlockID()
+	assert.NoError(t, err)
+
+	if blockId < 101 {
+		litecoin.Client.Generate(101)
+	}
 	msig, err := litecoin.GenerateMultisig(account)
 
 	litecoin.crosschainAddr = map[string]string{msig: account}
@@ -120,6 +125,11 @@ func TestDecodeLTC(t *testing.T) {
 	assert.NoError(t, err)
 
 	litecoin := client.(*LiteCoin)
+	blockId, err := litecoin.GetTopBlockID()
+	assert.NoError(t, err)
+	if blockId < 101 {
+		litecoin.Client.Generate(101)
+	}
 	addr1, err := litecoin.GenerateMultisig("crosschain2")
 	assert.NoError(t, err)
 	addr2, err := litecoin.GenerateMultisig("token_sale")
@@ -162,6 +172,11 @@ func TestEncodeWithMultipleInputsLTC(t *testing.T) {
 	assert.NoError(t, err)
 
 	litecoin := client.(*LiteCoin)
+	blockId, err := litecoin.GetTopBlockID()
+	assert.NoError(t, err)
+	if blockId < 101 {
+		litecoin.Client.Generate(101)
+	}
 
 	addr1, err := litecoin.GenerateMultisig("aaa1")
 	assert.NoError(t, err)

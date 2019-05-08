@@ -31,7 +31,12 @@ func TestEncodeRefundBCH(t *testing.T) {
 	assert.NoError(t, err)
 
 	bch := client.(*BCH)
-	bch.Client.Generate(101)
+	blockId, err := bch.GetTopBlockID()
+	assert.NoError(t, err)
+
+	if blockId < 101 {
+		bch.Client.Generate(101)
+	}
 
 	addr1, err := bch.GenerateMultisig("aaa1")
 	addr2, err := bch.GenerateMultisig("2")
@@ -119,6 +124,12 @@ func TestDecodeBCH(t *testing.T) {
 	assert.NoError(t, err)
 
 	bch := client.(*BCH)
+	blockId, err := bch.GetTopBlockID()
+	assert.NoError(t, err)
+
+	if blockId < 101 {
+		bch.Client.Generate(101)
+	}
 
 	addr1, err := bch.GenerateMultisig("aaa1")
 	assert.NoError(t, err)
@@ -162,6 +173,13 @@ func TestEncodeWithMultipleInputsBCH(t *testing.T) {
 	assert.NoError(t, err)
 
 	bch := client.(*BCH)
+	blockId, err := bch.GetTopBlockID()
+	assert.NoError(t, err)
+
+	if blockId < 101 {
+		bch.Client.Generate(101)
+	}
+
 	addr1, err := bch.GenerateMultisig("aaa1")
 	assert.NoError(t, err)
 	addr2, err := bch.GenerateMultisig("2")
