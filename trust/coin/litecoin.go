@@ -244,15 +244,21 @@ func (b *LiteCoin) GetDepositsInBlock(blockID int64, trustAddress map[string]str
 		return nil, errors.Wrap(err, "failed to get unspent")
 	}
 
-	txidMap := make(map[string]btcjson.ListUnspentResult)
+	txidMap := make(map[string][]btcjson.ListUnspentResult)
 	for _, e := range unspent {
-		txidMap[e.TxID] = e
+		if value, ok := txidMap[e.TxID]; ok {
+			value = append(value, e)
+			txidMap[e.TxID] = value
+		} else {
+			value := []btcjson.ListUnspentResult{e}
+			txidMap[e.TxID] = value
+		}
 	}
 
 	events := []*Deposit{}
 
 	for _, tx := range block.Transactions {
-		if _, ok := txidMap[tx.TxHash().String()]; ok {
+		if value, ok := txidMap[tx.TxHash().String()]; ok {
 			txHash := tx.TxHash()
 			//currentTx, err := b.Client.GetRawTransactionVerbose(&txHash)
 			//if err != nil {
@@ -290,22 +296,24 @@ func (b *LiteCoin) GetDepositsInBlock(blockID int64, trustAddress map[string]str
 			//	}
 			//}
 
-			unspent := txidMap[tx.TxHash().String()]
-			toAddr := unspent.Address
+			for _, unspent := range value {
+				//unspent := txidMap[tx.TxHash().String()]
+				toAddr := unspent.Address
 
-			if quantaAddr, ok := trustAddress[toAddr]; ok {
-				amount, err := ltcutil.NewAmount(unspent.Amount)
-				if err != nil {
-					return nil, errors.Wrap(err, "unable to create new amount")
+				if quantaAddr, ok := trustAddress[toAddr]; ok {
+					amount, err := ltcutil.NewAmount(unspent.Amount)
+					if err != nil {
+						return nil, errors.Wrap(err, "unable to create new amount")
+					}
+					events = append(events, &Deposit{
+						QuantaAddr: quantaAddr,
+						CoinName:   b.Blockchain(),
+						Amount:     int64(amount),
+						BlockID:    blockID,
+						Tx:         txHash.String(),
+						BlockHash:  blockHash.String(),
+					})
 				}
-				events = append(events, &Deposit{
-					QuantaAddr: quantaAddr,
-					CoinName:   b.Blockchain(),
-					Amount:     int64(amount),
-					BlockID:    blockID,
-					Tx:         txHash.String(),
-					BlockHash:  blockHash.String(),
-				})
 			}
 
 		}
