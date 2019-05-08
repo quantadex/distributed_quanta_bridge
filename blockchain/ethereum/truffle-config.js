@@ -47,7 +47,8 @@ module.exports = {
                   "https://mainnet.infura.io/v3/" + process.env.INFURA_API_KEY)
           },
           network_id: 1,
-          gasPrice: 2500000000
+          gasPrice: 4000000000,
+          gas: 1000000
       },
   },
   solc: {
