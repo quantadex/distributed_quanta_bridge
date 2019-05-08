@@ -9,7 +9,7 @@ WORKDIR $GOPATH/src/github.com/quantadex/distributed_quanta_bridge
 ENV OUTDIR=$GOPATH/src/github.com/quantadex/distributed_quanta_bridge
 
 COPY Gopkg.toml Gopkg.lock ./
-#RUN dep ensure --vendor-only
+RUN dep ensure --vendor-only
 COPY . .
 RUN $OUTDIR/build.sh
 
