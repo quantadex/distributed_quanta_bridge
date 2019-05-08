@@ -26,6 +26,7 @@ type AddressChange struct {
 	Blockchain string
 	QuantaAddr string
 	Address    string
+	Counter	   uint64
 }
 
 func NewAddressConsensus(logger logger.Logger, trustNode *TrustNode, db *db.DB, kv kv_store.KVStore, minBlock int64) *AddressConsensus {

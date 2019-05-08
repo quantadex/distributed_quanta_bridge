@@ -31,6 +31,7 @@ type Server struct {
 	coinNames     []string
 	coins         []coin.Coin
 	addressChange *AddressConsensus
+	counter		  uint64
 }
 
 func NewApiServer(trustNode *TrustNode, coinNames []string, publicKey string, listenIp string, kv kv_store.KVStore, db *db.DB, url string, logger logger.Logger) *Server {
@@ -133,7 +134,8 @@ func (server *Server) addressHandler(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		err = server.addressChange.GetConsensus(AddressChange{blockchain, quanta, addr[0].Address})
+		err = server.addressChange.GetConsensus(AddressChange{blockchain, quanta, addr[0].Address, server.counter})
+		server.counter++
 		if err != nil {
 			server.logger.Errorf("Could not agree on address change:", err.Error())
 			w.WriteHeader(http.StatusInternalServerError)
