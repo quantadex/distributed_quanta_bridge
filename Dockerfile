@@ -2,17 +2,16 @@ FROM golang:1.12.1-alpine3.9 as builder
 
 USER root:root
 
-RUN apk add --no-cache gcc musl-dev git
+RUN apk add --no-cache gcc musl-dev git git-lfs
 RUN go get -u github.com/golang/dep/cmd/dep
-
 WORKDIR $GOPATH/src/github.com/quantadex
 
 ARG token
 RUN git config --global url."https://$token@github.com/quantadex".insteadOf "https://github.com/quantadex"
-RUN git clone --single-branch --branch graphene https://github.com/quantadex/distributed_quanta_bridge
+RUN git clone --depth=1 --single-branch --branch graphene https://github.com/quantadex/distributed_quanta_bridge
 
 WORKDIR $GOPATH/src/github.com/quantadex/distributed_quanta_bridge
-RUN dep ensure --vendor-only
+RUN tar xvf vendor.tar
 RUN git reset --hard
 RUN ./build.sh
 
