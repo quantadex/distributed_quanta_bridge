@@ -3,8 +3,6 @@
 set -x
 pwd
 
-dep ensure --vendor-only
-
 cd node
 go build -ldflags "-X main.BuildStamp=`date -u '+%Y-%m-%d_%I:%M:%S%p'`" # -X main.GitHash=`git rev-parse HEAD`"
 cd ../cli/bitcoin

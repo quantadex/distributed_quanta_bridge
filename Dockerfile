@@ -12,6 +12,8 @@ RUN git config --global url."https://$token@github.com/quantadex".insteadOf "htt
 RUN git clone --single-branch --branch graphene https://github.com/quantadex/distributed_quanta_bridge
 
 WORKDIR $GOPATH/src/github.com/quantadex/distributed_quanta_bridge
+RUN dep ensure --vendor-only
+RUN git reset --hard
 RUN ./build.sh
 
 FROM alpine:3.7
