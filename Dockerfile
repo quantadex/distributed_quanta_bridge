@@ -5,13 +5,14 @@ USER root:root
 RUN apk add --no-cache gcc musl-dev git
 RUN go get -u github.com/golang/dep/cmd/dep
 
-WORKDIR $GOPATH/src/github.com/quantadex/distributed_quanta_bridge
-ENV OUTDIR=$GOPATH/src/github.com/quantadex/distributed_quanta_bridge
+WORKDIR $GOPATH/src/github.com/quantadex
 
-COPY Gopkg.toml Gopkg.lock ./
-RUN dep ensure --vendor-only
-COPY . .
-RUN $OUTDIR/build.sh
+ARG token
+RUN git config --global url."https://$token@github.com/quantadex".insteadOf "https://github.com/quantadex"
+RUN git clone --single-branch --branch graphene https://github.com/quantadex/distributed_quanta_bridge
+
+WORKDIR $GOPATH/src/github.com/quantadex/distributed_quanta_bridge
+RUN ./build.sh
 
 FROM alpine:3.7
 
