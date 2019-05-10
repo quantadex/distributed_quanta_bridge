@@ -23,6 +23,7 @@ jobs:
     - checkout
     - run: cd blockchain && docker-compose up -d
 #    - run: curl -v http://litecoind:19332
+    - run: tar xvf vendor.tar
     - run:
         name: run_test
         command: |
