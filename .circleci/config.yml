@@ -1,8 +1,8 @@
 version: 2
 jobs:
   build:
-    - machine: true
-    - branches:
+    machine: true
+    branches:
       only:
       - graphene
     docker:
