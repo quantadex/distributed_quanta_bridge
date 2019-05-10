@@ -10,7 +10,7 @@ jobs:
     environment: # environment variables for the build itself
       TEST_RESULTS: /tmp/test-results # path to where test results will be saved
     steps:
-    - run: mkdir -p /go/src/github.com/quantadex/distributed_quanta_bridge
+    - run: mkdir -p /go/src/github.com/quantadex/distributed_quanta_bridge/reports
     - run:
         name: Install Docker Compose
         command: |
@@ -22,7 +22,7 @@ jobs:
         docker_layer_caching: true # (3)
     - checkout
     - run: cd blockchain && docker-compose up -d
-    - run: curl -v http://litecoind:19332
+#    - run: curl -v http://litecoind:19332
     - run:
         name: run_test
         command: |
