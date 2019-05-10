@@ -50,10 +50,11 @@ jobs:
 #    - setup_remote_docker:
 #        docker_layer_caching: true
     - run: cd blockchain && docker-compose up -d
-    - run: curl -v http://litecoind:19332
+#   - run: curl -v http://litecoind:19332
     - run:
         name: run_test
         command: |
+          echo $WORKSPACE
           for name in common node registrar trust; do
               echo "Testing $name..."
               rm -f ./reports/report_$name.xml
