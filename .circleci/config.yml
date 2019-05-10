@@ -37,11 +37,11 @@ jobs:
         command: git lfs pull
     - run: tar xvf vendor.tar
 #    - run: mkdir -p ~/go/src/github.com/quantadex/distributed_quanta_bridge/reports
-    - run:
-        name: Setup PSQL Databases
-        command: |
-          sudo apt install -y postgresql-client
-          createdb -h localhost crosschain_1 -U postgres
+#    - run:
+#        name: Setup PSQL Databases
+#        command: |
+#          sudo apt install -y postgresql-client
+#          createdb -h localhost crosschain_1 -U postgres
     - run:
         name: Install Docker Compose
         command: |
