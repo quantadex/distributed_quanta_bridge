@@ -9,7 +9,7 @@ jobs:
     - image: circleci/postgres:9.6-alpine
       environment:
         - POSTGRES_USER: postgres
-        - POSTGRES_DB: circle_test
+        - POSTGRES_DB: crosschain_0
     working_directory: /go/src/github.com/quantadex/distributed_quanta_bridge
     environment: # environment variables for the build itself
       TEST_RESULTS: /tmp/test-results # path to where test results will be saved
