@@ -13,9 +13,9 @@ jobs:
     - image: quantalabs/litecoin-core:latest
       command: litecoind -regtest=1 -rpcallowip=0.0.0.0/0 -rpcuser=user -rpcpassword=123 -deprecatedrpc=signrawtransaction -txindex -deprecatedrpc=accounts -rpcport=19332 -printtoconsole
     - image: zquestz/bitcoin-abc:0.19.2
-      command: bitcoind -regtest=1 -rpcallowip=0.0.0.0/0 -rpcuser=user -rpcpassword=123 -deprecatedrpc=signrawtransaction  -txindex -deprecatedrpc=accounts -rpcbind=0.0.0.0:18333
+      command: bitcoind -regtest=1 -rpcallowip=0.0.0.0/0 -rpcuser=user -rpcpassword=123 -deprecatedrpc=signrawtransaction  -txindex -deprecatedrpc=accounts -port=18333
     - image: nicolasdorier/docker-bitcoin:0.17.0
-      command: bitcoind -regtest=1 -rpcallowip=0.0.0.0/0 -rpcuser=user -rpcpassword=123 -deprecatedrpc=signrawtransaction -txindex -deprecatedrpc=accounts -rpcbind=0.0.0.0:18332
+      command: bitcoind -regtest=1 -rpcallowip=0.0.0.0/0 -rpcuser=user -rpcpassword=123 -deprecatedrpc=signrawtransaction -txindex -deprecatedrpc=accounts -port18332
     working_directory: /go/src/github.com/quantadex/distributed_quanta_bridge
     environment: # environment variables for the build itself
       TEST_RESULTS: /tmp/test-results # path to where test results will be saved
