@@ -5,6 +5,7 @@ jobs:
       only:
       - graphene
     docker:
+    - machine: true
     - image: circleci/golang:1.12 #
     - image: circleci/postgres:9.6-alpine
       environment:
@@ -42,6 +43,13 @@ jobs:
         command: |
           sudo apt install -y postgresql-client
           createdb -h localhost crosschain_1 -U postgres
+    - run:
+        name: Install Docker Compose
+        command: |
+          curl -L https://github.com/docker/compose/releases/download/1.19.0/docker-compose-`uname -s`-`uname -m` > ~/docker-compose
+          chmod +x ~/docker-compose
+          sudo mv ~/docker-compose /usr/local/bin/docker-compose
+    - run: cd blockchain && docker-compose up -d
     - run:
         name: run_test
         command: |
