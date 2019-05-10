@@ -23,6 +23,15 @@ jobs:
     - checkout
     - run: cd blockchain && docker-compose up -d
 #    - run: curl -v http://litecoind:19332
+    - run:
+        name: Install checkout requirements
+        command: |
+          curl -s https://packagecloud.io/install/repositories/github/git-lfs/script.deb.sh | sudo bash
+          sudo apt-get install git-lfs
+          git lfs install
+    - run:
+        name: Checkout binaries
+        command: git lfs pull
     - run: tar xvf vendor.tar
     - run:
         name: run_test
