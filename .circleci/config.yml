@@ -22,6 +22,7 @@ jobs:
     environment: # environment variables for the build itself
       TEST_RESULTS: /tmp/test-results # path to where test results will be saved
     steps:
+    - run: chown -R $USER:$USER /go/src/github.com/quantadex/distributed_quanta_bridge
     - run: mkdir -p /go/src/github.com/quantadex/distributed_quanta_bridge
     - run: go get -u github.com/tebeka/go2xunit
     - checkout
