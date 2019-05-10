@@ -6,7 +6,7 @@ jobs:
       - graphene
     docker:
     - image: circleci/golang:1.12 #
-    working_directory: /go/src/github.com/CircleCI-Public/circleci-demo-go\
+    working_directory: /go/src/github.com/quantadex/distributed_quanta_bridge\
     environment: # environment variables for the build itself
       TEST_RESULTS: /tmp/test-results # path to where test results will be saved
     steps:
