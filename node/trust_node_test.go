@@ -872,6 +872,7 @@ func TestLTCWithdrawal(t *testing.T) {
 func TestBTCDeposit(t *testing.T) {
 	r := StartRegistry(2, ":6000")
 	nodes := StartNodes(test.GRAPHENE_ISSUER, test.GRAPHENE_TRUST, test.ETHER_NETWORKS[test.ROPSTEN])
+
 	time.Sleep(time.Millisecond * 250)
 
 	depositResult := make(chan control.DepositResult)
