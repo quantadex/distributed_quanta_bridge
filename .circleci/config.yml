@@ -20,18 +20,18 @@ jobs:
     - setup_remote_docker:   # (2)
         docker_layer_caching: true # (3)
     - checkout
-      - run: cd blockchain && docker-compose up -d
-      - run: curl -v http://litecoind:19332
-      - run:
-          name: run_test
-          command: |
-            for name in common node registrar trust; do
-                echo "Testing $name..."
-                rm -f ./reports/report_$name.xml
-                2>&1 go test -v ./$name/... | tee gotest_$name.out
-                $WORKSPACE/bin/go2xunit -fail -input gotest_$name.out -output ./reporst/report_$name.xml || :
-                echo
-            done
+    - run: cd blockchain && docker-compose up -d
+    - run: curl -v http://litecoind:19332
+    - run:
+        name: run_test
+        command: |
+          for name in common node registrar trust; do
+              echo "Testing $name..."
+              rm -f ./reports/report_$name.xml
+              2>&1 go test -v ./$name/... | tee gotest_$name.out
+              $WORKSPACE/bin/go2xunit -fail -input gotest_$name.out -output ./reporst/report_$name.xml || :
+              echo
+          done
     - store_test_results:
         path: ./reports
     - store_artifacts:
