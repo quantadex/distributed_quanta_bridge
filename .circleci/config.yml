@@ -42,7 +42,7 @@ jobs:
         name: Setup PSQL Databases
         command: |
           sudo apt install -y postgresql-client
-          createdb -h localhost crosschain_1 -O postgres
+          createdb -h localhost crosschain_1 -U postgres
     - run:
         name: run_test
         command: |

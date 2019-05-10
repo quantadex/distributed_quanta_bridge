@@ -138,6 +138,7 @@ func StartNodesWithIndexes(quanta *test.QuantaNodeSecrets, ethereum *test.Ethere
 
 			mutex.Lock()
 			node := bootstrapNode(config, coin, *secrets)
+			node.rDb.Debug()
 			nodes[currentIndex] = node
 			mutex.Unlock()
 
