@@ -10,7 +10,7 @@ jobs:
     environment: # environment variables for the build itself
       TEST_RESULTS: /tmp/test-results # path to where test results will be saved
     steps:
-    - run: mkdir -p
+    - run: mkdir -p /go/src/github.com/quantadex/distributed_quanta_bridge
     - run:
         name: Install Docker Compose
         command: |
