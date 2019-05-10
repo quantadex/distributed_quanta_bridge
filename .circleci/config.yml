@@ -1,30 +1,29 @@
 version: 2
 jobs:
   build:
-    machine: true
+    machine:
+      docker_layer_caching: true
     branches:
       only:
       - graphene
-    docker:
-    - image: circleci/golang:1.12 #
-    - image: circleci/postgres:9.6-alpine
-      environment:
-        - POSTGRES_USER: postgres
-        - POSTGRES_DB: crosschain_0
-    - image: quantalabs/litecoin-core:latest
-      command: litecoind -regtest=1 -rpcallowip=0.0.0.0/0 -rpcuser=user -rpcpassword=123 -deprecatedrpc=signrawtransaction -txindex -deprecatedrpc=accounts -rpcport=19332 -printtoconsole
-    - image: zquestz/bitcoin-abc:0.19.2
-      command: bitcoind -regtest=1 -rpcallowip=0.0.0.0/0 -rpcuser=user -rpcpassword=123 -deprecatedrpc=signrawtransaction  -txindex -deprecatedrpc=accounts -port=18333
-    - image: nicolasdorier/docker-bitcoin:0.17.0
-      command: bitcoind -regtest=1 -rpcallowip=0.0.0.0/0 -rpcuser=user -rpcpassword=123 -deprecatedrpc=signrawtransaction -txindex -deprecatedrpc=accounts -port=18332
+#    docker:
+#    - image: circleci/golang:1.12 #
+#    - image: circleci/postgres:9.6-alpine
+#      environment:
+#        - POSTGRES_USER: postgres
+#        - POSTGRES_DB: crosschain_0
+#    - image: quantalabs/litecoin-core:latest
+#      command: litecoind -regtest=1 -rpcallowip=0.0.0.0/0 -rpcuser=user -rpcpassword=123 -deprecatedrpc=signrawtransaction -txindex -deprecatedrpc=accounts -rpcport=19332 -printtoconsole
+#    - image: zquestz/bitcoin-abc:0.19.2
+#      command: bitcoind -regtest=1 -rpcallowip=0.0.0.0/0 -rpcuser=user -rpcpassword=123 -deprecatedrpc=signrawtransaction  -txindex -deprecatedrpc=accounts -port=18333
+#    - image: nicolasdorier/docker-bitcoin:0.17.0
+#      command: bitcoind -regtest=1 -rpcallowip=0.0.0.0/0 -rpcuser=user -rpcpassword=123 -deprecatedrpc=signrawtransaction -txindex -deprecatedrpc=accounts -port=18332
     working_directory: /go/src/github.com/quantadex/distributed_quanta_bridge
     environment: # environment variables for the build itself
       TEST_RESULTS: /tmp/test-results # path to where test results will be saved
     steps:
     - run: mkdir -p /go/src/github.com/quantadex/distributed_quanta_bridge
     - run: go get -u github.com/tebeka/go2xunit
-    - setup_remote_docker:   # (2)
-        docker_layer_caching: true # (3)
     - checkout
 #    - run: curl -v http://litecoind:19332
     - run:
@@ -49,6 +48,8 @@ jobs:
           curl -L https://github.com/docker/compose/releases/download/1.19.0/docker-compose-`uname -s`-`uname -m` > ~/docker-compose
           chmod +x ~/docker-compose
           sudo mv ~/docker-compose /usr/local/bin/docker-compose
+    - setup_remote_docker:
+        docker_layer_caching: true
     - run: cd blockchain && docker-compose up -d
     - run:
         name: run_test
