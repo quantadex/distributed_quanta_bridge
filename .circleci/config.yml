@@ -1,11 +1,11 @@
 version: 2
 jobs:
   build:
-    branches:
+    - machine: true
+    - branches:
       only:
       - graphene
     docker:
-    - machine: true
     - image: circleci/golang:1.12 #
     - image: circleci/postgres:9.6-alpine
       environment:
