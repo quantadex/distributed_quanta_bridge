@@ -25,7 +25,6 @@ jobs:
 #    - run: mkdir -p /go/src/github.com/quantadex/distributed_quanta_bridge
     - run: go get -u github.com/tebeka/go2xunit
     - checkout
-#    - run: curl -v http://litecoind:19332
     - run:
         name: Install checkout requirements
         command: |
@@ -51,6 +50,7 @@ jobs:
 #    - setup_remote_docker:
 #        docker_layer_caching: true
     - run: cd blockchain && docker-compose up -d
+    - run: curl -v http://litecoind:19332
     - run:
         name: run_test
         command: |
