@@ -18,12 +18,11 @@ jobs:
 #      command: bitcoind -regtest=1 -rpcallowip=0.0.0.0/0 -rpcuser=user -rpcpassword=123 -deprecatedrpc=signrawtransaction  -txindex -deprecatedrpc=accounts -port=18333
 #    - image: nicolasdorier/docker-bitcoin:0.17.0
 #      command: bitcoind -regtest=1 -rpcallowip=0.0.0.0/0 -rpcuser=user -rpcpassword=123 -deprecatedrpc=signrawtransaction -txindex -deprecatedrpc=accounts -port=18332
-    working_directory: /home/pooja/go/src/github.com/quantadex/distributed_quanta_bridge
+    working_directory: ~/go/src/github.com/quantadex/distributed_quanta_bridge
     environment: # environment variables for the build itself
       TEST_RESULTS: /tmp/test-results # path to where test results will be saved
     steps:
-    - run: chown -R $USER:$USER /home/pooja
-    - run: mkdir -p /home/pooja/go/src/github.com/quantadex/distributed_quanta_bridge
+#    - run: mkdir -p /go/src/github.com/quantadex/distributed_quanta_bridge
     - run: go get -u github.com/tebeka/go2xunit
     - checkout
 #    - run: curl -v http://litecoind:19332
@@ -37,7 +36,7 @@ jobs:
         name: Checkout binaries
         command: git lfs pull
     - run: tar xvf vendor.tar
-    - run: mkdir -p /home/pooja/go/src/github.com/quantadex/distributed_quanta_bridge/reports
+    - run: mkdir -p /go/src/github.com/quantadex/distributed_quanta_bridge/reports
     - run:
         name: Setup PSQL Databases
         command: |
