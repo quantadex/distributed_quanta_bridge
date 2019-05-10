@@ -39,6 +39,11 @@ jobs:
     - run: tar xvf vendor.tar
     - run: mkdir -p /go/src/github.com/quantadex/distributed_quanta_bridge/reports
     - run:
+        name: Setup PSQL Databases
+        command: |
+          sudo apt install -y postgresql-client
+          createdb -h localhost crosschain_1 -O postgres
+    - run:
         name: run_test
         command: |
           for name in common node registrar trust; do
