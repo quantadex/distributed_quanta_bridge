@@ -10,10 +10,10 @@ import (
 	"github.com/quantadex/distributed_quanta_bridge/registrar/service"
 	"github.com/quantadex/distributed_quanta_bridge/trust/coin"
 	"github.com/spf13/viper"
+	"golang.org/x/crypto/ssh/terminal"
 	"io/ioutil"
 	"path/filepath"
 	"syscall"
-	"golang.org/x/crypto/ssh/terminal"
 )
 
 /**
@@ -93,7 +93,7 @@ func main() {
 			panic(fmt.Errorf("cannot create ethereum listener"))
 		}
 
-		node := bootstrapNode(config, coin, secrets)
+		node := bootstrapNode(config, coin, secrets, false)
 		err = registerNode(config, node)
 		if err != nil {
 			panic(err)

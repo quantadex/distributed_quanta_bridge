@@ -72,7 +72,7 @@ type TrustNode struct {
  *
  * Initialize all sub-modules. Attach to databases.
  */
-func initNode(config common.Config, targetCoin coin.Coin, secrets common.Secrets) (*TrustNode, bool) {
+func initNode(config common.Config, targetCoin coin.Coin, secrets common.Secrets, debugDb bool) (*TrustNode, bool) {
 	var err error
 	node := &TrustNode{}
 	node.doneChan = make(chan bool, 1)
@@ -177,7 +177,9 @@ func initNode(config common.Config, targetCoin coin.Coin, secrets common.Secrets
 	if err != nil {
 		node.log.Error(err.Error())
 	}
-	//node.rDb.Debug()
+	if debugDb {
+		node.rDb.Debug()
+	}
 	node.rDb.Connect(info.Addr, info.User, info.Password, info.Database)
 	db.MigrateTx(node.rDb)
 	db.MigrateKv(node.rDb)
@@ -469,8 +471,8 @@ func (n *TrustNode) run() {
 	}
 }
 
-func bootstrapNode(config common.Config, targetCoin coin.Coin, secrets common.Secrets) *TrustNode {
-	node, success := initNode(config, targetCoin, secrets)
+func bootstrapNode(config common.Config, targetCoin coin.Coin, secrets common.Secrets, debugDb bool) *TrustNode {
+	node, success := initNode(config, targetCoin, secrets, debugDb)
 	if !success {
 		panic("Failed to init node")
 		return nil
