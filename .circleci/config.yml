@@ -8,7 +8,7 @@ jobs:
       - graphene
     working_directory: ~/go/src/github.com/quantadex/distributed_quanta_bridge
     environment:
-      GOPATH: ~/go
+      GOPATH: /home/circleci/go
     steps:
     - run:
         name: Install checkout requirements
