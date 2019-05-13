@@ -3,6 +3,16 @@ jobs:
   build:
     machine:
       docker_layer_caching: true
+      GOROOT: ""
+        GOPATH: "${HOME}/.go_project"
+        PATH: "${GOPATH}/bin:${PATH}"
+        BUILD_PATH: "${GOPATH}/src/github.com/shahpoo415/distributed_quanta_bridge"
+    dependencies:
+      pre:
+      - go get github.com/tools/godep
+      override:
+      - mkdir -p ~/.go_project/src/github.com/shahpoo415
+      - ln -s ${HOME}/distributed_quanta_bridge ${BUILD_PATH}
     branches:
       only:
       - graphene
@@ -51,18 +61,23 @@ jobs:
 #        docker_layer_caching: true
     - run: cd blockchain && docker-compose up -d
 #   - run: curl -v http://litecoind:19332
-    - run:
-        name: run_test
-        command: |
-          echo $WORKSPACE
-          for name in common node registrar trust; do
-              echo "Testing $name..."
-              rm -f ./reports/report_$name.xml
-              2>&1 go test -v ./$name/... | tee gotest_$name.out
-              $WORKSPACE/bin/go2xunit -fail -input gotest_$name.out -output ./reports/report_$name.xml || :
-              echo
-          done
+#    - run:
+#        name: run_test
+#        command: |
+#          echo $WORKSPACE
+#          for name in common node registrar trust; do
+#              echo "Testing $name..."
+#              rm -f ./reports/report_$name.xml
+#              2>&1 go test -v ./$name/... | tee gotest_$name.out
+#              $WORKSPACE/bin/go2xunit -fail -input gotest_$name.out -output ./reports/report_$name.xml || :
+#              echo
+#          done
 #    - store_test_results:
 #        path: ./reports
 #    - store_artifacts:
 #        path: ./reports
+    test:
+      pre:
+      - cd $BUILD_PATH && go vet $(go list ./... | grep -v /vendor/)
+      override:
+      - cd $BUILD_PATH && godep go test -v -race $(go list ./... | grep -v /vendor/)
