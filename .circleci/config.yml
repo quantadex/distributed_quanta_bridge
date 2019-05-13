@@ -3,14 +3,13 @@ jobs:
   build:
     machine:
       docker_layer_caching: true
-      GOPATH: "${HOME}/go"
-      PATH: "${GOPATH}/bin:${PATH}"
     branches:
       only:
       - graphene
     working_directory: ~/go/src/github.com/quantadex/distributed_quanta_bridge
     environment:
-      TEST_RESULTS: /tmp/test-results
+      GOPATH: "${HOME}/go"
+      PATH: "${GOPATH}/bin:${PATH}"
     steps:
     - run:
         name: Install checkout requirements
