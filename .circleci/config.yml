@@ -4,9 +4,9 @@ jobs:
     machine:
       docker_layer_caching: true
       GOROOT: ""
-        GOPATH: "${HOME}/.go_project"
-        PATH: "${GOPATH}/bin:${PATH}"
-        BUILD_PATH: "${GOPATH}/src/github.com/shahpoo415/distributed_quanta_bridge"
+      GOPATH: "${HOME}/.go_project"
+      PATH: "${GOPATH}/bin:${PATH}"
+      BUILD_PATH: "${GOPATH}/src/github.com/shahpoo415/distributed_quanta_bridge"
     dependencies:
       pre:
       - go get github.com/tools/godep
