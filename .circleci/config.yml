@@ -68,7 +68,7 @@ jobs:
           for name in common node registrar trust; do
               echo "Testing $name..."
               rm -f ./reports/report_$name.xml
-              2>&1 go test -v ./$name/... | tee gotest_$name.out
+              2>&1 godep go test -v ./$name/... | tee gotest_$name.out
               $WORKSPACE/bin/go2xunit -fail -input gotest_$name.out -output ./reports/report_$name.xml || :
               echo
           done
