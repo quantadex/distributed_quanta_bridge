@@ -3,21 +3,14 @@ jobs:
   build:
     machine:
       docker_layer_caching: true
-      environment:
-        IMPORT_PATH: "github.com/quocble/distributed_quanta_bridge"
     branches:
       only:
       - graphene
-#    working_directory: ~/go/src/github.com/quantadex/distributed_quanta_bridge
+    working_directory: ~/go/src/github.com/quantadex/distributed_quanta_bridge
     environment:
       TEST_RESULTS: /tmp/test-results
-    dependencies:
-      pre:
-      - go get github.com/tools/godep
-      override:
-      - mkdir -p "$GOPATH/src/$IMPORT_PATH"
-      - rsync -azC --delete ./ "$GOPATH/src/$IMPORT_PATH/"
     steps:
+    - run: go get github.com/jstemmer/go-junit-report
     - run: go get -u github.com/tebeka/go2xunit
     - checkout
     - run:
@@ -31,7 +24,7 @@ jobs:
         command: git lfs pull
     - run: tar xvf vendor.tar
     - run: ls -a
-#    - run: mkdir -p ~/go/src/github.com/quantadex/distributed_quanta_bridge/reports
+    - run: mkdir -p ~/go/src/github.com/quantadex/distributed_quanta_bridge/TEST_RESULTS
     - run:
         name: Install Docker Compose
         command: |
@@ -50,11 +43,15 @@ jobs:
 #              $WORKSPACE/bin/go2xunit -fail -input gotest_$name.out -output ./reports/report_$name.xml || :
 #              echo
 #          done
-    test:
-      pre:
-      - go vet ./...
-      override:
-      - godep go test ./...
+    - run:
+        name: Run unit tests
+        command: |
+          trap "go-junit-report <${TEST_RESULTS}/go-test.out > ${TEST_RESULTS}/go-test-report.xml" EXIT
+          make test | tee ${TEST_RESULTS}/go-test.out
+
+    - run: make # pull and build dependencies for the project
+
+
 #    - store_test_results:
 #        path: ./reports
 #    - store_artifacts:
