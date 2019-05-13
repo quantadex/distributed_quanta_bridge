@@ -43,8 +43,7 @@ jobs:
 #              $WORKSPACE/bin/go2xunit -fail -input gotest_$name.out -output ./reports/report_$name.xml || :
 #              echo
 #          done
-    - run: touch ~/go/src/github.com/quantadex/distributed_quanta_bridge/TEST_RESULTS/go-test.out
-    - run: touch ~/go/src/github.com/quantadex/distributed_quanta_bridge/TEST_RESULTS/go-test-report.xml
+    - run: touch ~/tmp/test-results/go-test.out
     - run:
         name: Run unit tests
         command: |
