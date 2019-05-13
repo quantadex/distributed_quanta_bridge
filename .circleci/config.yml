@@ -62,23 +62,22 @@ jobs:
 #        docker_layer_caching: true
     - run: cd blockchain && docker-compose up -d
 #   - run: curl -v http://litecoind:19332
-    - run:
-        name: run_test
-        command: |
-          echo $WORKSPACE
-          for name in common node registrar trust; do
-              echo "Testing $name..."
-              rm -f ./reports/report_$name.xml
-              2>&1 godep go test -v ./$name/... | tee gotest_$name.out
-              $WORKSPACE/bin/go2xunit -fail -input gotest_$name.out -output ./reports/report_$name.xml || :
-              echo
-          done
+    - run: cd $BUILD_PATH && godep go test -v
+#        name: run_test
+#        command: |
+#          for name in common node registrar trust; do
+#              echo "Testing $name..."
+#              rm -f ./reports/report_$name.xml
+#              2>&1 godep go test -v ./$name/... | tee gotest_$name.out
+#              $WORKSPACE/bin/go2xunit -fail -input gotest_$name.out -output ./reports/report_$name.xml || :
+#              echo
+#          done
 #    - store_test_results:
 #        path: ./reports
 #    - store_artifacts:
 #        path: ./reports
-    test:
-      pre:
-      - cd $BUILD_PATH && go vet $(go list ./... | grep -v /vendor/)
-      override:
-      - cd $BUILD_PATH && godep go test -v -race $(go list ./... | grep -v /vendor/)
+#    test:
+#      pre:
+#      - cd $BUILD_PATH && go vet $(go list ./... | grep -v /vendor/)
+#      override:
+#      - cd $BUILD_PATH && godep go test -v -race $(go list ./... | grep -v /vendor/)
