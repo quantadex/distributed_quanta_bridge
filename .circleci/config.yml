@@ -5,13 +5,10 @@ jobs:
       docker_layer_caching: true
       GOPATH: "${HOME}/go"
       PATH: "${GOPATH}/bin:${PATH}"
-    dependencies:
-      pre:
-      - go get github.com/tools/godep
     branches:
       only:
       - graphene
-    working_directory: $CIRCLE_WORKING_DIRECTORY
+    working_directory: ~/go/src/github.com/quantadex/distributed_quanta_bridge
     environment:
       TEST_RESULTS: /tmp/test-results
     steps:
@@ -21,15 +18,14 @@ jobs:
           curl -s https://packagecloud.io/install/repositories/github/git-lfs/script.deb.sh | sudo bash
           sudo apt-get install git-lfs
           git lfs install
+    - run: go get -u github.com/tebeka/go2xunit
+    - checkout
     - run:
         name: Checkout binaries
         command: git lfs pull
-    - run: go get github.com/tools/godep
-    - run: go get -u github.com/tebeka/go2xunit
-    - checkout
     - run: ls -a && pwd
     - run: tar xvf vendor.tar
-    - run: mkdir -p ~/go/src/github.com/quantadex/distributed_quanta_bridge/reports
+    - run: mkdir -p reports
     - run:
         name: Install Docker Compose
         command: |
