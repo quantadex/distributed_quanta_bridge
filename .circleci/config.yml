@@ -8,7 +8,7 @@ jobs:
       - graphene
     working_directory: ~/go/src/github.com/quantadex/distributed_quanta_bridge
     environment:
-      GOPATH: "$HOME/go"
+      GOPATH: ~/go
     steps:
     - run:
         name: Install checkout requirements
@@ -41,7 +41,7 @@ jobs:
 #              echo "Testing $name..."
 #              rm -f ./reports/report_$name.xml
 #              2>&1 go test -v ./$name/... | tee gotest_$name.out
-#              $WORKSPACE/bin/go2xunit -fail -input gotest_$name.out -output ./reports/report_$name.xml || :
+#              $GOPATH/bin/go2xunit -fail -input gotest_$name.out -output ./reports/report_$name.xml || :
 #              echo
 #          done
     - store_test_results:
