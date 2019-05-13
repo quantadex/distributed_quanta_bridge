@@ -3,12 +3,20 @@ jobs:
   build:
     machine:
       docker_layer_caching: true
+      environment:
+        IMPORT_PATH: "github.com/quocble/distributed_quanta_bridge"
     branches:
       only:
       - graphene
-    working_directory: ~/go/src/github.com/quantadex/distributed_quanta_bridge
+#    working_directory: ~/go/src/github.com/quantadex/distributed_quanta_bridge
     environment:
       TEST_RESULTS: /tmp/test-results
+    dependencies:
+      pre:
+      - go get github.com/tools/godep
+      override:
+      - mkdir -p "$GOPATH/src/$IMPORT_PATH"
+      - rsync -azC --delete ./ "$GOPATH/src/$IMPORT_PATH/"
     steps:
     - run: go get -u github.com/tebeka/go2xunit
     - checkout
@@ -32,16 +40,21 @@ jobs:
           sudo mv ~/docker-compose /usr/local/bin/docker-compose
     - run: cd blockchain && docker-compose up -d
 #    - run: curl -v http://litecoind:19332
-    - run:
-        name: run_test
-        command: |
-          for name in common node registrar trust; do
-              echo "Testing $name..."
-              rm -f ./reports/report_$name.xml
-              2>&1 go test -v ./$name/... | tee gotest_$name.out
-              $WORKSPACE/bin/go2xunit -fail -input gotest_$name.out -output ./reports/report_$name.xml || :
-              echo
-          done
+#    - run:
+#        name: run_test
+#        command: |
+#          for name in common node registrar trust; do
+#              echo "Testing $name..."
+#              rm -f ./reports/report_$name.xml
+#              2>&1 go test -v ./$name/... | tee gotest_$name.out
+#              $WORKSPACE/bin/go2xunit -fail -input gotest_$name.out -output ./reports/report_$name.xml || :
+#              echo
+#          done
+    test:
+      pre:
+      - go vet ./...
+      override:
+      - godep go test ./...
 #    - store_test_results:
 #        path: ./reports
 #    - store_artifacts:
