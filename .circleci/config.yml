@@ -43,7 +43,7 @@ jobs:
 #              $WORKSPACE/bin/go2xunit -fail -input gotest_$name.out -output ./reports/report_$name.xml || :
 #              echo
 #          done
-    - run: touch ~/tmp/test-results/go-test.out
+    - run: touch /tmp/test-results/go-test.out
     - run:
         name: Run unit tests
         command: |
