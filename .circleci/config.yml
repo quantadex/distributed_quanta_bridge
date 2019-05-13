@@ -43,11 +43,13 @@ jobs:
 #              $WORKSPACE/bin/go2xunit -fail -input gotest_$name.out -output ./reports/report_$name.xml || :
 #              echo
 #          done
-    - run: make test
-#        name: Run unit tests
-#        command: |
-#          trap "go-junit-report <${TEST_RESULTS}/go-test.out > ${TEST_RESULTS}/go-test-report.xml" EXIT
-#          make test | tee ${TEST_RESULTS}/go-test.out
+    - run: touch ~/go/src/github.com/quantadex/distributed_quanta_bridge/TEST_RESULTS/go-test.out
+    - run: touch ~/go/src/github.com/quantadex/distributed_quanta_bridge/TEST_RESULTS/go-test-report.xml
+    - run:
+        name: Run unit tests
+        command: |
+          trap "go-junit-report <${TEST_RESULTS}/go-test.out > ${TEST_RESULTS}/go-test-report.xml" EXIT
+          make test | tee ${TEST_RESULTS}/go-test.out
 
     - run: make # pull and build dependencies for the project
 
