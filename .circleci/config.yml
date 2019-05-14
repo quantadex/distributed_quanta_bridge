@@ -32,19 +32,19 @@ jobs:
           sudo mv ~/docker-compose /usr/local/bin/docker-compose
     - run: docker run -d -p 5432:5432 postgres
     - run: cd blockchain && docker-compose up -d
-    - run: go test -v -parallel 1 ./node/...
+#    - run: go test -v -parallel 1 ./node/...
 
-#    - run: cd $BUILD_PATH && godep go test ./..
-#    - run:
-#        name: run_test
-#        command: |
-#          for name in common node registrar trust; do
-#              echo "Testing $name..."
-#              rm -f ./reports/report_$name.xml
-#              2>&1 go test -v ./$name/... | tee gotest_$name.out
-#              $GOPATH/bin/go2xunit -fail -input gotest_$name.out -output ./reports/report_$name.xml || :
-#              echo
-#          done
+    - run: cd $BUILD_PATH && godep go test ./..
+    - run:
+        name: run_test
+        command: |
+          for name in common node registrar trust; do
+              echo "Testing $name..."
+              rm -f ./reports/report_$name.xml
+              2>&1 go test -parallel 1 -v ./$name/... | tee gotest_$name.out
+              $GOPATH/bin/go2xunit -fail -input gotest_$name.out -output ./reports/report_$name.xml || :
+              echo
+          done
     - store_test_results:
         path: ./reports
     - store_artifacts:
