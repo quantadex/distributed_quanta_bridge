@@ -192,7 +192,7 @@ func TestWithdrawalGanacheTX(t *testing.T) {
  * Test that we can connect to ganache
  */
 func TestGanacheTX(t *testing.T) {
-	network := test.ETHER_NETWORKS[test.LOCAL]
+	network := test.ETHER_NETWORKS[test.ROPSTEN]
 
 	coin, err := NewEthereumCoin(network.NetworkId, network.Rpc, "c87509a1c067bbde78beb793e6fa76530b6382a4c0241e5e4a9ec0a0f44dc0d3", nil)
 	if err != nil {
@@ -232,7 +232,7 @@ func teardownEthereum() {
 	}
 }
 
-// https://www.philosophicalhacker.com/post/integration-tests-in-go/
+//https://www.philosophicalhacker.com/post/integration-tests-in-go/
 func TestMain(m *testing.M) {
 	if !testing.Short() {
 		setupEthereum()
