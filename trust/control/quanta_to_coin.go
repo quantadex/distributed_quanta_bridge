@@ -291,6 +291,7 @@ func (c *QuantaToCoin) getBlockchainForCoin(coinName string) (string, bool) {
 	return "", false
 }
 func (c *QuantaToCoin) DispatchWithdrawal() {
+	doneFlag := false
 	for {
 		select {
 		case <-time.After(time.Second * 10):
@@ -343,7 +344,11 @@ func (c *QuantaToCoin) DispatchWithdrawal() {
 
 			}
 		case <-c.doneChan:
-			c.logger.Infof("Exiting.")
+			doneFlag = true
+			c.logger.Infof("Exiting quanta to coin.")
+			break
+		}
+		if doneFlag {
 			break
 		}
 	}

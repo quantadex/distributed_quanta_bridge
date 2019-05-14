@@ -348,7 +348,10 @@ func (c *CoinToQuanta) processSubmissions() {
 }
 
 func (c *CoinToQuanta) dispatchIssuance() {
+	c.logger.Infof("Started. %p", c)
+
 	ready := true
+	doneFlag := false
 	for {
 		select {
 		case <-c.readyChan:
@@ -358,6 +361,7 @@ func (c *CoinToQuanta) dispatchIssuance() {
 				_, err := c.quantaChannel.GetTopBlockID()
 				if err != nil {
 					if err.Error() == "connection is shut down" {
+						c.logger.Error("Connection was shutdown, connect...")
 						c.quantaChannel.Reconnect()
 					} else {
 						c.logger.Error("Unhandled error. " + err.Error())
@@ -368,17 +372,22 @@ func (c *CoinToQuanta) dispatchIssuance() {
 			}
 
 		case <-c.doneChan:
-			c.logger.Infof("Exiting.")
+			doneFlag = true
+			break
+		}
+		if doneFlag {
 			break
 		}
 	}
+
+	c.logger.Infof("Exiting coin to quanta. %p", c)
 }
 
 func (c *CoinToQuanta) StartConsensus(tx *coin.Deposit, consensus ConsensusType) (string, error) {
 	txResult := HEX_NULL
 	errResult := error(nil)
 
-	c.logger.Infof("Start new round %s %s to=%s amount=%d type =%d", tx.Tx, tx.CoinName, tx.QuantaAddr, tx.Amount, consensus)
+	c.logger.Infof("%p Start new round %s %s to=%s amount=%d type =%d", c, tx.Tx, tx.CoinName, tx.QuantaAddr, tx.Amount, consensus)
 	var encoded string
 	var err error
 
@@ -443,5 +452,6 @@ func (c *CoinToQuanta) StartConsensus(tx *coin.Deposit, consensus ConsensusType)
 }
 
 func (c *CoinToQuanta) Stop() {
+	c.logger.Infof("CoinToQuanta stopped %p", c)
 	c.doneChan <- true
 }

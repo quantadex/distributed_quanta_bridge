@@ -3,6 +3,8 @@ package db
 import (
 	"github.com/go-pg/pg"
 	"github.com/go-pg/pg/orm"
+	"log"
+
 	//"log"
 	"fmt"
 )
@@ -34,28 +36,30 @@ func (db *DB) Debug() {
 
 func (db *DB) Connect(addr, user, pass, database string) {
 	if db.Drop {
-		db := pg.Connect(&pg.Options{
+		db2 := pg.Connect(&pg.Options{
 			Addr:     addr,
 			User:     user,
 			Password: pass,
 			Database: "postgres",
 		})
 
-		_, err := db.Exec(fmt.Sprintf("SELECT pg_terminate_backend(pid) FROM pg_stat_activity WHERE datname = '%s'", database))
+		_, err := db2.Exec(fmt.Sprintf("SELECT pg_terminate_backend(pid) FROM pg_stat_activity WHERE datname = '%s'", database))
 		if err != nil {
 			panic(err)
 		}
 
-		_, err = db.Exec("DROP DATABASE IF EXISTS " + database)
-		if err != nil {
-			panic(err)
-		}
+		//_, err = db.Exec("DROP DATABASE IF EXISTS " + database)
+		//fmt.Println("Dropping database")
+		//if err != nil {
+		//	panic(err)
+		//}
 
-		_, err = db.Exec("CREATE DATABASE " + database)
+		_, err = db2.Exec("CREATE DATABASE " + database)
+		log.Println("Creating database")
 		if err != nil {
-			panic(err)
+			//panic(err)
 		}
-		db.Close()
+		db2.Close()
 	}
 	db.db = pg.Connect(&pg.Options{
 		Addr:     addr,

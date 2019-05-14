@@ -155,9 +155,13 @@ func StartNodesWithIndexes(quanta *test.QuantaNodeSecrets, ethereum *test.Ethere
 }
 
 func StartNodes(quanta *test.QuantaNodeSecrets, ethereum *test.EthereumTrustSecrets,
-	etherEnv test.EthereumEnv) []*TrustNode {
-	nodes := make([]*TrustNode, 2)
-	return StartNodesWithIndexes(quanta, ethereum, etherEnv, true, []int{0, 1}, nodes)
+	etherEnv test.EthereumEnv, numOfNodes int) []*TrustNode {
+	nodes := make([]*TrustNode, numOfNodes)
+	indexes := make([]int, numOfNodes)
+	for i := range indexes {
+		indexes[i] = i
+	}
+	return StartNodesWithIndexes(quanta, ethereum, etherEnv, true, indexes, nodes)
 }
 
 func StartNodeListener(quanta *test.QuantaNodeSecrets, ethereum *test.EthereumTrustSecrets,
@@ -192,6 +196,9 @@ func StartRegistry(minNodes int, url string) *service.Server {
 }
 
 func StopRegistry(s *service.Server) {
+	path, _ := filepath.Abs(filepath.Dir("manifest.yml"))
+	file := path + "/manifest.yml"
+	os.Remove(file)
 	s.Stop()
 }
 

@@ -539,6 +539,7 @@ func (n *TrustNode) CreateMultisig(blockchain string, accountId string) (*crypto
 func (n *TrustNode) Stop() {
 	n.db.CloseDB()
 	n.doneChan <- true
+	n.cTQ.Stop()
 	n.qTC.Stop()
 	n.listener.Stop()
 	n.restApi.Stop()

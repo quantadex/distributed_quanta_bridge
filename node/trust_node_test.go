@@ -81,8 +81,11 @@ func GetBchSync(node *TrustNode, minConfirm int64) sync.DepositSyncInterface {
 
 func TestRopstenNativeETH(t *testing.T) {
 	r := StartRegistry(2, ":6000")
-	nodes := StartNodes(test.GRAPHENE_ISSUER, test.GRAPHENE_TRUST, test.ETHER_NETWORKS[test.ROPSTEN])
-
+	nodes := StartNodes(test.GRAPHENE_ISSUER, test.GRAPHENE_TRUST, test.ETHER_NETWORKS[test.ROPSTEN], 2)
+	defer func() {
+		StopNodes(nodes, []int{0, 1})
+		StopRegistry(r)
+	}()
 	time.Sleep(time.Millisecond * 250)
 
 	depositResult := make(chan control.DepositResult)
@@ -171,8 +174,6 @@ func TestRopstenNativeETH(t *testing.T) {
 	// TODO: how to detect this successful tx submission handling?
 	// S2018/11/01 16:04:04 I [5100] Successful tx submission 1ef7303e5f49d80feb0c4955a97d63336d79ae7734bd329d4d899f15db43a60d,remove 4249018ETHQDIX3EOMEWN7OLZ3BEIN5DE7MCVSAP6547FFM3FFITQSTFXWUK4XA2NB
 
-	StopNodes(nodes, []int{0, 1})
-	StopRegistry(r)
 }
 
 // Block 4354954: ERC-20  0x719791a052ed86360015e659542d3b0b7f44182e created by 0x9b93a4be348ab36c16ec6861602f84321f24e544  tx=https://ropsten.etherscan.io/tx/0xfc50ed99430174aa791ea9fa0883ef12d1ba7aa3a2daf26f3bb255b8f5f9af1b
@@ -184,7 +185,11 @@ func TestRopstenNativeETH(t *testing.T) {
 func TestRopstenERC20Token(t *testing.T) {
 	r := StartRegistry(2, ":6000")
 	//ercContract := "0x541d973a7168dbbf413eab6993a5e504ec5accb0"
-	nodes := StartNodes(test.GRAPHENE_ISSUER, test.GRAPHENE_TRUST, test.ETHER_NETWORKS[test.ROPSTEN])
+	nodes := StartNodes(test.GRAPHENE_ISSUER, test.GRAPHENE_TRUST, test.ETHER_NETWORKS[test.ROPSTEN], 2)
+	defer func() {
+		StopNodes(nodes, []int{0, 1})
+		StopRegistry(r)
+	}()
 	initialBalance, err := nodes[0].q.GetBalance("SIMPLETOKEN0XDFE1002C2E1AE5E8F4F34BF481900DAAE5351992", "pooja")
 	assert.NoError(t, err)
 
@@ -255,9 +260,6 @@ func TestRopstenERC20Token(t *testing.T) {
 	//assert.Equal(t, initialBalance+float64(0.1), newBalance)
 	fmt.Printf("Initial balance=%f , expecting final balance = %f\n", initialBalance, newBalance)
 	time.Sleep(time.Second * 5)
-
-	StopNodes(nodes, []int{0, 1})
-	StopRegistry(r)
 }
 
 //func TestTrustNode_Stop(t *testing.T) {
@@ -402,7 +404,11 @@ func TestWithdrawal(t *testing.T) {
 	assert.NoError(t, err)
 	println("latest TXID=", txId)
 
-	nodes := StartNodes(test.GRAPHENE_ISSUER, test.GRAPHENE_TRUST, test.ETHER_NETWORKS[test.ROPSTEN])
+	nodes := StartNodes(test.GRAPHENE_ISSUER, test.GRAPHENE_TRUST, test.ETHER_NETWORKS[test.ROPSTEN], 2)
+	defer func() {
+		StopNodes(nodes, []int{0, 1})
+		StopRegistry(r)
+	}()
 
 	withdrawResult := make(chan control.DepositResult)
 
@@ -434,14 +440,15 @@ func TestWithdrawal(t *testing.T) {
 
 	assert.NotNil(t, w, "We expect withdrawal completed")
 	assert.NoError(t, w.Err, "should not get an error")
-
-	StopNodes(nodes, []int{0, 1})
-	StopRegistry(r)
 }
 
 func TestBCHDeposit(t *testing.T) {
 	r := StartRegistry(2, ":6000")
-	nodes := StartNodes(test.GRAPHENE_ISSUER, test.GRAPHENE_TRUST, test.ETHER_NETWORKS[test.ROPSTEN])
+	nodes := StartNodes(test.GRAPHENE_ISSUER, test.GRAPHENE_TRUST, test.ETHER_NETWORKS[test.ROPSTEN], 2)
+	defer func() {
+		StopNodes(nodes, []int{0, 1})
+		StopRegistry(r)
+	}()
 	time.Sleep(time.Millisecond * 250)
 
 	depositResult := make(chan control.DepositResult)
@@ -547,9 +554,6 @@ func TestBCHDeposit(t *testing.T) {
 	assert.NoError(t, w.Err, "should not get an error")
 
 	time.Sleep(time.Second * 5)
-
-	StopNodes(nodes, []int{0, 1})
-	StopRegistry(r)
 }
 
 func TestBCHWithdrawal(t *testing.T) {
@@ -566,7 +570,11 @@ func TestBCHWithdrawal(t *testing.T) {
 	assert.NoError(t, err)
 	println("latest TXID=", txId)
 
-	nodes := StartNodes(test.GRAPHENE_ISSUER, test.GRAPHENE_TRUST, test.ETHER_NETWORKS[test.ROPSTEN])
+	nodes := StartNodes(test.GRAPHENE_ISSUER, test.GRAPHENE_TRUST, test.ETHER_NETWORKS[test.ROPSTEN], 2)
+	defer func() {
+		StopNodes(nodes, []int{0, 1})
+		StopRegistry(r)
+	}()
 
 	withdrawResult := make(chan control.WithdrawalResult)
 
@@ -647,14 +655,15 @@ func TestBCHWithdrawal(t *testing.T) {
 
 	assert.NotNil(t, w, "We expect withdrawal completed")
 	assert.NoError(t, w.Err, "should not get an error")
-
-	StopNodes(nodes, []int{0, 1})
-	StopRegistry(r)
 }
 
 func TestLTCDeposit(t *testing.T) {
 	r := StartRegistry(2, ":6000")
-	nodes := StartNodes(test.GRAPHENE_ISSUER, test.GRAPHENE_TRUST, test.ETHER_NETWORKS[test.ROPSTEN])
+	nodes := StartNodes(test.GRAPHENE_ISSUER, test.GRAPHENE_TRUST, test.ETHER_NETWORKS[test.ROPSTEN], 2)
+	defer func() {
+		StopNodes(nodes, []int{0, 1})
+		StopRegistry(r)
+	}()
 	time.Sleep(time.Millisecond * 250)
 
 	depositResult := make(chan control.DepositResult)
@@ -760,9 +769,6 @@ func TestLTCDeposit(t *testing.T) {
 	assert.NoError(t, w.Err, "should not get an error")
 
 	time.Sleep(time.Second * 5)
-
-	StopNodes(nodes, []int{0, 1})
-	StopRegistry(r)
 }
 
 func TestLTCWithdrawal(t *testing.T) {
@@ -779,7 +785,11 @@ func TestLTCWithdrawal(t *testing.T) {
 	assert.NoError(t, err)
 	println("latest TXID=", txId)
 
-	nodes := StartNodes(test.GRAPHENE_ISSUER, test.GRAPHENE_TRUST, test.ETHER_NETWORKS[test.ROPSTEN])
+	nodes := StartNodes(test.GRAPHENE_ISSUER, test.GRAPHENE_TRUST, test.ETHER_NETWORKS[test.ROPSTEN], 2)
+	defer func() {
+		StopNodes(nodes, []int{0, 1})
+		StopRegistry(r)
+	}()
 
 	withdrawResult := make(chan control.WithdrawalResult)
 
@@ -860,18 +870,15 @@ func TestLTCWithdrawal(t *testing.T) {
 
 	assert.NotNil(t, w, "We expect withdrawal completed")
 	assert.NoError(t, w.Err, "should not get an error")
-
-	//nodes[0].rDb.Close()
-	//nodes[1].rDb.Close()
-	//nodes[0].db.CloseDB()
-	//nodes[1].db.CloseDB()
-	StopNodes(nodes, []int{0, 1})
-	StopRegistry(r)
 }
 
 func TestBTCDeposit(t *testing.T) {
 	r := StartRegistry(2, ":6000")
-	nodes := StartNodes(test.GRAPHENE_ISSUER, test.GRAPHENE_TRUST, test.ETHER_NETWORKS[test.ROPSTEN])
+	nodes := StartNodes(test.GRAPHENE_ISSUER, test.GRAPHENE_TRUST, test.ETHER_NETWORKS[test.ROPSTEN], 2)
+	defer func() {
+		StopNodes(nodes, []int{0, 1})
+		StopRegistry(r)
+	}()
 
 	time.Sleep(time.Millisecond * 250)
 
@@ -897,21 +904,21 @@ func TestBTCDeposit(t *testing.T) {
 		btc.Client.Generate(101)
 	}
 
-	//msig, err := client.GenerateMultisig("pooja")
-	//assert.NoError(t, err)
+	msig, err := client.GenerateMultisig("pooja")
+	assert.NoError(t, err)
 
-	//forwardAddress := &crypto.ForwardInput{
-	//	msig,
-	//	common.HexToAddress(test.GRAPHENE_TRUST.TrustContract),
-	//	"pooja",
-	//	"",
-	//	coin.BLOCKCHAIN_BTC,
-	//}
-	//nodes[0].rDb.AddCrosschainAddress(forwardAddress)
-	//nodes[1].rDb.AddCrosschainAddress(forwardAddress)
+	forwardAddress := &crypto.ForwardInput{
+		msig,
+		common.HexToAddress(test.GRAPHENE_TRUST.TrustContract),
+		"pooja",
+		"",
+		coin.BLOCKCHAIN_BTC,
+	}
+	nodes[0].rDb.AddCrosschainAddress(forwardAddress)
+	nodes[1].rDb.AddCrosschainAddress(forwardAddress)
 
 	//pubKey := "pooja"
-	res, err := http.Post("http://localhost:5200/api/address/BTC/pooja", "", nil)
+	res, err := http.Get("http://localhost:5200/api/address/BTC/pooja")
 	assert.NoError(t, err)
 	assert.Equal(t, res.StatusCode, 200)
 
@@ -977,9 +984,6 @@ func TestBTCDeposit(t *testing.T) {
 	assert.NoError(t, w.Err, "should not get an error")
 
 	time.Sleep(time.Second * 5)
-
-	StopNodes(nodes, []int{0, 1})
-	StopRegistry(r)
 }
 
 func TestBTCWithdrawal(t *testing.T) {
@@ -996,7 +1000,11 @@ func TestBTCWithdrawal(t *testing.T) {
 	assert.NoError(t, err)
 	println("latest TXID=", txId)
 
-	nodes := StartNodes(test.GRAPHENE_ISSUER, test.GRAPHENE_TRUST, test.ETHER_NETWORKS[test.ROPSTEN])
+	nodes := StartNodes(test.GRAPHENE_ISSUER, test.GRAPHENE_TRUST, test.ETHER_NETWORKS[test.ROPSTEN], 2)
+	defer func() {
+		StopNodes(nodes, []int{0, 1})
+		StopRegistry(r)
+	}()
 
 	withdrawResult := make(chan control.WithdrawalResult)
 
@@ -1018,7 +1026,21 @@ func TestBTCWithdrawal(t *testing.T) {
 		btc.Client.Generate(101)
 	}
 
-	res, err := http.Post("http://localhost:5200/api/address/BTC/pooja", "", nil)
+	msig, err := client.GenerateMultisig("pooja")
+	assert.NoError(t, err)
+
+	forwardAddress := &crypto.ForwardInput{
+		msig,
+		common.HexToAddress(test.GRAPHENE_TRUST.TrustContract),
+		"pooja",
+		"",
+		coin.BLOCKCHAIN_BTC,
+	}
+	nodes[0].rDb.AddCrosschainAddress(forwardAddress)
+	nodes[1].rDb.AddCrosschainAddress(forwardAddress)
+
+	pubKey := "pooja"
+	res, err := http.Get("http://localhost:5200/api/address/BTC/" + pubKey)
 	assert.NoError(t, err)
 	assert.Equal(t, res.StatusCode, 200)
 
@@ -1027,12 +1049,13 @@ func TestBTCWithdrawal(t *testing.T) {
 
 	println("Address created ", string(bodyBytes))
 
-	amount, err := btcutil.NewAmount(0.9)
+	amount, err := btcutil.NewAmount(1)
 	address := string(bodyBytes)[13:48]
 	bchAddr, err := btcutil.DecodeAddress(address, &chaincfg.RegressionNetParams)
 	assert.NoError(t, err)
 
-	_, err = btc.Client.SendToAddress(bchAddr, amount)
+	tx, err := btc.Client.SendToAddress(bchAddr, amount)
+	fmt.Println("tx = ", tx)
 	assert.NoError(t, err)
 
 	btc.Client.Generate(1)
@@ -1061,7 +1084,4 @@ func TestBTCWithdrawal(t *testing.T) {
 
 	assert.NotNil(t, w, "We expect withdrawal completed")
 	assert.NoError(t, w.Err, "should not get an error")
-
-	StopNodes(nodes, []int{0, 1})
-	StopRegistry(r)
 }
