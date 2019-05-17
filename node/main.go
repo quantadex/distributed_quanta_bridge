@@ -8,7 +8,6 @@ import (
 	"github.com/quantadex/distributed_quanta_bridge/common/logger"
 	"github.com/quantadex/distributed_quanta_bridge/node/common"
 	"github.com/quantadex/distributed_quanta_bridge/registrar/service"
-	"github.com/quantadex/distributed_quanta_bridge/trust/coin"
 	"github.com/spf13/viper"
 	"golang.org/x/crypto/ssh/terminal"
 	"io/ioutil"
@@ -22,6 +21,7 @@ import (
  * Runs the trust node
  */
 func main() {
+	viper.SetConfigType("yaml")
 
 	configFile := flag.String("config", "config.yml", "configuration file")
 	secretsFile := flag.String("secrets", "secrets.yml", "secrets file")
@@ -29,6 +29,8 @@ func main() {
 
 	encryptFile := flag.String("encrypt", "", "encrypt file")
 	encryptOutFile := flag.String("out", "config.yml.enc", "output encrypt file")
+
+	enableSyncAddresses := flag.String("sync_addresses", "", "sync addresses")
 	flag.Parse()
 
 	if *encryptFile != "" {
@@ -45,9 +47,6 @@ func main() {
 		}
 
 	} else {
-		flag.Parse()
-		viper.SetConfigType("yaml")
-
 		fmt.Print("Password: ")
 		password, err := terminal.ReadPassword(int(syscall.Stdin))
 		secrets, err := crypto.DecryptSecretsFile(*secretsFile, string(password))
@@ -75,31 +74,39 @@ func main() {
 			panic(fmt.Errorf("Fatal error config file: %s \n", err))
 		}
 
-		if *enableRegistry {
-			// start registrar if we need to
-			logger, _ := logger.NewLogger("registrar")
-			registrarUrl := fmt.Sprintf(":%d", config.RegistrarPort)
-			s := service.NewServer(service.NewRegistry(config.MinNodes, path), registrarUrl, logger)
-			s.DoHealthCheck(5)
-			go s.Start()
-		}
+		if *enableSyncAddresses != "" {
+			node, success := initNode(config, secrets, false)
+			if !success {
+				panic("Failed to init node")
+			}
+			crosschainAddresses := node.rDb.GetCrosschainByBlockchain(*enableSyncAddresses)
+			for _, addr := range crosschainAddresses {
+				_, err := node.CreateMultisig(*enableSyncAddresses, addr.QuantaAddr)
+				if err != nil {
+					panic("Could not generate multisig address")
+				}
+			}
+		} else {
+			if *enableRegistry {
+				// start registrar if we need to
+				logger, _ := logger.NewLogger("registrar")
+				registrarUrl := fmt.Sprintf(":%d", config.RegistrarPort)
+				s := service.NewServer(service.NewRegistry(config.MinNodes, path), registrarUrl, logger)
+				s.DoHealthCheck(5)
+				go s.Start()
+			}
 
-		if *portNumber != 0 {
-			config.ListenPort = *portNumber
-		}
+			if *portNumber != 0 {
+				config.ListenPort = *portNumber
+			}
 
-		coin, err := coin.NewEthereumCoin(config.EthereumNetworkId, config.EthereumRpc, secrets.EthereumKeyStore, config.Erc20Mapping)
-		if err != nil {
-			panic(fmt.Errorf("cannot create ethereum listener"))
-		}
+			node := bootstrapNode(config, secrets, false)
 
-		node := bootstrapNode(config, coin, secrets, false)
-		err = registerNode(config, node)
-		if err != nil {
-			panic(err)
+			err = registerNode(config, node)
+			if err != nil {
+				panic(err)
+			}
+			node.run()
 		}
-
-		node.run()
 	}
-
 }

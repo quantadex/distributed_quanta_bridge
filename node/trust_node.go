@@ -72,7 +72,7 @@ type TrustNode struct {
  *
  * Initialize all sub-modules. Attach to databases.
  */
-func initNode(config common.Config, targetCoin coin.Coin, secrets common.Secrets, debugDb bool) (*TrustNode, bool) {
+func initNode(config common.Config, secrets common.Secrets, debugDb bool) (*TrustNode, bool) {
 	var err error
 	node := &TrustNode{}
 	node.doneChan = make(chan bool, 1)
@@ -185,7 +185,11 @@ func initNode(config common.Config, targetCoin coin.Coin, secrets common.Secrets
 	db.MigrateKv(node.rDb)
 	db.MigrateXC(node.rDb)
 
-	node.eth = targetCoin
+	eth, err := coin.NewEthereumCoin(config.EthereumNetworkId, config.EthereumRpc, secrets.EthereumKeyStore, config.Erc20Mapping)
+	if err != nil {
+		panic(fmt.Errorf("cannot create ethereum coin"))
+	}
+	node.eth = eth
 
 	//node.coinName = coin.BLOCKCHAIN_ETH
 	//node.coinName = config.CoinName
@@ -471,8 +475,8 @@ func (n *TrustNode) run() {
 	}
 }
 
-func bootstrapNode(config common.Config, targetCoin coin.Coin, secrets common.Secrets, debugDb bool) *TrustNode {
-	node, success := initNode(config, targetCoin, secrets, debugDb)
+func bootstrapNode(config common.Config, secrets common.Secrets, debugDb bool) *TrustNode {
+	node, success := initNode(config, secrets, debugDb)
 	if !success {
 		panic("Failed to init node")
 		return nil
