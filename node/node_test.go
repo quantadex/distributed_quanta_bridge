@@ -6,7 +6,6 @@ import (
 	"github.com/quantadex/distributed_quanta_bridge/common/test"
 	"github.com/quantadex/distributed_quanta_bridge/node/common"
 	"github.com/quantadex/distributed_quanta_bridge/registrar/service"
-	"github.com/quantadex/distributed_quanta_bridge/trust/coin"
 	"github.com/quantadex/distributed_quanta_bridge/trust/db"
 	"github.com/stretchr/testify/assert"
 	"os"
@@ -131,13 +130,8 @@ func StartNodesWithIndexes(quanta *test.QuantaNodeSecrets, ethereum *test.Ethere
 		go func(config common.Config, currentIndex int) {
 			defer wg.Done()
 
-			coin, err := coin.NewEthereumCoin(config.EthereumNetworkId, config.EthereumRpc, secrets.EthereumKeyStore, config.Erc20Mapping)
-			if err != nil {
-				panic("Cannot create ethereum listener")
-			}
-
 			mutex.Lock()
-			node := bootstrapNode(config, coin, *secrets, true)
+			node := bootstrapNode(config, *secrets, true)
 			nodes[currentIndex] = node
 			mutex.Unlock()
 
