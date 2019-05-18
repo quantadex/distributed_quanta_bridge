@@ -19,6 +19,7 @@ import (
 	"regexp"
 	"strings"
 	"time"
+	"math"
 )
 
 type BitcoinCoin struct {
@@ -87,7 +88,10 @@ func (b *BitcoinCoin) estimateFee(inputs, outputs int) (float64, float64, error)
 		return 0, 0, err
 	}
 
-	return result.FeeRate, result.FeeRate * (totalBytes/1000), nil
+	// testnet is set to zero? override with our minimum
+	feeRateMin := math.Min(result.FeeRate, 0.00001)
+
+	return result.FeeRate, feeRateMin * (totalBytes/1000), nil
 }
 
 func (b *BitcoinCoin) GetBlockTime(blockId int64) (time.Time, error) {
