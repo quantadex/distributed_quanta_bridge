@@ -72,7 +72,7 @@ func TestBitcoinEncodeRefund(t *testing.T) {
 		QuantaBlockID:      0,
 	}
 	tx, err := client.EncodeRefund(w)
-	fmt.Println("tx = ", tx)
+	fmt.Println("tx = ", tx, err)
 	assert.NoError(t, err)
 	var encoded EncodedMsg
 	json.Unmarshal([]byte(tx), &encoded)
