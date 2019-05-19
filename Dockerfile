@@ -20,6 +20,7 @@ FROM alpine:3.7
 EXPOSE 5000
 EXPOSE 5100
 
+RUN apk update && apk add ca-certificates && rm -rf /var/cache/apk/*
 ENV OUTDIR=/go/src/github.com/quantadex/distributed_quanta_bridge
 
 COPY --from=builder $OUTDIR/node/node /usr/bin/quanta-bridge
