@@ -56,7 +56,7 @@ func TestBitcoinEncodeRefund(t *testing.T) {
 	bitcoin.crosschainAddr = crosschainAddr
 	fmt.Println(bitcoin.crosschainAddr)
 
-	amount, err := btcutil.NewAmount(0.01)
+	amount, err := btcutil.NewAmount(1.0)
 	bitcoinAddr, err := btcutil.DecodeAddress(addr1, &chaincfg.RegressionNetParams)
 	bitcoin.Client.SendToAddress(bitcoinAddr, amount)
 
@@ -71,9 +71,13 @@ func TestBitcoinEncodeRefund(t *testing.T) {
 		Amount:             1000,
 		QuantaBlockID:      0,
 	}
+	fee, totalFee, err := bitcoin.estimateFee(2, 2)
+	fmt.Printf("fee %f %f %v\n", fee, totalFee, err)
+
 	tx, err := client.EncodeRefund(w)
 	fmt.Println("tx = ", tx, err)
 	assert.NoError(t, err)
+
 	var encoded EncodedMsg
 	json.Unmarshal([]byte(tx), &encoded)
 
