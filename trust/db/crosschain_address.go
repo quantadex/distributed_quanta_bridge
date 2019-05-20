@@ -67,7 +67,7 @@ func RemoveCrosschainAddress(db *DB, id string) error {
 	return err
 }
 
-func (db *DB) AddCrosschainAddress(input *crypto.ForwardInput) error {
+func (db *DB) AddCrosschainAddress(input *crypto.ForwardInput) (error) {
 	var shared bool
 	lastBlock := uint64(1)
 	if input.QuantaAddr == "address-pool" {

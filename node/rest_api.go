@@ -59,6 +59,7 @@ func (server *Server) Start() {
 
 func (server *Server) setRoute() {
 	server.handlers = mux.NewRouter()
+	server.handlers.HandleFunc("/api/address/{blockchain}", server.listAddressHandler)
 	server.handlers.HandleFunc("/api/address/{blockchain}/{quanta}", server.addressHandler)
 	server.handlers.HandleFunc("/api/history", server.historyHandler)
 	server.handlers.HandleFunc("/api/status", server.statusHandler)
@@ -73,6 +74,20 @@ func (server *Server) generateNewAddress(blockchain string, quanta string) (*cry
 	} else {
 		return nil, errors.New("not supported")
 	}
+}
+
+func (server *Server) listAddressHandler(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	blockchain := strings.ToUpper(vars["blockchain"])
+	if !(blockchain == coin.BLOCKCHAIN_BTC || blockchain == coin.BLOCKCHAIN_ETH || blockchain == coin.BLOCKCHAIN_LTC || blockchain == coin.BLOCKCHAIN_BCH) {
+		w.WriteHeader(http.StatusBadRequest)
+		w.Write([]byte("not a supported blockchain"))
+		return
+	}
+
+	values := server.db.GetCrosschainByBlockchain(blockchain)
+	data, _ := json.Marshal(values)
+	w.Write(data)
 }
 
 func (server *Server) addressHandler(w http.ResponseWriter, r *http.Request) {
