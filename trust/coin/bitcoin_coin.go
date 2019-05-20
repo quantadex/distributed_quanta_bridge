@@ -19,6 +19,7 @@ import (
 	"regexp"
 	"strings"
 	"time"
+	"math"
 )
 
 type BitcoinCoin struct {
@@ -27,7 +28,7 @@ type BitcoinCoin struct {
 	chaincfg           *chaincfg.Params
 	signers            []btcutil.Address
 	crosschainAddr     map[string]string
-	fee                float64
+	maxFee                float64
 	rpcUser            string
 	rpcPassword        string
 	grapheneSeedPrefix string
@@ -50,13 +51,48 @@ func (b *BitcoinCoin) Attach() error {
 		DisableTLS:   true,
 		HTTPPostMode: true,
 	}, nil)
-	b.fee = 0.00001
+	b.maxFee = 0.0002
 	if err != nil {
 		return errors.Wrap(err, "Could not attach the client for BTC")
 	}
 
 	//err = crypto.ValidateNetwork(b.Client, "Satoshi")
 	return err
+}
+
+type FeeResult struct {
+	FeeRate float64 `json:"feerate"`
+	Blocks int 		`json:"blocks"`
+}
+
+func (b *BitcoinCoin) estimateFee(inputs, outputs int) (float64, float64, error) {
+	totalBytes := float64(350.0 + (180.0*inputs) + (34.0*outputs) + 10.0)
+
+	numBlocks, err := json.Marshal(int(5))
+	if err != nil {
+		return 0, 0, err
+	}
+	mode, err := json.Marshal("ECONOMICAL")
+	if err != nil {
+		return 0, 0, err
+	}
+	rawParams := []json.RawMessage{numBlocks, mode}
+	res,err := b.Client.RawRequest("estimatesmartfee",rawParams)
+
+	// decode result to string
+	var result FeeResult
+	err = json.Unmarshal(res, &result)
+	if err != nil {
+		return 0, 0, err
+	}
+
+	if err != nil {
+		return 0, 0, err
+	}
+
+	// testnet is set to zero? override with our minimum
+	feeRateMin := math.Max(result.FeeRate, 0.00001)
+	return result.FeeRate, feeRateMin * (totalBytes/1000.0), nil
 }
 
 func (b *BitcoinCoin) CheckValidAmount(amount uint64) bool {
@@ -408,7 +444,12 @@ func (b *BitcoinCoin) GetUnspentInputs(destAddress btcutil.Address, amount btcut
 	rawInput := []btcjson.RawTxInput{}
 	totalAmount, _ := btcutil.NewAmount(0)
 
-	amountWithFee := amount.ToBTC() + (b.fee * 50)
+	_, estimateFees, err := b.estimateFee(2,2)
+	if err != nil {
+		return 0, nil, nil, nil, errors.Wrap(err, "Unable to estimate fee")
+	}
+
+	amountWithFee := amount.ToBTC() + estimateFees
 
 	for _, e := range unspent {
 		if _, ok := b.crosschainAddr[e.Address]; ok {
@@ -454,28 +495,37 @@ func (b *BitcoinCoin) EncodeRefund(w Withdrawal) (string, error) {
 
 	destinationAddr, err := btcutil.DecodeAddress(w.DestinationAddress, b.chaincfg)
 	if err != nil {
-		return "", err
+		return "", errors.Wrap(err, "decode address")
 	}
 	amountMinusFee := w.Amount - uint64(b.BtcWithdrawFee*CONST_PRECISION)
 	amount, err := btcutil.NewAmount(float64(amountMinusFee) / CONST_PRECISION)
 	println(amount.ToBTC())
 	if err != nil {
-		return "", err
+		return "", errors.Wrap(err, "convert amount problem")
 	}
 
 	totalAmount, inputs, unspentFound, rawInput, err := b.GetUnspentInputs(destinationAddr, amount)
 
 	if err != nil {
-		return "", err
+		return "", errors.Wrap(err, "Unable to get unspent")
 	}
 
 	if len(inputs) == 0 {
 		return "", errors.New("No unspent input found")
 	}
 
-	fee := b.fee * float64(len(inputs))
+	feeRate, fees, err := b.estimateFee(len(inputs),2)
 
-	remain, err := btcutil.NewAmount(totalAmount.ToBTC() - amount.ToBTC() - fee)
+	if err != nil {
+		return "", errors.Wrap(err, "Unable to estimate fee")
+	}
+	if fees > b.maxFee {
+		return "", errors.New("Fee is too high")
+	}
+
+	fmt.Printf("Fee calculated %f feeRate=%f remain=%f\n", fees, feeRate,totalAmount.ToBTC() - amount.ToBTC())
+
+	remain, err := btcutil.NewAmount(totalAmount.ToBTC() - amount.ToBTC() - fees)
 	if err != nil {
 		return "", errors.Wrap(err, "Unable to create new amount")
 	}
@@ -484,6 +534,8 @@ func (b *BitcoinCoin) EncodeRefund(w Withdrawal) (string, error) {
 	if err != nil {
 		return "", err
 	}
+
+	fmt.Printf("total=%f amount=%f, remain=%f, fees=%f acual=%f \n", totalAmount.ToBTC(), amount.ToBTC(), remain.ToBTC(), fees, totalAmount.ToBTC() - amount.ToBTC() - remain.ToBTC())
 
 	tx, err := b.Client.CreateRawTransaction(inputs, map[btcutil.Address]btcutil.Amount{
 		destinationAddr:  amount,
@@ -498,7 +550,7 @@ func (b *BitcoinCoin) EncodeRefund(w Withdrawal) (string, error) {
 	err = tx.Serialize(&buf)
 
 	if err != nil {
-		return "", err
+		return "", errors.Wrap(err, "Serialize failure")
 	}
 
 	res := common2.TransactionBitcoin{
