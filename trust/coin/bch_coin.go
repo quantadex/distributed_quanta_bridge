@@ -34,6 +34,8 @@ type BCH struct {
 	rpcUser            string
 	rpcPassword        string
 	grapheneSeedPrefix string
+	BchWithdrawMin     float64
+	BchWithdrawFee     float64
 }
 
 func (b *BCH) Blockchain() string {
@@ -57,6 +59,13 @@ func (b *BCH) Attach() error {
 
 	//err = crypto.ValidateNetwork(b.Client, "Bitcoin ABC")
 	return err
+}
+
+func (b *BCH) CheckValidAmount(amount uint64) bool {
+	if amount < uint64(b.BchWithdrawMin*CONST_PRECISION) {
+		return false
+	}
+	return true
 }
 
 func (b *BCH) GetBlockTime(blockId int64) (time.Time, error) {
@@ -442,8 +451,8 @@ func (b *BCH) EncodeRefund(w Withdrawal) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	amount, err := bchutil.NewAmount(float64(w.Amount) / 1e5)
-	println(amount.ToBCH())
+	amountMinusFee := w.Amount - uint64(b.BchWithdrawFee*CONST_PRECISION)
+	amount, err := bchutil.NewAmount(float64(amountMinusFee) / CONST_PRECISION)
 	if err != nil {
 		return "", err
 	}

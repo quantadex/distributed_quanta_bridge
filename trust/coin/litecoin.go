@@ -33,6 +33,8 @@ type LiteCoin struct {
 	rpcUser            string
 	rpcPassword        string
 	grapheneSeedPrefix string
+	LtcWithdrawMin     float64
+	LtcWithdrawFee     float64
 }
 
 func (b *LiteCoin) Blockchain() string {
@@ -57,6 +59,13 @@ func (b *LiteCoin) Attach() error {
 	//err = crypto.ValidateNetwork(b.Client, "Litecoin")
 
 	return err
+}
+
+func (b *LiteCoin) CheckValidAmount(amount uint64) bool {
+	if amount < uint64(b.LtcWithdrawMin*CONST_PRECISION) {
+		return false
+	}
+	return true
 }
 
 func (b *LiteCoin) GetBlockTime(blockId int64) (time.Time, error) {
@@ -444,7 +453,8 @@ func (b *LiteCoin) EncodeRefund(w Withdrawal) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	amount, err := ltcutil.NewAmount(float64(w.Amount) / 1e5)
+	amountMinusFee := w.Amount - uint64(b.LtcWithdrawFee*CONST_PRECISION)
+	amount, err := ltcutil.NewAmount(float64(amountMinusFee) / CONST_PRECISION)
 	println(destinationAddr.String(), amount.ToBTC())
 	if err != nil {
 		return "", err

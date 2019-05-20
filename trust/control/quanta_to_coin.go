@@ -514,7 +514,7 @@ func (c *QuantaToCoin) DoLoop(cursor int64) ([]quanta.Refund, error) {
 		db.ConfirmWithdrawal(c.rDb, w)
 		//cursor = refund.PageTokenID
 
-		if w.DestinationAddress == "0x0000000000000000000000000000000000000000" || !c.coinChannel[blockchain].CheckValidAddress(w.DestinationAddress) {
+		if w.DestinationAddress == "0x0000000000000000000000000000000000000000" || !c.coinChannel[blockchain].CheckValidAddress(w.DestinationAddress) || !c.coinChannel[blockchain].CheckValidAmount(w.Amount) {
 			// create a deposit
 			dep := &coin.Deposit{
 				Tx:         refund.TransactionId,
@@ -525,7 +525,13 @@ func (c *QuantaToCoin) DoLoop(cursor int64) ([]quanta.Refund, error) {
 				BlockID:    int64(refund.LedgerID),
 				BlockHash:  refund.BlockHash,
 			}
-			err = db.ChangeSubmitState(c.rDb, dep.Tx, db.BAD_ADDRESS, db.WITHDRAWAL, dep.BlockHash)
+			if !c.coinChannel[blockchain].CheckValidAmount(w.Amount) {
+				c.logger.Error("Amount is less than the minimum withdraw amount")
+				err = db.ChangeSubmitState(c.rDb, dep.Tx, db.AMOUNT_TOO_SMALL, db.WITHDRAWAL, dep.BlockHash)
+			} else {
+				c.logger.Error("Refund is missing destination address, skipping.")
+				err = db.ChangeSubmitState(c.rDb, dep.Tx, db.BAD_ADDRESS, db.WITHDRAWAL, dep.BlockHash)
+			}
 			// mark as a bounced transaction
 			err := db.ConfirmDeposit(c.rDb, dep, true)
 			if err != nil {
@@ -537,7 +543,6 @@ func (c *QuantaToCoin) DoLoop(cursor int64) ([]quanta.Refund, error) {
 				}
 			}
 
-			c.logger.Error("Refund is missing destination address, skipping.")
 		} else if w.Amount == 0 {
 			c.logger.Error("Amount is too small")
 		} else if c.nodeID == 0 {

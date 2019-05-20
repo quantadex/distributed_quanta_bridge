@@ -377,15 +377,15 @@ func (l *Listener) GetForwardContract(blockNumber int64) ([]*crypto2.ForwardInpu
 
 func (l *Listener) SendWithDrawalToRPC(trustAddress common.Address,
 	ownerKey *ecdsa.PrivateKey,
-	w *Withdrawal) (string, error) {
+	w *Withdrawal, fee float64) (string, error) {
 
-	return l.SendWithdrawal(l.Client.(bind.ContractBackend), trustAddress, ownerKey, w)
+	return l.SendWithdrawal(l.Client.(bind.ContractBackend), trustAddress, ownerKey, w, fee)
 }
 
 func (l *Listener) SendWithdrawal(conn bind.ContractBackend,
 	trustAddress common.Address,
 	ownerKey *ecdsa.PrivateKey,
-	w *Withdrawal) (string, error) {
+	w *Withdrawal, fee float64) (string, error) {
 
 	auth := bind.NewKeyedTransactor(ownerKey)
 	auth.GasLimit = 900000
@@ -394,6 +394,8 @@ func (l *Listener) SendWithdrawal(conn bind.ContractBackend,
 	if err != nil {
 		return "", err
 	}
+
+	amountMinusFee := w.Amount - uint64(fee*CONST_PRECISION)
 
 	var smartAddress common.Address
 	var amount *big.Int
@@ -409,10 +411,10 @@ func (l *Listener) SendWithdrawal(conn bind.ContractBackend,
 		if err != nil {
 			return "", err
 		}
-		amount = GrapheneToERC20(*new(big.Int).SetUint64(w.Amount), 5, int(dec))
+		amount = GrapheneToERC20(*new(big.Int).SetUint64(amountMinusFee), 5, int(dec))
 
 	} else {
-		amount = GrapheneToWei(w.Amount)
+		amount = GrapheneToWei(amountMinusFee)
 	}
 	//smartAddress = common.HexToAddress(w.CoinName[11:])
 	toAddr := common.HexToAddress(w.DestinationAddress)

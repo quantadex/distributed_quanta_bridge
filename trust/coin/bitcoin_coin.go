@@ -31,6 +31,8 @@ type BitcoinCoin struct {
 	rpcUser            string
 	rpcPassword        string
 	grapheneSeedPrefix string
+	BtcWithdrawMin     float64
+	BtcWithdrawFee     float64
 }
 
 const BLOCKCHAIN_BTC = "BTC"
@@ -55,6 +57,13 @@ func (b *BitcoinCoin) Attach() error {
 
 	//err = crypto.ValidateNetwork(b.Client, "Satoshi")
 	return err
+}
+
+func (b *BitcoinCoin) CheckValidAmount(amount uint64) bool {
+	if amount < uint64(b.BtcWithdrawMin*CONST_PRECISION) {
+		return false
+	}
+	return true
 }
 
 func (b *BitcoinCoin) GetBlockTime(blockId int64) (time.Time, error) {
@@ -447,7 +456,8 @@ func (b *BitcoinCoin) EncodeRefund(w Withdrawal) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	amount, err := btcutil.NewAmount(float64(w.Amount) / 1e5)
+	amountMinusFee := w.Amount - uint64(b.BtcWithdrawFee*CONST_PRECISION)
+	amount, err := btcutil.NewAmount(float64(amountMinusFee) / CONST_PRECISION)
 	println(amount.ToBTC())
 	if err != nil {
 		return "", err

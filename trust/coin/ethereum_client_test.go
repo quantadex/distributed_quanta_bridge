@@ -162,7 +162,7 @@ func TestWithdrawalGanacheTX(t *testing.T) {
 	}
 
 	network := test.ETHER_NETWORKS[test.ROPSTEN]
-	coin, _ := NewEthereumCoin(network.NetworkId, network.Rpc, "c87509a1c067bbde78beb793e6fa76530b6382a4c0241e5e4a9ec0a0f44dc0d3", nil)
+	coin, _ := NewEthereumCoin(network.NetworkId, network.Rpc, "c87509a1c067bbde78beb793e6fa76530b6382a4c0241e5e4a9ec0a0f44dc0d3", nil, 0.00002, 0.00001)
 	coin.Attach()
 	encoded, _ := coin.EncodeRefund(*w)
 	println(encoded)
@@ -194,7 +194,7 @@ func TestWithdrawalGanacheTX(t *testing.T) {
 func TestGanacheTX(t *testing.T) {
 	network := test.ETHER_NETWORKS[test.ROPSTEN]
 
-	coin, err := NewEthereumCoin(network.NetworkId, network.Rpc, "c87509a1c067bbde78beb793e6fa76530b6382a4c0241e5e4a9ec0a0f44dc0d3", nil)
+	coin, err := NewEthereumCoin(network.NetworkId, network.Rpc, "c87509a1c067bbde78beb793e6fa76530b6382a4c0241e5e4a9ec0a0f44dc0d3", nil, 0.00002, 0.00001)
 	if err != nil {
 		t.Error(err)
 		return

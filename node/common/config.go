@@ -20,6 +20,8 @@ type Config struct {
 	EthMinConfirmation   int64
 	EthDegradedThreshold int64
 	EthFailureThreshold  int64
+	EthWithdrawMin       float64
+	EthWithdrawFee       float64
 
 	BtcRpc               string
 	BtcBlockStart        int64
@@ -27,6 +29,8 @@ type Config struct {
 	BtcMinConfirmation   int64
 	BtcDegradedThreshold int64
 	BtcFailureThreshold  int64
+	BtcWithdrawMin       float64
+	BtcWithdrawFee       float64
 
 	LogLevel      string
 	MinNodes      int
@@ -40,6 +44,8 @@ type Config struct {
 	LtcMinConfirmation   int64
 	LtcDegradedThreshold int64
 	LtcFailureThreshold  int64
+	LtcWithdrawMin       float64
+	LtcWithdrawFee       float64
 
 	BchRpc               string
 	BchNetwork           string
@@ -47,6 +53,8 @@ type Config struct {
 	BchMinConfirmation   int64
 	BchDegradedThreshold int64
 	BchFailureThreshold  int64
+	BchWithdrawMin       float64
+	BchWithdrawFee       float64
 
 	QuantaDegradedThreshold   int64
 	QuantaFailureThreshold    int64

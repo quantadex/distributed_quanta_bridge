@@ -39,6 +39,7 @@ const SUBMIT_FAILURE = "submit_failure"
 const PENDING = "pending"
 const WAIT_FOR_CONFIRMATION = "wait_for_confirmation"
 const ORPHAN = "orphan"
+const AMOUNT_TOO_SMALL = "amount_to_small"
 
 type Transaction struct {
 	Type                string `sql:"unique:type_tx_block_hash"`

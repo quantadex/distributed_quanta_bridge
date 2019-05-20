@@ -30,6 +30,8 @@ type EthereumCoin struct {
 	ethereumRpc    string
 	ethereumSecret *ecdsa.PrivateKey
 	erc20map       map[string]string
+	EthWithdrawMin float64
+	EthWithdrawFee float64
 }
 
 type EncodedMsg struct {
@@ -58,6 +60,13 @@ func (c *EthereumCoin) Attach() error {
 	}
 
 	return nil
+}
+
+func (c *EthereumCoin) CheckValidAmount(amount uint64) bool {
+	if amount < uint64(c.EthWithdrawMin*CONST_PRECISION) {
+		return false
+	}
+	return true
 }
 
 func (c *EthereumCoin) GetBlockTime(blockId int64) (time.Time, error) {
@@ -164,7 +173,7 @@ func (b *EthereumCoin) GenerateMultisig(accountId string) (string, error) {
 func (c *EthereumCoin) SendWithdrawal(trustAddress common2.Address,
 	ownerKey *ecdsa.PrivateKey,
 	w *Withdrawal) (string, error) {
-	return c.client.SendWithDrawalToRPC(trustAddress, ownerKey, w)
+	return c.client.SendWithDrawalToRPC(trustAddress, ownerKey, w, c.EthWithdrawFee)
 }
 
 func (c *EthereumCoin) FillCrosschainAddress(crosschainAddr map[string]string) {
@@ -175,6 +184,7 @@ func (c *EthereumCoin) EncodeRefund(w Withdrawal) (string, error) {
 	var encoded bytes.Buffer
 	var smartAddress string
 
+	amountMinusFee := w.Amount - uint64(c.EthWithdrawFee*CONST_PRECISION)
 	parts := strings.Split(w.CoinName, "0X")
 	var amount *big.Int
 	if len(parts) == 2 {
@@ -187,11 +197,11 @@ func (c *EthereumCoin) EncodeRefund(w Withdrawal) (string, error) {
 		if err != nil {
 			return "", err
 		}
-		amount = GrapheneToERC20(*new(big.Int).SetUint64(w.Amount), 5, int(dec))
+		amount = GrapheneToERC20(*new(big.Int).SetUint64(amountMinusFee), 5, int(dec))
 
 	} else {
 		smartAddress = ""
-		amount = GrapheneToWei(w.Amount)
+		amount = GrapheneToWei(amountMinusFee)
 	}
 	//smartAddress = w.CoinName[11:]
 	//fmt.Println("Smart address = ", smartAddress)

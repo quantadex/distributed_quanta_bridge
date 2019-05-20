@@ -185,7 +185,7 @@ func initNode(config common.Config, secrets common.Secrets, debugDb bool) (*Trus
 	db.MigrateKv(node.rDb)
 	db.MigrateXC(node.rDb)
 
-	eth, err := coin.NewEthereumCoin(config.EthereumNetworkId, config.EthereumRpc, secrets.EthereumKeyStore, config.Erc20Mapping)
+	eth, err := coin.NewEthereumCoin(config.EthereumNetworkId, config.EthereumRpc, secrets.EthereumKeyStore, config.Erc20Mapping, config.EthWithdrawMin, config.EthWithdrawFee)
 	if err != nil {
 		panic(fmt.Errorf("cannot create ethereum coin"))
 	}
@@ -199,7 +199,7 @@ func initNode(config common.Config, secrets common.Secrets, debugDb bool) (*Trus
 		return nil, false
 	}
 
-	ltccoin, err := coin.NewLitecoinCoin(config.LtcRpc, crypto.GetChainCfgByStringLTC(config.LtcNetwork), secrets.LtcSigners, secrets.LtcRpcUser, secrets.LtcRpcPassword, secrets.GrapheneSeedPrefix)
+	ltccoin, err := coin.NewLitecoinCoin(config.LtcRpc, crypto.GetChainCfgByStringLTC(config.LtcNetwork), secrets.LtcSigners, secrets.LtcRpcUser, secrets.LtcRpcPassword, secrets.GrapheneSeedPrefix, config.LtcWithdrawMin, config.LtcWithdrawFee)
 	if err != nil {
 		panic(fmt.Errorf("cannot create litecoin coin"))
 	}
@@ -210,7 +210,7 @@ func initNode(config common.Config, secrets common.Secrets, debugDb bool) (*Trus
 	}
 	node.ltc = ltccoin
 
-	bchcoin, err := coin.NewBCHCoin(config.BchRpc, crypto.GetChainCfgByStringBCH(config.BchNetwork), secrets.BchSigners, secrets.BchRpcUser, secrets.BchRpcPassword, secrets.GrapheneSeedPrefix)
+	bchcoin, err := coin.NewBCHCoin(config.BchRpc, crypto.GetChainCfgByStringBCH(config.BchNetwork), secrets.BchSigners, secrets.BchRpcUser, secrets.BchRpcPassword, secrets.GrapheneSeedPrefix, config.BchWithdrawMin, config.BchWithdrawFee)
 	if err != nil {
 		panic(fmt.Errorf("cannot create litecoin coin"))
 	}
@@ -222,7 +222,7 @@ func initNode(config common.Config, secrets common.Secrets, debugDb bool) (*Trus
 	node.bch = bchcoin
 
 	// attach bitcoin
-	coin, err := coin.NewBitcoinCoin(config.BtcRpc, crypto.GetChainCfgByString(config.BtcNetwork), secrets.BtcSigners, secrets.BtcRpcUser, secrets.BtcRpcPassword, secrets.GrapheneSeedPrefix)
+	coin, err := coin.NewBitcoinCoin(config.BtcRpc, crypto.GetChainCfgByString(config.BtcNetwork), secrets.BtcSigners, secrets.BtcRpcUser, secrets.BtcRpcPassword, secrets.GrapheneSeedPrefix, config.BtcWithdrawMin, config.BtcWithdrawFee)
 	if err != nil {
 		panic(fmt.Errorf("cannot create ethereum listener"))
 	}

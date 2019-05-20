@@ -24,6 +24,10 @@ func GetDummyInstance() *DummyCoin {
 	return instance
 }
 
+func (c *DummyCoin) CheckValidAmount(amount uint64) bool {
+	panic("Not implemented")
+}
+
 func (c *DummyCoin) GetBlockTime(blockId int64) (time.Time, error) {
 	panic("Not implemented")
 }
