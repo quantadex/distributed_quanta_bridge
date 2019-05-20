@@ -13,6 +13,7 @@ import (
 	"io/ioutil"
 	"path/filepath"
 	"syscall"
+	"github.com/quantadex/distributed_quanta_bridge/trust/db"
 )
 
 /**
@@ -31,6 +32,8 @@ func main() {
 	encryptOutFile := flag.String("out", "config.yml.enc", "output encrypt file")
 
 	enableSyncAddresses := flag.String("sync_addresses", "", "sync addresses")
+	bounceTx := flag.String("bounce", "", "bounce tx")
+
 	flag.Parse()
 
 	if *encryptFile != "" {
@@ -79,12 +82,30 @@ func main() {
 			if !success {
 				panic("Failed to init node")
 			}
+			fmt.Println("Synchronize addresses")
 			crosschainAddresses := node.rDb.GetCrosschainByBlockchain(*enableSyncAddresses)
 			for _, addr := range crosschainAddresses {
+				fmt.Println("process ", addr.Address, addr.Blockchain, addr.QuantaAddr)
 				_, err := node.CreateMultisig(*enableSyncAddresses, addr.QuantaAddr)
 				if err != nil {
 					panic("Could not generate multisig address")
 				}
+			}
+		} else if (*bounceTx != "") {
+			node, success := initNode(config, secrets, false)
+			if !success {
+				panic("Failed to init node")
+			}
+			fmt.Println("Bounce TX=", *bounceTx)
+			tx, err := db.GetTransaction(node.rDb, *bounceTx)
+			if err != nil {
+				panic(fmt.Errorf("failed to get tx file: %s \n", err))
+			}
+			if tx.SubmitState != db.SUBMIT_SUCCESS {
+				fmt.Println("marking as a bounce")
+				
+			} else {
+				fmt.Println("Tx already processed successfully.")
 			}
 		} else {
 			if *enableRegistry {
