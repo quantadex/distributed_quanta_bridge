@@ -16,10 +16,10 @@ import (
 	"github.com/pkg/errors"
 	common2 "github.com/quantadex/distributed_quanta_bridge/common"
 	"github.com/quantadex/distributed_quanta_bridge/common/crypto"
+	"math"
 	"regexp"
 	"strings"
 	"time"
-	"math"
 )
 
 type BitcoinCoin struct {
@@ -28,7 +28,7 @@ type BitcoinCoin struct {
 	chaincfg           *chaincfg.Params
 	signers            []btcutil.Address
 	crosschainAddr     map[string]string
-	maxFee                float64
+	maxFee             float64
 	rpcUser            string
 	rpcPassword        string
 	grapheneSeedPrefix string
@@ -62,11 +62,11 @@ func (b *BitcoinCoin) Attach() error {
 
 type FeeResult struct {
 	FeeRate float64 `json:"feerate"`
-	Blocks int 		`json:"blocks"`
+	Blocks  int     `json:"blocks"`
 }
 
 func (b *BitcoinCoin) estimateFee(inputs, outputs int) (float64, float64, error) {
-	totalBytes := float64(350.0 + (180.0*inputs) + (34.0*outputs) + 10.0)
+	totalBytes := float64(350.0 + (180.0 * inputs) + (34.0 * outputs) + 10.0)
 
 	numBlocks, err := json.Marshal(int(5))
 	if err != nil {
@@ -77,7 +77,7 @@ func (b *BitcoinCoin) estimateFee(inputs, outputs int) (float64, float64, error)
 		return 0, 0, err
 	}
 	rawParams := []json.RawMessage{numBlocks, mode}
-	res,err := b.Client.RawRequest("estimatesmartfee",rawParams)
+	res, err := b.Client.RawRequest("estimatesmartfee", rawParams)
 
 	// decode result to string
 	var result FeeResult
@@ -92,7 +92,7 @@ func (b *BitcoinCoin) estimateFee(inputs, outputs int) (float64, float64, error)
 
 	// testnet is set to zero? override with our minimum
 	feeRateMin := math.Max(result.FeeRate, 0.00001)
-	return result.FeeRate, feeRateMin * (totalBytes/1000.0), nil
+	return result.FeeRate, feeRateMin * (totalBytes / 1000.0), nil
 }
 
 func (b *BitcoinCoin) CheckValidAmount(amount uint64) bool {
@@ -444,7 +444,7 @@ func (b *BitcoinCoin) GetUnspentInputs(destAddress btcutil.Address, amount btcut
 	rawInput := []btcjson.RawTxInput{}
 	totalAmount, _ := btcutil.NewAmount(0)
 
-	_, estimateFees, err := b.estimateFee(2,2)
+	_, estimateFees, err := b.estimateFee(2, 2)
 	if err != nil {
 		return 0, nil, nil, nil, errors.Wrap(err, "Unable to estimate fee")
 	}
@@ -514,7 +514,7 @@ func (b *BitcoinCoin) EncodeRefund(w Withdrawal) (string, error) {
 		return "", errors.New("No unspent input found")
 	}
 
-	feeRate, fees, err := b.estimateFee(len(inputs),2)
+	feeRate, fees, err := b.estimateFee(len(inputs), 2)
 
 	if err != nil {
 		return "", errors.Wrap(err, "Unable to estimate fee")
@@ -523,7 +523,7 @@ func (b *BitcoinCoin) EncodeRefund(w Withdrawal) (string, error) {
 		return "", errors.New("Fee is too high")
 	}
 
-	fmt.Printf("Fee calculated %f feeRate=%f remain=%f\n", fees, feeRate,totalAmount.ToBTC() - amount.ToBTC())
+	fmt.Printf("Fee calculated %f feeRate=%f remain=%f\n", fees, feeRate, totalAmount.ToBTC()-amount.ToBTC())
 
 	remain, err := btcutil.NewAmount(totalAmount.ToBTC() - amount.ToBTC() - fees)
 	if err != nil {
@@ -535,7 +535,7 @@ func (b *BitcoinCoin) EncodeRefund(w Withdrawal) (string, error) {
 		return "", err
 	}
 
-	fmt.Printf("total=%f amount=%f, remain=%f, fees=%f acual=%f \n", totalAmount.ToBTC(), amount.ToBTC(), remain.ToBTC(), fees, totalAmount.ToBTC() - amount.ToBTC() - remain.ToBTC())
+	fmt.Printf("total=%f amount=%f, remain=%f, fees=%f acual=%f \n", totalAmount.ToBTC(), amount.ToBTC(), remain.ToBTC(), fees, totalAmount.ToBTC()-amount.ToBTC()-remain.ToBTC())
 
 	tx, err := b.Client.CreateRawTransaction(inputs, map[btcutil.Address]btcutil.Amount{
 		destinationAddr:  amount,
@@ -594,72 +594,56 @@ func (b *BitcoinCoin) DecodeRefund(encoded string) (*Withdrawal, error) {
 	if err != nil {
 		return nil, err
 	}
-	w := &Withdrawal{}
-	for _, vout := range decodedTx.Vout {
-		destAddr := strings.Join(vout.ScriptPubKey.Addresses, ",")
-		if destAddr == decoded.DestinationAddr {
-			amount, _ := btcutil.NewAmount(vout.Value)
-			w = &Withdrawal{
-				Amount:             uint64(amount),
-				DestinationAddress: destAddr,
-				Tx:                 decoded.Tx,
-				QuantaBlockID:      decoded.BlockNumber,
-			}
+
+	vinLookup := map[string]bool{}
+	vinAddresses := []string{}
+	for _, vin := range decodedTx.Vin {
+		if vin.Txid == "" {
+			continue
 		}
+
+		prevTranHash, err := chainhash.NewHashFromStr(vin.Txid)
+		if err != nil {
+			return nil, errors.Wrap(err, "failed to build hash")
+		}
+		prevTran, err := b.Client.GetRawTransactionVerbose(prevTranHash)
+		if err != nil {
+			return nil, errors.Wrap(err, "failed to getraw for vin")
+		}
+
+		prevVout := prevTran.Vout[vin.Vout]
+		fromAddress := strings.Join(prevVout.ScriptPubKey.Addresses, ",")
+		vinLookup[fromAddress] = true
+		vinAddresses = append(vinAddresses, fromAddress)
 	}
 
-	//vinLookup := map[string]bool{}
-	//vinAddresses := []string{}
-	//for _, vin := range decodedTx.Vin {
-	//	if vin.Txid == "" {
-	//		continue
-	//	}
-	//
-	//	prevTranHash, err := chainhash.NewHashFromStr(vin.Txid)
-	//	if err != nil {
-	//		return nil, errors.Wrap(err, "failed to build hash")
-	//	}
-	//	prevTran, err := b.Client.GetRawTransactionVerbose(prevTranHash)
-	//	if err != nil {
-	//		return nil, errors.Wrap(err, "failed to getraw for vin")
-	//	}
-	//
-	//	prevVout := prevTran.Vout[vin.Vout]
-	//	fromAddress := strings.Join(prevVout.ScriptPubKey.Addresses, ",")
-	//	vinLookup[fromAddress] = true
-	//	vinAddresses = append(vinAddresses, fromAddress)
-	//}
-	//
-	//fromAddr := strings.Join(vinAddresses, ",")
-	//allWithdrawals := []*Withdrawal{}
-	//for _, vout := range decodedTx.Vout {
-	//	destAddr := strings.Join(vout.ScriptPubKey.Addresses, ",")
-	//
-	//	if vinLookup[destAddr] || fromAddr == "" {
-	//		//println("Ignoring tx when from and to the same ", toAddr)
-	//		continue
-	//	}
-	//	amount, err := btcutil.NewAmount(vout.Value)
-	//	if err != nil {
-	//		return nil, errors.Wrap(err, "unable to create new amount")
-	//	}
-	//	w := &Withdrawal{
-	//		Amount:             uint64(amount),
-	//		SourceAddress:      fromAddr,
-	//		DestinationAddress: destAddr,
-	//		Tx:                 decoded.Tx,
-	//		QuantaBlockID:      decoded.BlockNumber,
-	//	}
-	//	allWithdrawals = append(allWithdrawals, w)
-	//}
-	//
-	//if len(allWithdrawals) != 1 {
-	//	return nil, errors.New("Expect to have only 1 withdrawal")
-	//}
-	//return allWithdrawals[0], nil
-	//fmt.Println(allWithdrawals[0])
-	fmt.Println(w)
-	return w, nil
+	fromAddr := strings.Join(vinAddresses, ",")
+	allWithdrawals := []*Withdrawal{}
+	for _, vout := range decodedTx.Vout {
+		destAddr := strings.Join(vout.ScriptPubKey.Addresses, ",")
+
+		if vinLookup[destAddr] || fromAddr == "" {
+			//println("Ignoring tx when from and to the same ", toAddr)
+			continue
+		}
+		amount, err := btcutil.NewAmount(vout.Value)
+		if err != nil {
+			return nil, errors.Wrap(err, "unable to create new amount")
+		}
+		w := &Withdrawal{
+			Amount:             uint64(amount),
+			SourceAddress:      fromAddr,
+			DestinationAddress: destAddr,
+			Tx:                 decoded.Tx,
+			QuantaBlockID:      decoded.BlockNumber,
+		}
+		allWithdrawals = append(allWithdrawals, w)
+	}
+
+	if len(allWithdrawals) != 1 {
+		return nil, errors.New("Expect to have only 1 withdrawal")
+	}
+	return allWithdrawals[0], nil
 }
 
 func (b *BitcoinCoin) CheckValidAddress(address string) bool {
