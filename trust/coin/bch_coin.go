@@ -179,24 +179,16 @@ func (b *BCH) GetFromAddress(txHash *chainhash.Hash) (string, error) {
 		if err != nil {
 			return "", errors.Wrap(err, "failed to build hash")
 		}
-		prevTran, err := b.Client.GetTransaction(prevTranHash)
+		prevTran, err := b.Client.GetRawTransactionVerbose(prevTranHash)
 		if err != nil {
-			return "", errors.Wrap(err, "failed to getraw for vin")
+			fmt.Println("returning an error")
+			return "", nil
 		}
 
-		//prevVout := prevTran.Vout[vin.Vout]
-		if len(prevTran.Details) != 0 {
-			res := ""
-			for _, details := range prevTran.Details {
-				res = res + "," + details.Address
-			}
-			fmt.Println("len = ", len(prevTran.Details))
-			fmt.Println("length is not zero")
-			fromAddress := res[1:]
-			fmt.Println("from=", fromAddress)
-			vinLookup[fromAddress] = true
-			vinAddresses = append(vinAddresses, fromAddress)
-		}
+		prevVout := prevTran.Vout[vin.Vout]
+		fromAddress := strings.Join(prevVout.ScriptPubKey.Addresses, ",")
+		vinLookup[fromAddress] = true
+		vinAddresses = append(vinAddresses, fromAddress)
 	}
 
 	fromAddr := strings.Join(vinAddresses, ",")
@@ -267,76 +259,43 @@ func (b *BCH) GetDepositsInBlock(blockID int64, trustAddress map[string]string) 
 		return nil, errors.Wrap(err, "failed to get unspent")
 	}
 
-	txidMap := make(map[string][]btcjson.ListUnspentResult)
+	txidMap := make(map[string]string)
 	for _, e := range unspent {
-		if value, ok := txidMap[e.TxID]; ok {
-			value = append(value, e)
-			txidMap[e.TxID] = value
-		} else {
-			value := []btcjson.ListUnspentResult{e}
-			txidMap[e.TxID] = value
-		}
+		txidMap[e.TxID] = e.Address
 	}
 
 	events := []*Deposit{}
 
 	for _, tx := range block.Transactions {
-		if value, ok := txidMap[tx.TxHash().String()]; ok {
+		if _, ok := txidMap[tx.TxHash().String()]; ok {
 			txHash := tx.TxHash()
-			//currentTx, err := b.Client.GetRawTransactionVerbose(&txHash)
-			//if err != nil {
-			//	return nil, errors.Wrap(err, "failed to getraw for currentTx")
-			//}
-			//
-			//fromAddr, err := b.GetFromAddress(&txHash)
-			//if err != nil {
-			//	return nil, errors.Wrap(err, "failed to from address for currentTx")
-			//}
-			//
-			//for _, vout := range currentTx.Vout {
-			//	toAddr := strings.Join(vout.ScriptPubKey.Addresses, ",")
-			//
-			//	if fromAddr == toAddr || fromAddr == "" {
-			//		//println("Ignoring tx when from and to the same ", toAddr)
-			//		continue
-			//	}
-			//
-			//	amount, err := btcutil.NewAmount(vout.Value)
-			//	if err != nil {
-			//		return nil, errors.Wrap(err, "unable to create new amount")
-			//	}
-			//
-			//	if quantaAddr, ok := trustAddress[toAddr]; ok {
-			//		events = append(events, &Deposit{
-			//			SenderAddr: fromAddr,
-			//			QuantaAddr: quantaAddr,
-			//			CoinName:   b.Blockchain(),
-			//			Amount:     int64(amount),
-			//			BlockID:    blockID,
-			//			Tx:         txHash.String(),
-			//			BlockHash:  blockHash.String(),
-			//		})
-			//	}
-			//}
+			currentTx, err := b.Client.GetRawTransactionVerbose(&txHash)
+			if err != nil {
+				return nil, errors.Wrap(err, "failed to getraw for currentTx")
+			}
 
-			for _, unspent := range value {
-				//unspent := txidMap[tx.TxHash().String()]
-				fromAddr, err := b.GetFromAddress(&txHash)
-				if err != nil {
-					return nil, errors.Wrap(err, "failed to from address for currentTx")
-				}
-				toAddr := unspent.Address
+			fromAddr, err := b.GetFromAddress(&txHash)
+			if err != nil {
+				return nil, errors.Wrap(err, "failed to from address for currentTx")
+			}
+
+			for _, vout := range currentTx.Vout {
+				toAddr := strings.Join(vout.ScriptPubKey.Addresses, ",")
+
 				if len(fromAddr) != 0 && fromAddr == toAddr {
 					fmt.Println("continuing")
+					//println("Ignoring tx when from and to the same ", toAddr)
 					continue
 				}
 
+				amount, err := bchutil.NewAmount(vout.Value)
+				if err != nil {
+					return nil, errors.Wrap(err, "unable to create new amount")
+				}
+
 				if quantaAddr, ok := trustAddress[toAddr]; ok {
-					amount, err := bchutil.NewAmount(unspent.Amount)
-					if err != nil {
-						return nil, errors.Wrap(err, "unable to create new amount")
-					}
 					events = append(events, &Deposit{
+						SenderAddr: fromAddr,
 						QuantaAddr: quantaAddr,
 						CoinName:   b.Blockchain(),
 						Amount:     int64(amount),
@@ -346,10 +305,9 @@ func (b *BCH) GetDepositsInBlock(blockID int64, trustAddress map[string]string) 
 					})
 				}
 			}
-
 		}
 	}
-	//msg, _ := json.Marshal(events)
+	//msg,_ := json.Marshal(events)
 	//fmt.Printf("events = %v\n", string(msg))
 	return events, nil
 }
