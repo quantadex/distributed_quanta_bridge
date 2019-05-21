@@ -468,6 +468,39 @@ func (c *QuantaToCoin) ComputeAmountToGraphene(coinName string, amount uint64) u
 
 }
 
+func (c *QuantaToCoin) BounceTx(refund *quanta.Refund, reason string, consensus bool) (error) {
+	dep := &coin.Deposit{
+		Tx:         refund.TransactionId,
+		CoinName:   refund.CoinName, // coin,issuer
+		SenderAddr: c.quantaChannel.GetIssuer(),
+		QuantaAddr: refund.SourceAddress,
+		Amount:     int64(refund.Amount),
+		BlockID:    int64(refund.LedgerID),
+		BlockHash:  refund.BlockHash,
+	}
+	err := db.ChangeSubmitState(c.rDb, dep.Tx, reason, db.WITHDRAWAL, dep.BlockHash)
+	if err != nil {
+		return err
+	}
+
+	// mark as a bounced transaction
+	err = db.ConfirmDeposit(c.rDb, dep, true)
+	if err != nil {
+		c.logger.Error("Cannot insert into db:" + err.Error())
+		return err
+	}
+
+	if consensus {
+		err := db.ChangeSubmitState(c.rDb, dep.Tx, db.SUBMIT_CONSENSUS, db.DEPOSIT, dep.BlockHash)
+		if err != nil {
+			c.logger.Error("Cannot change submit state:" + err.Error())
+			return err
+		}
+	}
+
+	return nil
+}
+
 /**
  * DoLoop
  *
@@ -515,34 +548,16 @@ func (c *QuantaToCoin) DoLoop(cursor int64) ([]quanta.Refund, error) {
 		//cursor = refund.PageTokenID
 
 		if w.DestinationAddress == "0x0000000000000000000000000000000000000000" || !c.coinChannel[blockchain].CheckValidAddress(w.DestinationAddress) || !c.coinChannel[blockchain].CheckValidAmount(w.Amount) {
-			// create a deposit
-			dep := &coin.Deposit{
-				Tx:         refund.TransactionId,
-				CoinName:   refund.CoinName, // coin,issuer
-				SenderAddr: c.quantaChannel.GetIssuer(),
-				QuantaAddr: refund.SourceAddress,
-				Amount:     int64(refund.Amount),
-				BlockID:    int64(refund.LedgerID),
-				BlockHash:  refund.BlockHash,
-			}
+			var reason string
 			if !c.coinChannel[blockchain].CheckValidAmount(w.Amount) {
 				c.logger.Error("Amount is less than the minimum withdraw amount")
-				err = db.ChangeSubmitState(c.rDb, dep.Tx, db.AMOUNT_TOO_SMALL, db.WITHDRAWAL, dep.BlockHash)
+				reason = db.AMOUNT_TOO_SMALL
 			} else {
 				c.logger.Error("Refund is missing destination address, skipping.")
-				err = db.ChangeSubmitState(c.rDb, dep.Tx, db.BAD_ADDRESS, db.WITHDRAWAL, dep.BlockHash)
+				reason = db.BAD_ADDRESS
 			}
-			// mark as a bounced transaction
-			err := db.ConfirmDeposit(c.rDb, dep, true)
-			if err != nil {
-				c.logger.Error("Cannot insert into db:" + err.Error())
-			} else if c.nodeID == 0 {
-				err = db.ChangeSubmitState(c.rDb, dep.Tx, db.SUBMIT_CONSENSUS, db.DEPOSIT, dep.BlockHash)
-				if err != nil {
-					c.logger.Error("Cannot change submit state:" + err.Error())
-				}
-			}
-
+			err := c.BounceTx(&refund, reason, c.nodeID == 0)
+			c.logger.Error(err.Error())
 		} else if w.Amount == 0 {
 			c.logger.Error("Amount is too small")
 		} else if c.nodeID == 0 {
