@@ -21,6 +21,7 @@ import (
 	"strconv"
 	"strings"
 	"time"
+	"math/rand"
 )
 
 type DepositResult struct {
@@ -261,9 +262,13 @@ func (c *CoinToQuanta) incrementCounter(nodeId int) {
 func (c *CoinToQuanta) processDeposits() {
 	// only leader - pick up  deposits with empty or null submit_state
 	txs := db.QueryDepositByAge(c.rDb, time.Now().Add(-time.Second*5), []string{db.SUBMIT_CONSENSUS})
+
+	// shuffle so we don't get stuck with the one failing.
+	pickN := rand.Intn(len(txs))
+
 	if len(txs) > 0 {
 		c.counter0.Add(1)
-		tx := txs[0]
+		tx := txs[pickN]
 		w := &coin.Deposit{
 			Tx:         tx.Tx,
 			CoinName:   tx.Coin,
@@ -273,15 +278,6 @@ func (c *CoinToQuanta) processDeposits() {
 			Amount:     tx.Amount,
 			BlockHash:  tx.BlockHash,
 		}
-
-		// if not a native token, we need to flush it
-		//if tx.Coin != c.coinName {
-		//	parts := strings.Split(c.coinName, "0X")
-		//	if len(parts) > 1 {
-		//		// flush
-		//		// contract := parts[1]
-		//	}
-		//}
 
 		// check if asset exists
 		//if not, then propose new asset
