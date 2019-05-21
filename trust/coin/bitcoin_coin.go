@@ -193,18 +193,29 @@ func (b *BitcoinCoin) GetFromAddress(txHash *chainhash.Hash) (string, error) {
 		if err != nil {
 			return "", errors.Wrap(err, "failed to build hash")
 		}
-		prevTran, err := b.Client.GetRawTransactionVerbose(prevTranHash)
+		prevTran, err := b.Client.GetTransaction(prevTranHash)
 		if err != nil {
 			return "", errors.Wrap(err, "failed to getraw for vin")
 		}
 
-		prevVout := prevTran.Vout[vin.Vout]
-		fromAddress := strings.Join(prevVout.ScriptPubKey.Addresses, ",")
-		vinLookup[fromAddress] = true
-		vinAddresses = append(vinAddresses, fromAddress)
+		//prevVout := prevTran.Vout[vin.Vout]
+		if len(prevTran.Details) != 0 {
+			res := ""
+			for _, details := range prevTran.Details {
+				res = res + "," + details.Address
+			}
+			fmt.Println("len = ", len(prevTran.Details))
+			fmt.Println("length is not zero")
+			fromAddress := res[1:]
+			fmt.Println("from=", fromAddress)
+			vinLookup[fromAddress] = true
+			vinAddresses = append(vinAddresses, fromAddress)
+		}
+
 	}
 
 	fromAddr := strings.Join(vinAddresses, ",")
+	fmt.Println("from address  == ", fromAddr)
 	return fromAddr, nil
 }
 
@@ -341,7 +352,15 @@ func (b *BitcoinCoin) GetDepositsInBlock(blockID int64, trustAddress map[string]
 
 			for _, unspent := range value {
 				//unspent := txidMap[tx.TxHash().String()]
+				fromAddr, err := b.GetFromAddress(&txHash)
+				if err != nil {
+					return nil, errors.Wrap(err, "failed to from address for currentTx")
+				}
 				toAddr := unspent.Address
+				if len(fromAddr) != 0 && fromAddr == toAddr {
+					fmt.Println("continuing")
+					continue
+				}
 
 				if quantaAddr, ok := trustAddress[toAddr]; ok {
 					amount, err := btcutil.NewAmount(unspent.Amount)
