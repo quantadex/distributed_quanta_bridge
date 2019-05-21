@@ -468,7 +468,7 @@ func (c *QuantaToCoin) ComputeAmountToGraphene(coinName string, amount uint64) u
 
 }
 
-func (c *QuantaToCoin) BounceTx(refund *quanta.Refund, reason string, consensus bool) (error) {
+func (c *QuantaToCoin) BounceTx(refund *quanta.Refund, reason string, consensus bool) error {
 	dep := &coin.Deposit{
 		Tx:         refund.TransactionId,
 		CoinName:   refund.CoinName, // coin,issuer
@@ -557,7 +557,9 @@ func (c *QuantaToCoin) DoLoop(cursor int64) ([]quanta.Refund, error) {
 				reason = db.BAD_ADDRESS
 			}
 			err := c.BounceTx(&refund, reason, c.nodeID == 0)
-			c.logger.Error(err.Error())
+			if err != nil {
+				c.logger.Error(err.Error())
+			}
 		} else if w.Amount == 0 {
 			c.logger.Error("Amount is too small")
 		} else if c.nodeID == 0 {
