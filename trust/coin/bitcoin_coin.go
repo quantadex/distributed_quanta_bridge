@@ -92,7 +92,7 @@ func (b *BitcoinCoin) estimateFee(inputs, outputs int) (float64, float64, error)
 
 	// testnet is set to zero? override with our minimum
 	feeRateMin := math.Max(result.FeeRate, 0.00001)
-	return result.FeeRate, feeRateMin * (totalBytes / 1000.0), nil
+	return result.FeeRate, feeRateMin * (totalBytes / 1000.0) * 2, nil
 }
 
 func (b *BitcoinCoin) CheckValidAmount(amount uint64) bool {
