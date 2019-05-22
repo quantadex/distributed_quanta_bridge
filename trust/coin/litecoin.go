@@ -174,8 +174,9 @@ func (b *LiteCoin) GetFromAddress(txHash *chainhash.Hash) (string, error) {
 			return "", errors.Wrap(err, "failed to build hash")
 		}
 		prevTran, err := b.Client.GetRawTransactionVerbose(prevTranHash)
+		//will return error for an external deposit
 		if err != nil {
-			fmt.Println("returning an error")
+			//returning "" to differentiate between external and internal deposits
 			return "", nil
 		}
 
@@ -204,17 +205,17 @@ func (b *LiteCoin) GetPendingTx(watchMap map[string]string) ([]*Deposit, error) 
 		if err != nil {
 			return nil, errors.Wrap(err, "unable to get chainhash")
 		}
-		//fromAddr, err := b.GetFromAddress(txHash)
-		//if err != nil {
-		//	return nil, errors.Wrap(err, "unable to get from address")
-		//}
+		fromAddr, err := b.GetFromAddress(txHash)
+		if err != nil {
+			return nil, errors.Wrap(err, "unable to get from address")
+		}
 
-		//if fromAddr == toAddr || fromAddr == "" {
-		//	//println("Ignoring tx when from and to the same ", toAddr)
-		//	continue
-		//}
+		if fromAddr != "" && fromAddr == toAddr {
+			fmt.Println("Skipping deposit as it is the remaining amount")
+			continue
+		}
 
-		//amount, err := btcutil.NewAmount(e.Amount)
+		//amount, err := ltcutil.NewAmount(e.Amount)
 		//if err != nil {
 		//	return nil, errors.Wrap(err, "unable to create new amount")
 		//}
@@ -277,8 +278,8 @@ func (b *LiteCoin) GetDepositsInBlock(blockID int64, trustAddress map[string]str
 			for _, vout := range currentTx.Vout {
 				toAddr := strings.Join(vout.ScriptPubKey.Addresses, ",")
 
-				if len(fromAddr) != 0 && fromAddr == toAddr {
-					fmt.Println("continuing")
+				if fromAddr != "" && fromAddr == toAddr {
+					fmt.Println("Skipping deposit as it is the remaining amount")
 					//println("Ignoring tx when from and to the same ", toAddr)
 					continue
 				}

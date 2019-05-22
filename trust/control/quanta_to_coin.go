@@ -544,10 +544,17 @@ func (c *QuantaToCoin) DoLoop(cursor int64) ([]quanta.Refund, error) {
 			BlockHash: refund.BlockHash,
 		}
 
+		isCrosschainAddress := false
 		db.ConfirmWithdrawal(c.rDb, w)
+		addresses := c.rDb.GetCrosschainByBlockchain(blockchain)
+		for _, addr := range addresses {
+			if addr.Address == w.DestinationAddress {
+				isCrosschainAddress = true
+			}
+		}
 		//cursor = refund.PageTokenID
 
-		if w.DestinationAddress == "0x0000000000000000000000000000000000000000" || !c.coinChannel[blockchain].CheckValidAddress(w.DestinationAddress) || !c.coinChannel[blockchain].CheckValidAmount(w.Amount) {
+		if isCrosschainAddress || w.DestinationAddress == "0x0000000000000000000000000000000000000000" || !c.coinChannel[blockchain].CheckValidAddress(w.DestinationAddress) || !c.coinChannel[blockchain].CheckValidAmount(w.Amount) {
 			var reason string
 			if !c.coinChannel[blockchain].CheckValidAmount(w.Amount) {
 				c.logger.Error("Amount is less than the minimum withdraw amount")
