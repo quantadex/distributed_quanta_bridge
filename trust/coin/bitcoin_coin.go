@@ -51,7 +51,7 @@ func (b *BitcoinCoin) Attach() error {
 		DisableTLS:   true,
 		HTTPPostMode: true,
 	}, nil)
-	b.maxFee = 0.008
+	b.maxFee = b.BtcWithdrawFee
 	if err != nil {
 		return errors.Wrap(err, "Could not attach the client for BTC")
 	}
