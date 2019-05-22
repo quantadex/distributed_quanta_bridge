@@ -51,8 +51,8 @@ func generateConfig(quanta *test.QuantaNodeSecrets, ethereum *test.EthereumTrust
 			BtcMinConfirmation:   1,
 			BtcDegradedThreshold: 2000,
 			BtcFailureThreshold:  4000,
-			BtcWithdrawMin:       0.00002,
-			BtcWithdrawFee:       0.00001,
+			BtcWithdrawMin:       0.00075,
+			BtcWithdrawFee:       0.00025,
 
 			LtcRpc:               "localhost:19332",
 			LtcNetwork:           "regnet",

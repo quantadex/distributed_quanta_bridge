@@ -238,8 +238,9 @@ func (b *BitcoinCoin) GetPendingTx(watchMap map[string]string) ([]*Deposit, erro
 		if err != nil {
 			return nil, errors.Wrap(err, "unable to get from address")
 		}
+		_, isCrosschain := watchMap[fromAddr]
 
-		if fromAddr != "" && fromAddr == toAddr {
+		if fromAddr != "" && isCrosschain {
 			fmt.Println("Skipping deposit in pending as it is the remaining amount")
 			continue
 		}
@@ -320,8 +321,10 @@ func (b *BitcoinCoin) GetDepositsInBlock(blockID int64, trustAddress map[string]
 
 			for _, vout := range currentTx.Vout {
 				toAddr := strings.Join(vout.ScriptPubKey.Addresses, ",")
+				quantaAddr, isCrosschain := trustAddress[fromAddr]
+				fmt.Println("quantaAddr = ", quantaAddr)
 
-				if fromAddr != "" && fromAddr == toAddr {
+				if fromAddr != "" && isCrosschain {
 					fmt.Println("Skipping deposit as it is the remaining amount")
 					//println("Ignoring tx when from and to the same ", toAddr)
 					continue
