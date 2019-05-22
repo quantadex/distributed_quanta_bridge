@@ -193,20 +193,29 @@ func (b *BitcoinCoin) GetFromAddress(txHash *chainhash.Hash) (string, error) {
 		if err != nil {
 			return "", errors.Wrap(err, "failed to build hash")
 		}
-		prevTran, err := b.Client.GetRawTransactionVerbose(prevTranHash)
+		prevTran, err := b.Client.GetTransaction(prevTranHash)
 		//will return error for an external deposit
 		if err != nil {
 			//returning "" to differentiate between external and internal deposits
 			return "", nil
 		}
+		tx, err := hex.DecodeString(prevTran.Hex)
+		if err != nil {
+			return "", errors.Wrap(err, "failed to decode hex string")
+		}
+		decodedTx, err := b.Client.DecodeRawTransaction(tx)
+		if err != nil {
+			return "", errors.Wrap(err, "failed to decode raw transaction")
+		}
 
-		prevVout := prevTran.Vout[vin.Vout]
+		prevVout := decodedTx.Vout[vin.Vout]
 		fromAddress := strings.Join(prevVout.ScriptPubKey.Addresses, ",")
 		vinLookup[fromAddress] = true
 		vinAddresses = append(vinAddresses, fromAddress)
 	}
 
 	fromAddr := strings.Join(vinAddresses, ",")
+	fmt.Println("from address = ", fromAddr)
 	return fromAddr, nil
 }
 
@@ -231,7 +240,7 @@ func (b *BitcoinCoin) GetPendingTx(watchMap map[string]string) ([]*Deposit, erro
 		}
 
 		if fromAddr != "" && fromAddr == toAddr {
-			fmt.Println("Skipping deposit as it is the remaining amount")
+			fmt.Println("Skipping deposit in pending as it is the remaining amount")
 			continue
 		}
 
