@@ -215,7 +215,6 @@ func (b *BitcoinCoin) GetFromAddress(txHash *chainhash.Hash) (string, error) {
 	}
 
 	fromAddr := strings.Join(vinAddresses, ",")
-	fmt.Println("from address = ", fromAddr)
 	return fromAddr, nil
 }
 
@@ -321,8 +320,7 @@ func (b *BitcoinCoin) GetDepositsInBlock(blockID int64, trustAddress map[string]
 
 			for _, vout := range currentTx.Vout {
 				toAddr := strings.Join(vout.ScriptPubKey.Addresses, ",")
-				quantaAddr, isCrosschain := trustAddress[fromAddr]
-				fmt.Println("quantaAddr = ", quantaAddr)
+				_, isCrosschain := trustAddress[fromAddr]
 
 				if fromAddr != "" && isCrosschain {
 					fmt.Println("Skipping deposit as it is the remaining amount")

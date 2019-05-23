@@ -286,8 +286,7 @@ func (b *LiteCoin) GetDepositsInBlock(blockID int64, trustAddress map[string]str
 
 			for _, vout := range currentTx.Vout {
 				toAddr := strings.Join(vout.ScriptPubKey.Addresses, ",")
-				quantaAddress, isCrosschain := trustAddress[fromAddr]
-				fmt.Println("quantaAddress = ", quantaAddress)
+				_, isCrosschain := trustAddress[fromAddr]
 
 				if fromAddr != "" && isCrosschain {
 					fmt.Println("Skipping deposit as it is the remaining amount")
