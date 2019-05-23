@@ -133,8 +133,8 @@ func main() {
 			if !success {
 				panic("Failed to init node")
 			}
-			fmt.Println("Retry TX=", *bounceTx)
-			tx, err := db.GetTransaction(node.rDb, *bounceTx)
+			fmt.Println("Retry TX=", *retryTx)
+			tx, err := db.GetTransaction(node.rDb, *retryTx)
 			if err != nil {
 				panic(fmt.Errorf("failed to get tx file: %s \n", err))
 			}
