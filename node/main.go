@@ -107,6 +107,12 @@ func main() {
 			if err != nil {
 				panic(fmt.Errorf("failed to get tx file: %s \n", err))
 			}
+
+			if tx.Type == db.DEPOSIT {
+				fmt.Println("Can't bounce deposit")
+				return
+			}
+
 			if tx.SubmitState != db.SUBMIT_SUCCESS {
 				fmt.Println("marking as a bounce")
 				refund := quanta.Refund{
