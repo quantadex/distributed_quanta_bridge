@@ -264,9 +264,8 @@ func (c *CoinToQuanta) processDeposits() {
 	txs := db.QueryDepositByAge(c.rDb, time.Now().Add(-time.Second*5), []string{db.SUBMIT_CONSENSUS})
 
 	// shuffle so we don't get stuck with the one failing.
-	pickN := rand.Intn(len(txs))
-
 	if len(txs) > 0 {
+		pickN := rand.Intn(len(txs))
 		c.counter0.Add(1)
 		tx := txs[pickN]
 		w := &coin.Deposit{
