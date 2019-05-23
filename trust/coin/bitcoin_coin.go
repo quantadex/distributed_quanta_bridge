@@ -66,7 +66,7 @@ type FeeResult struct {
 }
 
 func (b *BitcoinCoin) estimateFee(inputs, outputs int) (float64, float64, error) {
-	totalBytes := float64(350.0 + (180.0 * inputs) + (34.0 * outputs) + 10.0)
+	totalBytes := float64(180.0 + (180.0 * inputs) + (34.0 * outputs) + 10.0)
 
 	numBlocks, err := json.Marshal(int(35))
 	if err != nil {
