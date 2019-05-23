@@ -124,6 +124,7 @@ func main() {
 					DestinationAddress: tx.To,
 					BlockHash: tx.BlockHash,
 				}
+				node.initTrust(config)
 				node.qTC.BounceTx(&refund, db.AMOUNT_TOO_SMALL, true)
 			} else {
 				fmt.Println("Tx already processed successfully.")
