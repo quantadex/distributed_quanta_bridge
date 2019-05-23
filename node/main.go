@@ -145,6 +145,7 @@ func main() {
 					db.ChangeDepositSubmitState(node.rDb, tx.Tx, db.SUBMIT_CONSENSUS, tx.SubmitConfirm_block, tx.SubmitTxHash, tx.BlockHash)
 				} else {
 					db.ChangeWithdrawalSubmitState(node.rDb, tx.Tx, db.SUBMIT_CONSENSUS, tx.TxId, tx.SubmitTxHash, tx.BlockHash)
+					db.ChangeWithdrawalSubmitTx(node.rDb, tx.Type, tx.TxId, "", tx.BlockHash)
 				}
 			}
 		} else if *repair {
