@@ -9,6 +9,7 @@ import (
 	"github.com/quantadex/distributed_quanta_bridge/trust/control"
 	"github.com/quantadex/distributed_quanta_bridge/trust/db"
 	"github.com/quantadex/distributed_quanta_bridge/trust/quanta"
+	"strconv"
 
 	//"github.com/quantadex/distributed_quanta_bridge/trust/quanta"
 	"time"
@@ -90,7 +91,7 @@ func GetBlockchainStatus(coins interface{}, store kv_store.KVStore, rDb *db.DB, 
 
 	}
 	res.TotalAddresses = totalAddresses
-	addressesSince24hr, err := rDb.GetAddressCountByBlockchainAndTime(coinName)
+	addressesSince24hr, err := rDb.GetAddressCountByBlockchain24hrs(coinName)
 	if err != nil {
 
 	}
@@ -126,22 +127,12 @@ func GetDepositOrWithdrawalStatus(txType string, degradedThreshold, failureThres
 	res.FailureThreshold = failureThreshold
 
 	if txType == db.DEPOSIT {
-		if nodeId == 0 {
-			v = expvar.Get(control.DEPOSIT_STATUS_0)
-		} else if nodeId == 1 {
-			v = expvar.Get(control.DEPOSIT_STATUS_1)
-		} else if nodeId == 2 {
-			v = expvar.Get(control.DEPOSIT_STATUS_2)
-		}
+		counterName := control.DEPOSIT_STATUS_ + strconv.Itoa(nodeId)
+		v = expvar.Get(counterName)
 
 	} else if txType == db.WITHDRAWAL {
-		if nodeId == 0 {
-			v = expvar.Get(control.WITHDRAWAL_STATUS_0)
-		} else if nodeId == 1 {
-			v = expvar.Get(control.WITHDRAWAL_STATUS_1)
-		} else if nodeId == 2 {
-			v = expvar.Get(control.WITHDRAWAL_STATUS_2)
-		}
+		counterName := control.WITHDRAWAL_STATUS_ + strconv.Itoa(nodeId)
+		v = expvar.Get(counterName)
 
 	} else {
 		return res, errors.New("unknown transaction type")

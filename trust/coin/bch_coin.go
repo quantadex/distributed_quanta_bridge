@@ -126,28 +126,11 @@ func (b *BCH) GenerateMultisig(accountId string) (string, error) {
 
 	addr = append(addr, btcAddress)
 
-	//addrx, err := b.Client.CreateMultisig(len(addr)-1, addr)
-	//if err != nil {
-	//	return "", err
-	//}
-
 	addrx, err := b.Client.AddMultisigAddress(len(addr)-1, addr, "", b.chaincfg)
-	//fmt.Println("result ", addrx)
 
 	if err != nil {
 		return "", err
 	}
-
-	//scriptBytes, err := hex.DecodeString(addrx.RedeemScript)
-	//if err != nil {
-	//	return "", err
-	//}
-	//
-	//res, err := b.Client.DecodeScript(scriptBytes)
-	//
-	//if err != nil {
-	//	return "", err
-	//}
 
 	res := b.chaincfg.CashAddressPrefix + ":" + addrx.String()
 	err = b.Client.ImportAddressRescan(res, "", false)
@@ -230,11 +213,6 @@ func (b *BCH) GetPendingTx(watchMap map[string]string) ([]*Deposit, error) {
 			continue
 		}
 
-		//amount, err := btcutil.NewAmount(e.Amount)
-		//if err != nil {
-		//	return nil, errors.Wrap(err, "unable to create new amount")
-		//}
-
 		if quantaAddr, ok := watchMap[toAddr]; ok {
 			amount, err := bchutil.NewAmount(e.Amount)
 			if err != nil {
@@ -248,8 +226,6 @@ func (b *BCH) GetPendingTx(watchMap map[string]string) ([]*Deposit, error) {
 			})
 		}
 	}
-	//msg, _ := json.Marshal(events)
-	//fmt.Printf("pending events = %v\n", string(msg))
 	return events, nil
 }
 
@@ -318,8 +294,6 @@ func (b *BCH) GetDepositsInBlock(blockID int64, trustAddress map[string]string) 
 			}
 		}
 	}
-	//msg,_ := json.Marshal(events)
-	//fmt.Printf("events = %v\n", string(msg))
 	return events, nil
 }
 
@@ -403,10 +377,6 @@ func (b *BCH) GetUnspentInputs(destAddress bchutil.Address, amount bchutil.Amoun
 
 	for _, e := range unspent {
 		if _, ok := b.crosschainAddr[e.Address]; ok {
-			//unspentAddr, err := btcutil.DecodeAddress(e.Address, b.chaincfg)
-			//if unspentAddr.String() == destAddress.String() {
-			//	return nil, nil, nil, errors.New("We don't expect destination address to be same as ")
-			//}
 
 			inputs = append(inputs, btcjson.TransactionInput{Txid: e.TxID, Vout: e.Vout})
 			unspentFound = append(unspentFound, e)

@@ -128,7 +128,6 @@ func (b *LiteCoin) GenerateMultisig(accountId string) (string, error) {
 	addrx, err := b.Client.AddMultisigAddress(len(addr)-1, addr, "")
 
 	if err != nil {
-		fmt.Println("error = ", err)
 		return "", err
 	}
 
@@ -152,7 +151,6 @@ func (b *LiteCoin) GenerateMultisig(accountId string) (string, error) {
 }
 
 func (b *LiteCoin) GetTxID(trustAddress common.Address) (uint64, error) {
-	//panic("implement me")
 	return 0, nil
 }
 
@@ -224,11 +222,6 @@ func (b *LiteCoin) GetPendingTx(watchMap map[string]string) ([]*Deposit, error) 
 			continue
 		}
 
-		//amount, err := ltcutil.NewAmount(e.Amount)
-		//if err != nil {
-		//	return nil, errors.Wrap(err, "unable to create new amount")
-		//}
-
 		if quantaAddr, ok := watchMap[toAddr]; ok {
 			amount, err := ltcutil.NewAmount(e.Amount)
 			if err != nil {
@@ -243,8 +236,6 @@ func (b *LiteCoin) GetPendingTx(watchMap map[string]string) ([]*Deposit, error) 
 		}
 
 	}
-	//msg, _ := json.Marshal(events)
-	//fmt.Printf("pending events = %v\n", string(msg))
 	return events, nil
 }
 
@@ -313,8 +304,6 @@ func (b *LiteCoin) GetDepositsInBlock(blockID int64, trustAddress map[string]str
 			}
 		}
 	}
-	//msg,_ := json.Marshal(events)
-	//fmt.Printf("events = %v\n", string(msg))
 	return events, nil
 }
 
@@ -400,10 +389,6 @@ func (b *LiteCoin) GetUnspentInputs(amount ltcutil.Amount) (ltcutil.Amount, []bt
 
 	for _, e := range unspent {
 		if _, ok := b.crosschainAddr[e.Address]; ok {
-			//unspentAddr, err := btcutil.DecodeAddress(e.Address, b.chaincfg)
-			//if unspentAddr.String() == destAddress.String() {
-			//	return nil, nil, nil, errors.New("We don't expect destination address to be same as ")
-			//}
 
 			inputs = append(inputs, btcjson.TransactionInput{Txid: e.TxID, Vout: e.Vout})
 			unspentFound = append(unspentFound, e)

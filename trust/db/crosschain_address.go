@@ -46,7 +46,7 @@ func (db *DB) GetAddressCountByBlockchain(blockchain string) (int, error) {
 	return n, nil
 }
 
-func (db *DB) GetAddressCountByBlockchainAndTime(blockchain string) (int, error) {
+func (db *DB) GetAddressCountByBlockchain24hrs(blockchain string) (int, error) {
 	t := time.Now().AddDate(0, 0, -1)
 	var tx []crypto.CrosschainAddress
 	n, err := db.Model(&tx).Where("blockchain=? and updated>?", blockchain, t).Count()
@@ -67,7 +67,7 @@ func RemoveCrosschainAddress(db *DB, id string) error {
 	return err
 }
 
-func (db *DB) AddCrosschainAddress(input *crypto.ForwardInput) (error) {
+func (db *DB) AddCrosschainAddress(input *crypto.ForwardInput) error {
 	var shared bool
 	lastBlock := uint64(1)
 	if input.QuantaAddr == "address-pool" {

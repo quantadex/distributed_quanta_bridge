@@ -21,6 +21,7 @@ import (
 	"github.com/scorum/bitshares-go/apis/database"
 	"github.com/zserge/metric"
 	"math/big"
+	"strconv"
 	"strings"
 	"time"
 )
@@ -28,9 +29,7 @@ import (
 const QUANTA = "QUANTA"
 const DQ_QUANTA2COIN = "DQ_QUANTA2COIN"
 
-const WITHDRAWAL_STATUS_0 = "WITHDRAWAL_STATUS_0"
-const WITHDRAWAL_STATUS_1 = "WITHDRAWAL_STATUS_1"
-const WITHDRAWAL_STATUS_2 = "WITHDRAWAL_STATUS_2"
+const WITHDRAWAL_STATUS_ = "WITHDRAWAL_STATUS_"
 
 type WithdrawalResult struct {
 	W   *coin.Withdrawal
@@ -57,9 +56,7 @@ type QuantaToCoin struct {
 	coinMapping         map[string]string
 	coinInfo            map[string]*database.Asset
 	blockInfo           map[string]int64
-	counter0            metric.Metric
-	counter1            metric.Metric
-	counter2            metric.Metric
+	counter             metric.Metric
 
 	rr        *RoundRobinSigner
 	cosi      *cosi.Cosi
@@ -103,24 +100,12 @@ func NewQuantaToCoin(log logger.Logger,
 	res.doneChan = make(chan bool, 1)
 	res.trustPeer = peer_contact.NewTrustPeerNode(man, peer, nodeID, queue_, queue.REFUNDMSG_QUEUE, "/node/api/refund", kM[QUANTA])
 	res.cosi = cosi.NewProtocol(res.trustPeer, nodeID == 0, time.Second*3)
-	res.counter0 = metric.NewCounter("24h1m")
-	res.counter1 = metric.NewCounter("24h1m")
-	res.counter2 = metric.NewCounter("24h1m")
-	if res.nodeID == 0 {
-		v := expvar.Get(WITHDRAWAL_STATUS_0)
-		if v == nil {
-			expvar.Publish(WITHDRAWAL_STATUS_0, res.counter0)
-		}
-	} else if res.nodeID == 1 {
-		v := expvar.Get(WITHDRAWAL_STATUS_1)
-		if v == nil {
-			expvar.Publish(WITHDRAWAL_STATUS_1, res.counter1)
-		}
-	} else if res.nodeID == 2 {
-		v := expvar.Get(WITHDRAWAL_STATUS_2)
-		if v == nil {
-			expvar.Publish(WITHDRAWAL_STATUS_2, res.counter2)
-		}
+	res.counter = metric.NewCounter("24h1m")
+
+	counterName := WITHDRAWAL_STATUS_ + strconv.Itoa(res.nodeID)
+	v := expvar.Get(counterName)
+	if v == nil {
+		expvar.Publish(counterName, res.counter)
 	}
 
 	res.coinInfo = coinInfo
@@ -135,14 +120,14 @@ func NewQuantaToCoin(log logger.Logger,
 		} else {
 			withdrawal, err := res.coinChannel[blockchain].DecodeRefund(msg)
 			if err != nil {
-				res.incrementCounter(res.nodeID)
+				res.counter.Add(1)
 				log.Error("Unable to decode refund")
 				return err
 			}
 			tx, err := db.GetTransaction(rDb, withdrawal.Tx)
 
 			if err != nil {
-				res.incrementCounter(res.nodeID)
+				res.counter.Add(1)
 				return errors.New("Unable to verify: get tx, " + err.Error())
 			}
 
@@ -154,7 +139,7 @@ func NewQuantaToCoin(log logger.Logger,
 				log.Error("Unable to verify refund " + tx.Tx)
 			}
 
-			res.incrementCounter(res.nodeID)
+			res.counter.Add(1)
 			return errors.New("Unable to verify: " + withdrawal.Tx)
 		}
 		return nil
@@ -169,14 +154,14 @@ func NewQuantaToCoin(log logger.Logger,
 		} else {
 			withdrawal, err := res.coinChannel[blockchain].DecodeRefund(msg)
 			if err != nil {
-				res.incrementCounter(res.nodeID)
+				res.counter.Add(1)
 				log.Error("Unable to decode refund at persist")
 				return err
 			}
 
 			err = db.SignWithdrawal(rDb, withdrawal)
 			if err != nil {
-				res.incrementCounter(res.nodeID)
+				res.counter.Add(1)
 				res.logger.Error("Failed to confirm transaction: " + err.Error())
 				return errors.New("Failed to confirm transaction: " + err.Error())
 			}
@@ -190,13 +175,13 @@ func NewQuantaToCoin(log logger.Logger,
 		msg := &coin.EncodedMsg{}
 		err := json.Unmarshal([]byte(encoded), msg)
 		if err != nil {
-			res.incrementCounter(res.nodeID)
+			res.counter.Add(1)
 			return "", err
 		}
 
 		blockchain, b := res.getBlockchainForCoin(msg.CoinName)
 		if !b {
-			res.incrementCounter(res.nodeID)
+			res.counter.Add(1)
 			return "", nil
 		}
 
@@ -204,7 +189,7 @@ func NewQuantaToCoin(log logger.Logger,
 		log.Infof("Sign msg %s -> %s", msg.Message, encodedSig)
 
 		if err != nil {
-			res.incrementCounter(res.nodeID)
+			res.counter.Add(1)
 			log.Error("Unable to Sign/encode refund msg")
 			return "", err
 		}
@@ -233,14 +218,6 @@ func NewQuantaToCoin(log logger.Logger,
 	}
 
 	return res
-}
-
-func (c *QuantaToCoin) incrementCounter(nodeId int) {
-	if nodeId == 1 {
-		c.counter1.Add(1)
-	} else if nodeId == 2 {
-		c.counter2.Add(1)
-	}
 }
 
 func (c *QuantaToCoin) GetNewCoinBlockIDs() []int64 {
@@ -298,7 +275,7 @@ func (c *QuantaToCoin) DispatchWithdrawal() {
 			txs := db.QueryWithdrawalByAge(c.rDb, time.Now().Add(-time.Second*5), []string{db.SUBMIT_CONSENSUS})
 
 			if len(txs) > 0 {
-				c.counter0.Add(1)
+				c.counter.Add(1)
 
 				blockchain, ok := c.getBlockchainForCoin(txs[0].Coin)
 				if !ok {

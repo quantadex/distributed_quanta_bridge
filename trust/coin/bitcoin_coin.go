@@ -146,7 +146,6 @@ func (b *BitcoinCoin) GenerateMultisig(accountId string) (string, error) {
 	addr = append(addr, btcAddress)
 
 	addrx, err := b.Client.AddMultisigAddress(len(addr)-1, addr, "")
-	//fmt.Println("result ", addrx)
 
 	if err != nil {
 		return "", err
@@ -172,7 +171,6 @@ func (b *BitcoinCoin) GenerateMultisig(accountId string) (string, error) {
 }
 
 func (b *BitcoinCoin) GetTxID(trustAddress common.Address) (uint64, error) {
-	//panic("implement me")
 	return 0, nil
 }
 
@@ -244,11 +242,6 @@ func (b *BitcoinCoin) GetPendingTx(watchMap map[string]string) ([]*Deposit, erro
 			continue
 		}
 
-		//amount, err := btcutil.NewAmount(e.Amount)
-		//if err != nil {
-		//	return nil, errors.Wrap(err, "unable to create new amount")
-		//}
-
 		if quantaAddr, ok := watchMap[toAddr]; ok {
 			amount, err := btcutil.NewAmount(e.Amount)
 			if err != nil {
@@ -263,8 +256,6 @@ func (b *BitcoinCoin) GetPendingTx(watchMap map[string]string) ([]*Deposit, erro
 		}
 
 	}
-	//msg, _ := json.Marshal(events)
-	//fmt.Printf("pending events = %v\n", string(msg))
 	return events, nil
 }
 
@@ -347,8 +338,6 @@ func (b *BitcoinCoin) GetDepositsInBlock(blockID int64, trustAddress map[string]
 			}
 		}
 	}
-	//msg,_ := json.Marshal(events)
-	//fmt.Printf("events = %v\n", string(msg))
 	return events, nil
 }
 
@@ -439,10 +428,6 @@ func (b *BitcoinCoin) GetUnspentInputs(destAddress btcutil.Address, amount btcut
 
 	for _, e := range unspent {
 		if _, ok := b.crosschainAddr[e.Address]; ok {
-			//unspentAddr, err := btcutil.DecodeAddress(e.Address, b.chaincfg)
-			//if unspentAddr.String() == destAddress.String() {
-			//	return nil, nil, nil, errors.New("We don't expect destination address to be same as ")
-			//}
 
 			inputs = append(inputs, btcjson.TransactionInput{Txid: e.TxID, Vout: e.Vout})
 			unspentFound = append(unspentFound, e)
@@ -473,11 +458,6 @@ func (b *BitcoinCoin) GetUnspentInputs(destAddress btcutil.Address, amount btcut
 // must convert to our system precision
 func (b *BitcoinCoin) EncodeRefund(w Withdrawal) (string, error) {
 	fmt.Printf("Encode refund %v\n", w)
-
-	//sourceAddr, err := btcutil.DecodeAddress(w.SourceAddress, b.chaincfg)
-	//if err != nil {
-	//	return "", err
-	//}
 
 	destinationAddr, err := btcutil.DecodeAddress(w.DestinationAddress, b.chaincfg)
 	if err != nil {
