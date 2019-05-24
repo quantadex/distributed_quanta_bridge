@@ -17,18 +17,19 @@ import (
  * DepositSync is an interface which describes the lifecycle of syncing blockchain deposits into the database.
  */
 type DepositSync struct {
-	coinChannel         coin.Coin
-	quantaChannel       quanta.Quanta // stellar -> graphene
-	coinInfo            map[string]*database.Asset
-	db                  kv_store.KVStore
-	rDb                 *db.DB
-	logger              logger.Logger
-	blockStartID        int64
-	fnDepositInBlock    func(blockID int64) ([]*coin.Deposit, error)
-	fnPostProcessBlock  func(blockID int64) error
-	fnGetWatchAddress   func() map[string]string
-	fnTransformCoin     func(dep *coin.Deposit) *coin.Deposit
-	fnFindAllAndConfirm func() error
+	coinChannel          coin.Coin
+	quantaChannel        quanta.Quanta // stellar -> graphene
+	coinInfo             map[string]*database.Asset
+	db                   kv_store.KVStore
+	rDb                  *db.DB
+	logger               logger.Logger
+	blockStartID         int64
+	fnDepositInBlock     func(blockID int64) ([]*coin.Deposit, error)
+	fnPostProcessBlock   func(blockID int64) error
+	fnGetWatchAddress    func() map[string]string
+	fnTransformCoin      func(dep *coin.Deposit) *coin.Deposit
+	fnFindAllAndConfirm  func() error
+	fnGetMinConfirmation func() int64
 
 	doneChan chan bool
 }
@@ -112,7 +113,8 @@ func (c *DepositSync) DoLoop(blockIDs []int64) []*coin.Deposit {
 
 				for _, dep := range deposits {
 					// every node must mark the deposit
-					err = db.WaitForConfirmation(c.rDb, dep, false)
+					minConfirmations := c.fnGetMinConfirmation()
+					err = db.WaitForConfirmation(c.rDb, dep, false, minConfirmations)
 					if err != nil {
 						c.logger.Error("Cannot insert into db:" + err.Error())
 					}

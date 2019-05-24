@@ -5,6 +5,7 @@ import (
 	"github.com/go-errors/errors"
 	"github.com/go-pg/pg"
 	"github.com/quantadex/distributed_quanta_bridge/trust/coin"
+	"strconv"
 	"time"
 )
 
@@ -76,13 +77,13 @@ func QueryAllTXByUser(db *DB, user string, offset int, limit int) ([]Transaction
 
 func QueryAllWaitForConfirmTx(db *DB, blockchain string) ([]Transaction, error) {
 	var txs []Transaction
-	err := db.Model(&txs).Where("\"submit_state\" = ? AND \"coin\" = ?", WAIT_FOR_CONFIRMATION, blockchain).Select()
+	err := db.Model(&txs).Where("\"submit_state\" like ? || '%' AND \"coin\" = ?", WAIT_FOR_CONFIRMATION, blockchain).Select()
 	return txs, err
 }
 
 func QueryAllWaitForConfirmTxETH(db *DB, coin string) ([]Transaction, error) {
 	var txs []Transaction
-	err := db.Model(&txs).Where("Type=? and Submit_State=? AND (coin =? OR coin like'%0X%') ", DEPOSIT, WAIT_FOR_CONFIRMATION, coin).Select()
+	err := db.Model(&txs).Where("Type=? and Submit_State like ? || '%' AND (coin =? OR coin like'%0X%') ", DEPOSIT, WAIT_FOR_CONFIRMATION, coin).Select()
 	return txs, err
 }
 
@@ -106,7 +107,8 @@ func ConfirmDeposit(db *DB, dep *coin.Deposit, isBounced bool) error {
 	return err
 }
 
-func WaitForConfirmation(db *DB, dep *coin.Deposit, isBounced bool) error {
+func WaitForConfirmation(db *DB, dep *coin.Deposit, isBounced bool, minConfirmations int64) error {
+	submitState := WAIT_FOR_CONFIRMATION + " 1/" + strconv.Itoa(int(minConfirmations))
 	tx := &Transaction{
 		Type:        DEPOSIT,
 		Tx:          dep.Tx,
@@ -118,7 +120,7 @@ func WaitForConfirmation(db *DB, dep *coin.Deposit, isBounced bool) error {
 		To:          dep.QuantaAddr,
 		IsBounced:   isBounced,
 		Signed:      false,
-		SubmitState: WAIT_FOR_CONFIRMATION,
+		SubmitState: submitState,
 		BlockHash:   dep.BlockHash,
 	}
 	_, err := db.Model(tx).OnConflict("(Type,Tx,Block_Hash) DO UPDATE").Set("Submit_State = EXCLUDED.Submit_State").Insert()
@@ -268,9 +270,9 @@ func GetTransaction(db *DB, txID string) (*Transaction, error) {
 	return nil, errors.New("not found")
 }
 
-func GetAllTransaction(db *DB, txID string, txType string) ([]Transaction, error) {
+func GetAllWaitForConfirmTransaction(db *DB, txID string, txType string) ([]Transaction, error) {
 	var txs []Transaction
-	err := db.Model(&txs).Where("Tx=? and Type=? and Submit_State=?", txID, txType, WAIT_FOR_CONFIRMATION).Select()
+	err := db.Model(&txs).Where("Tx=? and Type=? and Submit_State like ? || '%'", txID, txType, WAIT_FOR_CONFIRMATION).Select()
 	if err != nil {
 		println("unable to get tx: " + err.Error())
 		return nil, err

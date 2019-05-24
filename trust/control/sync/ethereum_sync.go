@@ -7,6 +7,7 @@ import (
 	"github.com/quantadex/distributed_quanta_bridge/trust/coin"
 	"github.com/quantadex/distributed_quanta_bridge/trust/db"
 	"math/big"
+	"strconv"
 	"strings"
 )
 
@@ -23,6 +24,7 @@ func (c *EthereumSync) Setup() {
 	c.fnPostProcessBlock = c.PostProcessBlock
 	c.fnGetWatchAddress = c.GetWatchAddress
 	c.fnFindAllAndConfirm = c.FindAllAndConfirm
+	c.fnGetMinConfirmation = c.GetMinConfirmation
 }
 
 /**
@@ -128,7 +130,7 @@ func (c *EthereumSync) FindAllAndConfirm() error {
 		if err != nil {
 			return errors.Wrap(err, "Could not get the transaction")
 		}
-		tx, err := db.GetAllTransaction(c.rDb, t.Tx, db.DEPOSIT)
+		tx, err := db.GetAllWaitForConfirmTransaction(c.rDb, t.Tx, db.DEPOSIT)
 		for _, d := range tx {
 			if d.BlockHash == blockHash {
 				if confirm > c.ethMinConfirm {
@@ -137,6 +139,11 @@ func (c *EthereumSync) FindAllAndConfirm() error {
 						return errors.Wrap(err, "Could not change the submit state to consensus")
 					}
 				} else {
+					submitState := db.WAIT_FOR_CONFIRMATION + " " + strconv.Itoa(int(confirm)) + "/" + strconv.Itoa(int(c.ethMinConfirm))
+					err := db.ChangeSubmitState(c.rDb, d.Tx, submitState, db.DEPOSIT, blockHash)
+					if err != nil {
+						return errors.Wrap(err, "Could not change state to wait for confirmation")
+					}
 					c.logger.Infof("Transaction %s has %d confirmations", d.Tx, confirm)
 				}
 			} else {
@@ -150,4 +157,8 @@ func (c *EthereumSync) FindAllAndConfirm() error {
 		}
 	}
 	return nil
+}
+
+func (c *EthereumSync) GetMinConfirmation() int64 {
+	return c.ethMinConfirm
 }

@@ -7,6 +7,7 @@ import (
 	"github.com/quantadex/distributed_quanta_bridge/trust/coin"
 	"github.com/quantadex/distributed_quanta_bridge/trust/db"
 	"math/big"
+	"strconv"
 )
 
 type BitcoinSync struct {
@@ -20,6 +21,7 @@ func (c *BitcoinSync) Setup() {
 	c.fnGetWatchAddress = c.GetWatchAddress
 	c.fnTransformCoin = c.TransformCoin
 	c.fnFindAllAndConfirm = c.FindAllAndConfirm
+	c.fnGetMinConfirmation = c.GetMinConfirmation
 }
 
 func (c *BitcoinSync) TransformCoin(dep *coin.Deposit) *coin.Deposit {
@@ -82,6 +84,11 @@ func (c *BitcoinSync) FindAndConfirm(tx db.Transaction, blockHash string, confir
 			return errors.Wrap(err, "Could not change state to consensus")
 		}
 	} else {
+		submitState := db.WAIT_FOR_CONFIRMATION + " " + strconv.Itoa(int(confirmations)) + "/" + strconv.Itoa(int(c.btcMinConfirm))
+		err := db.ChangeSubmitState(c.rDb, tx.Tx, submitState, db.DEPOSIT, blockHash)
+		if err != nil {
+			return errors.Wrap(err, "Could not change state to wait for confirmation")
+		}
 		c.logger.Infof("Transaction %s has %d confirmations", tx.Tx, confirmations)
 	}
 	return nil
@@ -103,4 +110,8 @@ func (c *BitcoinSync) FindAllAndConfirm() error {
 		}
 	}
 	return nil
+}
+
+func (c *BitcoinSync) GetMinConfirmation() int64 {
+	return c.btcMinConfirm
 }
