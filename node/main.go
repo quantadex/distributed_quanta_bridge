@@ -107,6 +107,12 @@ func main() {
 			if err != nil {
 				panic(fmt.Errorf("failed to get tx file: %s \n", err))
 			}
+
+			if tx.Type == db.DEPOSIT {
+				fmt.Println("Can't bounce deposit")
+				return
+			}
+
 			if tx.SubmitState != db.SUBMIT_SUCCESS {
 				fmt.Println("marking as a bounce")
 				refund := quanta.Refund{
@@ -118,6 +124,7 @@ func main() {
 					DestinationAddress: tx.To,
 					BlockHash: tx.BlockHash,
 				}
+				node.initTrust(config)
 				node.qTC.BounceTx(&refund, db.AMOUNT_TOO_SMALL, true)
 			} else {
 				fmt.Println("Tx already processed successfully.")
@@ -127,8 +134,8 @@ func main() {
 			if !success {
 				panic("Failed to init node")
 			}
-			fmt.Println("Retry TX=", *bounceTx)
-			tx, err := db.GetTransaction(node.rDb, *bounceTx)
+			fmt.Println("Retry TX=", *retryTx)
+			tx, err := db.GetTransaction(node.rDb, *retryTx)
 			if err != nil {
 				panic(fmt.Errorf("failed to get tx file: %s \n", err))
 			}
@@ -138,6 +145,7 @@ func main() {
 					db.ChangeDepositSubmitState(node.rDb, tx.Tx, db.SUBMIT_CONSENSUS, tx.SubmitConfirm_block, tx.SubmitTxHash, tx.BlockHash)
 				} else {
 					db.ChangeWithdrawalSubmitState(node.rDb, tx.Tx, db.SUBMIT_CONSENSUS, tx.TxId, tx.SubmitTxHash, tx.BlockHash)
+					db.ChangeWithdrawalSubmitTx(node.rDb, tx.Type, tx.TxId, "", tx.BlockHash)
 				}
 			}
 		} else if *repair {

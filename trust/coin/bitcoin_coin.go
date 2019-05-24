@@ -66,9 +66,9 @@ type FeeResult struct {
 }
 
 func (b *BitcoinCoin) estimateFee(inputs, outputs int) (float64, float64, error) {
-	totalBytes := float64(350.0 + (180.0 * inputs) + (34.0 * outputs) + 10.0)
+	totalBytes := float64(180.0 + (180.0 * inputs) + (34.0 * outputs) + 10.0)
 
-	numBlocks, err := json.Marshal(int(5))
+	numBlocks, err := json.Marshal(int(35))
 	if err != nil {
 		return 0, 0, err
 	}
@@ -91,8 +91,11 @@ func (b *BitcoinCoin) estimateFee(inputs, outputs int) (float64, float64, error)
 	}
 
 	// testnet is set to zero? override with our minimum
-	feeRateMin := math.Max(result.FeeRate, 0.00001)
-	return result.FeeRate, feeRateMin * (totalBytes / 1000.0) * 2, nil
+	feeRateMin := math.Max(result.FeeRate, 0.00005)
+	fmt.Printf("estimateFee totalBytes=%d feeRate=%f totalFees=%f\n",
+		totalBytes, feeRateMin,feeRateMin * (totalBytes / 1000.0))
+
+	return result.FeeRate, feeRateMin * (totalBytes / 1000.0), nil
 }
 
 func (b *BitcoinCoin) CheckValidAmount(amount uint64) bool {

@@ -21,6 +21,7 @@ import (
 	"strconv"
 	"strings"
 	"time"
+	"math/rand"
 )
 
 type DepositResult struct {
@@ -235,9 +236,14 @@ func NewCoinToQuanta(log logger.Logger,
 func (c *CoinToQuanta) processDeposits() {
 	// only leader - pick up  deposits with empty or null submit_state
 	txs := db.QueryDepositByAge(c.rDb, time.Now().Add(-time.Second*5), []string{db.SUBMIT_CONSENSUS})
+
+	// shuffle so we don't get stuck with the one failing.
 	if len(txs) > 0 {
 		c.counter.Add(1)
 		tx := txs[0]
+		pickN := rand.Intn(len(txs))
+		c.counter0.Add(1)
+		tx := txs[pickN]
 		w := &coin.Deposit{
 			Tx:         tx.Tx,
 			CoinName:   tx.Coin,
