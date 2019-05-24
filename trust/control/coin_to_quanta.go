@@ -18,10 +18,10 @@ import (
 	"github.com/quantadex/quanta_book/consensus/cosi"
 	"github.com/scorum/bitshares-go/types"
 	"github.com/zserge/metric"
+	"math/rand"
 	"strconv"
 	"strings"
 	"time"
-	"math/rand"
 )
 
 type DepositResult struct {
@@ -240,9 +240,7 @@ func (c *CoinToQuanta) processDeposits() {
 	// shuffle so we don't get stuck with the one failing.
 	if len(txs) > 0 {
 		c.counter.Add(1)
-		tx := txs[0]
 		pickN := rand.Intn(len(txs))
-		c.counter0.Add(1)
 		tx := txs[pickN]
 		w := &coin.Deposit{
 			Tx:         tx.Tx,
