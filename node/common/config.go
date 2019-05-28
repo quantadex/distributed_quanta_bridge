@@ -62,4 +62,6 @@ type Config struct {
 	DepFailureThreshold       int64
 	WithdrawDegradedThreshold int64
 	WithdrawFailureThreshold  int64
+
+	BlackList map[string][]string
 }

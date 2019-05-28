@@ -32,6 +32,7 @@ type EthereumCoin struct {
 	erc20map       map[string]string
 	EthWithdrawMin float64
 	EthWithdrawFee float64
+	BlackList      map[string]bool
 }
 
 type EncodedMsg struct {
@@ -181,6 +182,10 @@ func (c *EthereumCoin) FillCrosschainAddress(crosschainAddr map[string]string) {
 }
 
 func (c *EthereumCoin) EncodeRefund(w Withdrawal) (string, error) {
+	if _, ok := c.BlackList[w.SourceAddress]; ok {
+		return "", errors.New("BlackListed user: " + w.SourceAddress)
+	}
+
 	var encoded bytes.Buffer
 	var smartAddress string
 

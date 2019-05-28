@@ -76,6 +76,8 @@ func generateConfig(quanta *test.QuantaNodeSecrets, ethereum *test.EthereumTrust
 			DepFailureThreshold:       20,
 			WithdrawDegradedThreshold: 10,
 			WithdrawFailureThreshold:  20,
+
+			BlackList: map[string][]string{},
 		}, &common.Secrets{
 			NodeKey:          quanta.NodeSecrets[index],
 			EthereumKeyStore: ethereum.NodeSecrets[index],

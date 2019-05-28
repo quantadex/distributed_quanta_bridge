@@ -36,6 +36,7 @@ type BCH struct {
 	grapheneSeedPrefix string
 	BchWithdrawMin     float64
 	BchWithdrawFee     float64
+	BlackList          map[string]bool
 }
 
 func (b *BCH) Blockchain() string {
@@ -403,6 +404,9 @@ func (b *BCH) GetUnspentInputs(destAddress bchutil.Address, amount bchutil.Amoun
 }
 
 func (b *BCH) EncodeRefund(w Withdrawal) (string, error) {
+	if _, ok := b.BlackList[w.SourceAddress]; ok {
+		return "", errors.New("BlackListed user: " + w.SourceAddress)
+	}
 	destinationAddr, err := bchutil.DecodeAddress(w.DestinationAddress, b.chaincfg)
 	if err != nil {
 		return "", err

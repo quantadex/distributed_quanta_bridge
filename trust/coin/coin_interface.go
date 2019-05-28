@@ -140,15 +140,15 @@ func NewDummyCoin() (Coin, error) {
 	return &DummyCoin{}, nil
 }
 
-func NewEthereumCoin(networkId string, ethereumRpc string, secret string, erc20map map[string]string, withdrawMin, withdrawFee float64) (Coin, error) {
+func NewEthereumCoin(networkId string, ethereumRpc string, secret string, erc20map map[string]string, withdrawMin, withdrawFee float64, blackList map[string]bool) (Coin, error) {
 	key, err := crypto2.HexToECDSA(secret)
 	if err != nil {
 		return nil, err
 	}
-	return &EthereumCoin{maxRange: common.MaxNumberInt64, networkId: networkId, ethereumRpc: ethereumRpc, ethereumSecret: key, erc20map: erc20map, EthWithdrawMin: withdrawMin, EthWithdrawFee: withdrawFee}, nil
+	return &EthereumCoin{maxRange: common.MaxNumberInt64, networkId: networkId, ethereumRpc: ethereumRpc, ethereumSecret: key, erc20map: erc20map, EthWithdrawMin: withdrawMin, EthWithdrawFee: withdrawFee, BlackList: blackList}, nil
 }
 
-func NewBitcoinCoin(rpcHost string, params *chaincfg.Params, signers []string, rpcUser, rpcPassword, grapheneSeedPrefix string, withdrawMin, withdrawFee float64) (Coin, error) {
+func NewBitcoinCoin(rpcHost string, params *chaincfg.Params, signers []string, rpcUser, rpcPassword, grapheneSeedPrefix string, withdrawMin, withdrawFee float64, blackList map[string]bool) (Coin, error) {
 	signersA := []btcutil.Address{}
 	for _, s := range signers {
 		addr, err := btcutil.DecodeAddress(s, params)
@@ -158,10 +158,10 @@ func NewBitcoinCoin(rpcHost string, params *chaincfg.Params, signers []string, r
 		signersA = append(signersA, addr)
 	}
 
-	return &BitcoinCoin{rpcHost: rpcHost, chaincfg: params, signers: signersA, rpcUser: rpcUser, rpcPassword: rpcPassword, grapheneSeedPrefix: grapheneSeedPrefix, BtcWithdrawMin: withdrawMin, BtcWithdrawFee: withdrawFee}, nil
+	return &BitcoinCoin{rpcHost: rpcHost, chaincfg: params, signers: signersA, rpcUser: rpcUser, rpcPassword: rpcPassword, grapheneSeedPrefix: grapheneSeedPrefix, BtcWithdrawMin: withdrawMin, BtcWithdrawFee: withdrawFee, BlackList: blackList}, nil
 }
 
-func NewLitecoinCoin(rpcHost string, params *chaincfg2.Params, signers []string, rpcUser, rpcPassword, grapheneSeedPrefix string, withdrawMin, withdrawFee float64) (Coin, error) {
+func NewLitecoinCoin(rpcHost string, params *chaincfg2.Params, signers []string, rpcUser, rpcPassword, grapheneSeedPrefix string, withdrawMin, withdrawFee float64, blackList map[string]bool) (Coin, error) {
 	signersA := []ltcutil.Address{}
 	for _, s := range signers {
 		addr, err := ltcutil.DecodeAddress(s, params)
@@ -171,10 +171,10 @@ func NewLitecoinCoin(rpcHost string, params *chaincfg2.Params, signers []string,
 		signersA = append(signersA, addr)
 	}
 
-	return &LiteCoin{rpcHost: rpcHost, chaincfg: params, signers: signersA, rpcUser: rpcUser, rpcPassword: rpcPassword, grapheneSeedPrefix: grapheneSeedPrefix, LtcWithdrawMin: withdrawMin, LtcWithdrawFee: withdrawFee}, nil
+	return &LiteCoin{rpcHost: rpcHost, chaincfg: params, signers: signersA, rpcUser: rpcUser, rpcPassword: rpcPassword, grapheneSeedPrefix: grapheneSeedPrefix, LtcWithdrawMin: withdrawMin, LtcWithdrawFee: withdrawFee, BlackList: blackList}, nil
 }
 
-func NewBCHCoin(rpcHost string, params *chaincfg3.Params, signers []string, rpcUser, rpcPassword, grapheneSeedPrefix string, withdrawMin, withdrawFee float64) (Coin, error) {
+func NewBCHCoin(rpcHost string, params *chaincfg3.Params, signers []string, rpcUser, rpcPassword, grapheneSeedPrefix string, withdrawMin, withdrawFee float64, blackList map[string]bool) (Coin, error) {
 	signersA := []bchutil.Address{}
 	for _, s := range signers {
 		addr, err := bchutil.DecodeAddress(s, params)
@@ -184,7 +184,7 @@ func NewBCHCoin(rpcHost string, params *chaincfg3.Params, signers []string, rpcU
 		signersA = append(signersA, addr)
 	}
 
-	return &BCH{rpcHost: rpcHost, chaincfg: params, signers: signersA, rpcUser: rpcUser, rpcPassword: rpcPassword, grapheneSeedPrefix: grapheneSeedPrefix, BchWithdrawMin: withdrawMin, BchWithdrawFee: withdrawFee}, nil
+	return &BCH{rpcHost: rpcHost, chaincfg: params, signers: signersA, rpcUser: rpcUser, rpcPassword: rpcPassword, grapheneSeedPrefix: grapheneSeedPrefix, BchWithdrawMin: withdrawMin, BchWithdrawFee: withdrawFee, BlackList: blackList}, nil
 }
 
 /**

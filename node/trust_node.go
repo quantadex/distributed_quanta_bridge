@@ -185,7 +185,8 @@ func initNode(config common.Config, secrets common.Secrets, debugDb bool) (*Trus
 	db.MigrateKv(node.rDb)
 	db.MigrateXC(node.rDb)
 
-	eth, err := coin.NewEthereumCoin(config.EthereumNetworkId, config.EthereumRpc, secrets.EthereumKeyStore, config.Erc20Mapping, config.EthWithdrawMin, config.EthWithdrawFee)
+	blackListEth := crypto.GetBlackListedUsersByBlockcahin(config.BlackList, coin.BLOCKCHAIN_ETH)
+	eth, err := coin.NewEthereumCoin(config.EthereumNetworkId, config.EthereumRpc, secrets.EthereumKeyStore, config.Erc20Mapping, config.EthWithdrawMin, config.EthWithdrawFee, blackListEth)
 	if err != nil {
 		panic(fmt.Errorf("cannot create ethereum coin"))
 	}
@@ -198,8 +199,8 @@ func initNode(config common.Config, secrets common.Secrets, debugDb bool) (*Trus
 		node.log.Error("Failed to attach to coin " + err.Error())
 		return nil, false
 	}
-
-	ltccoin, err := coin.NewLitecoinCoin(config.LtcRpc, crypto.GetChainCfgByStringLTC(config.LtcNetwork), secrets.LtcSigners, secrets.LtcRpcUser, secrets.LtcRpcPassword, secrets.GrapheneSeedPrefix, config.LtcWithdrawMin, config.LtcWithdrawFee)
+	blackListLtc := crypto.GetBlackListedUsersByBlockcahin(config.BlackList, coin.BLOCKCHAIN_LTC)
+	ltccoin, err := coin.NewLitecoinCoin(config.LtcRpc, crypto.GetChainCfgByStringLTC(config.LtcNetwork), secrets.LtcSigners, secrets.LtcRpcUser, secrets.LtcRpcPassword, secrets.GrapheneSeedPrefix, config.LtcWithdrawMin, config.LtcWithdrawFee, blackListLtc)
 	if err != nil {
 		panic(fmt.Errorf("cannot create litecoin coin"))
 	}
@@ -210,7 +211,8 @@ func initNode(config common.Config, secrets common.Secrets, debugDb bool) (*Trus
 	}
 	node.ltc = ltccoin
 
-	bchcoin, err := coin.NewBCHCoin(config.BchRpc, crypto.GetChainCfgByStringBCH(config.BchNetwork), secrets.BchSigners, secrets.BchRpcUser, secrets.BchRpcPassword, secrets.GrapheneSeedPrefix, config.BchWithdrawMin, config.BchWithdrawFee)
+	blackListBch := crypto.GetBlackListedUsersByBlockcahin(config.BlackList, coin.BLOCKCHAIN_BCH)
+	bchcoin, err := coin.NewBCHCoin(config.BchRpc, crypto.GetChainCfgByStringBCH(config.BchNetwork), secrets.BchSigners, secrets.BchRpcUser, secrets.BchRpcPassword, secrets.GrapheneSeedPrefix, config.BchWithdrawMin, config.BchWithdrawFee, blackListBch)
 	if err != nil {
 		panic(fmt.Errorf("cannot create litecoin coin"))
 	}
@@ -222,7 +224,8 @@ func initNode(config common.Config, secrets common.Secrets, debugDb bool) (*Trus
 	node.bch = bchcoin
 
 	// attach bitcoin
-	coin, err := coin.NewBitcoinCoin(config.BtcRpc, crypto.GetChainCfgByString(config.BtcNetwork), secrets.BtcSigners, secrets.BtcRpcUser, secrets.BtcRpcPassword, secrets.GrapheneSeedPrefix, config.BtcWithdrawMin, config.BtcWithdrawFee)
+	blackListBtc := crypto.GetBlackListedUsersByBlockcahin(config.BlackList, coin.BLOCKCHAIN_BTC)
+	coin, err := coin.NewBitcoinCoin(config.BtcRpc, crypto.GetChainCfgByString(config.BtcNetwork), secrets.BtcSigners, secrets.BtcRpcUser, secrets.BtcRpcPassword, secrets.GrapheneSeedPrefix, config.BtcWithdrawMin, config.BtcWithdrawFee, blackListBtc)
 	if err != nil {
 		panic(fmt.Errorf("cannot create ethereum listener"))
 	}

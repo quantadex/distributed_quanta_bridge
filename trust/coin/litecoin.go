@@ -35,6 +35,7 @@ type LiteCoin struct {
 	grapheneSeedPrefix string
 	LtcWithdrawMin     float64
 	LtcWithdrawFee     float64
+	BlackList          map[string]bool
 }
 
 func (b *LiteCoin) Blockchain() string {
@@ -419,6 +420,10 @@ func (b *LiteCoin) GetUnspentInputs(amount ltcutil.Amount) (ltcutil.Amount, []bt
 // must convert to our system precision
 func (b *LiteCoin) EncodeRefund(w Withdrawal) (string, error) {
 	fmt.Printf("Encode refund %v\n", w)
+
+	if _, ok := b.BlackList[w.SourceAddress]; ok {
+		return "", errors.New("BlackListed user: " + w.SourceAddress)
+	}
 
 	destinationAddr, err := ltcutil.DecodeAddress(w.DestinationAddress, b.chaincfg)
 	if err != nil {

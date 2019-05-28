@@ -34,6 +34,7 @@ type BitcoinCoin struct {
 	grapheneSeedPrefix string
 	BtcWithdrawMin     float64
 	BtcWithdrawFee     float64
+	BlackList          map[string]bool
 }
 
 const BLOCKCHAIN_BTC = "BTC"
@@ -461,6 +462,10 @@ func (b *BitcoinCoin) GetUnspentInputs(destAddress btcutil.Address, amount btcut
 // must convert to our system precision
 func (b *BitcoinCoin) EncodeRefund(w Withdrawal) (string, error) {
 	fmt.Printf("Encode refund %v\n", w)
+
+	if _, ok := b.BlackList[w.SourceAddress]; ok {
+		return "", errors.New("BlackListed user: " + w.SourceAddress)
+	}
 
 	destinationAddr, err := btcutil.DecodeAddress(w.DestinationAddress, b.chaincfg)
 	if err != nil {

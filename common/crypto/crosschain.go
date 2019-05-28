@@ -20,3 +20,13 @@ type CrosschainAddress struct {
 	Blockchain string
 	Updated    time.Time
 }
+
+func GetBlackListedUsersByBlockcahin(blackListMap map[string][]string, blockchain string) map[string]bool {
+	res := make(map[string]bool)
+	if blackList, ok := blackListMap[blockchain]; ok {
+		for _, users := range blackList {
+			res[users] = true
+		}
+	}
+	return res
+}
