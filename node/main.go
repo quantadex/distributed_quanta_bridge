@@ -91,8 +91,9 @@ func main() {
 			fmt.Println("Synchronize addresses")
 			crosschainAddresses := node.rDb.GetCrosschainByBlockchain(*enableSyncAddresses)
 			for _, addr := range crosschainAddresses {
-				fmt.Println("process ", addr.Address, addr.Blockchain, addr.QuantaAddr)
-				_, err := node.CreateMultisig(*enableSyncAddresses, addr.QuantaAddr)
+				c, err := node.CreateMultisig(*enableSyncAddresses, addr.QuantaAddr)
+				fmt.Println("process ", addr.Address, addr.Blockchain, addr.QuantaAddr, c.ContractAddress,err)
+
 				if err != nil {
 					panic("Could not generate multisig address")
 				}
