@@ -1,7 +1,6 @@
 package crypto
 
 import (
-	"fmt"
 	"github.com/ethereum/go-ethereum/common"
 	"strings"
 	"time"
@@ -25,7 +24,6 @@ type CrosschainAddress struct {
 
 func GetBlackListedUsersByBlockcahin(blackListMap map[string][]string, blockchain string) map[string]bool {
 	res := make(map[string]bool)
-	fmt.Println("map = ", blackListMap["eth"], blackListMap["ETH"])
 	if blackList, ok := blackListMap[strings.ToLower(blockchain)]; ok {
 		for _, users := range blackList {
 			res[users] = true
