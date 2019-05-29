@@ -23,7 +23,7 @@ type DB interface {
 
 	Close() error
 
-	GetCrosschainByBlockchain(blockchain string) []crypto.CrosschainAddress
+	GetCrosschainByBlockchain(blockchain string) []db.CrosschainAddress
 
 	AddCrosschainAddress(input *crypto.ForwardInput) error
 }

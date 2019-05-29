@@ -28,8 +28,17 @@ func MigrateXC(db *DB) error {
 	return err
 }
 
-func (db *DB) GetCrosschainByBlockchain(blockchain string) []crypto.CrosschainAddress {
-	var tx []crypto.CrosschainAddress
+func (db *DB) GetCrosschainAll() []CrosschainAddress {
+	var tx []CrosschainAddress
+	err := db.Model(&tx).Select()
+	if err != nil {
+		return nil
+	}
+	return tx
+}
+
+func (db *DB) GetCrosschainByBlockchain(blockchain string) []CrosschainAddress {
+	var tx []CrosschainAddress
 	err := db.Model(&tx).Where("blockchain=?", blockchain).Select()
 	if err != nil {
 		return nil
@@ -38,7 +47,7 @@ func (db *DB) GetCrosschainByBlockchain(blockchain string) []crypto.CrosschainAd
 }
 
 func (db *DB) GetAddressCountByBlockchain(blockchain string) (int, error) {
-	var tx []crypto.CrosschainAddress
+	var tx []CrosschainAddress
 	n, err := db.Model(&tx).Where("blockchain=?", blockchain).Count()
 	if err != nil {
 		return 0, err
@@ -48,7 +57,7 @@ func (db *DB) GetAddressCountByBlockchain(blockchain string) (int, error) {
 
 func (db *DB) GetAddressCountByBlockchain24hrs(blockchain string) (int, error) {
 	t := time.Now().AddDate(0, 0, -1)
-	var tx []crypto.CrosschainAddress
+	var tx []CrosschainAddress
 	n, err := db.Model(&tx).Where("blockchain=? and updated>?", blockchain, t).Count()
 	if err != nil {
 		return 0, err

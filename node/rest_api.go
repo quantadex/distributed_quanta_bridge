@@ -149,7 +149,7 @@ func (server *Server) addressHandler(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		err = server.addressChange.GetConsensus(AddressChange{blockchain, quanta, addr[0].Address, server.counter})
+		err = server.addressChange.GetAddress(AddressChange{blockchain, quanta, addr[0].Address, server.counter})
 		server.counter++
 		if err != nil {
 			server.logger.Errorf("Could not agree on address change:", err.Error())
