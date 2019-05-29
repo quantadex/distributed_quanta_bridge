@@ -18,6 +18,8 @@ import (
 	"net/http"
 	"github.com/quantadex/distributed_quanta_bridge/trust/coin"
 	"encoding/json"
+	common2 	"github.com/ethereum/go-ethereum/common"
+
 )
 
 /**
@@ -177,15 +179,20 @@ func main() {
 				}
 				for _, addr := range addresses {
 					fmt.Println("process ", addr.Address, addr.Blockchain, addr.QuantaAddr)
-					addr, err := node.CreateMultisig(addr.Blockchain, addr.QuantaAddr)
-					if err != nil {
-						panic("Could not generate multisig address: " +  err.Error())
+					if addr.Blockchain == coin.BLOCKCHAIN_ETH {
+						err = node.rDb.AddCrosschainAddress(&crypto.ForwardInput{ addr.Address,common2.HexToAddress("0x0"),  addr.QuantaAddr, "", coin.BLOCKCHAIN_ETH})
+					} else {
+						addr, err := node.CreateMultisig(addr.Blockchain, addr.QuantaAddr)
+						if err != nil {
+							panic("Could not generate multisig address: " +  err.Error())
+						}
+
+						err = node.rDb.AddCrosschainAddress(addr)
 					}
 
-					err = node.rDb.AddCrosschainAddress(addr)
 					if err != nil {
 					} else {
-						println("Added ", addr.ContractAddress, " to db.")
+						println("Added ", addr.Address, " to db.")
 					}
 				}
 			}
