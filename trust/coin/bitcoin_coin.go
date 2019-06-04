@@ -178,10 +178,10 @@ func (b *BitcoinCoin) GetTxID(trustAddress common.Address) (uint64, error) {
 	return 0, nil
 }
 
-func (b *BitcoinCoin) GetFromAddress(txHash *chainhash.Hash) (string, error) {
+func (b *BitcoinCoin) GetFromAddress(txHash *chainhash.Hash) ([]string, error) {
 	currentTx, err := b.Client.GetRawTransactionVerbose(txHash)
 	if err != nil {
-		return "", errors.Wrap(err, "failed to getraw for currentTx")
+		return nil, errors.Wrap(err, "failed to getraw for currentTx")
 	}
 
 	vinLookup := map[string]bool{}
@@ -193,21 +193,21 @@ func (b *BitcoinCoin) GetFromAddress(txHash *chainhash.Hash) (string, error) {
 
 		prevTranHash, err := chainhash.NewHashFromStr(vin.Txid)
 		if err != nil {
-			return "", errors.Wrap(err, "failed to build hash")
+			return nil, errors.Wrap(err, "failed to build hash")
 		}
 		prevTran, err := b.Client.GetTransaction(prevTranHash)
 		//will return error for an external deposit
 		if err != nil {
 			//returning "" to differentiate between external and internal deposits
-			return "", nil
+			return nil, nil
 		}
 		tx, err := hex.DecodeString(prevTran.Hex)
 		if err != nil {
-			return "", errors.Wrap(err, "failed to decode hex string")
+			return nil, errors.Wrap(err, "failed to decode hex string")
 		}
 		decodedTx, err := b.Client.DecodeRawTransaction(tx)
 		if err != nil {
-			return "", errors.Wrap(err, "failed to decode raw transaction")
+			return nil, errors.Wrap(err, "failed to decode raw transaction")
 		}
 
 		prevVout := decodedTx.Vout[vin.Vout]
@@ -216,8 +216,8 @@ func (b *BitcoinCoin) GetFromAddress(txHash *chainhash.Hash) (string, error) {
 		vinAddresses = append(vinAddresses, fromAddress)
 	}
 
-	fromAddr := strings.Join(vinAddresses, ",")
-	return fromAddr, nil
+	//fromAddr := strings.Join(vinAddresses, ",")
+	return vinAddresses, nil
 }
 
 func (b *BitcoinCoin) GetPendingTx(watchMap map[string]string) ([]*Deposit, error) {
@@ -239,9 +239,12 @@ func (b *BitcoinCoin) GetPendingTx(watchMap map[string]string) ([]*Deposit, erro
 		if err != nil {
 			return nil, errors.Wrap(err, "unable to get from address")
 		}
-		_, isCrosschain := watchMap[fromAddr]
+		isCrosschain := false
+		for _, addr := range fromAddr {
+			_, isCrosschain = watchMap[addr]
+		}
 
-		if fromAddr != "" && isCrosschain {
+		if fromAddr != nil && isCrosschain {
 			fmt.Println("Skipping deposit in pending as it is the remaining amount")
 			continue
 		}
@@ -315,9 +318,14 @@ func (b *BitcoinCoin) GetDepositsInBlock(blockID int64, trustAddress map[string]
 
 			for _, vout := range currentTx.Vout {
 				toAddr := strings.Join(vout.ScriptPubKey.Addresses, ",")
-				_, isCrosschain := trustAddress[fromAddr]
 
-				if fromAddr != "" && isCrosschain {
+				isCrosschain := false
+				for _, addr := range fromAddr {
+					fmt.Println("addr = ", addr)
+					_, isCrosschain = trustAddress[addr]
+				}
+
+				if fromAddr != nil && isCrosschain {
 					fmt.Println("Skipping deposit as it is the remaining amount")
 					//println("Ignoring tx when from and to the same ", toAddr)
 					continue
@@ -330,7 +338,7 @@ func (b *BitcoinCoin) GetDepositsInBlock(blockID int64, trustAddress map[string]
 
 				if quantaAddr, ok := trustAddress[toAddr]; ok {
 					events = append(events, &Deposit{
-						SenderAddr: fromAddr,
+						SenderAddr: strings.Join(fromAddr, ","),
 						QuantaAddr: quantaAddr,
 						CoinName:   b.Blockchain(),
 						Amount:     int64(amount),
