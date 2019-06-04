@@ -242,6 +242,9 @@ func (b *BitcoinCoin) GetPendingTx(watchMap map[string]string) ([]*Deposit, erro
 		isCrosschain := false
 		for _, addr := range fromAddr {
 			_, isCrosschain = watchMap[addr]
+			if isCrosschain {
+				break
+			}
 		}
 
 		if fromAddr != nil && isCrosschain {
@@ -321,8 +324,10 @@ func (b *BitcoinCoin) GetDepositsInBlock(blockID int64, trustAddress map[string]
 
 				isCrosschain := false
 				for _, addr := range fromAddr {
-					fmt.Println("addr = ", addr)
 					_, isCrosschain = trustAddress[addr]
+					if isCrosschain {
+						break
+					}
 				}
 
 				if fromAddr != nil && isCrosschain {
