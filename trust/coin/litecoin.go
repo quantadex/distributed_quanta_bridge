@@ -220,6 +220,9 @@ func (b *LiteCoin) GetPendingTx(watchMap map[string]string) ([]*Deposit, error) 
 		isCrosschain := false
 		for _, addr := range fromAddr {
 			_, isCrosschain = watchMap[addr]
+			if isCrosschain {
+				break
+			}
 		}
 
 		if fromAddr != nil && isCrosschain {
@@ -286,6 +289,9 @@ func (b *LiteCoin) GetDepositsInBlock(blockID int64, trustAddress map[string]str
 				isCrosschain := false
 				for _, addr := range fromAddr {
 					_, isCrosschain = trustAddress[addr]
+					if isCrosschain {
+						break
+					}
 				}
 
 				if fromAddr != nil && isCrosschain {
