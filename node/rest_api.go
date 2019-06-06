@@ -94,6 +94,7 @@ func (server *Server) addressHandler(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	blockchain := strings.ToUpper(vars["blockchain"])
 	quanta := vars["quanta"]
+	println("Address handler", quanta)
 
 	if !(blockchain == coin.BLOCKCHAIN_BTC || blockchain == coin.BLOCKCHAIN_ETH || blockchain == coin.BLOCKCHAIN_LTC || blockchain == coin.BLOCKCHAIN_BCH) {
 		w.WriteHeader(http.StatusBadRequest)

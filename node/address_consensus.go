@@ -58,6 +58,9 @@ func NewAddressConsensus(logger logger.Logger, trustNode *TrustNode, db *db.DB, 
 	res.cosi = consensus.NewProtocol(res.trustPeer, trustNode.nodeID == 0, time.Second*6)
 	res.logger = logger
 	res.db = db
+	res.msgChan = make(chan MsgAsync, 1)
+	res.poolNotify = map[string]chan error {}
+
 	res.cosi.Verify = func(encoded string) error {
 		decoded := common.Hex2Bytes(encoded)
 		msg := &AddressBlock{}
@@ -123,6 +126,7 @@ func NewAddressConsensus(logger logger.Logger, trustNode *TrustNode, db *db.DB, 
 		if repair {
 			logger.Infof("***** REPAIRING ADDRESS TABLE *****")
 		}
+		logger.Infof("Persisting number of txs=%d", len(msg.transactions))
 
 		for _, tx := range msg.transactions {
 			if tx.Blockchain == coin.BLOCKCHAIN_ETH {
@@ -161,6 +165,8 @@ func NewAddressConsensus(logger logger.Logger, trustNode *TrustNode, db *db.DB, 
 		}
 	}()
 
+	go res.StartConsensusIfNeeded()
+
 	return &res
 }
 
@@ -175,6 +181,8 @@ func (c *AddressConsensus) GetAddress(msg AddressChange) error {
 }
 
 func (c *AddressConsensus) StartConsensusIfNeeded() error {
+	c.logger.Infof("Started AddressBlock Block Producer")
+
 	// gather enough txs
 	pendingConsensus := false
 	doneConsensus := make(chan error)
@@ -183,6 +191,7 @@ func (c *AddressConsensus) StartConsensusIfNeeded() error {
 	for {
 		select {
 			case msg := <-c.msgChan:
+				c.logger.Infof("Enqueue new address %s %s", msg.data.Blockchain, msg.data.QuantaAddr)
 				c.pool = append(c.pool, msg.data) // modify
 				c.poolNotify[GetAddressId(msg.data)] = msg.notify
 
@@ -211,6 +220,7 @@ func (c *AddressConsensus) StartConsensusIfNeeded() error {
 }
 
 func (c *AddressConsensus) startNewBlock(txsToProcess []AddressChange, done chan error) {
+	c.logger.Infof("Generate new address block. txs=%d", len(txsToProcess))
 
 	state := c.db.GetCrosschainAll()
 
