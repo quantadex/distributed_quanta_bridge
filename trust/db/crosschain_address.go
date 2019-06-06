@@ -30,7 +30,7 @@ func MigrateXC(db *DB) error {
 
 func (db *DB) GetCrosschainAll() []CrosschainAddress {
 	var tx []CrosschainAddress
-	err := db.Model(&tx).Select()
+	err := db.Model(&tx).Order("blockchain asc","address asc").Select()
 	if err != nil {
 		return nil
 	}

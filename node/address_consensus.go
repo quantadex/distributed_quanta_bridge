@@ -12,15 +12,15 @@ import (
 	"github.com/quantadex/distributed_quanta_bridge/trust/control"
 	"github.com/quantadex/distributed_quanta_bridge/trust/db"
 	"github.com/quantadex/distributed_quanta_bridge/trust/peer_contact"
-	"github.com/quantadex/quanta_book/consensus/cosi"
 	"time"
 	"crypto/sha256"
+	"github.com/quantadex/distributed_quanta_bridge/common/consensus"
 )
 
 type AddressConsensus struct {
 	logger    logger.Logger
 	trustPeer *peer_contact.TrustPeerNode
-	cosi      *cosi.Cosi
+	cosi      *consensus.Cosi
 	pool      AddressRequestPool
 	db *db.DB
 	poolNotify map[string]chan error
@@ -55,7 +55,7 @@ type AddressRequestPool []AddressChange  // grab from top
 func NewAddressConsensus(logger logger.Logger, trustNode *TrustNode, db *db.DB, kv kv_store.KVStore, minBlock int64) *AddressConsensus {
 	var res AddressConsensus
 	res.trustPeer = peer_contact.NewTrustPeerNode(trustNode.man, trustNode.peer, trustNode.nodeID, trustNode.queue, queue.ADDR_MSG_QUEUE, "/node/api/address", trustNode.quantakM)
-	res.cosi = cosi.NewProtocol(res.trustPeer, trustNode.nodeID == 0, time.Second*6)
+	res.cosi = consensus.NewProtocol(res.trustPeer, trustNode.nodeID == 0, time.Second*6)
 	res.logger = logger
 	res.db = db
 	res.cosi.Verify = func(encoded string) error {
@@ -66,62 +66,77 @@ func NewAddressConsensus(logger logger.Logger, trustNode *TrustNode, db *db.DB, 
 			return err
 		}
 
-		blockHash := common.Bytes2Hex(sha256.Sum256(decoded)[:])
-		counter, ok := res.stateTracker[blockHash]
-		if !ok {
-			counter = map[string]int{}
-			res.stateTracker[blockHash] = counter
+		// if my state is the same -- confirm.
+		my_state := db.GetCrosschainAll()
+		my_state_hash, _ := json.Marshal(my_state)
+		my_state_hashb := sha256.Sum256(my_state_hash)
+		my_state_hash2 := common.Bytes2Hex(my_state_hashb[:])
+
+		in_state_hash, _ := json.Marshal(msg.state)
+		in_state_hashb := sha256.Sum256(in_state_hash)
+		in_state_hash2 := common.Bytes2Hex(in_state_hashb[:])
+
+		if my_state_hash2 != in_state_hash2 {
+			return errors.New(fmt.Sprintf("AddressConsensus state hash mismatch mine=%s in=%s", my_state_hash2, in_state_hash2))
 		}
-		data, err := json.Marshal(msg.state)
 
-		// not sure what happens when item does not exist in counter
-		counter[string(data)] += 1
+		for _, tx := range msg.transactions  {
+			if tx.Blockchain == coin.BLOCKCHAIN_ETH {
+				headBlock, _ := control.GetLastBlock(kv, coin.BLOCKCHAIN_ETH)
+				addrAvailable, err := db.GetAvailableShareAddress(headBlock, minBlock)
+				if err != nil {
+					return err
+				}
 
+				found := false
+				for _, a := range addrAvailable {
+					if a.Address == tx.Address {
+						found = true
+					}
+				}
 
-		//
-		//if msg.Blockchain == coin.BLOCKCHAIN_ETH {
-		//	headBlock, _ := control.GetLastBlock(kv, coin.BLOCKCHAIN_ETH)
-		//	addrAvailable, err := db.GetAvailableShareAddress(headBlock, minBlock)
-		//	if err != nil {
-		//		return err
-		//	}
-		//	for _, a := range addrAvailable {
-		//		if a.Address == msg.Address {
-		//			return nil
-		//		}
-		//	}
-		//	return errors.New(fmt.Sprintf("Address available not match - msg=%s", msg.Address))
-		//
-		//} else {
-		//	addr, err := trustNode.CreateMultisig(msg.Blockchain, msg.QuantaAddr)
-		//	if err != nil {
-		//		return errors.New("Unable to generate address for " + msg.Blockchain + "," + err.Error())
-		//	}
-		//	if addr.ContractAddress != msg.Address || addr.QuantaAddr != msg.QuantaAddr {
-		//		return errors.New("Unable to generate address for " + msg.Blockchain + ", somethign don't match")
-		//	}
-		//	return nil
-		//}
+				if !found {
+					return errors.New(fmt.Sprintf("Address available not match - msg=%s", tx.Address))
+				}
+			} else {
+				addr, err := trustNode.CreateMultisig(tx.Blockchain, tx.QuantaAddr)
+				if err != nil {
+					return errors.New("Unable to generate address for " + tx.Blockchain + "," + err.Error())
+				}
+				if addr.ContractAddress != tx.Address || addr.QuantaAddr != tx.QuantaAddr {
+					return errors.New("Unable to generate address for " + tx.Blockchain + ", somethign don't match")
+				}
+			}
+		}
+
+		return nil
 	}
 
-	res.cosi.Persist = func(encoded string) error {
+	res.cosi.Persist = func(encoded string, repair bool) error {
 		decoded := common.Hex2Bytes(encoded)
-		msg := &AddressChange{}
+		msg := &AddressBlock{}
 		err := json.Unmarshal(decoded, msg)
 		if err != nil {
 			return err
 		}
 
-		if msg.Blockchain == coin.BLOCKCHAIN_ETH {
-			headBlock, _ := control.GetLastBlock(kv, coin.BLOCKCHAIN_ETH)
-			err = db.UpdateShareAddressDestination(msg.Address, msg.QuantaAddr, uint64(headBlock))
-		} else {
-			addr, err := trustNode.CreateMultisig(msg.Blockchain, msg.QuantaAddr)
-			if err != nil {
-				return errors.New("Cannot persist due to error : " + err.Error())
-			}
-			err = db.AddCrosschainAddress(addr)
+		if repair {
+			logger.Infof("***** REPAIRING ADDRESS TABLE *****")
 		}
+
+		for _, tx := range msg.transactions {
+			if tx.Blockchain == coin.BLOCKCHAIN_ETH {
+				headBlock, _ := control.GetLastBlock(kv, coin.BLOCKCHAIN_ETH)
+				err = db.UpdateShareAddressDestination(tx.Address, tx.QuantaAddr, uint64(headBlock))
+			} else {
+				addr, err := trustNode.CreateMultisig(tx.Blockchain, tx.QuantaAddr)
+				if err != nil {
+					return errors.New("Cannot persist due to error : " + err.Error())
+				}
+				err = db.AddCrosschainAddress(addr)
+			}
+		}
+
 		return err
 	}
 
@@ -138,7 +153,7 @@ func NewAddressConsensus(logger logger.Logger, trustNode *TrustNode, db *db.DB, 
 
 			if msg != nil {
 				//log.Infof("Got peer message %v", msg.Signed)
-				res.cosi.CosiMsgChan <- msg
+				res.cosi.CosiMsgChan <- &consensus.CosiMessage{ msg.Msg, msg.Signed, consensus.Phase(msg.Phase), msg.Initial }
 				continue
 			}
 

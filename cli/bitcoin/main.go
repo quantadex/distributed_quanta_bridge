@@ -13,7 +13,7 @@ func main() {
 	config, quanta, rdb, kdb, log, secrets := cli.Setup()
 
 	// setup coin
-	blackList := crypto.GetBlackListedUsersByBlockcahin(config.BlackList, coin.BLOCKCHAIN_BTC)
+	blackList := crypto.GetBlackListedUsersByBlockchain(config.BlackList, coin.BLOCKCHAIN_BTC)
 	coin, err := coin.NewBitcoinCoin(config.BtcRpc, crypto.GetChainCfgByString(config.BtcNetwork), secrets.BtcSigners, secrets.BtcRpcUser, secrets.BtcRpcPassword, secrets.GrapheneSeedPrefix, config.BtcWithdrawMin, config.BtcWithdrawFee, blackList)
 	if err != nil {
 		panic(fmt.Errorf("cannot create ethereum listener"))
