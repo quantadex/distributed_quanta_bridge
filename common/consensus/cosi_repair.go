@@ -211,7 +211,7 @@ func (c *Cosi) dispatchFollower() {
 				c.gc.Set(msg.Msg, stateObj)
 
 				if err != nil {
-					logger.Error("%s Unable to validate transactions: ", c.Node().Address(), err.Error())
+					logger.Error("%s Unable to validate transactions: %v", c.Node().Address(), err.Error())
 					continue
 				}
 

@@ -25,6 +25,7 @@ type AddressConsensus struct {
 	db *db.DB
 	poolNotify map[string]chan error
 	msgChan chan MsgAsync
+	doneChan chan bool
 	stateTracker map[string]map[string]int  // tracking blockhash -> state -> count
 }
 
@@ -45,8 +46,8 @@ func GetAddressId(addr AddressChange) string {
 }
 
 type AddressBlock struct {
-	transactions []AddressChange  // batch multiple address request
-	state []db.CrosschainAddress // state
+	Transactions []AddressChange  // batch multiple address request
+	State []db.CrosschainAddress  // state
 }
 
 // tx pool
@@ -60,6 +61,7 @@ func NewAddressConsensus(logger logger.Logger, trustNode *TrustNode, db *db.DB, 
 	res.db = db
 	res.msgChan = make(chan MsgAsync, 1)
 	res.poolNotify = map[string]chan error {}
+	res.doneChan = make(chan bool, 1)
 
 	res.cosi.Verify = func(encoded string) error {
 		decoded := common.Hex2Bytes(encoded)
@@ -72,10 +74,14 @@ func NewAddressConsensus(logger logger.Logger, trustNode *TrustNode, db *db.DB, 
 		// if my state is the same -- confirm.
 		my_state := db.GetCrosschainAll()
 		my_state_hash, _ := json.Marshal(my_state)
+		//println(string(my_state_hash))
+
 		my_state_hashb := sha256.Sum256(my_state_hash)
 		my_state_hash2 := common.Bytes2Hex(my_state_hashb[:])
 
-		in_state_hash, _ := json.Marshal(msg.state)
+		in_state_hash, _ := json.Marshal(msg.State)
+		//println("IN", string(in_state_hash))
+
 		in_state_hashb := sha256.Sum256(in_state_hash)
 		in_state_hash2 := common.Bytes2Hex(in_state_hashb[:])
 
@@ -83,7 +89,7 @@ func NewAddressConsensus(logger logger.Logger, trustNode *TrustNode, db *db.DB, 
 			return errors.New(fmt.Sprintf("AddressConsensus state hash mismatch mine=%s in=%s", my_state_hash2, in_state_hash2))
 		}
 
-		for _, tx := range msg.transactions  {
+		for _, tx := range msg.Transactions  {
 			if tx.Blockchain == coin.BLOCKCHAIN_ETH {
 				headBlock, _ := control.GetLastBlock(kv, coin.BLOCKCHAIN_ETH)
 				addrAvailable, err := db.GetAvailableShareAddress(headBlock, minBlock)
@@ -126,9 +132,9 @@ func NewAddressConsensus(logger logger.Logger, trustNode *TrustNode, db *db.DB, 
 		if repair {
 			logger.Infof("***** REPAIRING ADDRESS TABLE *****")
 		}
-		logger.Infof("Persisting number of txs=%d", len(msg.transactions))
+		logger.Infof("Persisting number of txs=%d", len(msg.Transactions))
 
-		for _, tx := range msg.transactions {
+		for _, tx := range msg.Transactions {
 			if tx.Blockchain == coin.BLOCKCHAIN_ETH {
 				headBlock, _ := control.GetLastBlock(kv, coin.BLOCKCHAIN_ETH)
 				err = db.UpdateShareAddressDestination(tx.Address, tx.QuantaAddr, uint64(headBlock))
@@ -185,8 +191,9 @@ func (c *AddressConsensus) StartConsensusIfNeeded() error {
 
 	// gather enough txs
 	pendingConsensus := false
-	doneConsensus := make(chan error)
+	doneConsensus := make(chan error, 1)
 	pendingTxs := []AddressChange{}
+	doneFlag := false
 
 	for {
 		select {
@@ -213,10 +220,26 @@ func (c *AddressConsensus) StartConsensusIfNeeded() error {
 					notify <- err
 					delete(c.poolNotify, GetAddressId(tx))
 					pendingTxs = []AddressChange{}
-					pendingConsensus = true
+					pendingConsensus = false
+
+					c.logger.Infof("Notify addressBlock done %v", err)
 				}
+			case <-c.doneChan:
+				doneFlag = true
+				c.logger.Infof("Flag address Consensus Exit")
+				break
+		}
+
+		if doneFlag {
+			c.logger.Infof("Exiting address consensus.")
+			break
 		}
 	}
+	return nil
+}
+
+func (c *AddressConsensus) Stop() {
+	c.doneChan <- true
 }
 
 func (c *AddressConsensus) startNewBlock(txsToProcess []AddressChange, done chan error) {
@@ -226,8 +249,8 @@ func (c *AddressConsensus) startNewBlock(txsToProcess []AddressChange, done chan
 
 	// create the block
 	block := AddressBlock{
-		transactions: txsToProcess,
-		state: state,
+		Transactions: txsToProcess,
+		State: state,
 	}
 
 	data, err := json.Marshal(&block)
