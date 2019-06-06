@@ -59,7 +59,7 @@ func NewAddressConsensus(logger logger.Logger, trustNode *TrustNode, db *db.DB, 
 	res.cosi = consensus.NewProtocol(res.trustPeer, trustNode.nodeID == 0, time.Second*6)
 	res.logger = logger
 	res.db = db
-	res.msgChan = make(chan MsgAsync, 1)
+	res.msgChan = make(chan MsgAsync, 100)
 	res.poolNotify = map[string]chan error {}
 	res.doneChan = make(chan bool, 1)
 
@@ -199,8 +199,21 @@ func (c *AddressConsensus) StartConsensusIfNeeded() error {
 		select {
 			case msg := <-c.msgChan:
 				c.logger.Infof("Enqueue new address %s %s", msg.data.Blockchain, msg.data.QuantaAddr)
-				c.pool = append(c.pool, msg.data) // modify
-				c.poolNotify[GetAddressId(msg.data)] = msg.notify
+
+				// CHECK FOR DUPLICATE, FAIL FAST
+				isDuplicate := false
+				for _, e := range c.pool {
+					if e.Blockchain == msg.data.Blockchain && e.QuantaAddr == msg.data.QuantaAddr {
+						isDuplicate = true
+						break
+					}
+				}
+				if isDuplicate {
+					msg.notify <- errors.New("Duplicate address request.")
+				} else {
+					c.pool = append(c.pool, msg.data) // modify
+					c.poolNotify[GetAddressId(msg.data)] = msg.notify
+				}
 
 			// start new block every 3 sec for at least 1 address change
 			case <-time.After(time.Second * 3):
@@ -210,7 +223,20 @@ func (c *AddressConsensus) StartConsensusIfNeeded() error {
 					pendingConsensus = true
 					pendingTxs = txsToProcess
 
-					c.startNewBlock(txsToProcess, doneConsensus)
+					filtered := AddressRequestPool{}
+					// filter any unnecessary requests - which may be on previous blocks
+					for _, e := range pendingTxs {
+						lookup, _ := db.GetCrosschainByBlockchainAndUser(c.db, e.Blockchain, e.QuantaAddr)
+						if len(lookup) == 0 {
+							filtered = append(filtered, e)
+						} else {
+							c.logger.Infof("Rejected address %s %s since it already exists.", e.Blockchain, e.QuantaAddr)
+						}
+					}
+
+					if len(filtered) > 0 {
+						c.startNewBlock(filtered, doneConsensus)
+					}
 				}
 
 			// notify all the callers
