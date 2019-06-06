@@ -128,7 +128,15 @@ func TestAddress(t *testing.T) {
 		"0x01",
 		coin.BLOCKCHAIN_ETH,
 	}
-	
+
+	address3 := &crypto.ForwardInput{
+		"0xba420ef5d725361d8fdc58cb1e4fa62eda9ec889",
+		common.HexToAddress(test.GRAPHENE_TRUST.TrustContract),
+		"address-pool",
+		"0x01",
+		coin.BLOCKCHAIN_ETH,
+	}
+
 	// test crosschain
 	for _, n := range nodes {
 		n.rDb.AddCrosschainAddress(address)
@@ -155,11 +163,23 @@ func TestAddress(t *testing.T) {
 	bodyBytes, _ = ioutil.ReadAll(res.Body)
 	println("data", res.StatusCode, string(bodyBytes))
 
+	fmt.Println("We're out of addresses, expect to fail")
 	res, err = http.Post("http://localhost:5200/api/address/eth/charlie", "", nil)
 	assert.NoError(t, err)
 	bodyBytes, _ = ioutil.ReadAll(res.Body)
 	println("data 3", res.StatusCode, string(bodyBytes))
 	assert.True(t, strings.Contains(string(bodyBytes), "Could not find available crosschain address"))
+
+	fmt.Println("*** TESTING FOR REPAIR ***")
+	// show the address only for first 2 nodes, 3rd node will attempt to repair.
+	for _, n := range nodes[0:2] {
+		n.rDb.AddCrosschainAddress(address3)
+	}
+
+	res, err = http.Post("http://localhost:5200/api/address/eth/charlie", "", nil)
+	assert.NoError(t, err)
+	bodyBytes, _ = ioutil.ReadAll(res.Body)
+	println("data", res.StatusCode, string(bodyBytes))
 }
 
 func TestStatus(t *testing.T) {

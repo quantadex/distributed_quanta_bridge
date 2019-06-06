@@ -226,7 +226,6 @@ func (c *AddressConsensus) StartConsensusIfNeeded() error {
 				}
 			case <-c.doneChan:
 				doneFlag = true
-				c.logger.Infof("Flag address Consensus Exit")
 				break
 		}
 
