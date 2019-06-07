@@ -131,6 +131,10 @@ func NewAddressConsensus(logger logger.Logger, trustNode *TrustNode, db *db.DB, 
 
 		if repair {
 			logger.Infof("***** REPAIRING ADDRESS TABLE *****")
+			err := res.db.RepairCrosschain(msg.State)
+			if err != nil {
+				return err
+			}
 		}
 		logger.Infof("Persisting number of txs=%d", len(msg.Transactions))
 

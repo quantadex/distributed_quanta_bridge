@@ -180,6 +180,17 @@ func TestAddress(t *testing.T) {
 	assert.NoError(t, err)
 	bodyBytes, _ = ioutil.ReadAll(res.Body)
 	println("data", res.StatusCode, string(bodyBytes))
+	// expect repair
+
+	// expect no repair
+	for _, n := range nodes {
+		address3.ContractAddress = "0xba420ef5d725361d8fdc58cb1e4fa62eda9ec111"
+		n.rDb.AddCrosschainAddress(address3)
+	}
+	res, err = http.Post("http://localhost:5200/api/address/eth/beta", "", nil)
+	assert.NoError(t, err)
+	bodyBytes, _ = ioutil.ReadAll(res.Body)
+	println("data", res.StatusCode, string(bodyBytes))
 }
 
 func TestStatus(t *testing.T) {
