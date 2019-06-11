@@ -31,7 +31,7 @@ type Server struct {
 	coinNames     []string
 	coins         []coin.Coin
 	addressChange *AddressConsensus
-	counter		  uint64
+	counter       uint64
 }
 
 func NewApiServer(trustNode *TrustNode, coinNames []string, publicKey string, listenIp string, kv kv_store.KVStore, db *db.DB, url string, logger logger.Logger) *Server {
@@ -61,10 +61,30 @@ func (server *Server) setRoute() {
 	server.handlers = mux.NewRouter()
 	server.handlers.HandleFunc("/api/address/{blockchain}", server.listAddressHandler)
 	server.handlers.HandleFunc("/api/address/{blockchain}/{quanta}", server.addressHandler)
+	server.handlers.HandleFunc("/api/address_to_quanta/{blockchain}/{address}", server.addressToQuantaHandler)
 	server.handlers.HandleFunc("/api/history", server.historyHandler)
 	server.handlers.HandleFunc("/api/status", server.statusHandler)
 
 	server.httpService.Handler = server.handlers
+}
+
+func (server *Server) addressToQuantaHandler(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	blockchain := strings.ToUpper(vars["blockchain"])
+	if !(blockchain == coin.BLOCKCHAIN_BTC || blockchain == coin.BLOCKCHAIN_ETH || blockchain == coin.BLOCKCHAIN_LTC || blockchain == coin.BLOCKCHAIN_BCH) {
+		w.WriteHeader(http.StatusBadRequest)
+		w.Write([]byte("not a supported blockchain"))
+		return
+	}
+	address := vars["address"]
+	quanta := server.db.GetCrosschainByAddressandBlockchain(address, blockchain)
+	data, err := json.Marshal(quanta.QuantaAddr)
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		w.Write([]byte(err.Error()))
+		return
+	}
+	w.Write(data)
 }
 
 func (server *Server) generateNewAddress(blockchain string, quanta string) (*crypto.ForwardInput, error) {
@@ -132,7 +152,7 @@ func (server *Server) addressHandler(w http.ResponseWriter, r *http.Request) {
 				return
 			}
 
-			addr = []db.CrosschainAddress{ {Address: forwardInput.ContractAddress,QuantaAddr: forwardInput.QuantaAddr }}
+			addr = []db.CrosschainAddress{{Address: forwardInput.ContractAddress, QuantaAddr: forwardInput.QuantaAddr}}
 		}
 
 		if err != nil {

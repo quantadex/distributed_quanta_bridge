@@ -319,3 +319,58 @@ func TestAddressAllNodes(t *testing.T) {
 	//assert.Equal(t, 200, res.StatusCode)
 
 }
+
+func TestAddressToQuanta(t *testing.T) {
+	fmt.Println(time.Now())
+	r := StartRegistry(2, ":6000")
+	nodes := StartNodes(test.GRAPHENE_ISSUER, test.GRAPHENE_TRUST, test.ETHER_NETWORKS[test.ROPSTEN], 2)
+	defer func() {
+		StopNodes(nodes, []int{0})
+		StopRegistry(r)
+	}()
+	time.Sleep(time.Millisecond * 250)
+
+	address := &crypto.ForwardInput{
+		"0xba420ef5d725361d8fdc58cb1e4fa62eda9ec9084",
+		common.HexToAddress(test.GRAPHENE_TRUST.TrustContract),
+		"address-pool",
+		"0x01",
+		coin.BLOCKCHAIN_LTC,
+	}
+
+	nodes[0].rDb.AddCrosschainAddress(address)
+	nodes[1].rDb.AddCrosschainAddress(address)
+
+	// test crosschain
+	nodes[0].rDb.AddCrosschainAddress(address)
+	//nodes[1].rDb.AddCrosschainAddress(address)
+
+	address = &crypto.ForwardInput{
+		"0xba420ef5d725361d8fdc58cb1e4fa62eda9ec999",
+		common.HexToAddress(test.GRAPHENE_TRUST.TrustContract),
+		"pooja",
+		"0x01",
+		coin.BLOCKCHAIN_LTC,
+	}
+
+	nodes[0].rDb.AddCrosschainAddress(address)
+	nodes[1].rDb.AddCrosschainAddress(address)
+
+	control.SetLastBlock(nodes[0].db, control.QUANTA, 9593474)
+	control.SetLastBlock(nodes[1].db, control.QUANTA, 9593474)
+
+	time.Sleep(time.Second * 2)
+
+	// test crosschain
+	res, err := http.Get("http://localhost:5200/api/address/ltc")
+	//res, err = http.Get("http://localhost:5201/api/status")
+	assert.NoError(t, err)
+	bodyBytes, _ := ioutil.ReadAll(res.Body)
+	println("data", res.StatusCode, string(bodyBytes))
+
+	res, err = http.Get("http://localhost:5201/api/address_to_quanta/ltc/0xba420ef5d725361d8fdc58cb1e4fa62eda9ec999")
+	assert.NoError(t, err)
+	bodyBytes, _ = ioutil.ReadAll(res.Body)
+	println("data", res.StatusCode, string(bodyBytes))
+
+}
