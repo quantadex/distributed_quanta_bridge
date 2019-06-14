@@ -1,7 +1,6 @@
 package main
 
 import (
-	"crypto/sha256"
 	"encoding/json"
 	"fmt"
 	"github.com/ethereum/go-ethereum/common"
@@ -13,54 +12,57 @@ import (
 	"github.com/quantadex/distributed_quanta_bridge/trust/control"
 	"github.com/quantadex/distributed_quanta_bridge/trust/db"
 	"github.com/quantadex/distributed_quanta_bridge/trust/peer_contact"
-	"github.com/quantadex/quanta_book/consensus/cosi"
 	"time"
+	"crypto/sha256"
+	"github.com/quantadex/distributed_quanta_bridge/common/consensus"
 )
 
 type AddressConsensus struct {
-	logger       logger.Logger
-	trustPeer    *peer_contact.TrustPeerNode
-	cosi         *cosi.Cosi
-	pool         AddressRequestPool
-	db           *db.DB
-	poolNotify   map[string]chan error
-	msgChan      chan MsgAsync
-	stateTracker map[string]map[string]int // tracking blockhash -> state -> count
+	logger    logger.Logger
+	trustPeer *peer_contact.TrustPeerNode
+	cosi      *consensus.Cosi
+	pool      AddressRequestPool
+	db *db.DB
+	poolNotify map[string]chan error
+	msgChan chan MsgAsync
+	doneChan chan bool
+	stateTracker map[string]map[string]int  // tracking blockhash -> state -> count
 }
 
 type AddressChange struct {
 	Blockchain string
 	QuantaAddr string
 	Address    string
-	Counter    uint64
+	Counter	   uint64
 }
 
 type MsgAsync struct {
-	data   AddressChange
+	data AddressChange
 	notify chan error
 }
 
 func GetAddressId(addr AddressChange) string {
-	return fmt.Sprintf("%s:%s:%s", addr.Blockchain, addr.QuantaAddr, addr.Address)
+	return fmt.Sprintf("%s:%s:s", addr.Blockchain, addr.QuantaAddr, addr.Address)
 }
 
 type AddressBlock struct {
-	transactions []AddressChange        // batch multiple address request
-	state        []db.CrosschainAddress // state
+	Transactions []AddressChange  // batch multiple address request
+	State []db.CrosschainAddress  // state
 }
 
 // tx pool
-type AddressRequestPool []AddressChange // grab from top
+type AddressRequestPool []AddressChange  // grab from top
 
 func NewAddressConsensus(logger logger.Logger, trustNode *TrustNode, db *db.DB, kv kv_store.KVStore, minBlock int64) *AddressConsensus {
 	var res AddressConsensus
 	res.trustPeer = peer_contact.NewTrustPeerNode(trustNode.man, trustNode.peer, trustNode.nodeID, trustNode.queue, queue.ADDR_MSG_QUEUE, "/node/api/address", trustNode.quantakM)
-	res.cosi = cosi.NewProtocol(res.trustPeer, trustNode.nodeID == 0, time.Second*6)
+	res.cosi = consensus.NewProtocol(res.trustPeer, trustNode.nodeID == 0, time.Second*6)
 	res.logger = logger
 	res.db = db
-	res.msgChan = make(chan MsgAsync, 1)
-	res.poolNotify = make(map[string]chan error)
-	res.stateTracker = make(map[string]map[string]int)
+	res.msgChan = make(chan MsgAsync, 100)
+	res.poolNotify = map[string]chan error {}
+	res.doneChan = make(chan bool, 1)
+
 	res.cosi.Verify = func(encoded string) error {
 		decoded := common.Hex2Bytes(encoded)
 		msg := &AddressBlock{}
@@ -68,64 +70,87 @@ func NewAddressConsensus(logger logger.Logger, trustNode *TrustNode, db *db.DB, 
 		if err != nil {
 			return err
 		}
-		decodedSha := sha256.Sum256(decoded)
 
-		blockHash := common.Bytes2Hex(decodedSha[:])
-		counter, ok := res.stateTracker[blockHash]
-		if !ok {
-			counter = map[string]int{}
-			res.stateTracker[blockHash] = counter
+		// if my state is the same -- confirm.
+		my_state := db.GetCrosschainAll()
+		my_state_hash, _ := json.Marshal(my_state)
+		//println(string(my_state_hash))
+
+		my_state_hashb := sha256.Sum256(my_state_hash)
+		my_state_hash2 := common.Bytes2Hex(my_state_hashb[:])
+
+		in_state_hash, _ := json.Marshal(msg.State)
+		//println("IN", string(in_state_hash))
+
+		in_state_hashb := sha256.Sum256(in_state_hash)
+		in_state_hash2 := common.Bytes2Hex(in_state_hashb[:])
+
+		if my_state_hash2 != in_state_hash2 {
+			return errors.New(fmt.Sprintf("AddressConsensus state hash mismatch mine=%s in=%s", my_state_hash2, in_state_hash2))
 		}
-		data, err := json.Marshal(msg.state)
 
-		// not sure what happens when item does not exist in counter
-		counter[string(data)] += 1
+		for _, tx := range msg.Transactions  {
+			if tx.Blockchain == coin.BLOCKCHAIN_ETH {
+				headBlock, _ := control.GetLastBlock(kv, coin.BLOCKCHAIN_ETH)
+				addrAvailable, err := db.GetAvailableShareAddress(headBlock, minBlock)
+				if err != nil {
+					return err
+				}
 
-		//
-		//if msg.Blockchain == coin.BLOCKCHAIN_ETH {
-		//	headBlock, _ := control.GetLastBlock(kv, coin.BLOCKCHAIN_ETH)
-		//	addrAvailable, err := db.GetAvailableShareAddress(headBlock, minBlock)
-		//	if err != nil {
-		//		return err
-		//	}
-		//	for _, a := range addrAvailable {
-		//		if a.Address == msg.Address {
-		//			return nil
-		//		}
-		//	}
-		//	return errors.New(fmt.Sprintf("Address available not match - msg=%s", msg.Address))
-		//
-		//} else {
-		//	addr, err := trustNode.CreateMultisig(msg.Blockchain, msg.QuantaAddr)
-		//	if err != nil {
-		//		return errors.New("Unable to generate address for " + msg.Blockchain + "," + err.Error())
-		//	}
-		//	if addr.ContractAddress != msg.Address || addr.QuantaAddr != msg.QuantaAddr {
-		//		return errors.New("Unable to generate address for " + msg.Blockchain + ", somethign don't match")
-		//	}
-		//	return nil
-		//}
+				found := false
+				for _, a := range addrAvailable {
+					if a.Address == tx.Address {
+						found = true
+					}
+				}
+
+				if !found {
+					return errors.New(fmt.Sprintf("Address available not match - msg=%s", tx.Address))
+				}
+			} else {
+				addr, err := trustNode.CreateMultisig(tx.Blockchain, tx.QuantaAddr)
+				if err != nil {
+					return errors.New("Unable to generate address for " + tx.Blockchain + "," + err.Error())
+				}
+				if addr.ContractAddress != tx.Address || addr.QuantaAddr != tx.QuantaAddr {
+					return errors.New("Unable to generate address for " + tx.Blockchain + ", somethign don't match")
+				}
+			}
+		}
+
 		return nil
 	}
 
-	res.cosi.Persist = func(encoded string) error {
+	res.cosi.Persist = func(encoded string, repair bool) error {
 		decoded := common.Hex2Bytes(encoded)
-		msg := &AddressChange{}
+		msg := &AddressBlock{}
 		err := json.Unmarshal(decoded, msg)
 		if err != nil {
 			return err
 		}
 
-		if msg.Blockchain == "" {
-			headBlock, _ := control.GetLastBlock(kv, coin.BLOCKCHAIN_ETH)
-			err = db.UpdateShareAddressDestination(msg.Address, msg.QuantaAddr, uint64(headBlock))
-		} else {
-			addr, err := trustNode.CreateMultisig(msg.Blockchain, msg.QuantaAddr)
+		if repair {
+			logger.Infof("***** REPAIRING ADDRESS TABLE *****")
+			err := res.db.RepairCrosschain(msg.State)
 			if err != nil {
-				return errors.New("Cannot persist due to error : " + err.Error())
+				return err
 			}
-			err = db.AddCrosschainAddress(addr)
 		}
+		logger.Infof("Persisting number of txs=%d", len(msg.Transactions))
+
+		for _, tx := range msg.Transactions {
+			if tx.Blockchain == coin.BLOCKCHAIN_ETH {
+				headBlock, _ := control.GetLastBlock(kv, coin.BLOCKCHAIN_ETH)
+				err = db.UpdateShareAddressDestination(tx.Address, tx.QuantaAddr, uint64(headBlock))
+			} else {
+				addr, err := trustNode.CreateMultisig(tx.Blockchain, tx.QuantaAddr)
+				if err != nil {
+					return errors.New("Cannot persist due to error : " + err.Error())
+				}
+				err = db.AddCrosschainAddress(addr)
+			}
+		}
+
 		return err
 	}
 
@@ -142,13 +167,15 @@ func NewAddressConsensus(logger logger.Logger, trustNode *TrustNode, db *db.DB, 
 
 			if msg != nil {
 				//log.Infof("Got peer message %v", msg.Signed)
-				res.cosi.CosiMsgChan <- msg
+				res.cosi.CosiMsgChan <- &consensus.CosiMessage{ msg.Msg, msg.Signed, consensus.Phase(msg.Phase), msg.Initial }
 				continue
 			}
 
 			time.Sleep(500 * time.Millisecond)
 		}
 	}()
+
+	go res.StartConsensusIfNeeded()
 
 	return &res
 }
@@ -158,57 +185,101 @@ func NewAddressConsensus(logger logger.Logger, trustNode *TrustNode, db *db.DB, 
 func (c *AddressConsensus) GetAddress(msg AddressChange) error {
 	done := make(chan error, 1)
 
-	done <- nil
-	c.msgChan <- MsgAsync{msg, done}
-	go c.StartConsensusIfNeeded()
-	err := <-done
+	c.msgChan <- MsgAsync{ msg, done}
+	err := <- done
 	return err
 }
 
 func (c *AddressConsensus) StartConsensusIfNeeded() error {
+	c.logger.Infof("Started AddressBlock Block Producer")
+
 	// gather enough txs
 	pendingConsensus := false
 	doneConsensus := make(chan error, 1)
 	pendingTxs := []AddressChange{}
+	doneFlag := false
 
 	for {
 		select {
-		case msg := <-c.msgChan:
-			c.pool = append(c.pool, msg.data) // modify
-			c.poolNotify[GetAddressId(msg.data)] = msg.notify
+			case msg := <-c.msgChan:
+				c.logger.Infof("Enqueue new address %s %s", msg.data.Blockchain, msg.data.QuantaAddr)
+
+				// CHECK FOR DUPLICATE, FAIL FAST
+				isDuplicate := false
+				for _, e := range c.pool {
+					if e.Blockchain == msg.data.Blockchain && e.QuantaAddr == msg.data.QuantaAddr {
+						isDuplicate = true
+						break
+					}
+				}
+				if isDuplicate {
+					msg.notify <- errors.New("Duplicate address request.")
+				} else {
+					c.pool = append(c.pool, msg.data) // modify
+					c.poolNotify[GetAddressId(msg.data)] = msg.notify
+				}
 
 			// start new block every 3 sec for at least 1 address change
-		case <-time.After(time.Second * 3):
-			if !pendingConsensus && len(c.pool) > 0 {
-				txsToProcess := c.pool        // read
-				c.pool = AddressRequestPool{} // modify
-				pendingConsensus = true
-				pendingTxs = txsToProcess
+			case <-time.After(time.Second * 3):
+				if !pendingConsensus && len(c.pool) > 0 {
+					txsToProcess := c.pool        // read
+					c.pool = AddressRequestPool{} // modify
+					pendingConsensus = true
+					pendingTxs = txsToProcess
 
-				c.startNewBlock(txsToProcess, doneConsensus)
-			}
+					filtered := AddressRequestPool{}
+					// filter any unnecessary requests - which may be on previous blocks
+					for _, e := range pendingTxs {
+						lookup, _ := db.GetCrosschainByBlockchainAndUser(c.db, e.Blockchain, e.QuantaAddr)
+						if len(lookup) == 0 {
+							filtered = append(filtered, e)
+						} else {
+							c.logger.Infof("Rejected address %s %s since it already exists.", e.Blockchain, e.QuantaAddr)
+						}
+					}
+
+					if len(filtered) > 0 {
+						c.startNewBlock(filtered, doneConsensus)
+					}
+				}
 
 			// notify all the callers
-		case err := <-doneConsensus:
-			for _, tx := range pendingTxs {
-				notify := c.poolNotify[GetAddressId(tx)]
-				notify <- err
-				delete(c.poolNotify, GetAddressId(tx))
-				pendingTxs = []AddressChange{}
-				pendingConsensus = true
-			}
+			case err := <-doneConsensus:
+				for _, tx := range pendingTxs {
+					notify := c.poolNotify[GetAddressId(tx)]
+					notify <- err
+					delete(c.poolNotify, GetAddressId(tx))
+					pendingTxs = []AddressChange{}
+					pendingConsensus = false
+
+					c.logger.Infof("Notify addressBlock done %v", err)
+				}
+			case <-c.doneChan:
+				doneFlag = true
+				break
+		}
+
+		if doneFlag {
+			c.logger.Infof("Exiting address consensus.")
+			break
 		}
 	}
+	return nil
 }
 
-func (c *AddressConsensus) startNewBlock(txsToProcess []AddressChange, done chan<- error) {
+func (c *AddressConsensus) Stop() {
+	c.doneChan <- true
+}
+
+func (c *AddressConsensus) startNewBlock(txsToProcess []AddressChange, done chan error) {
+	c.logger.Infof("Generate new address block. txs=%d", len(txsToProcess))
 
 	state := c.db.GetCrosschainAll()
 
 	// create the block
 	block := AddressBlock{
-		transactions: txsToProcess,
-		state:        state,
+		Transactions: txsToProcess,
+		State: state,
 	}
 
 	data, err := json.Marshal(&block)

@@ -44,6 +44,7 @@ func NewApiServer(trustNode *TrustNode, coinNames []string, publicKey string, li
 }
 
 func (server *Server) Stop() {
+	server.addressChange.Stop()
 	server.httpService.Shutdown(context.Background())
 }
 
@@ -120,6 +121,8 @@ func (server *Server) addressHandler(w http.ResponseWriter, r *http.Request) {
 	if len(values) == 0 {
 		var addr []db.CrosschainAddress
 		var err error
+
+		server.logger.Infof("Request new address %v %v", blockchain, quanta)
 
 		if blockchain == coin.BLOCKCHAIN_ETH {
 			headBlock, _ := control.GetLastBlock(server.kv, coin.BLOCKCHAIN_ETH)

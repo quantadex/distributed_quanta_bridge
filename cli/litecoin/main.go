@@ -13,7 +13,7 @@ func main() {
 	config, quanta, rdb, kdb, log, secrets := cli.Setup()
 
 	// setup coin
-	blackList := crypto.GetBlackListedUsersByBlockcahin(config.BlackList, coin.BLOCKCHAIN_LTC)
+	blackList := crypto.GetBlackListedUsersByBlockchain(config.BlackList, coin.BLOCKCHAIN_LTC)
 	coin, err := coin.NewLitecoinCoin(config.LtcRpc, crypto.GetChainCfgByStringLTC(config.LtcNetwork), secrets.LtcSigners, secrets.LtcRpcUser, secrets.LtcRpcPassword, secrets.GrapheneSeedPrefix, config.LtcWithdrawMin, config.LtcWithdrawFee, blackList)
 	if err != nil {
 		panic(fmt.Errorf("cannot create litecoin coin"))

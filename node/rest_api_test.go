@@ -105,10 +105,10 @@ func TestAPI(t *testing.T) {
 }
 
 func TestAddress(t *testing.T) {
-	r := StartRegistry(1, ":6000")
-	nodes := StartNodes(test.GRAPHENE_ISSUER, test.GRAPHENE_TRUST, test.ETHER_NETWORKS[test.ROPSTEN], 1)
+	r := StartRegistry(3, ":6000")
+	nodes := StartNodes(test.GRAPHENE_ISSUER, test.GRAPHENE_TRUST, test.ETHER_NETWORKS[test.ROPSTEN], 3)
 	defer func() {
-		StopNodes(nodes, []int{0})
+		StopNodes(nodes, []int{0, 1, 2})
 		StopRegistry(r)
 	}()
 	time.Sleep(time.Millisecond * 250)
@@ -121,31 +121,28 @@ func TestAddress(t *testing.T) {
 		coin.BLOCKCHAIN_ETH,
 	}
 
-	control.SetLastBlock(nodes[0].db, coin.BLOCKCHAIN_ETH, 700000)
-	//control.SetLastBlock(nodes[1].db, coin.BLOCKCHAIN_ETH, 700000)
+	address2 := &crypto.ForwardInput{
+		"0xba420ef5d725361d8fdc58cb1e4fa62eda9ec888",
+		common.HexToAddress(test.GRAPHENE_TRUST.TrustContract),
+		"address-pool",
+		"0x01",
+		coin.BLOCKCHAIN_ETH,
+	}
+
+	address3 := &crypto.ForwardInput{
+		"0xba420ef5d725361d8fdc58cb1e4fa62eda9ec889",
+		common.HexToAddress(test.GRAPHENE_TRUST.TrustContract),
+		"address-pool",
+		"0x01",
+		coin.BLOCKCHAIN_ETH,
+	}
 
 	// test crosschain
-	nodes[0].rDb.AddCrosschainAddress(address)
-
-	// try to mess with the order of adddresses
-	//nodes[1].rDb.AddCrosschainAddress(&crypto.ForwardInput{
-	//	"0xba420ef5d725361d8fdc58cb1e4fa62eda9ec888",
-	//	common.HexToAddress(test.GRAPHENE_TRUST.TrustContract),
-	//	"address-pool",
-	//	"0x01",
-	//	coin.BLOCKCHAIN_ETH,
-	//})
-	//nodes[1].rDb.AddCrosschainAddress(address)
-	//nodes[1].rDb.AddCrosschainAddress(&crypto.ForwardInput{
-	//	"0xba420ef5d725361d8fdc58cb1e4fa62eda9ec991",
-	//	common.HexToAddress(test.GRAPHENE_TRUST.TrustContract),
-	//	"address-pool",
-	//	"0x01",
-	//	coin.BLOCKCHAIN_ETH,
-	//})
-
-	//nodes[0].rDb.UpdateLastBlockNumber("0xba420ef5d725361d8fdc58cb1e4fa62eda9ec990", 1)
-	//nodes[1].rDb.UpdateLastBlockNumber("0xba420ef5d725361d8fdc58cb1e4fa62eda9ec990", 1)
+	for _, n := range nodes {
+		n.rDb.AddCrosschainAddress(address)
+		n.rDb.AddCrosschainAddress(address2)
+		control.SetLastBlock(n.db, coin.BLOCKCHAIN_ETH, 700000)
+	}
 
 	// wait for node to bootup
 	time.Sleep(time.Millisecond * 2000)
@@ -156,21 +153,44 @@ func TestAddress(t *testing.T) {
 	bodyBytes, _ := ioutil.ReadAll(res.Body)
 	println("data", res.StatusCode, string(bodyBytes))
 
-	//res, err = http.Get("http://localhost:5201/api/address/eth/pooja")
-	//assert.NoError(t, err)
-	//bodyBytes, _ = ioutil.ReadAll(res.Body)
-	//println("data", res.StatusCode, string(bodyBytes))
-
 	res, err = http.Post("http://localhost:5200/api/address/eth/pooja", "", nil)
 	assert.NoError(t, err)
 	bodyBytes, _ = ioutil.ReadAll(res.Body)
 	println("data", res.StatusCode, string(bodyBytes))
 
+	res, err = http.Post("http://localhost:5200/api/address/eth/alpha", "", nil)
+	assert.NoError(t, err)
+	bodyBytes, _ = ioutil.ReadAll(res.Body)
+	println("data", res.StatusCode, string(bodyBytes))
+
+	fmt.Println("We're out of addresses, expect to fail")
 	res, err = http.Post("http://localhost:5200/api/address/eth/charlie", "", nil)
 	assert.NoError(t, err)
 	bodyBytes, _ = ioutil.ReadAll(res.Body)
 	println("data 3", res.StatusCode, string(bodyBytes))
 	assert.True(t, strings.Contains(string(bodyBytes), "Could not find available crosschain address"))
+
+	fmt.Println("*** TESTING FOR REPAIR ***")
+	// show the address only for first 2 nodes, 3rd node will attempt to repair.
+	for _, n := range nodes[0:2] {
+		n.rDb.AddCrosschainAddress(address3)
+	}
+
+	res, err = http.Post("http://localhost:5200/api/address/eth/charlie", "", nil)
+	assert.NoError(t, err)
+	bodyBytes, _ = ioutil.ReadAll(res.Body)
+	println("data", res.StatusCode, string(bodyBytes))
+	// expect repair
+
+	// expect no repair
+	for _, n := range nodes {
+		address3.ContractAddress = "0xba420ef5d725361d8fdc58cb1e4fa62eda9ec111"
+		n.rDb.AddCrosschainAddress(address3)
+	}
+	res, err = http.Post("http://localhost:5200/api/address/eth/beta", "", nil)
+	assert.NoError(t, err)
+	bodyBytes, _ = ioutil.ReadAll(res.Body)
+	println("data", res.StatusCode, string(bodyBytes))
 }
 
 func TestStatus(t *testing.T) {

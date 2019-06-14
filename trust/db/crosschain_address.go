@@ -30,11 +30,68 @@ func MigrateXC(db *DB) error {
 
 func (db *DB) GetCrosschainAll() []CrosschainAddress {
 	var tx []CrosschainAddress
-	err := db.Model(&tx).Select()
+	out := []CrosschainAddress {}
+
+	err := db.Model(&tx).Order("blockchain asc","address asc").Select()
+	for _, tx := range tx {
+		tx.Updated = time.Unix(0, 0)
+		out = append(out, tx)
+	}
 	if err != nil {
 		return nil
 	}
-	return tx
+	return out
+}
+
+func getDifference(mine, in []CrosschainAddress) (changed,added,deleted []CrosschainAddress) {
+	mineMap := map[string]CrosschainAddress {}
+	for _, r := range mine {
+		mineMap[r.Address] = r
+	}
+
+	newMap := map[string]CrosschainAddress{}
+	for _, r := range in {
+		newMap[r.Address] = r
+	}
+
+	for k, v := range mineMap {
+		if _, exist := newMap[k]; !exist {
+			deleted = append(deleted, v)
+		}
+	}
+
+	for k, v := range newMap {
+		// exist in the old orders
+		if n, exist := mineMap[k]; exist {
+			if v.QuantaAddr != n.QuantaAddr || v.LastBlockNumber != n.LastBlockNumber ||
+				v.TxHash != n.TxHash || v.Shared != n.Shared || v.Blockchain != n.Blockchain{
+				changed = append(changed, v) // send back old one so we can cancel
+			}
+		} else {
+			added = append(added, v)
+		}
+	}
+	return
+}
+
+// given an input "in", repair the local database as neccessary
+func (db *DB) RepairCrosschain(in []CrosschainAddress) error {
+	changed, added, deleted := getDifference(db.GetCrosschainAll(), in)
+
+	for _, tx := range append(deleted, changed...) {
+		_, err := db.Model(&tx).Delete()
+		if err != nil {
+			return err
+		}
+	}
+
+	for _, tx := range added {
+		_, err := db.Model(&tx).Insert()
+		if err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
 func (db *DB) GetCrosschainByBlockchain(blockchain string) []CrosschainAddress {
