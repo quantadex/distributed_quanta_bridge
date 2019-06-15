@@ -35,6 +35,7 @@ type BitcoinCoin struct {
 	BtcWithdrawMin     float64
 	BtcWithdrawFee     float64
 	BlackList          map[string]bool
+	issuerAddr         string
 }
 
 const BLOCKCHAIN_BTC = "BTC"
@@ -59,6 +60,10 @@ func (b *BitcoinCoin) Attach() error {
 
 	//err = crypto.ValidateNetwork(b.Client, "Satoshi")
 	return err
+}
+
+func (b *BitcoinCoin) SetIssuerAddress(address string) {
+	b.issuerAddr = address
 }
 
 type FeeResult struct {
@@ -166,7 +171,7 @@ func (b *BitcoinCoin) GenerateMultisig(accountId string) (string, error) {
 		return "", err
 	}
 
-	err = b.Client.ImportAddressRescan(res.P2sh, "", false)
+	b.Client.ImportAddressRescanAsync(res.P2sh, "", false)
 	if err != nil {
 		return "", errors.Wrap(err, "Unable to import address "+res.P2sh)
 	}
@@ -491,7 +496,7 @@ func (b *BitcoinCoin) EncodeRefund(w Withdrawal) (string, error) {
 		return "", errors.Wrap(err, "convert amount problem")
 	}
 
-	totalAmount, inputs, unspentFound, rawInput, err := b.GetUnspentInputs(destinationAddr, amount)
+	totalAmount, inputs, _, rawInput, err := b.GetUnspentInputs(destinationAddr, amount)
 
 	if err != nil {
 		return "", errors.Wrap(err, "Unable to get unspent")
@@ -517,7 +522,11 @@ func (b *BitcoinCoin) EncodeRefund(w Withdrawal) (string, error) {
 		return "", errors.Wrap(err, "Unable to create new amount")
 	}
 
-	sourceAddrRefund, err := btcutil.DecodeAddress(unspentFound[0].Address, b.chaincfg)
+	if b.issuerAddr == "" {
+		return "", errors.New("Issuer address not set for BTC")
+	}
+
+	sourceAddrRefund, err := btcutil.DecodeAddress(b.issuerAddr, b.chaincfg)
 	if err != nil {
 		return "", err
 	}
@@ -609,8 +618,9 @@ func (b *BitcoinCoin) DecodeRefund(encoded string) (*Withdrawal, error) {
 	for _, vout := range decodedTx.Vout {
 		destAddr := strings.Join(vout.ScriptPubKey.Addresses, ",")
 
-		if vinLookup[destAddr] || fromAddr == "" {
-			//println("Ignoring tx when from and to the same ", toAddr)
+		_, isCrosschain := b.crosschainAddr[destAddr]
+		if vinLookup[destAddr] || fromAddr == "" || isCrosschain {
+			//println("Ignoring tx when from and to the same ", fromAddr)
 			continue
 		}
 		amount, err := btcutil.NewAmount(vout.Value)

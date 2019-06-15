@@ -31,7 +31,8 @@ type Server struct {
 	coinNames     []string
 	coins         []coin.Coin
 	addressChange *AddressConsensus
-	counter		  uint64
+	counter       uint64
+	isTest        bool
 }
 
 func NewApiServer(trustNode *TrustNode, coinNames []string, publicKey string, listenIp string, kv kv_store.KVStore, db *db.DB, url string, logger logger.Logger) *Server {
@@ -40,7 +41,8 @@ func NewApiServer(trustNode *TrustNode, coinNames []string, publicKey string, li
 		publicKey: publicKey,
 		listenIp:  listenIp, url: url, logger: logger,
 		kv: kv, db: db, httpService: &http.Server{Addr: url},
-		addressChange: NewAddressConsensus(logger, trustNode, db, kv, trustNode.config.MinBlockReuse)}
+		addressChange: NewAddressConsensus(logger, trustNode, db, kv, trustNode.config.MinBlockReuse),
+		isTest:        trustNode.config.IsTest}
 }
 
 func (server *Server) Stop() {
@@ -102,6 +104,15 @@ func (server *Server) addressHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	if !server.isTest {
+		accountExists := server.trustNode.q.AccountExist(quanta)
+		if !accountExists {
+			w.WriteHeader(http.StatusBadRequest)
+			w.Write([]byte("not a valid user"))
+			return
+		}
+	}
+
 	values, err := db.GetCrosschainByBlockchainAndUser(server.db, blockchain, quanta)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
@@ -135,7 +146,7 @@ func (server *Server) addressHandler(w http.ResponseWriter, r *http.Request) {
 				return
 			}
 
-			addr = []db.CrosschainAddress{ {Address: forwardInput.ContractAddress,QuantaAddr: forwardInput.QuantaAddr }}
+			addr = []db.CrosschainAddress{{Address: forwardInput.ContractAddress, QuantaAddr: forwardInput.QuantaAddr}}
 		}
 
 		if err != nil {

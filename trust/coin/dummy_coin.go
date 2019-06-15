@@ -24,6 +24,10 @@ func GetDummyInstance() *DummyCoin {
 	return instance
 }
 
+func (c *DummyCoin) SetIssuerAddress(address string) {
+	panic("Not implemented")
+}
+
 func (c *DummyCoin) CheckValidAmount(amount uint64) bool {
 	panic("Not implemented")
 }

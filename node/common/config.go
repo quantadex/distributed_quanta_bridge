@@ -64,4 +64,6 @@ type Config struct {
 	WithdrawFailureThreshold  int64
 
 	BlackList map[string][]string
+	Mode      string
+	IsTest    bool
 }

@@ -78,6 +78,8 @@ func generateConfig(quanta *test.QuantaNodeSecrets, ethereum *test.EthereumTrust
 			WithdrawFailureThreshold:  20,
 
 			BlackList: map[string][]string{},
+			Mode:      "auto",
+			IsTest:    true,
 		}, &common.Secrets{
 			NodeKey:          quanta.NodeSecrets[index],
 			EthereumKeyStore: ethereum.NodeSecrets[index],
@@ -115,7 +117,7 @@ func assertMsgCountEqualDoLoop(t *testing.T, label string, expected int, actual 
 func StartNodesWithIndexes(quanta *test.QuantaNodeSecrets, ethereum *test.EthereumTrustSecrets,
 	etherEnv test.EthereumEnv, removePrevDB bool, indexesToStart []int, nodes []*TrustNode) []*TrustNode {
 	println("Starting nodes with ", ethereum.TrustContract)
-	
+
 	mutex := sync.Mutex{}
 	var wg sync.WaitGroup
 

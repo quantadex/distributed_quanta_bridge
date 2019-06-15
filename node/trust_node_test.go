@@ -80,10 +80,10 @@ func GetBchSync(node *TrustNode, minConfirm int64) sync.DepositSyncInterface {
 }
 
 func TestRopstenNativeETH(t *testing.T) {
-	r := StartRegistry(2, ":6000")
-	nodes := StartNodes(test.GRAPHENE_ISSUER, test.GRAPHENE_TRUST, test.ETHER_NETWORKS[test.ROPSTEN], 2)
+	r := StartRegistry(3, ":6000")
+	nodes := StartNodes(test.GRAPHENE_ISSUER, test.GRAPHENE_TRUST, test.ETHER_NETWORKS[test.ROPSTEN], 3)
 	defer func() {
-		StopNodes(nodes, []int{0, 1})
+		StopNodes(nodes, []int{0, 1, 2})
 		StopRegistry(r)
 	}()
 	time.Sleep(time.Millisecond * 250)
@@ -183,11 +183,11 @@ func TestRopstenNativeETH(t *testing.T) {
 // Block 4356004 ERC-20 0x541d973a7168dbbf413eab6993a5e504ec5accb0
 // Block 4356013 sent .0001234  precision 9  tx=https://ropsten.etherscan.io/tx/0x51a1018c6b2afd7bffb52d05178c3b66c9336e8c2dfeca0110f405cc41613492
 func TestRopstenERC20Token(t *testing.T) {
-	r := StartRegistry(2, ":6000")
+	r := StartRegistry(3, ":6000")
 	//ercContract := "0x541d973a7168dbbf413eab6993a5e504ec5accb0"
-	nodes := StartNodes(test.GRAPHENE_ISSUER, test.GRAPHENE_TRUST, test.ETHER_NETWORKS[test.ROPSTEN], 2)
+	nodes := StartNodes(test.GRAPHENE_ISSUER, test.GRAPHENE_TRUST, test.ETHER_NETWORKS[test.ROPSTEN], 3)
 	defer func() {
-		StopNodes(nodes, []int{0, 1})
+		StopNodes(nodes, []int{0, 1, 2})
 		StopRegistry(r)
 	}()
 	initialBalance, err := nodes[0].q.GetBalance("SIMPLETOKEN0XDFE1002C2E1AE5E8F4F34BF481900DAAE5351992", "pooja")
@@ -398,15 +398,15 @@ func TestWithdrawal(t *testing.T) {
 	contract, err := contracts.NewTrustContract(trustAddress, ethereumClient)
 	assert.NoError(t, err)
 
-	r := StartRegistry(2, ":6000")
+	r := StartRegistry(3, ":6000")
 
 	txId, err := contract.TxIdLast(nil)
 	assert.NoError(t, err)
 	println("latest TXID=", txId)
 
-	nodes := StartNodes(test.GRAPHENE_ISSUER, test.GRAPHENE_TRUST, test.ETHER_NETWORKS[test.ROPSTEN], 2)
+	nodes := StartNodes(test.GRAPHENE_ISSUER, test.GRAPHENE_TRUST, test.ETHER_NETWORKS[test.ROPSTEN], 3)
 	defer func() {
-		StopNodes(nodes, []int{0, 1})
+		StopNodes(nodes, []int{0, 1, 2})
 		StopRegistry(r)
 	}()
 
@@ -443,10 +443,10 @@ func TestWithdrawal(t *testing.T) {
 }
 
 func TestBCHDeposit(t *testing.T) {
-	r := StartRegistry(2, ":6000")
-	nodes := StartNodes(test.GRAPHENE_ISSUER, test.GRAPHENE_TRUST, test.ETHER_NETWORKS[test.ROPSTEN], 2)
+	r := StartRegistry(3, ":6000")
+	nodes := StartNodes(test.GRAPHENE_ISSUER, test.GRAPHENE_TRUST, test.ETHER_NETWORKS[test.ROPSTEN], 3)
 	defer func() {
-		StopNodes(nodes, []int{0, 1})
+		StopNodes(nodes, []int{0, 1, 2})
 		StopRegistry(r)
 	}()
 	time.Sleep(time.Millisecond * 250)
@@ -481,9 +481,9 @@ func TestBCHDeposit(t *testing.T) {
 		"",
 		coin.BLOCKCHAIN_BCH,
 	}
-	nodes[0].rDb.AddCrosschainAddress(forwardAddress)
-	nodes[1].rDb.AddCrosschainAddress(forwardAddress)
-
+	for _, node := range nodes {
+		node.rDb.AddCrosschainAddress(forwardAddress)
+	}
 	assert.NoError(t, err)
 
 	pubKey := "pooja"
@@ -557,24 +557,14 @@ func TestBCHDeposit(t *testing.T) {
 }
 
 func TestBCHWithdrawal(t *testing.T) {
-	ethereumClient, err := ethclient.Dial(test.ETHER_NETWORKS[test.ROPSTEN].Rpc)
-	assert.Nil(t, err)
-
-	trustAddress := common.HexToAddress(test.GRAPHENE_TRUST.TrustContract)
-	contract, err := contracts.NewTrustContract(trustAddress, ethereumClient)
-	assert.NoError(t, err)
-
-	r := StartRegistry(2, ":6000")
-
-	txId, err := contract.TxIdLast(nil)
-	assert.NoError(t, err)
-	println("latest TXID=", txId)
-
-	nodes := StartNodes(test.GRAPHENE_ISSUER, test.GRAPHENE_TRUST, test.ETHER_NETWORKS[test.ROPSTEN], 2)
+	r := StartRegistry(3, ":6000")
+	nodes := StartNodes(test.GRAPHENE_ISSUER, test.GRAPHENE_TRUST, test.ETHER_NETWORKS[test.ROPSTEN], 3)
 	defer func() {
-		StopNodes(nodes, []int{0, 1})
+		StopNodes(nodes, []int{0, 1, 2})
 		StopRegistry(r)
 	}()
+
+	time.Sleep(time.Second)
 
 	withdrawResult := make(chan control.WithdrawalResult)
 
@@ -606,8 +596,9 @@ func TestBCHWithdrawal(t *testing.T) {
 		"",
 		coin.BLOCKCHAIN_BCH,
 	}
-	nodes[0].rDb.AddCrosschainAddress(forwardAddress)
-	nodes[1].rDb.AddCrosschainAddress(forwardAddress)
+	for _, node := range nodes {
+		node.rDb.AddCrosschainAddress(forwardAddress)
+	}
 
 	pubKey := "pooja"
 	res, err := http.Get("http://localhost:5200/api/address/BCH/" + pubKey)
@@ -658,10 +649,10 @@ func TestBCHWithdrawal(t *testing.T) {
 }
 
 func TestLTCDeposit(t *testing.T) {
-	r := StartRegistry(2, ":6000")
-	nodes := StartNodes(test.GRAPHENE_ISSUER, test.GRAPHENE_TRUST, test.ETHER_NETWORKS[test.ROPSTEN], 2)
+	r := StartRegistry(3, ":6000")
+	nodes := StartNodes(test.GRAPHENE_ISSUER, test.GRAPHENE_TRUST, test.ETHER_NETWORKS[test.ROPSTEN], 3)
 	defer func() {
-		StopNodes(nodes, []int{0, 1})
+		StopNodes(nodes, []int{0, 1, 2})
 		StopRegistry(r)
 	}()
 	time.Sleep(time.Millisecond * 250)
@@ -696,8 +687,9 @@ func TestLTCDeposit(t *testing.T) {
 		"",
 		coin.BLOCKCHAIN_LTC,
 	}
-	nodes[0].rDb.AddCrosschainAddress(forwardAddress)
-	nodes[1].rDb.AddCrosschainAddress(forwardAddress)
+	for _, node := range nodes {
+		node.rDb.AddCrosschainAddress(forwardAddress)
+	}
 
 	assert.NoError(t, err)
 
@@ -772,22 +764,10 @@ func TestLTCDeposit(t *testing.T) {
 }
 
 func TestLTCWithdrawal(t *testing.T) {
-	ethereumClient, err := ethclient.Dial(test.ETHER_NETWORKS[test.ROPSTEN].Rpc)
-	assert.Nil(t, err)
-
-	trustAddress := common.HexToAddress(test.GRAPHENE_TRUST.TrustContract)
-	contract, err := contracts.NewTrustContract(trustAddress, ethereumClient)
-	assert.NoError(t, err)
-
-	r := StartRegistry(2, ":6000")
-
-	txId, err := contract.TxIdLast(nil)
-	assert.NoError(t, err)
-	println("latest TXID=", txId)
-
-	nodes := StartNodes(test.GRAPHENE_ISSUER, test.GRAPHENE_TRUST, test.ETHER_NETWORKS[test.ROPSTEN], 2)
+	r := StartRegistry(3, ":6000")
+	nodes := StartNodes(test.GRAPHENE_ISSUER, test.GRAPHENE_TRUST, test.ETHER_NETWORKS[test.ROPSTEN], 3)
 	defer func() {
-		StopNodes(nodes, []int{0, 1})
+		StopNodes(nodes, []int{0, 1, 2})
 		StopRegistry(r)
 	}()
 
@@ -821,8 +801,10 @@ func TestLTCWithdrawal(t *testing.T) {
 		"",
 		coin.BLOCKCHAIN_LTC,
 	}
-	nodes[0].rDb.AddCrosschainAddress(forwardAddress)
-	nodes[1].rDb.AddCrosschainAddress(forwardAddress)
+
+	for _, node := range nodes {
+		node.rDb.AddCrosschainAddress(forwardAddress)
+	}
 
 	pubKey := "pooja"
 	res, err := http.Get("http://localhost:5200/api/address/LTC/" + pubKey)
@@ -873,10 +855,10 @@ func TestLTCWithdrawal(t *testing.T) {
 }
 
 func TestBTCDeposit(t *testing.T) {
-	r := StartRegistry(2, ":6000")
-	nodes := StartNodes(test.GRAPHENE_ISSUER, test.GRAPHENE_TRUST, test.ETHER_NETWORKS[test.ROPSTEN], 2)
+	r := StartRegistry(3, ":6000")
+	nodes := StartNodes(test.GRAPHENE_ISSUER, test.GRAPHENE_TRUST, test.ETHER_NETWORKS[test.ROPSTEN], 3)
 	defer func() {
-		StopNodes(nodes, []int{0, 1})
+		StopNodes(nodes, []int{0, 1, 2})
 		StopRegistry(r)
 	}()
 
@@ -914,8 +896,9 @@ func TestBTCDeposit(t *testing.T) {
 		"",
 		coin.BLOCKCHAIN_BTC,
 	}
-	nodes[0].rDb.AddCrosschainAddress(forwardAddress)
-	nodes[1].rDb.AddCrosschainAddress(forwardAddress)
+	for _, node := range nodes {
+		node.rDb.AddCrosschainAddress(forwardAddress)
+	}
 
 	//pubKey := "pooja"
 	res, err := http.Get("http://localhost:5200/api/address/BTC/pooja")
@@ -987,22 +970,10 @@ func TestBTCDeposit(t *testing.T) {
 }
 
 func TestBTCWithdrawal(t *testing.T) {
-	ethereumClient, err := ethclient.Dial(test.ETHER_NETWORKS[test.ROPSTEN].Rpc)
-	assert.Nil(t, err)
-
-	trustAddress := common.HexToAddress(test.GRAPHENE_TRUST.TrustContract)
-	contract, err := contracts.NewTrustContract(trustAddress, ethereumClient)
-	assert.NoError(t, err)
-
-	r := StartRegistry(2, ":6000")
-
-	txId, err := contract.TxIdLast(nil)
-	assert.NoError(t, err)
-	println("latest TXID=", txId)
-
-	nodes := StartNodes(test.GRAPHENE_ISSUER, test.GRAPHENE_TRUST, test.ETHER_NETWORKS[test.ROPSTEN], 2)
+	r := StartRegistry(3, ":6000")
+	nodes := StartNodes(test.GRAPHENE_ISSUER, test.GRAPHENE_TRUST, test.ETHER_NETWORKS[test.ROPSTEN], 3)
 	defer func() {
-		StopNodes(nodes, []int{0, 1})
+		StopNodes(nodes, []int{0, 1, 2})
 		StopRegistry(r)
 	}()
 
@@ -1012,7 +983,8 @@ func TestBTCWithdrawal(t *testing.T) {
 		withdrawResult <- c
 	}
 
-	_, secrets := generateConfig(test.GRAPHENE_ISSUER, test.GRAPHENE_TRUST, test.ETHER_NETWORKS[test.ROPSTEN], 0)
+	config, secrets := generateConfig(test.GRAPHENE_ISSUER, test.GRAPHENE_TRUST, test.ETHER_NETWORKS[test.ROPSTEN], 0)
+	fmt.Println("config = ", config.IssuerAddress)
 
 	client, err := coin.NewBitcoinCoin("localhost:18332", &chaincfg.RegressionNetParams, []string{"049C8C4647E016C502766C6F5C40CFD37EE86CD02972274CA50DA16D72016CAB5812F867F27C268923E5DE3ADCB268CC8A29B96D0D8972841F286BA6D9CCF61360", "040C9B0D5324CBAF4F40A215C1D87DF1BEB51A0345E0384942FE0D60F8D796F7B7200CC5B70DDCF101E7804EFA26A0CE6EC6622C2FE90BCFD2DA2482006C455FF1"}, secrets.BtcRpcUser, secrets.BtcRpcPassword, secrets.GrapheneSeedPrefix, 0.00002, 0.00001, map[string]bool{})
 	err = client.Attach()
@@ -1036,8 +1008,9 @@ func TestBTCWithdrawal(t *testing.T) {
 		"",
 		coin.BLOCKCHAIN_BTC,
 	}
-	nodes[0].rDb.AddCrosschainAddress(forwardAddress)
-	nodes[1].rDb.AddCrosschainAddress(forwardAddress)
+	for _, node := range nodes {
+		node.rDb.AddCrosschainAddress(forwardAddress)
+	}
 
 	pubKey := "pooja"
 	res, err := http.Get("http://localhost:5200/api/address/BTC/" + pubKey)

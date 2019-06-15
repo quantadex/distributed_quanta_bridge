@@ -37,6 +37,7 @@ type BCH struct {
 	BchWithdrawMin     float64
 	BchWithdrawFee     float64
 	BlackList          map[string]bool
+	issuerAddr         string
 }
 
 func (b *BCH) Blockchain() string {
@@ -60,6 +61,10 @@ func (b *BCH) Attach() error {
 
 	//err = crypto.ValidateNetwork(b.Client, "Bitcoin ABC")
 	return err
+}
+
+func (b *BCH) SetIssuerAddress(address string) {
+	b.issuerAddr = address
 }
 
 func (b *BCH) CheckValidAmount(amount uint64) bool {
@@ -431,7 +436,7 @@ func (b *BCH) EncodeRefund(w Withdrawal) (string, error) {
 		return "", err
 	}
 
-	totalAmount, inputs, unspentFound, rawInput, err := b.GetUnspentInputs(destinationAddr, amount)
+	totalAmount, inputs, _, rawInput, err := b.GetUnspentInputs(destinationAddr, amount)
 
 	if err != nil {
 		return "", err
@@ -448,7 +453,11 @@ func (b *BCH) EncodeRefund(w Withdrawal) (string, error) {
 		return "", errors.Wrap(err, "Unable to create new amount")
 	}
 
-	sourceAddrRefund, err := bchutil.DecodeAddress(unspentFound[0].Address, b.chaincfg)
+	if b.issuerAddr == "" {
+		return "", errors.New("Issuer address not set for bch")
+	}
+
+	sourceAddrRefund, err := bchutil.DecodeAddress(b.issuerAddr, b.chaincfg)
 	if err != nil {
 		return "", err
 	}
@@ -541,7 +550,8 @@ func (b *BCH) DecodeRefund(encoded string) (*Withdrawal, error) {
 	for _, vout := range decodedTx.Vout {
 		destAddr := strings.Join(vout.ScriptPubKey.Addresses, ",")
 
-		if vinLookup[destAddr] || fromAddr == "" {
+		_, isCrosschain := b.crosschainAddr[destAddr]
+		if vinLookup[destAddr] || fromAddr == "" || isCrosschain {
 			//println("Ignoring tx when from and to the same ", toAddr)
 			continue
 		}

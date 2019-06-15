@@ -339,3 +339,60 @@ func TestAddressAllNodes(t *testing.T) {
 	//assert.Equal(t, 200, res.StatusCode)
 
 }
+
+func TestStressTest(t *testing.T) {
+	r := StartRegistry(3, ":6000")
+	nodes := StartNodes(test.GRAPHENE_ISSUER, test.GRAPHENE_TRUST, test.ETHER_NETWORKS[test.ROPSTEN], 3)
+	defer func() {
+		StopNodes(nodes, []int{0, 1, 2})
+		StopRegistry(r)
+	}()
+
+	// wait for node to bootup
+	time.Sleep(time.Millisecond * 2000)
+
+	for i := 0; i < 10; i++ {
+		contractAddress := "0xba420ef5d725361d8fdc58cb1e4fa62eda9ec999" + strconv.Itoa(i)
+		address := &crypto.ForwardInput{
+			contractAddress,
+			common.HexToAddress(test.GRAPHENE_TRUST.TrustContract),
+			"address-pool",
+			"0x01",
+			coin.BLOCKCHAIN_ETH,
+		}
+		for _, node := range nodes {
+			node.rDb.AddCrosschainAddress(address)
+		}
+	}
+
+	// test crosschain
+	for _, n := range nodes {
+		control.SetLastBlock(n.db, coin.BLOCKCHAIN_ETH, 700000)
+	}
+
+	resultChan := make(chan error, 10)
+
+	// test crosschain
+	for i := 0; i < 10; i++ {
+		go func(i int) {
+			str := "pooja" + strconv.Itoa(i)
+			_, err := http.Post("http://localhost:5200/api/address/eth/"+str, "", nil)
+			resultChan <- err
+		}(i)
+	}
+	for i := 0; i < 10; i++ {
+		<-resultChan
+	}
+
+	time.Sleep(time.Second * 15)
+
+	for i := 0; i < 9; i++ {
+		str := "pooja" + strconv.Itoa(i)
+		res, err := http.Get("http://localhost:5200/api/address/bch/" + str)
+		assert.NoError(t, err)
+		bodyBytes, _ := ioutil.ReadAll(res.Body)
+		println("data", res.StatusCode, string(bodyBytes))
+	}
+
+	time.Sleep(time.Second * 5)
+}

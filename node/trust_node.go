@@ -376,6 +376,57 @@ func (n *TrustNode) registerNode(config common.Config) bool {
 	return true
 }
 
+func (n *TrustNode) AddIssuerAddressToDatabase(issuer string) error {
+	btcAddr, err := n.CreateMultisig(coin.BLOCKCHAIN_BTC, issuer)
+	if err != nil {
+		n.log.Error("Failed to generate BTC multisig address for the issuer")
+		return err
+	}
+	n.btc.SetIssuerAddress(btcAddr.ContractAddress)
+
+	crosschainBTC, _ := db.GetCrosschainByBlockchainAndUser(n.rDb, coin.BLOCKCHAIN_BTC, issuer)
+	if len(crosschainBTC) == 0 {
+
+		err = n.rDb.AddCrosschainAddress(btcAddr)
+		if err != nil {
+			return err
+		}
+	}
+
+	ltcAddr, err := n.CreateMultisig(coin.BLOCKCHAIN_LTC, issuer)
+	if err != nil {
+		n.log.Error("Failed to generate LTC multisig address for the issuer")
+		return err
+	}
+	n.ltc.SetIssuerAddress(ltcAddr.ContractAddress)
+
+	crosschainLTC, _ := db.GetCrosschainByBlockchainAndUser(n.rDb, coin.BLOCKCHAIN_LTC, issuer)
+	if len(crosschainLTC) == 0 {
+
+		err = n.rDb.AddCrosschainAddress(ltcAddr)
+		if err != nil {
+			return err
+		}
+	}
+
+	bchAddr, err := n.CreateMultisig(coin.BLOCKCHAIN_BCH, issuer)
+	if err != nil {
+		n.log.Error("Failed to generate BTC multisig address for the issuer")
+		return err
+	}
+	n.bch.SetIssuerAddress(bchAddr.ContractAddress)
+
+	crosschainBCH, _ := db.GetCrosschainByBlockchainAndUser(n.rDb, coin.BLOCKCHAIN_BCH, issuer)
+	if len(crosschainBCH) == 0 {
+
+		err = n.rDb.AddCrosschainAddress(bchAddr)
+		if err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
 /**
  * initTrusts
  *
@@ -383,6 +434,11 @@ func (n *TrustNode) registerNode(config common.Config) bool {
  */
 func (n *TrustNode) initTrust(config common.Config) {
 	n.log.Info("Trust initialized")
+
+	err := n.AddIssuerAddressToDatabase(config.IssuerAddress)
+	if err != nil {
+		n.log.Errorf("Failed to add issuer address to database", err)
+	}
 
 	coinInfo := make(map[string]*database.Asset)
 
@@ -405,7 +461,8 @@ func (n *TrustNode) initTrust(config common.Config) {
 		n.queue,
 		n.nodeID,
 		coinInfo,
-		map[string]int64{coin.BLOCKCHAIN_ETH: 0, coin.BLOCKCHAIN_BTC: 0, coin.BLOCKCHAIN_LTC: 0, coin.BLOCKCHAIN_BCH: 0})
+		map[string]int64{coin.BLOCKCHAIN_ETH: 0, coin.BLOCKCHAIN_BTC: 0, coin.BLOCKCHAIN_LTC: 0, coin.BLOCKCHAIN_BCH: 0},
+		config.Mode)
 
 	n.cTQ = control.NewCoinToQuanta(n.log,
 		n.db,
