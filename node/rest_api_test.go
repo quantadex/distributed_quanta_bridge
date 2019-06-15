@@ -18,6 +18,8 @@ import (
 	"strings"
 	"testing"
 	"time"
+	"math/rand"
+	"github.com/go-errors/errors"
 )
 
 func TestAPI(t *testing.T) {
@@ -340,6 +342,14 @@ func TestAddressAllNodes(t *testing.T) {
 
 }
 
+func RandomString(len int) string {
+	bytes := make([]byte, len)
+	for i := 0; i < len; i++ {
+		bytes[i] = byte(65 + rand.Intn(25))  //A=65 and Z = 65+25
+	}
+	return string(bytes)
+}
+
 func TestStressTest(t *testing.T) {
 	r := StartRegistry(3, ":6000")
 	nodes := StartNodes(test.GRAPHENE_ISSUER, test.GRAPHENE_TRUST, test.ETHER_NETWORKS[test.ROPSTEN], 3)
@@ -349,50 +359,56 @@ func TestStressTest(t *testing.T) {
 	}()
 
 	// wait for node to bootup
-	time.Sleep(time.Millisecond * 2000)
+	time.Sleep(time.Millisecond * 1000)
 
-	for i := 0; i < 10; i++ {
-		contractAddress := "0xba420ef5d725361d8fdc58cb1e4fa62eda9ec999" + strconv.Itoa(i)
-		address := &crypto.ForwardInput{
-			contractAddress,
-			common.HexToAddress(test.GRAPHENE_TRUST.TrustContract),
-			"address-pool",
-			"0x01",
-			coin.BLOCKCHAIN_ETH,
-		}
-		for _, node := range nodes {
-			node.rDb.AddCrosschainAddress(address)
-		}
-	}
+	//for i := 0; i < 10; i++ {
+	//	contractAddress := "0xba420ef5d725361d8fdc58cb1e4fa62eda9ec999" + strconv.Itoa(i)
+	//	address := &crypto.ForwardInput{
+	//		contractAddress,
+	//		common.HexToAddress(test.GRAPHENE_TRUST.TrustContract),
+	//		"address-pool",
+	//		"0x01",
+	//		coin.BLOCKCHAIN_ETH,
+	//	}
+	//	for _, node := range nodes {
+	//		node.rDb.AddCrosschainAddress(address)
+	//	}
+	//}
+	//
+	//// test crosschain
+	//for _, n := range nodes {
+	//	control.SetLastBlock(n.db, coin.BLOCKCHAIN_ETH, 700000)
+	//}
+
+	resultChan := make(chan interface{}, 100)
+	numTests := 100
+	baseStr := RandomString(20)
 
 	// test crosschain
-	for _, n := range nodes {
-		control.SetLastBlock(n.db, coin.BLOCKCHAIN_ETH, 700000)
-	}
-
-	resultChan := make(chan error, 10)
-
-	// test crosschain
-	for i := 0; i < 10; i++ {
+	for i := 0; i < numTests; i++ {
 		go func(i int) {
-			str := "pooja" + strconv.Itoa(i)
-			_, err := http.Post("http://localhost:5200/api/address/eth/"+str, "", nil)
-			resultChan <- err
+			str := baseStr + strconv.Itoa(i)
+			res, err := http.Post("http://localhost:5200/api/address/btc/"+str, "", nil)
+
+			if err != nil {
+				resultChan <- err
+			} else if res.StatusCode != 200 {
+				bodyBytes, _ := ioutil.ReadAll(res.Body)
+				resultChan <- errors.New("Status code:" + res.Status + " " + string(bodyBytes))
+			} else {
+				bodyBytes, _ := ioutil.ReadAll(res.Body)
+				resultChan <- string(bodyBytes)
+			}
 		}(i)
 	}
-	for i := 0; i < 10; i++ {
-		<-resultChan
+
+	for i := 0; i < numTests; i++ {
+		res := <-resultChan
+		switch v := res.(type) {
+			case string:
+				println("result ", v)
+			case error:
+				println("result ", v.Error())
+		}
 	}
-
-	time.Sleep(time.Second * 15)
-
-	for i := 0; i < 9; i++ {
-		str := "pooja" + strconv.Itoa(i)
-		res, err := http.Get("http://localhost:5200/api/address/bch/" + str)
-		assert.NoError(t, err)
-		bodyBytes, _ := ioutil.ReadAll(res.Body)
-		println("data", res.StatusCode, string(bodyBytes))
-	}
-
-	time.Sleep(time.Second * 5)
 }
