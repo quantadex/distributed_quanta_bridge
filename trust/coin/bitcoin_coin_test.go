@@ -10,6 +10,7 @@ import (
 	"github.com/quantadex/distributed_quanta_bridge/trust/key_manager"
 	"github.com/stretchr/testify/assert"
 	"testing"
+	"time"
 )
 
 const LOCAL_RPC_HOST = "localhost:18332"
@@ -239,13 +240,14 @@ func TestGenerateMultisig(t *testing.T) {
 	assert.NoError(t, err)
 	bitcoin := client.(*BitcoinCoin)
 
-	addr1, err := bitcoin.GenerateMultisig("crosschain2")
-	println(addr1, err)
-	assert.NoError(t, err)
-
-	addr2, err := bitcoin.GenerateMultisig("token_sale")
-	println(addr2, err)
-	assert.NoError(t, err)
+	start := time.Now()
+	for i :=0; i < 100; i++ {
+		addr1, err := bitcoin.GenerateMultisig("crosschainx_" + string(i))
+		println(addr1, err)
+		assert.NoError(t, err)
+	}
+	end := time.Now()
+	fmt.Printf("Time it took=%f seconds", end.Sub(start).Seconds())
 }
 
 //not needed. testdeocde already exists
