@@ -39,7 +39,7 @@
 
 [[override]]
   name = "github.com/quantadex/quanta_book"
-  revision="e1f0da37c58106da0f2eac2a40c4d2cf114f0f77"
+  revision="dc442351a38d7ce661401fbdbbe8545827373895"
 
 [[override]]
   name = "github.com/stellar/go"
