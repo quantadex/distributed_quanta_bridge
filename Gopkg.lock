@@ -525,7 +525,7 @@
   version = "v1.0.0"
 
 [[projects]]
-  digest = "1:f1227da5a63d0ec9196105a11b29f4c3507157ba2e4d9e922bd05a623b864dc0"
+  digest = "1:955638154b68a94040247fbca743219b70c5ada56f7157d60d0e0066628c437e"
   name = "github.com/quantadex/quanta_book"
   packages = [
     "common",
@@ -534,7 +534,7 @@
     "storage/pb",
   ]
   pruneopts = "T"
-  revision = "dc442351a38d7ce661401fbdbbe8545827373895"
+  revision = "2a44aa56823a4e7ad9ea568f6e1dc795fa3f166f"
 
 [[projects]]
   digest = "1:9787d2d3220cbfd444596afd03ab0abcf391df169b789fbe3eae27fa2e426cf6"
