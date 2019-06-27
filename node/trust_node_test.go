@@ -764,6 +764,7 @@ func TestLTCDeposit(t *testing.T) {
 }
 
 func TestLTCWithdrawal(t *testing.T) {
+	time.Sleep(time.Second * 2)
 	r := StartRegistry(3, ":6000")
 	nodes := StartNodes(test.GRAPHENE_ISSUER, test.GRAPHENE_TRUST, test.ETHER_NETWORKS[test.ROPSTEN], 3)
 	defer func() {
@@ -855,6 +856,7 @@ func TestLTCWithdrawal(t *testing.T) {
 }
 
 func TestBTCDeposit(t *testing.T) {
+	time.Sleep(time.Second * 2)
 	r := StartRegistry(3, ":6000")
 	nodes := StartNodes(test.GRAPHENE_ISSUER, test.GRAPHENE_TRUST, test.ETHER_NETWORKS[test.ROPSTEN], 3)
 	defer func() {
@@ -970,6 +972,7 @@ func TestBTCDeposit(t *testing.T) {
 }
 
 func TestBTCWithdrawal(t *testing.T) {
+	time.Sleep(time.Second * 2)
 	r := StartRegistry(3, ":6000")
 	nodes := StartNodes(test.GRAPHENE_ISSUER, test.GRAPHENE_TRUST, test.ETHER_NETWORKS[test.ROPSTEN], 3)
 	defer func() {
