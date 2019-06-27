@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/ethereum/go-ethereum/common"
+	"github.com/go-errors/errors"
 	"github.com/quantadex/distributed_quanta_bridge/common/crypto"
 	metric2 "github.com/quantadex/distributed_quanta_bridge/common/metric"
 	"github.com/quantadex/distributed_quanta_bridge/common/test"
@@ -13,20 +14,19 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/zserge/metric"
 	"io/ioutil"
+	"math/rand"
 	"net/http"
 	"strconv"
 	"strings"
 	"testing"
 	"time"
-	"math/rand"
-	"github.com/go-errors/errors"
 )
 
 func TestAPI(t *testing.T) {
-	r := StartRegistry(1, ":6000")
-	nodes := StartNodes(test.GRAPHENE_ISSUER, test.GRAPHENE_TRUST, test.ETHER_NETWORKS[test.ROPSTEN], 1)
+	r := StartRegistry(3, ":6000")
+	nodes := StartNodes(test.GRAPHENE_ISSUER, test.GRAPHENE_TRUST, test.ETHER_NETWORKS[test.ROPSTEN], 3)
 	defer func() {
-		StopNodes(nodes, []int{0})
+		StopNodes(nodes, []int{0, 1, 2})
 		StopRegistry(r)
 	}()
 	time.Sleep(time.Millisecond * 250)
@@ -197,10 +197,10 @@ func TestAddress(t *testing.T) {
 
 func TestStatus(t *testing.T) {
 	fmt.Println(time.Now())
-	r := StartRegistry(1, ":6000")
-	nodes := StartNodes(test.GRAPHENE_ISSUER, test.GRAPHENE_TRUST, test.ETHER_NETWORKS[test.ROPSTEN], 1)
+	r := StartRegistry(3, ":6000")
+	nodes := StartNodes(test.GRAPHENE_ISSUER, test.GRAPHENE_TRUST, test.ETHER_NETWORKS[test.ROPSTEN], 3)
 	defer func() {
-		StopNodes(nodes, []int{0})
+		StopNodes(nodes, []int{0, 1, 2})
 		StopRegistry(r)
 	}()
 	time.Sleep(time.Millisecond * 250)
@@ -275,10 +275,10 @@ func TestMetric(t *testing.T) {
 }
 
 func TestAddressAllNodes(t *testing.T) {
-	r := StartRegistry(1, ":6000")
-	nodes := StartNodes(test.GRAPHENE_ISSUER, test.GRAPHENE_TRUST, test.ETHER_NETWORKS[test.ROPSTEN], 1)
+	r := StartRegistry(3, ":6000")
+	nodes := StartNodes(test.GRAPHENE_ISSUER, test.GRAPHENE_TRUST, test.ETHER_NETWORKS[test.ROPSTEN], 3)
 	defer func() {
-		StopNodes(nodes, []int{0})
+		StopNodes(nodes, []int{0, 1, 2})
 		StopRegistry(r)
 	}()
 	time.Sleep(time.Millisecond * 250)
@@ -345,7 +345,7 @@ func TestAddressAllNodes(t *testing.T) {
 func RandomString(len int) string {
 	bytes := make([]byte, len)
 	for i := 0; i < len; i++ {
-		bytes[i] = byte(65 + rand.Intn(25))  //A=65 and Z = 65+25
+		bytes[i] = byte(65 + rand.Intn(25)) //A=65 and Z = 65+25
 	}
 	return string(bytes)
 }
@@ -380,8 +380,9 @@ func TestStressTest(t *testing.T) {
 	//	control.SetLastBlock(n.db, coin.BLOCKCHAIN_ETH, 700000)
 	//}
 
-	resultChan := make(chan interface{}, 100)
-	numTests := 100
+	//reducing to 10 to test on circleci
+	resultChan := make(chan interface{}, 10)
+	numTests := 10
 	baseStr := RandomString(20)
 
 	// test crosschain
@@ -405,10 +406,10 @@ func TestStressTest(t *testing.T) {
 	for i := 0; i < numTests; i++ {
 		res := <-resultChan
 		switch v := res.(type) {
-			case string:
-				println("result ", v)
-			case error:
-				println("result ", v.Error())
+		case string:
+			println("result ", v)
+		case error:
+			println("result ", v.Error())
 		}
 	}
 }
