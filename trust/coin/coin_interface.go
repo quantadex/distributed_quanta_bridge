@@ -142,12 +142,12 @@ func NewDummyCoin() (Coin, error) {
 	return &DummyCoin{}, nil
 }
 
-func NewEthereumCoin(networkId string, ethereumRpc string, secret string, erc20map map[string]string, withdrawMin, withdrawFee float64, blackList map[string]bool) (Coin, error) {
+func NewEthereumCoin(networkId string, ethereumRpc string, secret string, erc20map map[string]string, withdrawMin, withdrawFee float64, gasFee int64, blackList map[string]bool) (Coin, error) {
 	key, err := crypto2.HexToECDSA(secret)
 	if err != nil {
 		return nil, err
 	}
-	return &EthereumCoin{maxRange: common.MaxNumberInt64, networkId: networkId, ethereumRpc: ethereumRpc, ethereumSecret: key, erc20map: erc20map, EthWithdrawMin: withdrawMin, EthWithdrawFee: withdrawFee, BlackList: blackList}, nil
+	return &EthereumCoin{maxRange: common.MaxNumberInt64, networkId: networkId, ethereumRpc: ethereumRpc, ethereumSecret: key, erc20map: erc20map, EthWithdrawMin: withdrawMin, EthWithdrawFee: withdrawFee, EthWithdrawGasFee: gasFee, BlackList: blackList}, nil
 }
 
 func NewBitcoinCoin(rpcHost string, params *chaincfg.Params, signers []string, rpcUser, rpcPassword, grapheneSeedPrefix string, withdrawMin, withdrawFee float64, blackList map[string]bool) (Coin, error) {
