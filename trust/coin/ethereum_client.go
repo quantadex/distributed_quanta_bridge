@@ -456,6 +456,8 @@ func (l *Listener) SendWithdrawal(conn bind.ContractBackend,
 		return "", err
 	}
 
+	fmt.Printf("Submitted %s\n", tx.Hash().Hex())
+
 	if tx == nil {
 		return "", errors.New("PaymentTX did not produce a transaction")
 	}
