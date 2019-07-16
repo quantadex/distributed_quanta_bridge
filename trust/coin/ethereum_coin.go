@@ -32,6 +32,7 @@ type EthereumCoin struct {
 	erc20map       map[string]string
 	EthWithdrawMin float64
 	EthWithdrawFee float64
+	EthWithdrawGasFee int64
 	BlackList      map[string]bool
 }
 
@@ -174,7 +175,7 @@ func (b *EthereumCoin) GenerateMultisig(accountId string) (string, error) {
 func (c *EthereumCoin) SendWithdrawal(trustAddress common2.Address,
 	ownerKey *ecdsa.PrivateKey,
 	w *Withdrawal) (string, error) {
-	return c.client.SendWithDrawalToRPC(trustAddress, ownerKey, w, c.EthWithdrawFee)
+	return c.client.SendWithDrawalToRPC(trustAddress, ownerKey, w, c.EthWithdrawFee, c.EthWithdrawGasFee)
 }
 
 func (c *EthereumCoin) FillCrosschainAddress(crosschainAddr map[string]string) {

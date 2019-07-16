@@ -13,7 +13,7 @@ func main() {
 
 	// setup coin
 	blackList := crypto.GetBlackListedUsersByBlockcahin(config.BlackList, coin.BLOCKCHAIN_ETH)
-	coin, err := coin.NewEthereumCoin(config.EthereumNetworkId, config.EthereumRpc, secrets.EthereumKeyStore, config.Erc20Mapping, config.EthWithdrawMin, config.EthWithdrawFee, blackList)
+	coin, err := coin.NewEthereumCoin(config.EthereumNetworkId, config.EthereumRpc, secrets.EthereumKeyStore, config.Erc20Mapping, config.EthWithdrawMin, config.EthWithdrawFee, config.EthWithdrawGasFee, blackList)
 	if err != nil {
 		panic(fmt.Errorf("cannot create ethereum listener"))
 	}

@@ -22,6 +22,7 @@ type Config struct {
 	EthFailureThreshold  int64
 	EthWithdrawMin       float64
 	EthWithdrawFee       float64
+	EthWithdrawGasFee	 int64
 
 	BtcRpc               string
 	BtcBlockStart        int64
