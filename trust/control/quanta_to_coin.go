@@ -279,6 +279,15 @@ func (c *QuantaToCoin) DispatchWithdrawal() {
 	for {
 		select {
 		case <-time.After(time.Second * 10):
+			_, err := c.quantaChannel.GetTopBlockID()
+			if err != nil {
+				if err.Error() == "connection is shut down" {
+					c.logger.Error("Connection was shutdown, connect...")
+					c.quantaChannel.Reconnect()
+				} else {
+					c.logger.Error("Unhandled error. " + err.Error())
+				}
+			}
 			txs := db.QueryWithdrawalByAge(c.rDb, time.Now().Add(-time.Second*5), []string{db.SUBMIT_CONSENSUS})
 
 			if len(txs) > 0 {

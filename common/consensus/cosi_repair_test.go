@@ -1,14 +1,14 @@
 package consensus
 
 import (
-	"testing"
-	"github.com/quantadex/quanta_book/consensus/tests"
-	"github.com/quantadex/quanta_book/common"
-	"strconv"
 	"fmt"
-	"github.com/stretchr/testify/assert"
-	"time"
 	"github.com/go-errors/errors"
+	"github.com/quantadex/quanta_book/common"
+	"github.com/quantadex/quanta_book/consensus/tests"
+	"github.com/stretchr/testify/assert"
+	"strconv"
+	"testing"
+	"time"
 )
 
 func GetProtocolByAddress(servers []*Cosi, address string) *Cosi {
@@ -20,16 +20,16 @@ func GetProtocolByAddress(servers []*Cosi, address string) *Cosi {
 	return nil
 }
 
-func StartNServer(n int, verify []error) ([]*Cosi,[]*tests.TestNode) {
+func StartNServer(n int, verify []error) ([]*Cosi, []*tests.TestNode) {
 	servers := []*Cosi{}
 	nodes := []*tests.TestNode{}
 
 	for i := 0; i < n; i++ {
 		node := tests.NewTestNode("node:" + strconv.Itoa(i))
 		node.Start()
-		protocol := NewProtocol(node, i == 0, time.Duration(1 * time.Second))
-		node.SendMessage = func (sender, address string, call string, req interface{}, res interface{}) error {
-			switch(call) {
+		protocol := NewProtocol(node, i == 0, time.Duration(1*time.Second))
+		node.SendMessage = func(sender, address string, call string, req interface{}, res interface{}) error {
+			switch call {
 			case "Protocol.Cosi":
 				//fmt.Println("send to " + address)
 				if p := GetProtocolByAddress(servers, address); p != nil {
@@ -39,7 +39,7 @@ func StartNServer(n int, verify []error) ([]*Cosi,[]*tests.TestNode) {
 			return nil
 		}
 
-		func (i int) {
+		func(i int) {
 			protocol.Verify = func(msg string) error {
 				return verify[i]
 			}
@@ -61,7 +61,7 @@ func StartNServer(n int, verify []error) ([]*Cosi,[]*tests.TestNode) {
 	}
 
 	for _, node := range nodes {
-		node.GetAllNodes = func () []*tests.TestNode {
+		node.GetAllNodes = func() []*tests.TestNode {
 			return nodes
 		}
 	}
@@ -73,9 +73,9 @@ func StartNServer(n int, verify []error) ([]*Cosi,[]*tests.TestNode) {
 func TestConsensus2Nodes(t *testing.T) {
 	common.InitLogger()
 
-	protocols,_ := StartNServer(2, []error{nil,nil, nil})
+	protocols, _ := StartNServer(2, []error{nil, nil, nil})
 	protocols[0].StartNewRound("tx message")
-	finalMsg := <- protocols[0].FinalSigChan
+	finalMsg := <-protocols[0].FinalSigChan
 	assert.Equal(t, 2, len(finalMsg.Msg), "Expect to have 2 signatures")
 }
 
@@ -83,27 +83,30 @@ func TestConsensus2Nodes(t *testing.T) {
 // TEST 3:  1 leader, 1 follower (1 fail)  2/3
 func TestConsensus3Nodes(t *testing.T) {
 	common.InitLogger()
-	protocols,_ := StartNServer(3, []error{nil,nil, nil})
+	protocols, _ := StartNServer(3, []error{nil, nil, nil})
 	protocols[0].StartNewRound("tx message")
-	finalMsg := <- protocols[0].FinalSigChan
+	finalMsg := <-protocols[0].FinalSigChan
 
 	assert.Equal(t, 3, len(finalMsg.Msg), "Expect to have 3 signatures")
 	println("Start of #1")
 
 	// stop 1 node, should fail
+	//stopping 2 nodes as threshold is 2
 	protocols[1].Node().Stop()
+	protocols[2].Node().Stop()
 	protocols[0].StartNewRound("tx message 2")
-	finalMsg = <- protocols[0].FinalSigChan
+	finalMsg = <-protocols[0].FinalSigChan
 	assert.Equal(t, 0, len(finalMsg.Msg), "Expect to have 2 signatures")
 
 	println("Start of #2")
 	protocols[0].StartNewRound("tx message 2")
-	finalMsg = <- protocols[0].FinalSigChan
+	finalMsg = <-protocols[0].FinalSigChan
 
 	println("Start of #3")
 	protocols[1].Node().Start()
+	protocols[2].Node().Start()
 	protocols[0].StartNewRound("tx message 2")
-	finalMsg = <- protocols[0].FinalSigChan
+	finalMsg = <-protocols[0].FinalSigChan
 	assert.Equal(t, 3, len(finalMsg.Msg), "Expect to have 2 signatures")
 }
 
@@ -111,11 +114,11 @@ func TestConsensus3Nodes(t *testing.T) {
 
 func TestConsensus4Nodes(t *testing.T) {
 	common.InitLogger()
-	protocols,_ := StartNServer(4, []error{nil,nil, nil, nil})
+	protocols, _ := StartNServer(4, []error{nil, nil, nil, nil})
 	protocols[1].Node().Stop()
 
 	protocols[0].StartNewRound("tx message")
-	finalMsg := <- protocols[0].FinalSigChan
+	finalMsg := <-protocols[0].FinalSigChan
 
 	assert.Equal(t, 3, len(finalMsg.Msg), "Expect to have 3 signatures %v", finalMsg.Msg)
 }

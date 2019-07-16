@@ -38,7 +38,7 @@ func TestEncodeRefundBCH(t *testing.T) {
 		bch.Client.Generate(101)
 	}
 
-	addr1, err := bch.GenerateMultisig("aaa1")
+	addr1, err := bch.GenerateMultisig("crosschain2")
 	addr2, err := bch.GenerateMultisig("2")
 
 	println(addr1, addr2)
@@ -46,6 +46,8 @@ func TestEncodeRefundBCH(t *testing.T) {
 	crosschainAddr := make(map[string]string)
 	crosschainAddr[addr1] = "pooja"
 	crosschainAddr[addr2] = "pooja"
+
+	bch.issuerAddr = addr1
 
 	bch.crosschainAddr = crosschainAddr
 	fmt.Println(bch.crosschainAddr)
@@ -131,8 +133,10 @@ func TestDecodeBCH(t *testing.T) {
 		bch.Client.Generate(101)
 	}
 
-	addr1, err := bch.GenerateMultisig("aaa1")
+	addr1, err := bch.GenerateMultisig("crosschain2")
 	assert.NoError(t, err)
+
+	bch.issuerAddr = addr1
 
 	amount, err := bchutil.NewAmount(0.02)
 	assert.NoError(t, err)
@@ -186,6 +190,8 @@ func TestEncodeWithMultipleInputsBCH(t *testing.T) {
 	assert.NoError(t, err)
 	addr3, err := bch.GenerateMultisig("crosschain2")
 	assert.NoError(t, err)
+
+	bch.issuerAddr = addr3
 
 	crosschainAddr := make(map[string]string)
 

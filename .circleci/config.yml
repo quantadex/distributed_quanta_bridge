@@ -6,6 +6,7 @@ jobs:
     branches:
       only:
       - graphene
+      - address_consensus
     working_directory: ~/go/src/github.com/quantadex/distributed_quanta_bridge
     environment:
       GOPATH: /home/circleci/go
