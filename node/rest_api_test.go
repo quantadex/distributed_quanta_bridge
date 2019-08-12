@@ -361,7 +361,7 @@ func TestStressTest(t *testing.T) {
 	// wait for node to bootup
 	time.Sleep(time.Millisecond * 1000)
 
-	//for i := 0; i < 10; i++ {
+	//for i := 0; i < 100; i++ {
 	//	contractAddress := "0xba420ef5d725361d8fdc58cb1e4fa62eda9ec999" + strconv.Itoa(i)
 	//	address := &crypto.ForwardInput{
 	//		contractAddress,
@@ -381,8 +381,8 @@ func TestStressTest(t *testing.T) {
 	//}
 
 	//reducing to 10 to test on circleci
-	resultChan := make(chan interface{}, 10)
-	numTests := 10
+	resultChan := make(chan interface{}, 100)
+	numTests := 100
 	baseStr := RandomString(20)
 
 	// test crosschain
@@ -390,6 +390,160 @@ func TestStressTest(t *testing.T) {
 		go func(i int) {
 			str := baseStr + strconv.Itoa(i)
 			res, err := http.Post("http://localhost:5200/api/address/btc/"+str, "", nil)
+
+			if err != nil {
+				resultChan <- err
+			} else if res.StatusCode != 200 {
+				bodyBytes, _ := ioutil.ReadAll(res.Body)
+				resultChan <- errors.New("Status code:" + res.Status + " " + string(bodyBytes))
+			} else {
+				bodyBytes, _ := ioutil.ReadAll(res.Body)
+				resultChan <- string(bodyBytes)
+			}
+		}(i)
+	}
+
+	for i := 0; i < numTests; i++ {
+		res := <-resultChan
+		switch v := res.(type) {
+		case string:
+			println("result ", v)
+		case error:
+			println("result ", v.Error())
+		}
+	}
+}
+
+func TestDuplicate(t *testing.T) {
+	r := StartRegistry(3, ":6000")
+	nodes := StartNodes(test.GRAPHENE_ISSUER, test.GRAPHENE_TRUST, test.ETHER_NETWORKS[test.ROPSTEN], 3)
+	defer func() {
+		StopNodes(nodes, []int{0, 1, 2})
+		StopRegistry(r)
+	}()
+
+	// wait for node to bootup
+	time.Sleep(time.Millisecond * 1000)
+
+	resultChan := make(chan interface{}, 3)
+	numTests := 3
+	baseStr := RandomString(20)
+
+	// test crosschain
+	for i := 0; i < numTests; i++ {
+		go func(i int) {
+			res, err := http.Post("http://localhost:5200/api/address/btc/"+baseStr, "", nil)
+
+			if err != nil {
+				resultChan <- err
+			} else if res.StatusCode != 200 {
+				bodyBytes, _ := ioutil.ReadAll(res.Body)
+				resultChan <- errors.New("Status code:" + res.Status + " " + string(bodyBytes))
+				assert.Contains(t, string(bodyBytes), "Duplicate address request")
+			} else {
+				bodyBytes, _ := ioutil.ReadAll(res.Body)
+				resultChan <- string(bodyBytes)
+			}
+		}(i)
+	}
+
+	for i := 0; i < numTests; i++ {
+		res := <-resultChan
+		switch v := res.(type) {
+		case string:
+			println("result ", v)
+		case error:
+			println("result ", v.Error())
+		}
+	}
+}
+
+func TestRepair(t *testing.T) {
+	r := StartRegistry(3, ":6000")
+	nodes := StartNodes(test.GRAPHENE_ISSUER, test.GRAPHENE_TRUST, test.ETHER_NETWORKS[test.ROPSTEN], 3)
+	defer func() {
+		StopNodes(nodes, []int{0, 1, 2})
+		StopRegistry(r)
+	}()
+
+	// wait for node to bootup
+	time.Sleep(time.Millisecond * 1000)
+	addr, err := nodes[0].CreateMultisig("BCH", "pooja5")
+	assert.NoError(t, err)
+	addr2, err := nodes[0].CreateMultisig("BCH", "pooja7")
+	assert.NoError(t, err)
+
+	//stopping one node
+	nodes[1].Stop()
+
+	for _, n := range nodes {
+		n.rDb.AddCrosschainAddress(addr)
+		n.rDb.AddCrosschainAddress(addr2)
+	}
+	//strarting the node again
+	node := StartNodesWithIndexes(test.GRAPHENE_ISSUER, test.GRAPHENE_TRUST, test.ETHER_NETWORKS[test.ROPSTEN], true, []int{1}, make([]*TrustNode, 3))
+	nodes[1] = node[1]
+	resultChan := make(chan interface{}, 1)
+	numTests := 1
+	baseStr := RandomString(20)
+
+	// test crosschain
+	for i := 0; i < numTests; i++ {
+		go func(i int) {
+			str := baseStr + strconv.Itoa(i)
+			res, err := http.Post("http://localhost:5200/api/address/bch/"+str, "", nil)
+
+			if err != nil {
+				fmt.Println("error = ", err)
+				resultChan <- err
+			} else if res.StatusCode != 200 {
+				bodyBytes, _ := ioutil.ReadAll(res.Body)
+				resultChan <- errors.New("Status code:" + res.Status + " " + string(bodyBytes))
+			} else {
+				bodyBytes, _ := ioutil.ReadAll(res.Body)
+				resultChan <- string(bodyBytes)
+			}
+		}(i)
+	}
+
+	for i := 0; i < numTests; i++ {
+		res := <-resultChan
+		switch v := res.(type) {
+		case string:
+			println("result ", v)
+		case error:
+			println("result ", v.Error())
+		}
+	}
+}
+
+func TestVariationTimming(t *testing.T) {
+	r := StartRegistry(3, ":6000")
+	nodes := StartNodes(test.GRAPHENE_ISSUER, test.GRAPHENE_TRUST, test.ETHER_NETWORKS[test.ROPSTEN], 3)
+	defer func() {
+		StopNodes(nodes, []int{0, 1, 2})
+		StopRegistry(r)
+	}()
+
+	// wait for node to bootup
+	time.Sleep(time.Millisecond * 1000)
+
+	resultChan := make(chan interface{}, 50)
+	numTests := 50
+	baseStr := RandomString(20)
+
+	// test crosschain
+	for i := 0; i < numTests; i++ {
+		go func(i int) {
+			if i%5 == 0 {
+				time.Sleep(time.Second * 15)
+			} else if i%3 == 0 {
+				time.Sleep(time.Second * 10)
+			} else if i%2 == 0 {
+				time.Sleep(time.Second * 5)
+			}
+			str := baseStr + strconv.Itoa(i)
+			res, err := http.Post("http://localhost:5200/api/address/ltc/"+str, "", nil)
 
 			if err != nil {
 				resultChan <- err
