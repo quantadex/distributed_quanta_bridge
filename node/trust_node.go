@@ -186,7 +186,7 @@ func initNode(config common.Config, secrets common.Secrets, debugDb bool) (*Trus
 	db.MigrateXC(node.rDb)
 
 	blackListEth := crypto.GetBlackListedUsersByBlockchain(config.BlackList, coin.BLOCKCHAIN_ETH)
-	eth, err := coin.NewEthereumCoin(config.EthereumNetworkId, config.EthereumRpc, secrets.EthereumKeyStore, config.Erc20Mapping, config.EthWithdrawMin, config.EthWithdrawFee, blackListEth)
+	eth, err := coin.NewEthereumCoin(config.EthereumNetworkId, config.EthereumRpc, secrets.EthereumKeyStore, config.Erc20Mapping, config.EthWithdrawMin, config.EthWithdrawFee, config.EthWithdrawGasFee, blackListEth)
 	if err != nil {
 		panic(fmt.Errorf("cannot create ethereum coin"))
 	}

@@ -377,18 +377,24 @@ func (l *Listener) GetForwardContract(blockNumber int64) ([]*crypto2.ForwardInpu
 
 func (l *Listener) SendWithDrawalToRPC(trustAddress common.Address,
 	ownerKey *ecdsa.PrivateKey,
-	w *Withdrawal, fee float64) (string, error) {
+	w *Withdrawal, fee float64, gasFee int64) (string, error) {
 
-	return l.SendWithdrawal(l.Client.(bind.ContractBackend), trustAddress, ownerKey, w, fee)
+	return l.SendWithdrawal(l.Client.(bind.ContractBackend), trustAddress, ownerKey, w, fee, gasFee)
 }
 
 func (l *Listener) SendWithdrawal(conn bind.ContractBackend,
 	trustAddress common.Address,
 	ownerKey *ecdsa.PrivateKey,
-	w *Withdrawal, fee float64) (string, error) {
+	w *Withdrawal, fee float64, gasFee int64) (string, error) {
 
 	auth := bind.NewKeyedTransactor(ownerKey)
 	auth.GasLimit = 900000
+	if gasFee > 0 {
+		auth.GasPrice = big.NewInt(gasFee)
+	} else {
+		auth.GasPrice = nil
+	}
+
 	contract, err := contracts.NewTrustContract(trustAddress, conn)
 
 	if err != nil {
@@ -449,6 +455,8 @@ func (l *Listener) SendWithdrawal(conn bind.ContractBackend,
 	if err != nil {
 		return "", err
 	}
+
+	fmt.Printf("Submitted %s\n", tx.Hash().Hex())
 
 	if tx == nil {
 		return "", errors.New("PaymentTX did not produce a transaction")
