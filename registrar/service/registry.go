@@ -32,8 +32,6 @@ func (r *Registry) AddNode(n *msgs.NodeInfo) error {
 	for _, v := range r.manifest.Nodes {
 		if v.PubKey == n.NodeKey {
 			v.IP = n.NodeIp
-			v.Port = n.NodePort
-			v.ExternalPort = n.NodeExternalPort
 		}
 	}
 	err := r.manifest.AddNode(n.NodeIp, n.NodePort, n.NodeExternalPort, n.NodeKey, n.ChainAddress)
@@ -67,6 +65,11 @@ func NewRegistry(minNodes int, path string) *Registry {
 	r := &Registry{}
 	filePath := path + "/manifest.yml"
 	r.path = filePath
+	//removing only once
+	err := os.Remove(filePath)
+	if err != nil {
+		fmt.Println("could not remove the file")
+	}
 	if _, err := os.Stat(filePath); err != nil {
 		if os.IsNotExist(err) {
 			r.manifest = manifest.CreateNewManifest(minNodes)
