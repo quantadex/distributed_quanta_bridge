@@ -32,6 +32,8 @@ func (r *Registry) AddNode(n *msgs.NodeInfo) error {
 	for _, v := range r.manifest.Nodes {
 		if v.PubKey == n.NodeKey {
 			v.IP = n.NodeIp
+			v.Port = n.NodePort
+			v.ExternalPort = n.NodeExternalPort
 		}
 	}
 	err := r.manifest.AddNode(n.NodeIp, n.NodePort, n.NodeExternalPort, n.NodeKey, n.ChainAddress)
