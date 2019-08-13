@@ -30,9 +30,9 @@ func MigrateXC(db *DB) error {
 
 func (db *DB) GetCrosschainAll() []CrosschainAddress {
 	var tx []CrosschainAddress
-	out := []CrosschainAddress {}
+	out := []CrosschainAddress{}
 
-	err := db.Model(&tx).Order("blockchain asc","address asc").Select()
+	err := db.Model(&tx).Order("blockchain asc", "address asc").Select()
 	for _, tx := range tx {
 		tx.Updated = time.Unix(0, 0)
 		out = append(out, tx)
@@ -43,8 +43,8 @@ func (db *DB) GetCrosschainAll() []CrosschainAddress {
 	return out
 }
 
-func getDifference(mine, in []CrosschainAddress) (changed,added,deleted []CrosschainAddress) {
-	mineMap := map[string]CrosschainAddress {}
+func getDifference(mine, in []CrosschainAddress) (changed, added, deleted []CrosschainAddress) {
+	mineMap := map[string]CrosschainAddress{}
 	for _, r := range mine {
 		mineMap[r.Address] = r
 	}
@@ -64,7 +64,7 @@ func getDifference(mine, in []CrosschainAddress) (changed,added,deleted []Crossc
 		// exist in the old orders
 		if n, exist := mineMap[k]; exist {
 			if v.QuantaAddr != n.QuantaAddr || v.LastBlockNumber != n.LastBlockNumber ||
-				v.TxHash != n.TxHash || v.Shared != n.Shared || v.Blockchain != n.Blockchain{
+				v.TxHash != n.TxHash || v.Shared != n.Shared || v.Blockchain != n.Blockchain {
 				changed = append(changed, v) // send back old one so we can cancel
 			}
 		} else {
@@ -79,7 +79,7 @@ func (db *DB) RepairCrosschain(in []CrosschainAddress) error {
 	changed, added, deleted := getDifference(db.GetCrosschainAll(), in)
 
 	for _, tx := range append(deleted, changed...) {
-		_, err := db.Model(&tx).Delete()
+		_, err := db.Model(&tx).Where("address=?", tx.Address).Delete()
 		if err != nil {
 			return err
 		}
