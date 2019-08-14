@@ -110,8 +110,10 @@ func (m *Manifest) ManifestComplete() bool {
  */
 func (m *Manifest) FindNode(ip string, port string, pubKey string) (nodeID int, err error) {
 	fmt.Println("Finding node")
-	for k, v := range m.Nodes {
+	for _, v := range m.Nodes {
 		fmt.Println("Node information = ", v.IP, ip, v.Port, port, v.PubKey, pubKey)
+	}
+	for k, v := range m.Nodes {
 		if v.IP == ip && v.Port == port && v.PubKey == pubKey {
 			return k, nil
 		}

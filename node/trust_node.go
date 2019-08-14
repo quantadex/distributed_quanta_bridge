@@ -286,7 +286,6 @@ func initNode(config common.Config, secrets common.Secrets, debugDb bool) (*Trus
 
 	node.config = config
 
-	fmt.Println("returning node")
 	return node, true
 }
 
@@ -349,6 +348,7 @@ func (n *TrustNode) registerNode(config common.Config) bool {
 			}
 		}
 		man := n.reg.GetManifest()
+		fmt.Println("manifest = ", man)
 		if man != nil {
 			fmt.Println("mainfest is not nil")
 			// OVERRIDE WITH OUR OWN

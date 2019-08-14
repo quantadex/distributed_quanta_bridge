@@ -65,6 +65,7 @@ func NewRegistry(minNodes int, path string) *Registry {
 	r := &Registry{}
 	filePath := path + "/manifest.yml"
 	r.path = filePath
+	os.Remove(filePath)
 	if _, err := os.Stat(filePath); err != nil {
 		if os.IsNotExist(err) {
 			r.manifest = manifest.CreateNewManifest(minNodes)
