@@ -3,6 +3,7 @@ package manifest
 import (
 	"encoding/json"
 	"errors"
+	"fmt"
 	"strconv"
 )
 
@@ -82,7 +83,7 @@ func (m *Manifest) AddNode(ip string, port string, externalPort string, pubKey s
 
 	nodeId, err := m.FindNode(ip, port, pubKey)
 	if err != nil {
-		m.Nodes = append(m.Nodes, &TrustNode{ip, port, externalPort,pubKey, "ADDED", chainAddress})
+		m.Nodes = append(m.Nodes, &TrustNode{ip, port, externalPort, pubKey, "ADDED", chainAddress})
 		m.N++
 		return nil
 	}
@@ -108,7 +109,9 @@ func (m *Manifest) ManifestComplete() bool {
  * If a node with the given IP/port exists return it's nodeID. Otherwise return error
  */
 func (m *Manifest) FindNode(ip string, port string, pubKey string) (nodeID int, err error) {
+	fmt.Println("Finding node")
 	for k, v := range m.Nodes {
+		fmt.Println("Node information = ", v.IP, ip, v.Port, port, v.PubKey, pubKey)
 		if v.IP == ip && v.Port == port && v.PubKey == pubKey {
 			return k, nil
 		}

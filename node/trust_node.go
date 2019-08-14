@@ -348,6 +348,7 @@ func (n *TrustNode) registerNode(config common.Config) bool {
 		}
 		man := n.reg.GetManifest()
 		if man != nil {
+			fmt.Println("mainfest is not nil")
 			// OVERRIDE WITH OUR OWN
 			// man.ContractAddress = viper.GetString("TRUST_ETHEREUM_ADDR")
 			n.man = man
