@@ -167,7 +167,7 @@ func initNode(config common.Config, secrets common.Secrets, debugDb bool) (*Trus
 	}
 
 	if needsInitialize {
-		node.log.Info("Initialize ledger")
+		node.log.Info("Initialized ledger")
 		control.InitLedger(node.db)
 	}
 
@@ -184,6 +184,7 @@ func initNode(config common.Config, secrets common.Secrets, debugDb bool) (*Trus
 	db.MigrateTx(node.rDb)
 	db.MigrateKv(node.rDb)
 	db.MigrateXC(node.rDb)
+	fmt.Println("connected to database")
 
 	blackListEth := crypto.GetBlackListedUsersByBlockchain(config.BlackList, coin.BLOCKCHAIN_ETH)
 	eth, err := coin.NewEthereumCoin(config.EthereumNetworkId, config.EthereumRpc, secrets.EthereumKeyStore, config.Erc20Mapping, config.EthWithdrawMin, config.EthWithdrawFee, config.EthWithdrawGasFee, blackListEth)
@@ -285,6 +286,7 @@ func initNode(config common.Config, secrets common.Secrets, debugDb bool) (*Trus
 
 	node.config = config
 
+	fmt.Println("returning node")
 	return node, true
 }
 
@@ -337,7 +339,7 @@ func (n *TrustNode) registerNode(config common.Config) bool {
 
 	// Now we sit and wait to be added to quorum
 	for {
-		//n.log.Info("Wait to be added to quorum")
+		n.log.Info("Wait to be added to quorum")
 		time.Sleep(time.Second)
 		if n.reg.HealthCheckRequested() {
 			err = n.reg.SendHealth("READY", n.quantakM)
