@@ -338,7 +338,7 @@ func (n *TrustNode) registerNode(config common.Config) bool {
 
 	// Now we sit and wait to be added to quorum
 	for {
-		n.log.Info("Wait to be added to quorum")
+		//n.log.Info("Wait to be added to quorum")
 		time.Sleep(time.Second)
 		if n.reg.HealthCheckRequested() {
 			err = n.reg.SendHealth("READY", n.quantakM)
@@ -348,9 +348,7 @@ func (n *TrustNode) registerNode(config common.Config) bool {
 			}
 		}
 		man := n.reg.GetManifest()
-		fmt.Println("manifest = ", man)
 		if man != nil {
-			fmt.Println("mainfest is not nil")
 			// OVERRIDE WITH OUR OWN
 			// man.ContractAddress = viper.GetString("TRUST_ETHEREUM_ADDR")
 			n.man = man

@@ -3,7 +3,6 @@ package manifest
 import (
 	"encoding/json"
 	"errors"
-	"fmt"
 	"strconv"
 )
 
@@ -109,10 +108,6 @@ func (m *Manifest) ManifestComplete() bool {
  * If a node with the given IP/port exists return it's nodeID. Otherwise return error
  */
 func (m *Manifest) FindNode(ip string, port string, pubKey string) (nodeID int, err error) {
-	fmt.Println("Finding node")
-	for _, v := range m.Nodes {
-		fmt.Println("Node information = ", v.IP, ip, v.Port, port, v.PubKey, pubKey)
-	}
 	for k, v := range m.Nodes {
 		if v.IP == ip && v.Port == port && v.PubKey == pubKey {
 			return k, nil
