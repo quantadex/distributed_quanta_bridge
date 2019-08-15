@@ -56,12 +56,12 @@ type AddressBlock struct {
 // tx pool
 type AddressRequestPool []AddressChange // grab from top
 
-func NewAddressConsensus(logger logger.Logger, trustNode *TrustNode, db *db.DB, kv kv_store.KVStore, minBlock int64) *AddressConsensus {
+func NewAddressConsensus(logger logger.Logger, trustNode *TrustNode, db2 *db.DB, kv kv_store.KVStore, minBlock int64) *AddressConsensus {
 	var res AddressConsensus
 	res.trustPeer = peer_contact.NewTrustPeerNode(trustNode.man, trustNode.peer, trustNode.nodeID, trustNode.queue, queue.ADDR_MSG_QUEUE, "/node/api/address", trustNode.quantakM)
 	res.cosi = consensus.NewProtocol(res.trustPeer, trustNode.nodeID == 0, time.Second*6)
 	res.logger = logger
-	res.db = db
+	res.db = db2
 	res.msgChan = make(chan MsgAsync, 100)
 	res.poolNotify = map[string]chan error{}
 	res.doneChan = make(chan bool, 1)
@@ -77,15 +77,29 @@ func NewAddressConsensus(logger logger.Logger, trustNode *TrustNode, db *db.DB, 
 			return err
 		}
 
+		msgIn := &AddressBlock{State: make([]db.CrosschainAddress, len(msg.State))}
+		for i, state := range msg.State {
+			msgIn.State[i].Address = state.Address
+			msgIn.State[i].QuantaAddr = state.QuantaAddr
+			msgIn.State[i].Shared = state.Shared
+			msgIn.State[i].Blockchain = state.Blockchain
+		}
 		// if my state is the same -- confirm.
-		my_state := db.GetCrosschainAll()
+		crosschainAddresses := db2.GetCrosschainAll()
+		my_state := make([]db.CrosschainAddress, len(crosschainAddresses))
+		for i, state := range crosschainAddresses {
+			my_state[i].Address = state.Address
+			my_state[i].QuantaAddr = state.QuantaAddr
+			my_state[i].Shared = state.Shared
+			my_state[i].Blockchain = state.Blockchain
+		}
 		my_state_hash, _ := json.Marshal(my_state)
 		//println(string(my_state_hash))
 
 		my_state_hashb := sha256.Sum256(my_state_hash)
 		my_state_hash2 := common.Bytes2Hex(my_state_hashb[:])
 
-		in_state_hash, _ := json.Marshal(msg.State)
+		in_state_hash, _ := json.Marshal(msgIn.State)
 		//println("IN", string(in_state_hash))
 
 		in_state_hashb := sha256.Sum256(in_state_hash)
@@ -98,7 +112,7 @@ func NewAddressConsensus(logger logger.Logger, trustNode *TrustNode, db *db.DB, 
 		for _, tx := range msg.Transactions {
 			if tx.Blockchain == coin.BLOCKCHAIN_ETH {
 				headBlock, _ := control.GetLastBlock(kv, coin.BLOCKCHAIN_ETH)
-				addrAvailable, err := db.GetAvailableShareAddress(headBlock, minBlock)
+				addrAvailable, err := db2.GetAvailableShareAddress(headBlock, minBlock)
 				if err != nil {
 					return err
 				}
@@ -147,13 +161,13 @@ func NewAddressConsensus(logger logger.Logger, trustNode *TrustNode, db *db.DB, 
 		for _, tx := range msg.Transactions {
 			if tx.Blockchain == coin.BLOCKCHAIN_ETH {
 				headBlock, _ := control.GetLastBlock(kv, coin.BLOCKCHAIN_ETH)
-				err = db.UpdateShareAddressDestination(tx.Address, tx.QuantaAddr, uint64(headBlock))
+				err = db2.UpdateShareAddressDestination(tx.Address, tx.QuantaAddr, uint64(headBlock))
 			} else {
 				addr, err := trustNode.CreateMultisig(tx.Blockchain, tx.QuantaAddr)
 				if err != nil {
 					return errors.New("Cannot persist due to error : " + err.Error())
 				}
-				err = db.AddCrosschainAddress(addr)
+				err = db2.AddCrosschainAddress(addr)
 			}
 		}
 
