@@ -152,7 +152,7 @@ func (db *DB) GetAvailableShareAddress(head_block_number int64, min_block int64)
 		Where("shared=true").
 		WrapWith("shared_addresses").
 		Table("shared_addresses").
-		Where("? - last_block_number > ?", head_block_number, min_block).Order("last_block_number asc", "address asc").Limit(10).Select()
+		Where("? - last_block_number > ?", head_block_number, min_block).Order("last_block_number asc", "address asc").Select()
 
 	return address, err
 }

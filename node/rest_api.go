@@ -3,7 +3,6 @@ package main
 import (
 	"context"
 	"encoding/json"
-	"fmt"
 	"github.com/go-errors/errors"
 	"github.com/gorilla/mux"
 	"github.com/quantadex/distributed_quanta_bridge/common/crypto"
@@ -130,40 +129,9 @@ func (server *Server) addressHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if len(values) == 0 {
-		var addr []db.CrosschainAddress
-		var err error
-
 		server.logger.Infof("Request new address %v %v", blockchain, quanta)
 
-		if blockchain == coin.BLOCKCHAIN_ETH {
-			headBlock, _ := control.GetLastBlock(server.kv, coin.BLOCKCHAIN_ETH)
-			addr, err = server.db.GetAvailableShareAddress(headBlock, server.trustNode.config.MinBlockReuse)
-		} else {
-			forwardInput, err := server.generateNewAddress(blockchain, quanta)
-			if err != nil {
-				w.WriteHeader(http.StatusInternalServerError)
-				w.Write([]byte("Unable to generate address for " + blockchain + "," + err.Error()))
-				return
-			}
-
-			addr = []db.CrosschainAddress{{Address: forwardInput.ContractAddress, QuantaAddr: forwardInput.QuantaAddr}}
-		}
-
-		if err != nil {
-			server.logger.Errorf("Could not find available crosschain address for %s error: %s", quanta, err.Error())
-			w.WriteHeader(http.StatusInternalServerError)
-			w.Write([]byte(err.Error()))
-			return
-		}
-
-		if len(addr) == 0 {
-			server.logger.Errorf("Could not find available crosschain address for %s", quanta)
-			w.WriteHeader(http.StatusInternalServerError)
-			w.Write([]byte(fmt.Sprintf("Could not find available crosschain address for %s", quanta)))
-			return
-		}
-
-		err = server.addressChange.GetAddress(AddressChange{blockchain, quanta, addr[0].Address, server.counter})
+		err = server.addressChange.GetAddress(AddressChange{blockchain, quanta, "", server.counter})
 		server.counter++
 		if err != nil {
 			server.logger.Errorf("Could not agree on address change:", err.Error())

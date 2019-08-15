@@ -27,6 +27,9 @@ type AddressConsensus struct {
 	msgChan      chan MsgAsync
 	doneChan     chan bool
 	stateTracker map[string]map[string]int // tracking blockhash -> state -> count
+	minBlock     int64
+	kv           kv_store.KVStore
+	trustNode    *TrustNode
 }
 
 type AddressChange struct {
@@ -62,6 +65,9 @@ func NewAddressConsensus(logger logger.Logger, trustNode *TrustNode, db *db.DB, 
 	res.msgChan = make(chan MsgAsync, 100)
 	res.poolNotify = map[string]chan error{}
 	res.doneChan = make(chan bool, 1)
+	res.minBlock = minBlock
+	res.kv = kv
+	res.trustNode = trustNode
 
 	res.cosi.Verify = func(encoded string) error {
 		decoded := common.Hex2Bytes(encoded)
@@ -274,8 +280,30 @@ func (c *AddressConsensus) Stop() {
 func (c *AddressConsensus) startNewBlock(txsToProcess []AddressChange, done chan error) {
 	c.logger.Infof("Generate new address block. txs=%d", len(txsToProcess))
 
-	state := c.db.GetCrosschainAll()
+	headBlock, _ := control.GetLastBlock(c.kv, coin.BLOCKCHAIN_ETH)
+	addrAvailable, err := c.db.GetAvailableShareAddress(headBlock, c.minBlock)
+	if err != nil {
+		c.logger.Errorf("Cannot get available addresses: %v", err)
+	}
+	count := 0
+	for i, tx := range txsToProcess {
+		if tx.Blockchain == coin.BLOCKCHAIN_ETH {
+			if count > len(addrAvailable)-1 {
+				c.logger.Errorf("No available shared address for %s", tx.QuantaAddr)
+			} else {
+				txsToProcess[i].Address = addrAvailable[count].Address
+				count++
+			}
+		} else {
+			addr, err := c.trustNode.CreateMultisig(tx.Blockchain, tx.QuantaAddr)
+			if err != nil {
+				c.logger.Errorf("cannot create multisig address for %s", tx.QuantaAddr)
+			}
+			txsToProcess[i].Address = addr.ContractAddress
+		}
+	}
 
+	state := c.db.GetCrosschainAll()
 	// create the block
 	block := AddressBlock{
 		Transactions: txsToProcess,
