@@ -28,8 +28,8 @@ func MigrateXC(db *DB) error {
 	return err
 }
 
-func (db *DB) GetCrosschainByAddressandBlockchain(address, blockchain string) crypto.CrosschainAddress {
-	var tx crypto.CrosschainAddress
+func (db *DB) GetCrosschainByAddressandBlockchain(address, blockchain string) CrosschainAddress {
+	var tx CrosschainAddress
 	err := db.Model(&tx).Where("address=? and blockchain=?", address, blockchain).Select()
 	if err != nil {
 		return tx
@@ -37,8 +37,6 @@ func (db *DB) GetCrosschainByAddressandBlockchain(address, blockchain string) cr
 	return tx
 }
 
-func (db *DB) GetCrosschainByBlockchain(blockchain string) []crypto.CrosschainAddress {
-	var tx []crypto.CrosschainAddress
 func (db *DB) GetCrosschainAll() []CrosschainAddress {
 	var tx []CrosschainAddress
 	out := []CrosschainAddress{}

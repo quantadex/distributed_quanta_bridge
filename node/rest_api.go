@@ -168,7 +168,7 @@ func (server *Server) addressHandler(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		server.logger.Infof("Updated the crosschain address for account : %s to %s", quanta, addr[0].Address)
+		//server.logger.Infof("Updated the crosschain address for account : %s to %s", quanta, addr[0].Address)
 	}
 
 	data, _ := json.Marshal(values)
