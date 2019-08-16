@@ -246,7 +246,7 @@ func TestGenerateMultisig(t *testing.T) {
 	bitcoin := client.(*BitcoinCoin)
 
 	start := time.Now()
-	for i := 0; i < 100; i++ {
+	for i := 0; i < 5; i++ {
 		addr1, err := bitcoin.GenerateMultisig("crosschainx_" + string(i))
 		println(addr1, err)
 		assert.NoError(t, err)

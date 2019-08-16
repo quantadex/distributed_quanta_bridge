@@ -170,7 +170,7 @@ func TestAddress(t *testing.T) {
 	assert.NoError(t, err)
 	bodyBytes, _ = ioutil.ReadAll(res.Body)
 	println("data 3", res.StatusCode, string(bodyBytes))
-	assert.True(t, strings.Contains(string(bodyBytes), "Could not find available crosschain address"))
+	assert.True(t, strings.Contains(string(bodyBytes), "Unable to agree for address change"))
 
 	fmt.Println("*** TESTING FOR REPAIR ***")
 	// show the address only for first 2 nodes, 3rd node will attempt to repair.
@@ -361,35 +361,35 @@ func TestStressTest(t *testing.T) {
 	// wait for node to bootup
 	time.Sleep(time.Millisecond * 1000)
 
-	//for i := 0; i < 100; i++ {
-	//	contractAddress := "0xba420ef5d725361d8fdc58cb1e4fa62eda9ec999" + strconv.Itoa(i)
-	//	address := &crypto.ForwardInput{
-	//		contractAddress,
-	//		common.HexToAddress(test.GRAPHENE_TRUST.TrustContract),
-	//		"address-pool",
-	//		"0x01",
-	//		coin.BLOCKCHAIN_ETH,
-	//	}
-	//	for _, node := range nodes {
-	//		node.rDb.AddCrosschainAddress(address)
-	//	}
-	//}
-	//
-	//// test crosschain
-	//for _, n := range nodes {
-	//	control.SetLastBlock(n.db, coin.BLOCKCHAIN_ETH, 700000)
-	//}
+	for i := 0; i < 10; i++ {
+		contractAddress := "0xba420ef5d725361d8fdc58cb1e4fa62eda9ec999" + strconv.Itoa(i)
+		address := &crypto.ForwardInput{
+			contractAddress,
+			common.HexToAddress(test.GRAPHENE_TRUST.TrustContract),
+			"address-pool",
+			"0x01",
+			coin.BLOCKCHAIN_ETH,
+		}
+		for _, node := range nodes {
+			node.rDb.AddCrosschainAddress(address)
+		}
+	}
+
+	// test crosschain
+	for _, n := range nodes {
+		control.SetLastBlock(n.db, coin.BLOCKCHAIN_ETH, 700000)
+	}
 
 	//reducing to 10 to test on circleci
-	resultChan := make(chan interface{}, 100)
-	numTests := 100
+	resultChan := make(chan interface{}, 10)
+	numTests := 10
 	baseStr := RandomString(20)
 
 	// test crosschain
 	for i := 0; i < numTests; i++ {
 		go func(i int) {
 			str := baseStr + strconv.Itoa(i)
-			res, err := http.Post("http://localhost:5200/api/address/btc/"+str, "", nil)
+			res, err := http.Post("http://localhost:5200/api/address/eth/"+str, "", nil)
 
 			if err != nil {
 				resultChan <- err
@@ -529,7 +529,7 @@ func TestVariationTimming(t *testing.T) {
 	time.Sleep(time.Millisecond * 1000)
 
 	resultChan := make(chan interface{}, 50)
-	numTests := 50
+	numTests := 5
 	baseStr := RandomString(20)
 
 	// test crosschain
