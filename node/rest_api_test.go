@@ -473,16 +473,13 @@ func TestRepair(t *testing.T) {
 	addr2, err := nodes[0].CreateMultisig("BCH", "pooja7")
 	assert.NoError(t, err)
 
-	//stopping one node
-	nodes[1].Stop()
-
 	for _, n := range nodes {
 		n.rDb.AddCrosschainAddress(addr)
-		n.rDb.AddCrosschainAddress(addr2)
+		if n.nodeID != 2 {
+			n.rDb.AddCrosschainAddress(addr2)
+		}
 	}
-	//strarting the node again
-	node := StartNodesWithIndexes(test.GRAPHENE_ISSUER, test.GRAPHENE_TRUST, test.ETHER_NETWORKS[test.ROPSTEN], true, []int{1}, make([]*TrustNode, 3))
-	nodes[1] = node[1]
+
 	resultChan := make(chan interface{}, 1)
 	numTests := 1
 	baseStr := RandomString(20)
