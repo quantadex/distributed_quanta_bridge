@@ -649,6 +649,7 @@ func TestBCHWithdrawal(t *testing.T) {
 }
 
 func TestLTCDeposit(t *testing.T) {
+	time.Sleep(time.Second)
 	r := StartRegistry(3, ":6000")
 	nodes := StartNodes(test.GRAPHENE_ISSUER, test.GRAPHENE_TRUST, test.ETHER_NETWORKS[test.ROPSTEN], 3)
 	defer func() {
