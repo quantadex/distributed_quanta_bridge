@@ -80,6 +80,7 @@ func GetBchSync(node *TrustNode, minConfirm int64) sync.DepositSyncInterface {
 }
 
 func TestRopstenNativeETH(t *testing.T) {
+	time.Sleep(time.Second * 2)
 	r := StartRegistry(3, ":6000")
 	nodes := StartNodes(test.GRAPHENE_ISSUER, test.GRAPHENE_TRUST, test.ETHER_NETWORKS[test.ROPSTEN], 3)
 	defer func() {
