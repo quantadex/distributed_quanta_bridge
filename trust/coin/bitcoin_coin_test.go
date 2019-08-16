@@ -71,7 +71,7 @@ func TestBitcoinEncodeRefund(t *testing.T) {
 	w := Withdrawal{
 		SourceAddress:      addr2,
 		DestinationAddress: addr1,
-		Amount:             100,
+		Amount:             10000,
 		QuantaBlockID:      0,
 	}
 	fee, totalFee, err := bitcoin.estimateFee(2, 2)
