@@ -108,21 +108,24 @@ func TestConsensus3Nodes(t *testing.T) {
 	protocols[0].StartNewRound("tx message 2")
 	finalMsg = <-protocols[0].FinalSigChan
 	assert.Equal(t, 3, len(finalMsg.Msg), "Expect to have 2 signatures")
+	protocols[0].Node().Stop()
+	protocols[1].Node().Stop()
+	protocols[2].Node().Stop()
 }
 
 // TEST 4:  1 leader, 4 nodes, 1 failure
 
 //commenting to test other tests
-//func TestConsensus4Nodes(t *testing.T) {
-//	common.InitLogger()
-//	protocols, _ := StartNServer(4, []error{nil, nil, nil, nil})
-//	protocols[1].Node().Stop()
-//
-//	protocols[0].StartNewRound("tx message")
-//	finalMsg := <-protocols[0].FinalSigChan
-//
-//	assert.Equal(t, 3, len(finalMsg.Msg), "Expect to have 3 signatures %v", finalMsg.Msg)
-//}
+func TestConsensus4Nodes(t *testing.T) {
+	common.InitLogger()
+	protocols, _ := StartNServer(4, []error{nil, nil, nil, nil})
+	protocols[1].Node().Stop()
+
+	protocols[0].StartNewRound("tx message")
+	finalMsg := <-protocols[0].FinalSigChan
+
+	assert.Equal(t, 3, len(finalMsg.Msg), "Expect to have 3 signatures %v", finalMsg.Msg)
+}
 
 //func TestConsensus3NodesDelayed(t *testing.T) {
 //	common.InitLogger()
