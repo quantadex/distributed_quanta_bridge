@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/ethereum/go-ethereum/common"
+	"github.com/go-errors/errors"
 	"github.com/quantadex/distributed_quanta_bridge/common/crypto"
 	metric2 "github.com/quantadex/distributed_quanta_bridge/common/metric"
 	"github.com/quantadex/distributed_quanta_bridge/common/test"
@@ -13,6 +14,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/zserge/metric"
 	"io/ioutil"
+	"math/rand"
 	"net/http"
 	"strconv"
 	"strings"
@@ -21,10 +23,10 @@ import (
 )
 
 func TestAPI(t *testing.T) {
-	r := StartRegistry(1, ":6000")
-	nodes := StartNodes(test.GRAPHENE_ISSUER, test.GRAPHENE_TRUST, test.ETHER_NETWORKS[test.ROPSTEN], 1)
+	r := StartRegistry(3, ":6000")
+	nodes := StartNodes(test.GRAPHENE_ISSUER, test.GRAPHENE_TRUST, test.ETHER_NETWORKS[test.ROPSTEN], 3)
 	defer func() {
-		StopNodes(nodes, []int{0})
+		StopNodes(nodes, []int{0, 1, 2})
 		StopRegistry(r)
 	}()
 	time.Sleep(time.Millisecond * 250)
@@ -105,10 +107,10 @@ func TestAPI(t *testing.T) {
 }
 
 func TestAddress(t *testing.T) {
-	r := StartRegistry(1, ":6000")
-	nodes := StartNodes(test.GRAPHENE_ISSUER, test.GRAPHENE_TRUST, test.ETHER_NETWORKS[test.ROPSTEN], 1)
+	r := StartRegistry(3, ":6000")
+	nodes := StartNodes(test.GRAPHENE_ISSUER, test.GRAPHENE_TRUST, test.ETHER_NETWORKS[test.ROPSTEN], 3)
 	defer func() {
-		StopNodes(nodes, []int{0})
+		StopNodes(nodes, []int{0, 1, 2})
 		StopRegistry(r)
 	}()
 	time.Sleep(time.Millisecond * 250)
@@ -121,31 +123,28 @@ func TestAddress(t *testing.T) {
 		coin.BLOCKCHAIN_ETH,
 	}
 
-	control.SetLastBlock(nodes[0].db, coin.BLOCKCHAIN_ETH, 700000)
-	//control.SetLastBlock(nodes[1].db, coin.BLOCKCHAIN_ETH, 700000)
+	address2 := &crypto.ForwardInput{
+		"0xba420ef5d725361d8fdc58cb1e4fa62eda9ec888",
+		common.HexToAddress(test.GRAPHENE_TRUST.TrustContract),
+		"address-pool",
+		"0x01",
+		coin.BLOCKCHAIN_ETH,
+	}
+
+	address3 := &crypto.ForwardInput{
+		"0xba420ef5d725361d8fdc58cb1e4fa62eda9ec889",
+		common.HexToAddress(test.GRAPHENE_TRUST.TrustContract),
+		"address-pool",
+		"0x01",
+		coin.BLOCKCHAIN_ETH,
+	}
 
 	// test crosschain
-	nodes[0].rDb.AddCrosschainAddress(address)
-
-	// try to mess with the order of adddresses
-	//nodes[1].rDb.AddCrosschainAddress(&crypto.ForwardInput{
-	//	"0xba420ef5d725361d8fdc58cb1e4fa62eda9ec888",
-	//	common.HexToAddress(test.GRAPHENE_TRUST.TrustContract),
-	//	"address-pool",
-	//	"0x01",
-	//	coin.BLOCKCHAIN_ETH,
-	//})
-	//nodes[1].rDb.AddCrosschainAddress(address)
-	//nodes[1].rDb.AddCrosschainAddress(&crypto.ForwardInput{
-	//	"0xba420ef5d725361d8fdc58cb1e4fa62eda9ec991",
-	//	common.HexToAddress(test.GRAPHENE_TRUST.TrustContract),
-	//	"address-pool",
-	//	"0x01",
-	//	coin.BLOCKCHAIN_ETH,
-	//})
-
-	//nodes[0].rDb.UpdateLastBlockNumber("0xba420ef5d725361d8fdc58cb1e4fa62eda9ec990", 1)
-	//nodes[1].rDb.UpdateLastBlockNumber("0xba420ef5d725361d8fdc58cb1e4fa62eda9ec990", 1)
+	for _, n := range nodes {
+		n.rDb.AddCrosschainAddress(address)
+		n.rDb.AddCrosschainAddress(address2)
+		control.SetLastBlock(n.db, coin.BLOCKCHAIN_ETH, 700000)
+	}
 
 	// wait for node to bootup
 	time.Sleep(time.Millisecond * 2000)
@@ -156,29 +155,52 @@ func TestAddress(t *testing.T) {
 	bodyBytes, _ := ioutil.ReadAll(res.Body)
 	println("data", res.StatusCode, string(bodyBytes))
 
-	//res, err = http.Get("http://localhost:5201/api/address/eth/pooja")
-	//assert.NoError(t, err)
-	//bodyBytes, _ = ioutil.ReadAll(res.Body)
-	//println("data", res.StatusCode, string(bodyBytes))
-
 	res, err = http.Post("http://localhost:5200/api/address/eth/pooja", "", nil)
 	assert.NoError(t, err)
 	bodyBytes, _ = ioutil.ReadAll(res.Body)
 	println("data", res.StatusCode, string(bodyBytes))
 
+	res, err = http.Post("http://localhost:5200/api/address/eth/alpha", "", nil)
+	assert.NoError(t, err)
+	bodyBytes, _ = ioutil.ReadAll(res.Body)
+	println("data", res.StatusCode, string(bodyBytes))
+
+	fmt.Println("We're out of addresses, expect to fail")
 	res, err = http.Post("http://localhost:5200/api/address/eth/charlie", "", nil)
 	assert.NoError(t, err)
 	bodyBytes, _ = ioutil.ReadAll(res.Body)
 	println("data 3", res.StatusCode, string(bodyBytes))
 	assert.True(t, strings.Contains(string(bodyBytes), "Could not find available crosschain address"))
+
+	fmt.Println("*** TESTING FOR REPAIR ***")
+	// show the address only for first 2 nodes, 3rd node will attempt to repair.
+	for _, n := range nodes[0:2] {
+		n.rDb.AddCrosschainAddress(address3)
+	}
+
+	res, err = http.Post("http://localhost:5200/api/address/eth/charlie", "", nil)
+	assert.NoError(t, err)
+	bodyBytes, _ = ioutil.ReadAll(res.Body)
+	println("data", res.StatusCode, string(bodyBytes))
+	// expect repair
+
+	// expect no repair
+	for _, n := range nodes {
+		address3.ContractAddress = "0xba420ef5d725361d8fdc58cb1e4fa62eda9ec111"
+		n.rDb.AddCrosschainAddress(address3)
+	}
+	res, err = http.Post("http://localhost:5200/api/address/eth/beta", "", nil)
+	assert.NoError(t, err)
+	bodyBytes, _ = ioutil.ReadAll(res.Body)
+	println("data", res.StatusCode, string(bodyBytes))
 }
 
 func TestStatus(t *testing.T) {
 	fmt.Println(time.Now())
-	r := StartRegistry(1, ":6000")
-	nodes := StartNodes(test.GRAPHENE_ISSUER, test.GRAPHENE_TRUST, test.ETHER_NETWORKS[test.ROPSTEN], 1)
+	r := StartRegistry(3, ":6000")
+	nodes := StartNodes(test.GRAPHENE_ISSUER, test.GRAPHENE_TRUST, test.ETHER_NETWORKS[test.ROPSTEN], 3)
 	defer func() {
-		StopNodes(nodes, []int{0})
+		StopNodes(nodes, []int{0, 1, 2})
 		StopRegistry(r)
 	}()
 	time.Sleep(time.Millisecond * 250)
@@ -253,10 +275,10 @@ func TestMetric(t *testing.T) {
 }
 
 func TestAddressAllNodes(t *testing.T) {
-	r := StartRegistry(1, ":6000")
-	nodes := StartNodes(test.GRAPHENE_ISSUER, test.GRAPHENE_TRUST, test.ETHER_NETWORKS[test.ROPSTEN], 1)
+	r := StartRegistry(3, ":6000")
+	nodes := StartNodes(test.GRAPHENE_ISSUER, test.GRAPHENE_TRUST, test.ETHER_NETWORKS[test.ROPSTEN], 3)
 	defer func() {
-		StopNodes(nodes, []int{0})
+		StopNodes(nodes, []int{0, 1, 2})
 		StopRegistry(r)
 	}()
 	time.Sleep(time.Millisecond * 250)
@@ -318,6 +340,232 @@ func TestAddressAllNodes(t *testing.T) {
 	//println("data", res.StatusCode, string(bodyBytes))
 	//assert.Equal(t, 200, res.StatusCode)
 
+}
+
+func RandomString(len int) string {
+	bytes := make([]byte, len)
+	for i := 0; i < len; i++ {
+		bytes[i] = byte(65 + rand.Intn(25)) //A=65 and Z = 65+25
+	}
+	return string(bytes)
+}
+
+func TestStressTest(t *testing.T) {
+	r := StartRegistry(3, ":6000")
+	nodes := StartNodes(test.GRAPHENE_ISSUER, test.GRAPHENE_TRUST, test.ETHER_NETWORKS[test.ROPSTEN], 3)
+	defer func() {
+		StopNodes(nodes, []int{0, 1, 2})
+		StopRegistry(r)
+	}()
+
+	// wait for node to bootup
+	time.Sleep(time.Millisecond * 1000)
+
+	//for i := 0; i < 100; i++ {
+	//	contractAddress := "0xba420ef5d725361d8fdc58cb1e4fa62eda9ec999" + strconv.Itoa(i)
+	//	address := &crypto.ForwardInput{
+	//		contractAddress,
+	//		common.HexToAddress(test.GRAPHENE_TRUST.TrustContract),
+	//		"address-pool",
+	//		"0x01",
+	//		coin.BLOCKCHAIN_ETH,
+	//	}
+	//	for _, node := range nodes {
+	//		node.rDb.AddCrosschainAddress(address)
+	//	}
+	//}
+	//
+	//// test crosschain
+	//for _, n := range nodes {
+	//	control.SetLastBlock(n.db, coin.BLOCKCHAIN_ETH, 700000)
+	//}
+
+	//reducing to 10 to test on circleci
+	resultChan := make(chan interface{}, 100)
+	numTests := 100
+	baseStr := RandomString(20)
+
+	// test crosschain
+	for i := 0; i < numTests; i++ {
+		go func(i int) {
+			str := baseStr + strconv.Itoa(i)
+			res, err := http.Post("http://localhost:5200/api/address/btc/"+str, "", nil)
+
+			if err != nil {
+				resultChan <- err
+			} else if res.StatusCode != 200 {
+				bodyBytes, _ := ioutil.ReadAll(res.Body)
+				resultChan <- errors.New("Status code:" + res.Status + " " + string(bodyBytes))
+			} else {
+				bodyBytes, _ := ioutil.ReadAll(res.Body)
+				resultChan <- string(bodyBytes)
+			}
+		}(i)
+	}
+
+	for i := 0; i < numTests; i++ {
+		res := <-resultChan
+		switch v := res.(type) {
+		case string:
+			println("result ", v)
+		case error:
+			println("result ", v.Error())
+		}
+	}
+}
+
+func TestDuplicate(t *testing.T) {
+	r := StartRegistry(3, ":6000")
+	nodes := StartNodes(test.GRAPHENE_ISSUER, test.GRAPHENE_TRUST, test.ETHER_NETWORKS[test.ROPSTEN], 3)
+	defer func() {
+		StopNodes(nodes, []int{0, 1, 2})
+		StopRegistry(r)
+	}()
+
+	// wait for node to bootup
+	time.Sleep(time.Millisecond * 1000)
+
+	resultChan := make(chan interface{}, 3)
+	numTests := 3
+	baseStr := RandomString(20)
+
+	// test crosschain
+	for i := 0; i < numTests; i++ {
+		go func(i int) {
+			res, err := http.Post("http://localhost:5200/api/address/btc/"+baseStr, "", nil)
+
+			if err != nil {
+				resultChan <- err
+			} else if res.StatusCode != 200 {
+				bodyBytes, _ := ioutil.ReadAll(res.Body)
+				resultChan <- errors.New("Status code:" + res.Status + " " + string(bodyBytes))
+				assert.Contains(t, string(bodyBytes), "Duplicate address request")
+			} else {
+				bodyBytes, _ := ioutil.ReadAll(res.Body)
+				resultChan <- string(bodyBytes)
+			}
+		}(i)
+	}
+
+	for i := 0; i < numTests; i++ {
+		res := <-resultChan
+		switch v := res.(type) {
+		case string:
+			println("result ", v)
+		case error:
+			println("result ", v.Error())
+		}
+	}
+}
+
+func TestRepair(t *testing.T) {
+	r := StartRegistry(3, ":6000")
+	nodes := StartNodes(test.GRAPHENE_ISSUER, test.GRAPHENE_TRUST, test.ETHER_NETWORKS[test.ROPSTEN], 3)
+	defer func() {
+		StopNodes(nodes, []int{0, 1, 2})
+		StopRegistry(r)
+	}()
+
+	// wait for node to bootup
+	time.Sleep(time.Millisecond * 1000)
+	addr, err := nodes[0].CreateMultisig("BCH", "pooja5")
+	assert.NoError(t, err)
+	addr2, err := nodes[0].CreateMultisig("BCH", "pooja7")
+	assert.NoError(t, err)
+
+	//stopping one node
+	nodes[1].Stop()
+
+	for _, n := range nodes {
+		n.rDb.AddCrosschainAddress(addr)
+		n.rDb.AddCrosschainAddress(addr2)
+	}
+	//strarting the node again
+	node := StartNodesWithIndexes(test.GRAPHENE_ISSUER, test.GRAPHENE_TRUST, test.ETHER_NETWORKS[test.ROPSTEN], true, []int{1}, make([]*TrustNode, 3))
+	nodes[1] = node[1]
+	resultChan := make(chan interface{}, 1)
+	numTests := 1
+	baseStr := RandomString(20)
+
+	// test crosschain
+	for i := 0; i < numTests; i++ {
+		go func(i int) {
+			str := baseStr + strconv.Itoa(i)
+			res, err := http.Post("http://localhost:5200/api/address/bch/"+str, "", nil)
+
+			if err != nil {
+				fmt.Println("error = ", err)
+				resultChan <- err
+			} else if res.StatusCode != 200 {
+				bodyBytes, _ := ioutil.ReadAll(res.Body)
+				resultChan <- errors.New("Status code:" + res.Status + " " + string(bodyBytes))
+			} else {
+				bodyBytes, _ := ioutil.ReadAll(res.Body)
+				resultChan <- string(bodyBytes)
+			}
+		}(i)
+	}
+
+	for i := 0; i < numTests; i++ {
+		res := <-resultChan
+		switch v := res.(type) {
+		case string:
+			println("result ", v)
+		case error:
+			println("result ", v.Error())
+		}
+	}
+}
+
+func TestVariationTimming(t *testing.T) {
+	r := StartRegistry(3, ":6000")
+	nodes := StartNodes(test.GRAPHENE_ISSUER, test.GRAPHENE_TRUST, test.ETHER_NETWORKS[test.ROPSTEN], 3)
+	defer func() {
+		StopNodes(nodes, []int{0, 1, 2})
+		StopRegistry(r)
+	}()
+
+	// wait for node to bootup
+	time.Sleep(time.Millisecond * 1000)
+
+	resultChan := make(chan interface{}, 50)
+	numTests := 50
+	baseStr := RandomString(20)
+
+	// test crosschain
+	for i := 0; i < numTests; i++ {
+		go func(i int) {
+			if i%5 == 0 {
+				time.Sleep(time.Second * 15)
+			} else if i%3 == 0 {
+				time.Sleep(time.Second * 10)
+			} else if i%2 == 0 {
+				time.Sleep(time.Second * 5)
+			}
+			str := baseStr + strconv.Itoa(i)
+			res, err := http.Post("http://localhost:5200/api/address/ltc/"+str, "", nil)
+
+			if err != nil {
+				resultChan <- err
+			} else if res.StatusCode != 200 {
+				bodyBytes, _ := ioutil.ReadAll(res.Body)
+				resultChan <- errors.New("Status code:" + res.Status + " " + string(bodyBytes))
+			} else {
+				bodyBytes, _ := ioutil.ReadAll(res.Body)
+				resultChan <- string(bodyBytes)
+			}
+		}(i)
+	}
+
+	for i := 0; i < numTests; i++ {
+		res := <-resultChan
+		switch v := res.(type) {
+		case string:
+			println("result ", v)
+		case error:
+			println("result ", v.Error())
+		}
+	}
 }
 
 func TestAddressToQuanta(t *testing.T) {

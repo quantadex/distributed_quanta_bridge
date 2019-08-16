@@ -2,24 +2,23 @@ package main
 
 import (
 	"bytes"
+	"encoding/json"
 	"flag"
 	"fmt"
+	common2 "github.com/ethereum/go-ethereum/common"
 	"github.com/quantadex/distributed_quanta_bridge/common/crypto"
 	"github.com/quantadex/distributed_quanta_bridge/common/logger"
 	"github.com/quantadex/distributed_quanta_bridge/node/common"
 	"github.com/quantadex/distributed_quanta_bridge/registrar/service"
+	"github.com/quantadex/distributed_quanta_bridge/trust/coin"
+	"github.com/quantadex/distributed_quanta_bridge/trust/db"
+	"github.com/quantadex/distributed_quanta_bridge/trust/quanta"
 	"github.com/spf13/viper"
 	"golang.org/x/crypto/ssh/terminal"
 	"io/ioutil"
+	"net/http"
 	"path/filepath"
 	"syscall"
-	"github.com/quantadex/distributed_quanta_bridge/trust/db"
-	"github.com/quantadex/distributed_quanta_bridge/trust/quanta"
-	"net/http"
-	"github.com/quantadex/distributed_quanta_bridge/trust/coin"
-	"encoding/json"
-	common2 	"github.com/ethereum/go-ethereum/common"
-
 )
 
 /**
@@ -94,13 +93,13 @@ func main() {
 			crosschainAddresses := node.rDb.GetCrosschainByBlockchain(*enableSyncAddresses)
 			for _, addr := range crosschainAddresses {
 				c, err := node.CreateMultisig(*enableSyncAddresses, addr.QuantaAddr)
-				fmt.Println("process ", addr.Address, addr.Blockchain, addr.QuantaAddr, c.ContractAddress,err)
+				fmt.Println("process ", addr.Address, addr.Blockchain, addr.QuantaAddr, c.ContractAddress, err)
 
 				if err != nil {
 					panic("Could not generate multisig address")
 				}
 			}
-		} else if (*bounceTx != "") {
+		} else if *bounceTx != "" {
 			node, success := initNode(config, secrets, false)
 			if !success {
 				panic("Failed to init node")
@@ -119,20 +118,20 @@ func main() {
 			if tx.SubmitState != db.SUBMIT_SUCCESS {
 				fmt.Println("marking as a bounce")
 				refund := quanta.Refund{
-					TransactionId: tx.Tx,
-					CoinName: tx.Coin,
-					LedgerID: int32(tx.BlockId),
-					Amount: uint64(tx.Amount),
-					SourceAddress: tx.From,
+					TransactionId:      tx.Tx,
+					CoinName:           tx.Coin,
+					LedgerID:           int32(tx.BlockId),
+					Amount:             uint64(tx.Amount),
+					SourceAddress:      tx.From,
 					DestinationAddress: tx.To,
-					BlockHash: tx.BlockHash,
+					BlockHash:          tx.BlockHash,
 				}
 				node.initTrust(config)
 				node.qTC.BounceTx(&refund, db.AMOUNT_TOO_SMALL, true)
 			} else {
 				fmt.Println("Tx already processed successfully.")
 			}
-		} else if (*retryTx != "") {
+		} else if *retryTx != "" {
 			node, success := initNode(config, secrets, false)
 			if !success {
 				panic("Failed to init node")
@@ -159,14 +158,17 @@ func main() {
 
 			for _, blockchain := range []string{coin.BLOCKCHAIN_BTC, coin.BLOCKCHAIN_BCH, coin.BLOCKCHAIN_LTC, coin.BLOCKCHAIN_ETH} {
 				fmt.Println("Repairing ", blockchain)
-				req, _ := http.NewRequest("GET", fmt.Sprintf("http://%s:%d/api/address/%s",config.RegistrarIp, config.ExternalListenPort, blockchain), nil)
-				req.Header.Set("User-Agent", "AmazonAPIGateway_wya99cec1d")
-				client := &http.Client{}
-				res, _ := client.Do(req)
-
+				req, err := http.NewRequest("GET", fmt.Sprintf("http://%s:%d/api/address/%s", config.RegistrarIp, config.ExternalListenPort, blockchain), nil)
 				if err != nil {
 					panic(err.Error())
 				}
+				req.Header.Set("User-Agent", "AmazonAPIGateway_wya99cec1d")
+				client := &http.Client{}
+				res, err := client.Do(req)
+				if err != nil {
+					panic(err.Error())
+				}
+
 				bodyBytes, err := ioutil.ReadAll(res.Body)
 				if err != nil {
 					panic(err.Error())
@@ -180,11 +182,11 @@ func main() {
 				for _, addr := range addresses {
 					fmt.Println("process ", addr.Address, addr.Blockchain, addr.QuantaAddr)
 					if addr.Blockchain == coin.BLOCKCHAIN_ETH {
-						err = node.rDb.AddCrosschainAddress(&crypto.ForwardInput{ addr.Address,common2.HexToAddress("0x0"),  addr.QuantaAddr, "", coin.BLOCKCHAIN_ETH})
+						err = node.rDb.AddCrosschainAddress(&crypto.ForwardInput{addr.Address, common2.HexToAddress("0x0"), addr.QuantaAddr, "", coin.BLOCKCHAIN_ETH})
 					} else {
 						addr, err := node.CreateMultisig(addr.Blockchain, addr.QuantaAddr)
 						if err != nil {
-							panic("Could not generate multisig address: " +  err.Error())
+							panic("Could not generate multisig address: " + err.Error())
 						}
 
 						err = node.rDb.AddCrosschainAddress(addr)

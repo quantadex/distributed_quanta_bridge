@@ -116,25 +116,22 @@ func TestMultipleSignatures(t *testing.T) {
 	assert.NoError(t, err)
 
 	km.LoadNodeKeys("5Jd9vxNwWXvMnBpcVm58gwXkJ4smzWDv9ChiBXwSRkvCTtekUrx")
-	sig, err := km.SignTransaction(proposed)
+	sig1, err := km.SignTransaction(proposed)
 	assert.NoError(t, err)
-
-	submitTx, err := ProcessGrapheneTransaction(proposed, []string{sig})
-	assert.NoError(t, err)
-
-	// ready to submit to network
-	_, err = api.Broadcast(submitTx)
 
 	km.LoadNodeKeys("5KFJnRn38wuXnpKGvkxmsyiWUuUkPXKZGvdG8aTzHCTvJMUQ4sA")
-	sig, err = km.SignTransaction(proposed)
+	sig2, err := km.SignTransaction(proposed)
 	assert.NoError(t, err)
 
-	submitTx, err = ProcessGrapheneTransaction(proposed, []string{sig})
+	km.LoadNodeKeys("5KFJnRn38wuXnpKGvkxmsyiWUuUkPXKZGvdG8aTzHCTvJMUQ4sA")
+	sig3, err := km.SignTransaction(proposed)
 	assert.NoError(t, err)
 
-	// ready to submit to network
+	submitTx, err := ProcessGrapheneTransaction(proposed, []string{sig1, sig2, sig3})
+	assert.NoError(t, err)
+
+	// ready to submit to network 5JUSChg2HbsdySGT2WR3q713zWywKbAtPRMAtqgQeJvAos4pYwN
 	_, err = api.Broadcast(submitTx)
-	assert.NoError(t, err)
 }
 
 func TestCreateTransaction(t *testing.T) {

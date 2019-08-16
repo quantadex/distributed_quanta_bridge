@@ -134,6 +134,8 @@ type Coin interface {
 	GetBlockTime(blockId int64) (time.Time, error)
 
 	CheckValidAmount(amount uint64) bool
+
+	SetIssuerAddress(address string)
 }
 
 func NewDummyCoin() (Coin, error) {

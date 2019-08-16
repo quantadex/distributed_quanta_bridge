@@ -10,6 +10,7 @@ import (
 	"github.com/quantadex/distributed_quanta_bridge/trust/key_manager"
 	"github.com/stretchr/testify/assert"
 	"testing"
+	"time"
 )
 
 const LOCAL_RPC_HOST = "localhost:18332"
@@ -44,11 +45,13 @@ func TestBitcoinEncodeRefund(t *testing.T) {
 	if blockId < 101 {
 		bitcoin.Client.Generate(101)
 	}
-	addr1, err := bitcoin.GenerateMultisig("aaa1")
+	addr1, err := bitcoin.GenerateMultisig("crosschain2")
 	assert.NoError(t, err)
 	addr2, err := bitcoin.GenerateMultisig("2")
 	assert.NoError(t, err)
 	println(addr1, addr2)
+
+	bitcoin.issuerAddr = addr1
 
 	crosschainAddr := make(map[string]string)
 	crosschainAddr[addr1] = "pooja"
@@ -142,8 +145,10 @@ func TestDecode(t *testing.T) {
 	if blockId < 101 {
 		bitcoin.Client.Generate(101)
 	}
-	addr1, err := bitcoin.GenerateMultisig("aaa1")
+	addr1, err := bitcoin.GenerateMultisig("crosschain2")
 	assert.NoError(t, err)
+
+	bitcoin.issuerAddr = addr1
 
 	amount, err := btcutil.NewAmount(0.02)
 	assert.NoError(t, err)
@@ -196,6 +201,7 @@ func TestEncodeWithMultipleInputs(t *testing.T) {
 	assert.NoError(t, err)
 	addr3, err := bitcoin.GenerateMultisig("crosschain2")
 	assert.NoError(t, err)
+	bitcoin.issuerAddr = addr3
 
 	crosschainAddr := make(map[string]string)
 
@@ -216,8 +222,8 @@ func TestEncodeWithMultipleInputs(t *testing.T) {
 	bitcoin.Client.Generate(1)
 
 	w := Withdrawal{
-		SourceAddress:      addr2,
-		DestinationAddress: addr3,
+		SourceAddress:      addr1,
+		DestinationAddress: addr2,
 		Amount:             1000,
 		Tx:                 "4418603_0",
 		QuantaBlockID:      0,
@@ -239,13 +245,14 @@ func TestGenerateMultisig(t *testing.T) {
 	assert.NoError(t, err)
 	bitcoin := client.(*BitcoinCoin)
 
-	addr1, err := bitcoin.GenerateMultisig("crosschain2")
-	println(addr1, err)
-	assert.NoError(t, err)
-
-	addr2, err := bitcoin.GenerateMultisig("token_sale")
-	println(addr2, err)
-	assert.NoError(t, err)
+	start := time.Now()
+	for i := 0; i < 100; i++ {
+		addr1, err := bitcoin.GenerateMultisig("crosschainx_" + string(i))
+		println(addr1, err)
+		assert.NoError(t, err)
+	}
+	end := time.Now()
+	fmt.Printf("Time it took=%f seconds", end.Sub(start).Seconds())
 }
 
 //not needed. testdeocde already exists

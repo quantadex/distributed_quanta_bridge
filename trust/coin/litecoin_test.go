@@ -47,6 +47,7 @@ func TestLTCEncodeRefund(t *testing.T) {
 
 	addr1, err := litecoin.GenerateMultisig("crosschain2")
 	assert.NoError(t, err)
+	litecoin.issuerAddr = addr1
 
 	ltcAddr, err := ltcutil.DecodeAddress(msig, &chaincfg.RegressionNetParams)
 	assert.NoError(t, err)
@@ -135,6 +136,8 @@ func TestDecodeLTC(t *testing.T) {
 	addr2, err := litecoin.GenerateMultisig("token_sale")
 	assert.NoError(t, err)
 
+	litecoin.issuerAddr = addr1
+
 	amount, err := ltcutil.NewAmount(0.1)
 
 	ltcAddr, err := ltcutil.DecodeAddress(addr1, &chaincfg.RegressionNetParams)
@@ -184,6 +187,8 @@ func TestEncodeWithMultipleInputsLTC(t *testing.T) {
 	assert.NoError(t, err)
 	addr3, err := litecoin.GenerateMultisig("crosschain2")
 	assert.NoError(t, err)
+
+	litecoin.issuerAddr = addr3
 
 	crosschainAddr := make(map[string]string)
 

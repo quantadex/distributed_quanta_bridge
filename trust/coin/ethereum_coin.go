@@ -64,6 +64,10 @@ func (c *EthereumCoin) Attach() error {
 	return nil
 }
 
+func (c *EthereumCoin) SetIssuerAddress(address string) {
+
+}
+
 func (c *EthereumCoin) CheckValidAmount(amount uint64) bool {
 	if amount < uint64(c.EthWithdrawMin*CONST_PRECISION) {
 		return false

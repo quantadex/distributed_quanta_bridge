@@ -30,6 +30,8 @@ const QUANTA = "QUANTA"
 const DQ_QUANTA2COIN = "DQ_QUANTA2COIN"
 
 const WITHDRAWAL_STATUS_ = "WITHDRAWAL_STATUS_"
+const AUTO = "auto"
+const MANUAL = "manual"
 
 type WithdrawalResult struct {
 	W   *coin.Withdrawal
@@ -57,6 +59,7 @@ type QuantaToCoin struct {
 	coinInfo            map[string]*database.Asset
 	blockInfo           map[string]int64
 	counter             metric.Metric
+	mode                string
 
 	rr        *RoundRobinSigner
 	cosi      *cosi.Cosi
@@ -85,7 +88,8 @@ func NewQuantaToCoin(log logger.Logger,
 	queue_ queue.Queue,
 	nodeID int,
 	coinInfo map[string]*database.Asset,
-	blockInfo map[string]int64) *QuantaToCoin {
+	blockInfo map[string]int64,
+	mode string) *QuantaToCoin {
 	res := &QuantaToCoin{}
 	res.logger = log
 	res.db = db_
@@ -101,6 +105,7 @@ func NewQuantaToCoin(log logger.Logger,
 	res.trustPeer = peer_contact.NewTrustPeerNode(man, peer, nodeID, queue_, queue.REFUNDMSG_QUEUE, "/node/api/refund", kM[QUANTA])
 	res.cosi = cosi.NewProtocol(res.trustPeer, nodeID == 0, time.Second*3)
 	res.counter = metric.NewCounter("24h1m")
+	res.mode = mode
 
 	counterName := WITHDRAWAL_STATUS_ + strconv.Itoa(res.nodeID)
 	v := expvar.Get(counterName)
@@ -118,6 +123,8 @@ func NewQuantaToCoin(log logger.Logger,
 		if !b {
 			log.Error("Unable to verify refund coin name" + encoded.CoinName)
 		} else {
+			// update the latest crosschain adddress from database
+			res.coinChannel[blockchain].FillCrosschainAddress(res.GetCrosschainAddress(nil, blockchain))
 			withdrawal, err := res.coinChannel[blockchain].DecodeRefund(msg)
 			if err != nil {
 				res.counter.Add(1)
@@ -272,6 +279,15 @@ func (c *QuantaToCoin) DispatchWithdrawal() {
 	for {
 		select {
 		case <-time.After(time.Second * 10):
+			_, err := c.quantaChannel.GetTopBlockID()
+			if err != nil {
+				if err.Error() == "connection is shut down" {
+					c.logger.Error("Connection was shutdown, connect...")
+					c.quantaChannel.Reconnect()
+				} else {
+					c.logger.Error("Unhandled error. " + err.Error())
+				}
+			}
 			txs := db.QueryWithdrawalByAge(c.rDb, time.Now().Add(-time.Second*5), []string{db.SUBMIT_CONSENSUS})
 
 			if len(txs) > 0 {
@@ -353,6 +369,7 @@ func (c *QuantaToCoin) StartConsensus(w *coin.Withdrawal) (string, error) {
 		return "", nil
 	}
 
+	// update the latest crosschain adddress from database
 	c.coinChannel[blockchain].FillCrosschainAddress(c.GetCrosschainAddress(w, blockchain))
 
 	txResult := HEX_NULL
@@ -547,7 +564,14 @@ func (c *QuantaToCoin) DoLoop(cursor int64) ([]quanta.Refund, error) {
 		} else if w.Amount == 0 {
 			c.logger.Error("Amount is too small")
 		} else if c.nodeID == 0 {
-			db.ChangeSubmitState(c.rDb, w.Tx, db.SUBMIT_CONSENSUS, db.WITHDRAWAL, w.BlockHash)
+			if c.mode == AUTO {
+				db.ChangeSubmitState(c.rDb, w.Tx, db.SUBMIT_CONSENSUS, db.WITHDRAWAL, w.BlockHash)
+			} else if c.mode == MANUAL {
+				db.ChangeSubmitState(c.rDb, w.Tx, db.PENDING_MANUAL, db.WITHDRAWAL, w.BlockHash)
+			} else {
+				c.logger.Error("Not a supported mode")
+				return nil, errors.New("Not a supported mode")
+			}
 		}
 	}
 

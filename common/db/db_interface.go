@@ -4,6 +4,7 @@ import (
 	"github.com/go-pg/pg"
 	"github.com/go-pg/pg/orm"
 	"github.com/quantadex/distributed_quanta_bridge/common/crypto"
+	"github.com/quantadex/distributed_quanta_bridge/trust/db"
 )
 
 type DB interface {
@@ -23,7 +24,7 @@ type DB interface {
 
 	Close() error
 
-	GetCrosschainByBlockchain(blockchain string) []crypto.CrosschainAddress
+	GetCrosschainByBlockchain(blockchain string) []db.CrosschainAddress
 
 	AddCrosschainAddress(input *crypto.ForwardInput) error
 }

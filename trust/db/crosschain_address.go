@@ -39,6 +39,74 @@ func (db *DB) GetCrosschainByAddressandBlockchain(address, blockchain string) cr
 
 func (db *DB) GetCrosschainByBlockchain(blockchain string) []crypto.CrosschainAddress {
 	var tx []crypto.CrosschainAddress
+func (db *DB) GetCrosschainAll() []CrosschainAddress {
+	var tx []CrosschainAddress
+	out := []CrosschainAddress{}
+
+	err := db.Model(&tx).Order("blockchain asc", "address asc").Select()
+	for _, tx := range tx {
+		tx.Updated = time.Unix(0, 0)
+		out = append(out, tx)
+	}
+	if err != nil {
+		return nil
+	}
+	return out
+}
+
+func getDifference(mine, in []CrosschainAddress) (changed, added, deleted []CrosschainAddress) {
+	mineMap := map[string]CrosschainAddress{}
+	for _, r := range mine {
+		mineMap[r.Address] = r
+	}
+
+	newMap := map[string]CrosschainAddress{}
+	for _, r := range in {
+		newMap[r.Address] = r
+	}
+
+	for k, v := range mineMap {
+		if _, exist := newMap[k]; !exist {
+			deleted = append(deleted, v)
+		}
+	}
+
+	for k, v := range newMap {
+		// exist in the old orders
+		if n, exist := mineMap[k]; exist {
+			if v.QuantaAddr != n.QuantaAddr || v.LastBlockNumber != n.LastBlockNumber ||
+				v.TxHash != n.TxHash || v.Shared != n.Shared || v.Blockchain != n.Blockchain {
+				changed = append(changed, v) // send back old one so we can cancel
+			}
+		} else {
+			added = append(added, v)
+		}
+	}
+	return
+}
+
+// given an input "in", repair the local database as neccessary
+func (db *DB) RepairCrosschain(in []CrosschainAddress) error {
+	changed, added, deleted := getDifference(db.GetCrosschainAll(), in)
+
+	for _, tx := range append(deleted, changed...) {
+		_, err := db.Model(&tx).Where("address=?", tx.Address).Delete()
+		if err != nil {
+			return err
+		}
+	}
+
+	for _, tx := range added {
+		_, err := db.Model(&tx).Insert()
+		if err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func (db *DB) GetCrosschainByBlockchain(blockchain string) []CrosschainAddress {
+	var tx []CrosschainAddress
 	err := db.Model(&tx).Where("blockchain=?", blockchain).Select()
 	if err != nil {
 		return nil
@@ -47,7 +115,7 @@ func (db *DB) GetCrosschainByBlockchain(blockchain string) []crypto.CrosschainAd
 }
 
 func (db *DB) GetAddressCountByBlockchain(blockchain string) (int, error) {
-	var tx []crypto.CrosschainAddress
+	var tx []CrosschainAddress
 	n, err := db.Model(&tx).Where("blockchain=?", blockchain).Count()
 	if err != nil {
 		return 0, err
@@ -57,7 +125,7 @@ func (db *DB) GetAddressCountByBlockchain(blockchain string) (int, error) {
 
 func (db *DB) GetAddressCountByBlockchain24hrs(blockchain string) (int, error) {
 	t := time.Now().AddDate(0, 0, -1)
-	var tx []crypto.CrosschainAddress
+	var tx []CrosschainAddress
 	n, err := db.Model(&tx).Where("blockchain=? and updated>?", blockchain, t).Count()
 	if err != nil {
 		return 0, err
@@ -95,7 +163,7 @@ func (db *DB) GetAvailableShareAddress(head_block_number int64, min_block int64)
 		Where("shared=true").
 		WrapWith("shared_addresses").
 		Table("shared_addresses").
-		Where("? - last_block_number > ?", head_block_number, min_block).Order("last_block_number asc", "address asc").Limit(10).Select()
+		Where("? - last_block_number > ?", head_block_number, min_block).Order("last_block_number asc", "address asc").Select()
 
 	return address, err
 }

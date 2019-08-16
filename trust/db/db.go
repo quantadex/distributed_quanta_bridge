@@ -7,6 +7,7 @@ import (
 
 	//"log"
 	"fmt"
+	"time"
 )
 
 type DB struct {
@@ -35,6 +36,7 @@ func (db *DB) Debug() {
 }
 
 func (db *DB) Connect(addr, user, pass, database string) {
+
 	if db.Drop {
 		db2 := pg.Connect(&pg.Options{
 			Addr:     addr,
@@ -66,6 +68,11 @@ func (db *DB) Connect(addr, user, pass, database string) {
 		User:     user,
 		Password: pass,
 		Database: database,
+		PoolSize:           20,
+		MaxConnAge:         10 * time.Second,
+		PoolTimeout:        30 * time.Second,
+		IdleTimeout:        10 * time.Second,
+		IdleCheckFrequency: 100 * time.Millisecond,
 	})
 
 	// uncomment to see raw SQL

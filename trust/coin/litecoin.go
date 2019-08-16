@@ -36,6 +36,7 @@ type LiteCoin struct {
 	LtcWithdrawMin     float64
 	LtcWithdrawFee     float64
 	BlackList          map[string]bool
+	issuerAddr         string
 }
 
 func (b *LiteCoin) Blockchain() string {
@@ -60,6 +61,10 @@ func (b *LiteCoin) Attach() error {
 	//err = crypto.ValidateNetwork(b.Client, "Litecoin")
 
 	return err
+}
+
+func (b *LiteCoin) SetIssuerAddress(address string) {
+	b.issuerAddr = address
 }
 
 func (b *LiteCoin) CheckValidAmount(amount uint64) bool {
@@ -450,7 +455,7 @@ func (b *LiteCoin) EncodeRefund(w Withdrawal) (string, error) {
 		return "", err
 	}
 
-	totalAmount, inputs, unspentFound, rawInput, err := b.GetUnspentInputs(amount)
+	totalAmount, inputs, _, rawInput, err := b.GetUnspentInputs(amount)
 
 	if err != nil {
 		return "", err
@@ -467,7 +472,11 @@ func (b *LiteCoin) EncodeRefund(w Withdrawal) (string, error) {
 		return "", errors.Wrap(err, "Unable to create new amount")
 	}
 
-	sourceAddrRefund, err := ltcutil.DecodeAddress(unspentFound[0].Address, b.chaincfg)
+	if b.issuerAddr == "" {
+		return "", errors.New("Issuer address not set for LTC")
+	}
+
+	sourceAddrRefund, err := ltcutil.DecodeAddress(b.issuerAddr, b.chaincfg)
 	if err != nil {
 		return "", err
 	}
@@ -557,7 +566,8 @@ func (b *LiteCoin) DecodeRefund(encoded string) (*Withdrawal, error) {
 	for _, vout := range decodedTx.Vout {
 		destAddr := strings.Join(vout.ScriptPubKey.Addresses, ",")
 
-		if vinLookup[destAddr] || fromAddr == "" {
+		_, isCrosschain := b.crosschainAddr[destAddr]
+		if vinLookup[destAddr] || fromAddr == "" || isCrosschain {
 			//println("Ignoring tx when from and to the same ", toAddr)
 			continue
 		}
