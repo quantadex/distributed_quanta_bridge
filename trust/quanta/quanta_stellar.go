@@ -366,3 +366,7 @@ func (q *QuantaClient) ProcessDeposit(deposit *coin.Deposit, proposed string) er
 func (q *QuantaClient) GetAsset(assetName string) (*database.Asset, error) {
 	panic("Not implemented")
 }
+
+func (q *QuantaClient) GetAccountFromPubKey(pubKey string) (string, error) {
+	panic("Not implemented")
+}

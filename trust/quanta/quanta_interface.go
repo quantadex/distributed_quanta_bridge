@@ -85,6 +85,8 @@ type Quanta interface {
 	Reconnect()
 
 	GetBlockTime(blockId int64) (time.Time, error)
+
+	GetAccountFromPubKey(pubKey string) (string, error)
 }
 
 func NewQuanta(options QuantaClientOptions) (Quanta, error) {

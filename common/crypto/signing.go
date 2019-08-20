@@ -154,6 +154,26 @@ func VerifyMessage(msg interface{}, publicKey string, signature string) bool {
 	return pub == publicKey
 }
 
+func GetPublicKey(msg interface{}, signature string) (string, error) {
+	bData := new(bytes.Buffer)
+	json.NewEncoder(bData).Encode(msg)
+	digest := sha256.Sum256(bData.Bytes())
+
+	sig, err := hex.DecodeString(signature)
+	p, _, err := btcec.RecoverCompact(btcec.S256(), sig, digest[:])
+
+	if err != nil {
+		return "", nil
+	}
+
+	pub, err := GetGraphenePublicKey(p)
+	if err != nil {
+		return "", nil
+	}
+
+	return pub, nil
+}
+
 func Verify(input []byte, sig []byte, publicKey string) error {
 	fmt.Println("lenght = ", publicKey, len(publicKey))
 	if len(sig) != 64 {

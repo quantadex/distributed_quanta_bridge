@@ -683,3 +683,26 @@ func (q *QuantaGraphene) ProcessDeposit(deposit *coin.Deposit, proposed string) 
 	}
 	return db.ChangeSubmitQueue(q.Db, deposit.Tx, txe, db.DEPOSIT, deposit.BlockHash)
 }
+
+func (q *QuantaGraphene) GetAccountFromPubKey(pubKey string) (string, error) {
+	config, err := q.Database.GetKeyReferences(pubKey)
+	if err != nil {
+		return "", err
+	}
+	accountID := config[0][0]
+
+	rawMsg, err := q.Database.GetObjects(accountID)
+	if err != nil {
+		return "", err
+	}
+	if rawMsg == nil {
+		return "", errors.New("account not found")
+	}
+
+	account := &Object{}
+	err = json.Unmarshal(rawMsg[0], &account)
+	if err != nil {
+		return "", err
+	}
+	return account.Name, nil
+}

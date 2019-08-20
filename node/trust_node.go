@@ -63,6 +63,7 @@ type TrustNode struct {
 	listener listener.Listener
 	restApi  *Server
 	config   common.Config
+	Webhook  *Webhook
 
 	doneChan chan bool
 }
@@ -184,6 +185,7 @@ func initNode(config common.Config, secrets common.Secrets, debugDb bool) (*Trus
 	db.MigrateTx(node.rDb)
 	db.MigrateKv(node.rDb)
 	db.MigrateXC(node.rDb)
+	db.MigrateW(node.rDb)
 
 	blackListEth := crypto.GetBlackListedUsersByBlockchain(config.BlackList, coin.BLOCKCHAIN_ETH)
 	eth, err := coin.NewEthereumCoin(config.EthereumNetworkId, config.EthereumRpc, secrets.EthereumKeyStore, config.Erc20Mapping, config.EthWithdrawMin, config.EthWithdrawFee, config.EthWithdrawGasFee, blackListEth)
@@ -372,6 +374,9 @@ func (n *TrustNode) registerNode(config common.Config) bool {
 	}
 	n.restApi = NewApiServer(n, blockchain, pubKey, config.ListenIp, n.db, n.rDb, fmt.Sprintf(":%d", config.ExternalListenPort), n.log)
 	go n.restApi.Start()
+
+	n.Webhook = NewWebhook(n)
+	go n.Webhook.Start()
 
 	return true
 }
