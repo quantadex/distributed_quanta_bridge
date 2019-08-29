@@ -4,7 +4,9 @@ import (
 	"fmt"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/pkg/errors"
+	"github.com/quantadex/distributed_quanta_bridge/node/webhook"
 	"github.com/quantadex/distributed_quanta_bridge/trust/coin"
+	"github.com/quantadex/distributed_quanta_bridge/trust/control"
 	"github.com/quantadex/distributed_quanta_bridge/trust/db"
 	"math/big"
 	"strconv"
@@ -134,11 +136,15 @@ func (c *EthereumSync) FindAllAndConfirm() error {
 		for _, d := range tx {
 			if d.BlockHash == blockHash {
 				if confirm > c.ethMinConfirm {
+					c.eventsChan <- webhook.Event{control.Deposit_In_Consensus, t.To, t.Tx}
+
 					err := db.ChangeSubmitState(c.rDb, d.Tx, db.SUBMIT_CONSENSUS, db.DEPOSIT, d.BlockHash)
 					if err != nil {
 						return errors.Wrap(err, "Could not change the submit state to consensus")
 					}
 				} else {
+					c.eventsChan <- webhook.Event{control.Deposit_Wait_For_Confirmation, t.To, t.Tx}
+
 					submitState := db.WAIT_FOR_CONFIRMATION + " " + strconv.Itoa(int(confirm)) + "/" + strconv.Itoa(int(c.ethMinConfirm))
 					err := db.ChangeSubmitState(c.rDb, d.Tx, submitState, db.DEPOSIT, blockHash)
 					if err != nil {

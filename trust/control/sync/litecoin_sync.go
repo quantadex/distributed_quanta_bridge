@@ -4,7 +4,9 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/pkg/errors"
+	"github.com/quantadex/distributed_quanta_bridge/node/webhook"
 	"github.com/quantadex/distributed_quanta_bridge/trust/coin"
+	"github.com/quantadex/distributed_quanta_bridge/trust/control"
 	"github.com/quantadex/distributed_quanta_bridge/trust/db"
 	"math/big"
 	"strconv"
@@ -79,11 +81,15 @@ func (c *LitecoinSync) FindAndConfirm(tx db.Transaction, blockHash string, confi
 			return errors.Wrap(err, "Could not change state to orphan")
 		}
 	} else if confirmations > c.ltcMinConfirm {
+		c.eventsChan <- webhook.Event{control.Deposit_In_Consensus, tx.To, tx.Tx}
+
 		err := db.ChangeSubmitState(c.rDb, tx.Tx, db.SUBMIT_CONSENSUS, db.DEPOSIT, blockHash)
 		if err != nil {
 			return errors.Wrap(err, "Could not change state to consensus")
 		}
 	} else {
+		c.eventsChan <- webhook.Event{control.Deposit_Wait_For_Confirmation, tx.To, tx.Tx}
+
 		submitState := db.WAIT_FOR_CONFIRMATION + " " + strconv.Itoa(int(confirmations)) + "/" + strconv.Itoa(int(c.ltcMinConfirm))
 		err := db.ChangeSubmitState(c.rDb, tx.Tx, submitState, db.DEPOSIT, blockHash)
 		if err != nil {

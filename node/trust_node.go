@@ -13,6 +13,7 @@ import (
 	"github.com/quantadex/distributed_quanta_bridge/common/manifest"
 	"github.com/quantadex/distributed_quanta_bridge/common/queue"
 	"github.com/quantadex/distributed_quanta_bridge/node/common"
+	"github.com/quantadex/distributed_quanta_bridge/node/webhook"
 	"github.com/quantadex/distributed_quanta_bridge/trust/coin"
 	"github.com/quantadex/distributed_quanta_bridge/trust/control"
 	"github.com/quantadex/distributed_quanta_bridge/trust/db"
@@ -63,7 +64,7 @@ type TrustNode struct {
 	listener listener.Listener
 	restApi  *Server
 	config   common.Config
-	Webhook  *Webhook
+	webhook  webhook.WebhookInterface
 
 	doneChan chan bool
 }
@@ -186,6 +187,7 @@ func initNode(config common.Config, secrets common.Secrets, debugDb bool) (*Trus
 	db.MigrateKv(node.rDb)
 	db.MigrateXC(node.rDb)
 	db.MigrateW(node.rDb)
+	db.MigrateFM(node.rDb)
 
 	blackListEth := crypto.GetBlackListedUsersByBlockchain(config.BlackList, coin.BLOCKCHAIN_ETH)
 	eth, err := coin.NewEthereumCoin(config.EthereumNetworkId, config.EthereumRpc, secrets.EthereumKeyStore, config.Erc20Mapping, config.EthWithdrawMin, config.EthWithdrawFee, config.EthWithdrawGasFee, blackListEth)
@@ -287,6 +289,8 @@ func initNode(config common.Config, secrets common.Secrets, debugDb bool) (*Trus
 
 	node.config = config
 
+	node.webhook = webhook.NewWebhook(node.rDb)
+
 	return node, true
 }
 
@@ -375,8 +379,7 @@ func (n *TrustNode) registerNode(config common.Config) bool {
 	n.restApi = NewApiServer(n, blockchain, pubKey, config.ListenIp, n.db, n.rDb, fmt.Sprintf(":%d", config.ExternalListenPort), n.log)
 	go n.restApi.Start()
 
-	n.Webhook = NewWebhook(n)
-	go n.Webhook.Start()
+	go n.webhook.ProcessEvents()
 
 	return true
 }
@@ -467,7 +470,8 @@ func (n *TrustNode) initTrust(config common.Config) {
 		n.nodeID,
 		coinInfo,
 		map[string]int64{coin.BLOCKCHAIN_ETH: 0, coin.BLOCKCHAIN_BTC: 0, coin.BLOCKCHAIN_LTC: 0, coin.BLOCKCHAIN_BCH: 0},
-		config.Mode)
+		config.Mode,
+		n.webhook.GetEventsChan())
 
 	n.cTQ = control.NewCoinToQuanta(n.log,
 		n.db,
@@ -487,7 +491,8 @@ func (n *TrustNode) initTrust(config common.Config) {
 			NetworkUrl: config.NetworkUrl,
 			Network:    config.ChainId,
 			Issuer:     config.IssuerAddress,
-		})
+		},
+		n.webhook.GetEventsChan())
 }
 
 /**

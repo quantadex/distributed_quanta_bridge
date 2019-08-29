@@ -5,6 +5,7 @@ import (
 	"github.com/quantadex/distributed_quanta_bridge/common"
 	"github.com/quantadex/distributed_quanta_bridge/common/kv_store"
 	"github.com/quantadex/distributed_quanta_bridge/common/logger"
+	"github.com/quantadex/distributed_quanta_bridge/node/webhook"
 	"github.com/quantadex/distributed_quanta_bridge/trust/coin"
 	"github.com/quantadex/distributed_quanta_bridge/trust/control"
 	"github.com/quantadex/distributed_quanta_bridge/trust/db"
@@ -31,7 +32,8 @@ type DepositSync struct {
 	fnFindAllAndConfirm  func() error
 	fnGetMinConfirmation func() int64
 
-	doneChan chan bool
+	eventsChan chan webhook.Event
+	doneChan   chan bool
 }
 
 func NewDepositSync(coin coin.Coin,
@@ -49,6 +51,10 @@ func NewDepositSync(coin coin.Coin,
 		coinInfo[v] = asset
 	}
 
+	w := webhook.NewWebhook(rDb)
+
+	go w.ProcessEvents()
+
 	return &DepositSync{
 		coinChannel:   coin,
 		quantaChannel: quantaChannel,
@@ -58,6 +64,7 @@ func NewDepositSync(coin coin.Coin,
 		doneChan:      make(chan bool, 1),
 		logger:        logger,
 		blockStartID:  blockStartID,
+		eventsChan:    w.GetEventsChan(),
 	}
 }
 
@@ -87,6 +94,9 @@ func (c *DepositSync) DoLoop(blockIDs []int64) []*coin.Deposit {
 	err = db.AddPendingDeposits(c.rDb, pending)
 	if err != nil {
 		c.logger.Error("could not insert pending transactions to database")
+	}
+	for _, p := range pending {
+		c.eventsChan <- webhook.Event{control.Deposit_Pending, p.QuantaAddr, p.Tx}
 	}
 	if blockIDs != nil {
 		err := c.fnFindAllAndConfirm()

@@ -92,14 +92,17 @@ func (server *Server) getQuantaAddr(msg, sig string) (string, error) {
 
 func (server *Server) createOrListWebhookHandler(w http.ResponseWriter, r *http.Request) {
 	sig := r.Header.Get("Signature")
-	msg := r.Header.Get("Msg")
+	date := r.Header.Get("Date")
+	msg := r.URL.String() + date
 
 	quanta, err := server.getQuantaAddr(msg, sig)
 	if err != nil {
-		w.WriteHeader(http.StatusBadRequest)
+		w.WriteHeader(http.StatusUnauthorized)
 		w.Write([]byte("could not get quanta address: " + err.Error()))
 		return
 	}
+
+	var data []byte
 
 	if r.Method == "POST" {
 		bodyBytes, _ := ioutil.ReadAll(r.Body)
@@ -115,13 +118,13 @@ func (server *Server) createOrListWebhookHandler(w http.ResponseWriter, r *http.
 		id := strconv.Itoa(int(server.counter))
 		err = server.db.AddWebhook(id, reqMsg.URL, reqMsg.Events, quanta)
 		if err != nil {
-			w.WriteHeader(http.StatusBadRequest)
+			w.WriteHeader(http.StatusInternalServerError)
 			w.Write([]byte("could not add to database"))
 			return
 		}
 		server.counter++
 		value := server.db.GetWebhookById(id)
-		data, _ := json.Marshal(value)
+		data, _ = json.Marshal(value)
 		w.Write(data)
 
 	} else if r.Method == "GET" {
@@ -129,7 +132,7 @@ func (server *Server) createOrListWebhookHandler(w http.ResponseWriter, r *http.
 		if values == nil {
 			values = []db.Webhook{}
 		}
-		data, _ := json.Marshal(values)
+		data, _ = json.Marshal(values)
 		w.Write(data)
 	}
 }
@@ -139,18 +142,20 @@ func (server *Server) deleteWebhookHandler(w http.ResponseWriter, r *http.Reques
 	id := strings.ToUpper(vars["webhookId"])
 
 	sig := r.Header.Get("Signature")
-	msg := r.Header.Get("Msg")
+	date := r.Header.Get("Date")
+	msg := r.URL.String() + date
+
 	quanta, err := server.getQuantaAddr(msg, sig)
 	if err != nil {
-		w.WriteHeader(http.StatusBadRequest)
+		w.WriteHeader(http.StatusUnauthorized)
 		w.Write([]byte("could not get quanta address: " + err.Error()))
 		return
 	}
 
 	err = db.RemoveWebhook(server.db, id, quanta)
 	if err != nil {
-		w.WriteHeader(http.StatusBadRequest)
-		w.Write([]byte("could not remove webhook"))
+		w.WriteHeader(http.StatusInternalServerError)
+		w.Write([]byte("could not remove webhook_process"))
 		return
 	}
 	w.WriteHeader(http.StatusNoContent)

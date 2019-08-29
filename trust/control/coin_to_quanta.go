@@ -10,6 +10,7 @@ import (
 	"github.com/quantadex/distributed_quanta_bridge/common/logger"
 	"github.com/quantadex/distributed_quanta_bridge/common/manifest"
 	"github.com/quantadex/distributed_quanta_bridge/common/queue"
+	"github.com/quantadex/distributed_quanta_bridge/node/webhook"
 	"github.com/quantadex/distributed_quanta_bridge/trust/coin"
 	"github.com/quantadex/distributed_quanta_bridge/trust/db"
 	"github.com/quantadex/distributed_quanta_bridge/trust/key_manager"
@@ -40,6 +41,14 @@ const (
 
 const DEPOSIT_STATUS_ = "deposit_status_"
 
+const (
+	Deposit_Successsful           = "Deposit_Successful"
+	Deposit_In_Consensus          = "Deposit_In_Consensus"
+	Deposit_Pending               = "Deposit_Pending"
+	Deposit_Wait_For_Confirmation = "Deposit_Wait_For_Confirmation"
+	Deposit_Failed                = "Deposit_Failed"
+)
+
 /**
  * CoinToQuanta
  *
@@ -63,6 +72,8 @@ type CoinToQuanta struct {
 	nodeID    int
 	C2QOptions
 	quantaOptions quanta.QuantaClientOptions
+
+	eventsChan chan webhook.Event
 }
 
 type C2QOptions struct {
@@ -90,7 +101,7 @@ func NewCoinToQuanta(log logger.Logger,
 	queue_ queue.Queue,
 	options C2QOptions,
 
-	quantaOptions quanta.QuantaClientOptions) *CoinToQuanta {
+	quantaOptions quanta.QuantaClientOptions, eventsChan chan webhook.Event) *CoinToQuanta {
 	res := &CoinToQuanta{C2QOptions: options}
 	res.logger = log
 	res.quantaChannel = q
@@ -103,6 +114,7 @@ func NewCoinToQuanta(log logger.Logger,
 	res.readyChan = make(chan bool, 1)
 	res.quantaOptions = quantaOptions
 	res.counter = metric.NewCounter("24h1m")
+	res.eventsChan = eventsChan
 	counterName := DEPOSIT_STATUS_ + strconv.Itoa(nodeID)
 	v := expvar.Get(counterName)
 	if v == nil {
@@ -297,12 +309,16 @@ func (c *CoinToQuanta) processSubmissions() {
 
 		resp, err := c.quantaChannel.Broadcast(v.SubmitTx)
 		if err != nil {
+			c.eventsChan <- webhook.Event{Deposit_Failed, v.To, v.Tx}
+
 			msg := quanta.ErrorString(err, false)
 			c.logger.Error("could not submit transaction " + msg)
 			if strings.Contains(msg, "tx_bad_seq") || strings.Contains(msg, "op_malformed") {
 				db.ChangeSubmitState(c.rDb, v.Tx, db.SUBMIT_FATAL, db.DEPOSIT, v.BlockHash)
 			}
 		} else {
+			c.eventsChan <- webhook.Event{Deposit_Successsful, v.To, v.Tx}
+
 			c.logger.Infof("Successful tx submission %s,remove %s", "", k)
 
 			txHash := strconv.Itoa(int(resp.BlockNum)) + "_" + strconv.Itoa(int(resp.TrxNum))

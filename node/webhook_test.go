@@ -1,22 +1,26 @@
 package main
 
 import (
-	"bytes"
-	"crypto/sha256"
-	"encoding/hex"
 	"encoding/json"
 	"fmt"
-	"github.com/btcsuite/btcutil"
-	"github.com/h2non/gock"
-	"github.com/magiconair/properties/assert"
+	"github.com/quantadex/distributed_quanta_bridge/common/logger"
 	"github.com/quantadex/distributed_quanta_bridge/common/test"
-	"github.com/scorum/bitshares-go/sign"
-	"io/ioutil"
-	"log"
-	"net/http"
+	"github.com/quantadex/distributed_quanta_bridge/node/webhook"
+	"github.com/quantadex/distributed_quanta_bridge/webhook_process"
+	"github.com/stretchr/testify/assert"
+	"strconv"
 	"testing"
 	"time"
 )
+
+type WebHookTest struct {
+	f func(event string)
+}
+
+func (w *WebHookTest) ProcessEvent(event string) error {
+	w.f(event)
+	return nil
+}
 
 func TestWebhook(t *testing.T) {
 	r := StartRegistry(3, ":6000")
@@ -24,71 +28,28 @@ func TestWebhook(t *testing.T) {
 	defer func() {
 		StopNodes(nodes, []int{0, 1, 2})
 		StopRegistry(r)
-		gock.Off()
 	}()
 	time.Sleep(time.Millisecond * 250)
+	eventExpect := []string{"Deposit_Pending", "Deposit_Successful"}
+	eventNum := 0
+	testWebhook := &WebHookTest{f: func(event string) {
+		// if event is not what we expect
+		var e *webhook.Event
+		json.Unmarshal([]byte(event), &e)
+		fmt.Println(e.Name)
+		assert.Equal(t, e.Name, eventExpect[eventNum])
+		eventNum++
+	}}
 
-	msg := "https://httpbin.org/post" + time.Now().String()
-	sig, err := SignMessage("5JyYu5DCXbUznQRSx3XT2ZkjFxQyLtMuJ3y6bGLKC3TZWPHMDxj", msg)
-	assert.Equal(t, err, nil)
+	log, _ := logger.NewLogger(strconv.Itoa(5300))
+	webhook_client := webhook_process.NewWebhookServerCustom(fmt.Sprintf(":%d", 5300), log, "http://localhost:5200", testWebhook, "5JyYu5DCXbUznQRSx3XT2ZkjFxQyLtMuJ3y6bGLKC3TZWPHMDxj", `{"url": "http://localhost:5300/events", "events":["Deposit_Successful", "Deposit_Pending"]}`)
 
-	client := &http.Client{}
-
-	//post
-	body := bytes.NewBuffer([]byte(`{"url": "https://httpbin.org/post", "events":["Deposit.Successful"]}`))
-	req, err := http.NewRequest("POST", "http://localhost:5200/api/webhook", body)
-	req.Header.Set("Signature", sig)
-	req.Header.Set("Msg", msg)
-
-	resp, err := client.Do(req)
-	if err != nil {
-		log.Fatal(err)
-	}
-	bodyText, err := ioutil.ReadAll(resp.Body)
-	fmt.Println("post data ", resp.StatusCode, string(bodyText))
-
-	//get
-	req, err = http.NewRequest("GET", "http://localhost:5200/api/webhook", nil)
-	req.Header.Set("Signature", sig)
-	req.Header.Set("Msg", msg)
-
-	resp, err = client.Do(req)
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	bodyText, err = ioutil.ReadAll(resp.Body)
-	fmt.Println("get data ", resp.StatusCode, string(bodyText))
-
-	nodes[0].Webhook.EventChan <- map[string]string{"Deposit.Successful": "pooja"}
-
+	go webhook_client.Start()
 	time.Sleep(time.Second * 5)
 
-	//delete
-	req, err = http.NewRequest("DELETE", "http://localhost:5200/api/webhook/0", nil)
-	req.Header.Set("Signature", sig)
-	req.Header.Set("Msg", msg)
+	nodes[0].webhook.GetEventsChan() <- webhook.Event{"Deposit_Pending", "pooja", "hgcdhg"}
+	nodes[0].webhook.GetEventsChan() <- webhook.Event{"Deposit_Successful", "pooja", "hgcdhg"}
+	time.Sleep(time.Second * 10)
 
-	resp, err = client.Do(req)
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	fmt.Println("delete data ", resp.StatusCode)
-}
-
-func SignMessage(wif, msg string) (string, error) {
-	w, err := btcutil.DecodeWIF(wif)
-	if err != nil {
-		return "", err
-	}
-
-	bData := new(bytes.Buffer)
-	json.NewEncoder(bData).Encode(msg)
-
-	digest := sha256.Sum256(bData.Bytes())
-
-	sig := sign.SignBufferSha256(digest[:], w.PrivKey.ToECDSA())
-	sigHex := hex.EncodeToString(sig)
-	return sigHex, err
+	webhook_client.Stop()
 }

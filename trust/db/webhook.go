@@ -1,7 +1,7 @@
 package db
 
 import (
-	"github.com/go-pg/pg"
+	"errors"
 )
 
 type Webhook struct {
@@ -16,11 +16,6 @@ func MigrateW(db *DB) error {
 	if err != nil {
 		return err
 	}
-
-	db.RunInTransaction(func(tx *pg.Tx) error {
-		_, err := tx.Exec("ALTER TABLE webhooks ADD COLUMN quanta text")
-		return err
-	})
 	return err
 }
 
@@ -51,18 +46,20 @@ func (db *DB) GetWebhookById(id string) Webhook {
 	return tx
 }
 
-func (db *DB) GetURLForQuanta(quanta, event string) string {
-	var tx Webhook
+func (db *DB) GetWebhookByQuantaAndEvent(quanta, event string) ([]Webhook, error) {
+	var tx, res []Webhook
 	err := db.Model(&tx).Where("quanta=?", quanta).Select()
 	if err != nil {
-		return ""
+		return tx, err
 	}
-	for _, e := range tx.Events {
-		if e == event {
-			return tx.URL
+	for _, t := range tx {
+		for _, e := range t.Events {
+			if e == event {
+				res = append(res, t)
+			}
 		}
 	}
-	return ""
+	return res, nil
 }
 
 func RemoveWebhook(db *DB, id, quanta string) error {
@@ -70,8 +67,13 @@ func RemoveWebhook(db *DB, id, quanta string) error {
 	return err
 }
 
+// de-dup by url - 1 registration per url
 func (db *DB) AddWebhook(id string, url string, events []string, quanta string) error {
+	exists, err := db.Model(&Webhook{}).Where("url=?", url).Exists()
+	if exists {
+		return errors.New("only one registration per url")
+	}
 	tx := &Webhook{id, url, events, quanta}
-	_, err := db.Model(tx).Insert()
+	_, err = db.Model(tx).Insert()
 	return err
 }
