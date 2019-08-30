@@ -28,10 +28,10 @@ type WebhookClient struct {
 	id          string
 }
 
-func NewWebhookServer(url string, logger logger.Logger, restApiUrl string) *WebhookClient {
+func NewWebhookServer(url string, logger logger.Logger, restApiUrl, privateKey, request string) *WebhookClient {
 	return &WebhookClient{url: url, logger: logger,
 		httpService: &http.Server{Addr: url},
-		facade:      NewFacade(), restApiUrl: restApiUrl}
+		facade:      NewFacade(), restApiUrl: restApiUrl, privateKey: privateKey, request: request}
 }
 
 func NewWebhookServerCustom(url string, logger logger.Logger, restApiUrl string, facade ProcessInterface, privateKey string, request string) *WebhookClient {
@@ -40,8 +40,14 @@ func NewWebhookServerCustom(url string, logger logger.Logger, restApiUrl string,
 		facade:      facade, restApiUrl: restApiUrl, privateKey: privateKey, request: request}
 }
 
+type RequestMsg struct {
+	URL    string   `json:"url"`
+	Events []string `json:"events"`
+}
+
 func (server *WebhookClient) Start() {
 	// Register the webhook
+
 	err := server.registerWebhook()
 	if err != nil {
 		server.logger.Error("Could not register webhook: " + err.Error())

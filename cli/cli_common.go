@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"github.com/go-pg/pg"
 	"github.com/op/go-logging"
+	"github.com/quantadex/distributed_quanta_bridge/common/crypto"
 	"github.com/quantadex/distributed_quanta_bridge/common/kv_store"
 	"github.com/quantadex/distributed_quanta_bridge/common/logger"
 	"github.com/quantadex/distributed_quanta_bridge/node/common"
@@ -13,11 +14,10 @@ import (
 	"github.com/quantadex/distributed_quanta_bridge/trust/db"
 	"github.com/quantadex/distributed_quanta_bridge/trust/quanta"
 	"github.com/spf13/viper"
+	"golang.org/x/crypto/ssh/terminal"
 	"io/ioutil"
 	"strconv"
 	"syscall"
-	"github.com/quantadex/distributed_quanta_bridge/common/crypto"
-	"golang.org/x/crypto/ssh/terminal"
 )
 
 func Setup() (*common.Config, quanta.Quanta, *db.DB, kv_store.KVStore, logger.Logger, *common.Secrets) {
@@ -97,6 +97,8 @@ func Setup() (*common.Config, quanta.Quanta, *db.DB, kv_store.KVStore, logger.Lo
 	db.MigrateTx(rDb)
 	db.MigrateKv(rDb)
 	db.MigrateXC(rDb)
+	db.MigrateW(rDb)
+	db.MigrateFM(rDb)
 
 	quanta, err := quanta.NewQuantaGraphene(quanta.QuantaClientOptions{
 		log,

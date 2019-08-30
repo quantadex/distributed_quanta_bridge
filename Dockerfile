@@ -28,11 +28,13 @@ COPY --from=builder $OUTDIR/cli/bitcoin/bitcoin /usr/bin/bitcoin_sync
 COPY --from=builder $OUTDIR/cli/ethereum/ethereum /usr/bin/ethereum_sync
 COPY --from=builder $OUTDIR/cli/litecoin/litecoin /usr/bin/litecoin_sync
 COPY --from=builder $OUTDIR/cli/bch/bch /usr/bin/bch_sync
+COPY --from=builder $OUTDIR/cli/event_notifier/event_notifier /usr/bin/webhook_process
 
 RUN ["chmod", "+x", "/usr/bin/quanta-bridge"]
 RUN ["chmod", "+x", "/usr/bin/ethereum_sync"]
 RUN ["chmod", "+x", "/usr/bin/bitcoin_sync"]
 RUN ["chmod", "+x", "/usr/bin/litecoin_sync"]
 RUN ["chmod", "+x", "/usr/bin/bch_sync"]
+RUN ["chmod", "+x", "/usr/bin/webhook_process"]
 
 # ENTRYPOINT ["/usr/bin/quanta-bridge", "-config", "/data/crosschain.yml"]
