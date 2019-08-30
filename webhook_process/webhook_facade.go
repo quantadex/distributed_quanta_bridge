@@ -4,9 +4,9 @@ type Facade struct {
 	webPush ProcessInterface
 }
 
-func NewFacade() *Facade {
+func NewFacade(credFile string) *Facade {
 	return &Facade{
-		webPush: NewWebPush(),
+		webPush: NewWebPush(credFile),
 	}
 }
 

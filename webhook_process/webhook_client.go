@@ -28,10 +28,10 @@ type WebhookClient struct {
 	id          string
 }
 
-func NewWebhookServer(url string, logger logger.Logger, restApiUrl, privateKey, request string) *WebhookClient {
+func NewWebhookServer(url string, logger logger.Logger, restApiUrl, privateKey, request, credFile string) *WebhookClient {
 	return &WebhookClient{url: url, logger: logger,
 		httpService: &http.Server{Addr: url},
-		facade:      NewFacade(), restApiUrl: restApiUrl, privateKey: privateKey, request: request}
+		facade:      NewFacade(credFile), restApiUrl: restApiUrl, privateKey: privateKey, request: request}
 }
 
 func NewWebhookServerCustom(url string, logger logger.Logger, restApiUrl string, facade ProcessInterface, privateKey string, request string) *WebhookClient {

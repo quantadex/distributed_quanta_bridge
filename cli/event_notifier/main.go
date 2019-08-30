@@ -10,6 +10,7 @@ import (
 	"github.com/quantadex/distributed_quanta_bridge/webhook_process"
 	"github.com/spf13/viper"
 	"io/ioutil"
+	"path/filepath"
 	"strconv"
 )
 
@@ -18,6 +19,7 @@ func main() {
 	request := flag.String("request", "something.json", "request")
 	stop := flag.String("stop", "", "stop")
 	configFile := flag.String("config", "config.yml", "configuration file")
+	credFile := flag.String("credentials", "firebase-adminsdk.json", "credentials file")
 	flag.Parse()
 
 	viper.SetConfigType("yaml")
@@ -60,7 +62,17 @@ func main() {
 		}
 	}
 
-	process := webhook_process.NewWebhookServer(":5300", log, fmt.Sprintf("http://localhost:%d", config.ExternalListenPort), *privKey, string(js))
+	var file string
+	if *credFile != "" {
+		path, err := filepath.Abs(filepath.Dir(*credFile))
+		if err != nil {
+			panic(err)
+		}
+
+		file = path + "/firebase-adminsdk.json"
+	}
+
+	process := webhook_process.NewWebhookServer(":5300", log, fmt.Sprintf("http://localhost:%d", config.ExternalListenPort), *privKey, string(js), file)
 	process.Start()
 
 	if *stop != "" {

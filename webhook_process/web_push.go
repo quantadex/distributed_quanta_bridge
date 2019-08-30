@@ -8,14 +8,14 @@ import (
 	"firebase.google.com/go/messaging"
 	"fmt"
 	"google.golang.org/api/option"
-	"path/filepath"
 )
 
 type WebPush struct {
-	app    *firebase.App
-	client *messaging.Client
-	store  *firestore.Client
-	ctx    context.Context
+	app      *firebase.App
+	client   *messaging.Client
+	store    *firestore.Client
+	ctx      context.Context
+	credFile string
 }
 
 type Event struct {
@@ -24,8 +24,8 @@ type Event struct {
 	TxId   string
 }
 
-func NewWebPush() *WebPush {
-	w := &WebPush{}
+func NewWebPush(credFile string) *WebPush {
+	w := &WebPush{credFile: credFile}
 	err := w.initialize()
 	if err != nil {
 		panic(err)
@@ -34,13 +34,7 @@ func NewWebPush() *WebPush {
 }
 
 func (w *WebPush) initialize() error {
-	path, err := filepath.Abs(filepath.Dir("firebase-adminsdk.json"))
-	if err != nil {
-		return err
-	}
-
-	file := path + "/firebase-adminsdk.json"
-	opt := option.WithCredentialsFile(file)
+	opt := option.WithCredentialsFile(w.credFile)
 	ctx := context.Background()
 	w.ctx = ctx
 	conf := &firebase.Config{DatabaseURL: "https://quantadice-01.firebaseio.com"}
