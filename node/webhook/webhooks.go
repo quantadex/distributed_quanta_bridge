@@ -46,7 +46,7 @@ func (w *Webhook) postDataAndCheckFailed(event Event, url string) {
 	}
 	err = w.postData(url, string(eventByte))
 	if err != nil {
-		w.log.Infof("Failed message: %s for %s", event.Name, event.Quanta)
+		w.log.Infof("Failed message: %s for %s error: %s", event.Name, event.Quanta, err.Error())
 
 		failed, err := w.rDb.GetFailedMessageByIdAndEvent(event.TxId, event.Name)
 		if err != nil {
