@@ -7,6 +7,8 @@ import (
 	"firebase.google.com/go"
 	"firebase.google.com/go/messaging"
 	"fmt"
+	"google.golang.org/api/option"
+	"path/filepath"
 )
 
 type WebPush struct {
@@ -32,12 +34,18 @@ func NewWebPush() *WebPush {
 }
 
 func (w *WebPush) initialize() error {
-	//opt := option.WithCredentialsFile("quantadice-01-firebase-adminsdk-35ckj-7577f12803.json")
+	path, err := filepath.Abs(filepath.Dir("firebase-adminsdk.json"))
+	if err != nil {
+		return err
+	}
+
+	file := path + "/firebase-adminsdk.json"
+	opt := option.WithCredentialsFile(file)
 	ctx := context.Background()
 	w.ctx = ctx
 	conf := &firebase.Config{DatabaseURL: "https://quantadice-01.firebaseio.com"}
 
-	app, err := firebase.NewApp(ctx, conf)
+	app, err := firebase.NewApp(ctx, conf, opt)
 	if err != nil {
 		return err
 	}
