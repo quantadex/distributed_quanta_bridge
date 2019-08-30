@@ -72,7 +72,7 @@ func main() {
 		file = path + "/firebase-adminsdk.json"
 	}
 
-	process := webhook_process.NewWebhookServer(":5300", log, fmt.Sprintf("http://localhost:%d", config.ExternalListenPort), *privKey, string(js), file)
+	process := webhook_process.NewWebhookServer(":5300", log, fmt.Sprintf("http://%s:%d", config.ListenIp, config.ExternalListenPort), *privKey, string(js), file)
 	process.Start()
 
 	if *stop != "" {
