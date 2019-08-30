@@ -4,6 +4,7 @@ USER root:root
 
 RUN apk add --no-cache gcc musl-dev git git-lfs
 RUN go get -u github.com/golang/dep/cmd/dep
+RUN go get -u firebase.google.com/go
 WORKDIR $GOPATH/src/github.com/quantadex
 
 ARG token
