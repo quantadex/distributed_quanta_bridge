@@ -5,8 +5,10 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/quantadex/distributed_quanta_bridge/common/listener"
 	"github.com/quantadex/distributed_quanta_bridge/common/manifest"
 	"github.com/quantadex/distributed_quanta_bridge/common/queue"
+	"github.com/quantadex/distributed_quanta_bridge/trust/key_manager"
 	"github.com/quantadex/quanta_book/common"
 	"github.com/quantadex/quanta_book/consensus"
 	"github.com/quantadex/quanta_book/consensus/cosi"
@@ -15,26 +17,28 @@ import (
 )
 
 type TrustPeerNode struct {
-	man    *manifest.Manifest
-	peer   PeerContact
-	nodeID int
-	q      queue.Queue
+	man       *manifest.Manifest
+	peer      PeerContact
+	nodeID    int
+	q         queue.Queue
 	queueName string
-	apiUrl string
+	apiUrl    string
+	km        key_manager.KeyManager
 }
 
-func NewTrustPeerNode(man *manifest.Manifest, peer PeerContact, nodeID int, q queue.Queue, queueName string, apiUrl string) *TrustPeerNode {
+func NewTrustPeerNode(man *manifest.Manifest, peer PeerContact, nodeID int, q queue.Queue, queueName string, apiUrl string, km key_manager.KeyManager) *TrustPeerNode {
 	//fmt.Printf("setup peer node\n")
 	//for _, p := range man.Nodes {
 	//	println(p.Port)
 	//}
 	return &TrustPeerNode{
-		man:    man,
-		peer:   peer,
-		nodeID: nodeID,
-		q:      q,
+		man:       man,
+		peer:      peer,
+		nodeID:    nodeID,
+		q:         q,
 		queueName: queueName,
-		apiUrl: apiUrl,
+		apiUrl:    apiUrl,
+		km:        km,
 	}
 }
 
@@ -44,13 +48,15 @@ func (t *TrustPeerNode) GetMsg() *cosi.CosiMessage {
 		//fmt.Printf("queue is empty\n")
 		return nil
 	}
+	listenerData := data.(listener.ListenerData)
 
 	msg := &cosi.CosiMessage{}
-	err = json.Unmarshal(data, msg)
+	err = json.Unmarshal(listenerData.Body, msg)
 	if err != nil {
 		fmt.Printf("Unable to parse json\n")
 		return nil
 	}
+
 	return msg
 }
 
@@ -59,14 +65,17 @@ func (t *TrustPeerNode) SendMsg(destinationNodeID int, msg interface{}) error {
 	url := fmt.Sprintf("http://%s:%s%s", peer.IP, peer.Port, t.apiUrl)
 	//fmt.Println("Send to peer " + url)
 
-	//if signature := crypto.SignMessage(msg, t.peer.privateKey); signature != nil {
-	//msg.Signature = *signature
-	//println(signature)
-
 	data, err := json.Marshal(&msg)
 	if err != nil {
 		return errors.New("unable to marshall")
 	}
+
+	_, err = t.km.SignMessage(data)
+	if err != nil {
+		return err
+	}
+	//println(string(signature))
+
 	_, err = http.Post(url, "application/json", bytes.NewReader(data))
 	if err != nil {
 		println("Error! " + err.Error())

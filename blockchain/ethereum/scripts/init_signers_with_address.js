@@ -1,17 +1,18 @@
 const QuantaCrossChain = artifacts.require("QuantaCrossChain");
 
 var myaccounts = [
-    "0x0833030c730792fDD9b77Cc54F43d7921C356Bf1",
-    "0xe0006458963c3773B051E767C5C63FEe24Cd7Ff9",
-    "0xba7573C0e805ef71ACB7f1c4a55E7b0af416E96A"
+    "0xc010F4FF759605e792db672C2aF70fdCedB8D974",
+    "0xc020f640E9cCc0f3fc8D4e429aa8828BEB814853",
+    "0xc0305048615C1331F836298DC7e9Cc5079Cd6814"
 ]
 
 module.exports = function(callback) {
     QuantaCrossChain.deployed().then(function(instance) {
-        return web3.eth.getAccounts(function(err,accounts) {
-            console.log(instance, accounts)
-            instance.assignInitialSigners(myaccounts)
-            callback()
-        });
+        return instance.assignInitialSigners(myaccounts).then((err) => {
+            console.log(err)
+            callback(err)
+        })
+    }).catch((e) => {
+        callback(e)
     })
 }

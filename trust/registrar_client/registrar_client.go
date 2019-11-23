@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/quantadex/distributed_quanta_bridge/common/listener"
 	"github.com/quantadex/distributed_quanta_bridge/common/manifest"
 	"github.com/quantadex/distributed_quanta_bridge/common/msgs"
 	"github.com/quantadex/distributed_quanta_bridge/common/queue"
@@ -37,10 +38,11 @@ func (r *RegistrarClient) AttachQueue(queue queue.Queue) error {
 	return nil
 }
 
-func (r *RegistrarClient) RegisterNode(nodeIP string, nodePort string, km key_manager.KeyManager) error {
+// chainaddress is a map of blockchain -> public key (eg)    BTC -> "1m11123123213"
+func (r *RegistrarClient) RegisterNode(nodeIP string, nodePort string, externalPort string, km key_manager.KeyManager, chainaddress map[string]string) error {
 	msg := msgs.RegisterReq{}
 	nodeKey, _ := km.GetPublicKey()
-	msg.Body = msgs.NodeInfo{nodeIP, nodePort, nodeKey}
+	msg.Body = msgs.NodeInfo{nodeIP, nodePort, externalPort, nodeKey, chainaddress}
 
 	if signature := km.SignMessageObj(msg.Body); signature != nil {
 		msg.Signature = *signature
@@ -49,8 +51,8 @@ func (r *RegistrarClient) RegisterNode(nodeIP string, nodePort string, km key_ma
 		if err != nil {
 			return errors.New("unable to marshall")
 		}
-		http.Post(r.url+"/registry/api/register", "application/json", bytes.NewReader(data))
-		return nil
+		_, err = http.Post(r.url+"/registry/api/register", "application/json", bytes.NewReader(data))
+		return err
 	}
 	return errors.New("unable to sign message")
 }
@@ -58,7 +60,7 @@ func (r *RegistrarClient) RegisterNode(nodeIP string, nodePort string, km key_ma
 func (r *RegistrarClient) SendHealth(nodeState string, km key_manager.KeyManager) error {
 	msg := msgs.PingReq{}
 	nodeKey, _ := km.GetPublicKey()
-	msg.Body = msgs.PingBody{nodeState, nodeKey}
+	msg.Body = msgs.PingBody{nodeKey, nodeState}
 
 	if signature := km.SignMessageObj(msg.Body); signature != nil {
 		msg.Signature = *signature
@@ -97,8 +99,9 @@ func (r *RegistrarClient) GetManifest() *manifest.Manifest {
 	if err != nil {
 		return nil
 	}
+	listenerData := bodyBytes.(listener.ListenerData)
 
-	manifest, err := manifest.CreateManifestFromJSON(bodyBytes)
+	manifest, err := manifest.CreateManifestFromJSON(listenerData.Body)
 	if err != nil {
 		return nil
 	}

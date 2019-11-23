@@ -116,7 +116,7 @@ func (server *Server) receiveHealthCheck(w http.ResponseWriter, request *http.Re
 	err := json.NewDecoder(request.Body).Decode(&msg)
 
 	if err != nil {
-		fmt.Println(err)
+		fmt.Println("HealthCheck Decoding err: ", err)
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	}

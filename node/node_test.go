@@ -6,37 +6,102 @@ import (
 	"github.com/quantadex/distributed_quanta_bridge/common/test"
 	"github.com/quantadex/distributed_quanta_bridge/node/common"
 	"github.com/quantadex/distributed_quanta_bridge/registrar/service"
-	"github.com/quantadex/distributed_quanta_bridge/trust/coin"
+	"github.com/quantadex/distributed_quanta_bridge/trust/db"
 	"github.com/stretchr/testify/assert"
 	"os"
+	"path/filepath"
+	"strings"
 	"sync"
 	"testing"
 	"time"
-	"github.com/quantadex/distributed_quanta_bridge/trust/db"
 )
 
 func generateConfig(quanta *test.QuantaNodeSecrets, ethereum *test.EthereumTrustSecrets,
-	etherNet test.EthereumEnv, index int) *common.Config {
+	etherNet test.EthereumEnv, index int) (*common.Config, *common.Secrets) {
 	return &common.Config{
-		ExternalListenPort: 5200 + index,
-		ListenIp:           "0.0.0.0",
-		ListenPort:         5100 + index,
-		UsePrevKeys:        true,
-		KvDbName:           fmt.Sprintf("kv_db_%d", 5100+index),
-		CoinName:           "ETH",
-		IssuerAddress:      quanta.SourceAccount,
-		NodeKey:            quanta.NodeSecrets[index],
-		HorizonUrl:         "http://testnet-02.quantachain.io:8000/",
-		NetworkPassphrase:  "QUANTA Test Network ; September 2018",
-		RegistrarIp:        "localhost",
-		RegistrarPort:      5001,
-		EthereumNetworkId:  etherNet.NetworkId,
-		EthereumBlockStart: 0,
-		EthereumRpc:        etherNet.Rpc,
-		EthereumKeyStore:   ethereum.NodeSecrets[index],
-		EthereumTrustAddr:  ethereum.TrustContract,
-		DatabaseUrl:		fmt.Sprintf("postgres://postgres:@localhost/crosschain_%d",index),
-	}
+			ExternalListenPort: 5200 + index,
+			ListenIp:           "0.0.0.0",
+			ListenPort:         5100 + index,
+			UsePrevKeys:        true,
+			MinNodes:           2,
+
+			KvDbName:      fmt.Sprintf("kv_db_%d", 5100+index),
+			CoinMapping:   map[string]string{"BCH": "TESTISSUE8", "LTC": "TESTISSUE2", "BTC": "TESTISSUE3", "ETH": "TESTETH"},
+			IssuerAddress: quanta.SourceAccount,
+			NetworkUrl:    "ws://testnet-01.quantachain.io:8090",
+			ChainId:       "bb2aeb9eebaaa29d79ed81699ee49a912c19c59b9350f8f8d3d81b12fa178495",
+			RegistrarIp:   "localhost",
+			RegistrarPort: 6000,
+
+			EthereumNetworkId:    etherNet.NetworkId,
+			EthereumBlockStart:   0,
+			EthereumRpc:          etherNet.Rpc,
+			EthereumTrustAddr:    ethereum.TrustContract,
+			Erc20Mapping:         map[string]string{strings.ToLower("0xDfE1002c2e1AE5E8F4f34bf481900dAae5351992"): "DAI"},
+			EthMinConfirmation:   1,
+			EthDegradedThreshold: 2000,
+			EthFailureThreshold:  4000,
+			EthWithdrawMin:       0.00002,
+			EthWithdrawFee:       0.00001,
+
+			MinBlockReuse: 43200,
+
+			BtcRpc:               "localhost:18332",
+			BtcNetwork:           "regnet",
+			BtcMinConfirmation:   1,
+			BtcDegradedThreshold: 2000,
+			BtcFailureThreshold:  4000,
+			BtcWithdrawMin:       0.00075,
+			BtcWithdrawFee:       0.00025,
+
+			LtcRpc:               "localhost:19332",
+			LtcNetwork:           "regnet",
+			LtcMinConfirmation:   1,
+			LtcDegradedThreshold: 2000,
+			LtcFailureThreshold:  4000,
+			LtcWithdrawMin:       0.00002,
+			LtcWithdrawFee:       0.00001,
+
+			BchRpc:               "localhost:18333",
+			BchNetwork:           "regnet",
+			BchMinConfirmation:   1,
+			BchDegradedThreshold: 2000,
+			BchFailureThreshold:  4000,
+			BchWithdrawMin:       0.00002,
+			BchWithdrawFee:       0.00001,
+
+			QuantaDegradedThreshold:   2000,
+			QuantaFailureThreshold:    4000,
+			DepDegradedThreshold:      10,
+			DepFailureThreshold:       20,
+			WithdrawDegradedThreshold: 10,
+			WithdrawFailureThreshold:  20,
+
+			BlackList: map[string][]string{},
+			Mode:      "auto",
+			IsTest:    true,
+		}, &common.Secrets{
+			NodeKey:          quanta.NodeSecrets[index],
+			EthereumKeyStore: ethereum.NodeSecrets[index],
+			DatabaseUrl:      fmt.Sprintf("postgres://postgres:@localhost/crosschain_%d", index),
+
+			BtcPrivateKey:  test.BTCSECRETS.NodeSecrets[index],
+			BtcRpcUser:     "user",
+			BtcRpcPassword: "123",
+			BtcSigners:     []string{"049C8C4647E016C502766C6F5C40CFD37EE86CD02972274CA50DA16D72016CAB5812F867F27C268923E5DE3ADCB268CC8A29B96D0D8972841F286BA6D9CCF61360", "040C9B0D5324CBAF4F40A215C1D87DF1BEB51A0345E0384942FE0D60F8D796F7B7200CC5B70DDCF101E7804EFA26A0CE6EC6622C2FE90BCFD2DA2482006C455FF1"},
+
+			LtcPrivateKey:  test.LTCSECRETS.NodeSecrets[index],
+			LtcRpcUser:     "user",
+			LtcRpcPassword: "123",
+			LtcSigners:     []string{"047AABB69BBE1B5D9E2EFD10D0215A37AE835EAE08DFDF795E5A8411271F690CC8797CF4DEB3508844920E28A42A67D8A3F56D5B6B65401DEDB1E130F9F9908463", "04851D591308AFBE768566060C01A60A5F6AC6C78C3766559C835BEF0485628013ADC7D7E7676B0281FB83E788F4BC11E4CA597D1A53AF5F0BB90D555A28B55504"},
+
+			BchPrivateKey:  test.BCHSECRETS.NodeSecrets[index],
+			BchRpcUser:     "user",
+			BchRpcPassword: "123",
+			BchSigners:     []string{"049C8C4647E016C502766C6F5C40CFD37EE86CD02972274CA50DA16D72016CAB5812F867F27C268923E5DE3ADCB268CC8A29B96D0D8972841F286BA6D9CCF61360", "040C9B0D5324CBAF4F40A215C1D87DF1BEB51A0345E0384942FE0D60F8D796F7B7200CC5B70DDCF101E7804EFA26A0CE6EC6622C2FE90BCFD2DA2482006C455FF1"},
+
+			GrapheneSeedPrefix: "",
+		}
 }
 
 func assertMsgCountEqualDoLoop(t *testing.T, label string, expected int, actual int, blockNum int64, nodeNum int, totalNodes int, node *TrustNode) {
@@ -50,11 +115,8 @@ func assertMsgCountEqualDoLoop(t *testing.T, label string, expected int, actual 
  * nodes[]*TrustNode are not modified
  */
 func StartNodesWithIndexes(quanta *test.QuantaNodeSecrets, ethereum *test.EthereumTrustSecrets,
-	etherEnv test.EthereumEnv, removePrevDB bool, indexesToStart []int, nodesIn []*TrustNode) []*TrustNode {
-	println("Starting nodes")
-
-	nodes := make([]*TrustNode, 3)
-	copy(nodes, nodesIn)
+	etherEnv test.EthereumEnv, removePrevDB bool, indexesToStart []int, nodes []*TrustNode) []*TrustNode {
+	println("Starting nodes with ", ethereum.TrustContract)
 
 	mutex := sync.Mutex{}
 	var wg sync.WaitGroup
@@ -73,18 +135,13 @@ func StartNodesWithIndexes(quanta *test.QuantaNodeSecrets, ethereum *test.Ethere
 			os.Remove(fmt.Sprintf("./kv_db_%d.db", 5100+currentIndex))
 		}
 
-		config := generateConfig(quanta, ethereum, etherEnv, currentIndex)
+		config, secrets := generateConfig(quanta, ethereum, etherEnv, currentIndex)
 
 		go func(config common.Config, currentIndex int) {
 			defer wg.Done()
 
-			coin, err := coin.NewEthereumCoin(config.EthereumNetworkId, config.EthereumRpc)
-			if err != nil {
-				panic("Cannot create ethereum listener")
-			}
-
 			mutex.Lock()
-			node := bootstrapNode(config, coin)
+			node := bootstrapNode(config, *secrets, true)
 			nodes[currentIndex] = node
 			mutex.Unlock()
 
@@ -92,7 +149,7 @@ func StartNodesWithIndexes(quanta *test.QuantaNodeSecrets, ethereum *test.Ethere
 			registerNode(config, node)
 
 			// ensure they start on time
-			time.Sleep(time.Millisecond*250)
+			time.Sleep(time.Millisecond * 250)
 		}(*config, currentIndex)
 
 		time.Sleep(time.Second)
@@ -102,15 +159,19 @@ func StartNodesWithIndexes(quanta *test.QuantaNodeSecrets, ethereum *test.Ethere
 }
 
 func StartNodes(quanta *test.QuantaNodeSecrets, ethereum *test.EthereumTrustSecrets,
-	etherEnv test.EthereumEnv) []*TrustNode {
-	nodes := make([]*TrustNode, 3)
-	return StartNodesWithIndexes(quanta, ethereum, etherEnv, true, []int{0, 1, 2}, nodes)
+	etherEnv test.EthereumEnv, numOfNodes int) []*TrustNode {
+	nodes := make([]*TrustNode, numOfNodes)
+	indexes := make([]int, numOfNodes)
+	for i := range indexes {
+		indexes[i] = i
+	}
+	return StartNodesWithIndexes(quanta, ethereum, etherEnv, true, indexes, nodes)
 }
 
 func StartNodeListener(quanta *test.QuantaNodeSecrets, ethereum *test.EthereumTrustSecrets,
 	etherEnv test.EthereumEnv, nodes []*TrustNode) []*TrustNode {
 	fmt.Println("\nStarting Node again")
-	config := generateConfig(quanta, ethereum, etherEnv, 0)
+	config, _ := generateConfig(quanta, ethereum, etherEnv, 0)
 	nodes[0].StartListener(*config)
 
 	return nodes
@@ -129,22 +190,20 @@ func StopNodes(nodes []*TrustNode, indexesToStart []int) {
 	}
 }
 
-func StartRegistry() *service.Server {
+func StartRegistry(minNodes int, url string) *service.Server {
 	logger, _ := logger.NewLogger("registrar")
-	s := service.NewServer(service.NewRegistry(), "localhost:5001", logger)
+	path, _ := filepath.Abs(filepath.Dir("config.yml"))
+	s := service.NewServer(service.NewRegistry(minNodes, path), url, logger)
 	s.DoHealthCheck(5)
 	go s.Start()
 	return s
 }
 
 func StopRegistry(s *service.Server) {
+	path, _ := filepath.Abs(filepath.Dir("manifest.yml"))
+	file := path + "/manifest.yml"
+	os.Remove(file)
 	s.Stop()
-}
-
-func DoLoopDeposit(nodes []*TrustNode, blockIds []int64) {
-	for _, node := range nodes {
-		node.cTQ.DoLoop(blockIds)
-	}
 }
 
 func DoLoopWithdrawal(nodes []*TrustNode, cursor int64) {

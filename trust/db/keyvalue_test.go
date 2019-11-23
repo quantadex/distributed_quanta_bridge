@@ -1,20 +1,23 @@
 package db
 
 import (
-	"testing"
 	"fmt"
 	"github.com/go-pg/pg"
+	"testing"
 )
 
 func TestKeyValue(t *testing.T) {
-	DatabaseUrl := fmt.Sprintf("postgres://postgres:@localhost/crosschain_%d",0)
+	DatabaseUrl := fmt.Sprintf("postgres://postgres:@localhost/crosschain_%d", 1)
 	rDb := &DB{}
 	info, err := pg.ParseURL(DatabaseUrl)
 	if err != nil {
 		t.Error(err)
 	}
-	rDb.Connect(info.Network, info.User, info.Password, info.Database)
+	println(info.Network, info.Addr)
+	//defer rDb.Close()
 	rDb.Debug()
+	rDb.Connect(info.Addr, info.User, info.Password, info.Database)
+	MigrateKv(rDb)
 
 	err = UpdateValue(rDb, "key", "val1")
 	if err != nil {

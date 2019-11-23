@@ -27,7 +27,7 @@ func TestCheckDepositNode(t *testing.T) {
 	}
 
 	client.Client = ethereumClient
-	client.Start()
+	client.Start(nil)
 
 	const blockNumber = 4356013
 
@@ -64,8 +64,8 @@ func TestForwardScan(t *testing.T) {
 	}
 
 	client.Client = ethereumClient
-	client.Start()
-	contracts, err := client.GetForwardContract(4186074)
+	client.Start(nil)
+	contracts, err := client.GetForwardContract(5061200)
 	if err != nil {
 		println("err... " + err.Error())
 		t.Error(err)
@@ -92,6 +92,7 @@ func TestWithdrawalTX(t *testing.T) {
 
 	sim := backends.NewSimulatedBackend(core.GenesisAlloc{
 		userAuth.From: {Balance: big.NewInt(10000000000)}}, 5000000)
+	fmt.Println(sim)
 
 	w := &Withdrawal{
 		TxId:               1,
@@ -110,13 +111,23 @@ func TestWithdrawalTX(t *testing.T) {
 
 	w.Signatures = []string{signed, signed, signed}
 
-	client := &Listener{NetworkID: ROPSTEN_NETWORK_ID}
-	tx, err := client.SendWithdrawal(sim, userAuth.From, userKey, w)
+	network := test.ETHER_NETWORKS[test.ROPSTEN]
+	client := &Listener{NetworkID: network.NetworkId}
+	ethereumClient, err := ethclient.Dial(network.Rpc)
+
+	if err != nil {
+		t.Error(err)
+		return
+	}
+
+	client.Client = ethereumClient
+	client.Start(nil)
+	//tx, err := client.SendWithdrawal(sim, userAuth.From, userKey, w)
 
 	if err != nil {
 		println("ERR: ", err.Error())
 	}
-	println(tx)
+	//println(tx)
 }
 
 /*
@@ -151,7 +162,7 @@ func TestWithdrawalGanacheTX(t *testing.T) {
 	}
 
 	network := test.ETHER_NETWORKS[test.ROPSTEN]
-	coin, _ := NewEthereumCoin(network.NetworkId, network.Rpc)
+	coin, _ := NewEthereumCoin(network.NetworkId, network.Rpc, "c87509a1c067bbde78beb793e6fa76530b6382a4c0241e5e4a9ec0a0f44dc0d3", nil, 0.00002, 0.00001, 100, map[string]bool{})
 	coin.Attach()
 	encoded, _ := coin.EncodeRefund(*w)
 	println(encoded)
@@ -181,9 +192,9 @@ func TestWithdrawalGanacheTX(t *testing.T) {
  * Test that we can connect to ganache
  */
 func TestGanacheTX(t *testing.T) {
-	network := test.ETHER_NETWORKS[test.LOCAL]
+	network := test.ETHER_NETWORKS[test.ROPSTEN]
 
-	coin, err := NewEthereumCoin(network.NetworkId, network.Rpc)
+	coin, err := NewEthereumCoin(network.NetworkId, network.Rpc, "c87509a1c067bbde78beb793e6fa76530b6382a4c0241e5e4a9ec0a0f44dc0d3", nil, 0.00002, 0.00001, 100, map[string]bool{})
 	if err != nil {
 		t.Error(err)
 		return
@@ -205,16 +216,23 @@ var cmd *exec.Cmd
 func setupEthereum() {
 	fmt.Println("Spinning up GETH")
 	cmd = exec.Command("./run_ethereum.sh")
-	cmd.Start()
+	err := cmd.Start()
+	if err != nil {
+		fmt.Println("trouble with spinning up geth", err.Error())
+		cmd = nil
+	}
 }
 
 func teardownEthereum() {
+	if cmd == nil {
+		return
+	}
 	if err := cmd.Process.Kill(); err != nil {
 		fmt.Printf("failed to kill process: %v", err)
 	}
 }
 
-// https://www.philosophicalhacker.com/post/integration-tests-in-go/
+//https://www.philosophicalhacker.com/post/integration-tests-in-go/
 func TestMain(m *testing.M) {
 	if !testing.Short() {
 		setupEthereum()

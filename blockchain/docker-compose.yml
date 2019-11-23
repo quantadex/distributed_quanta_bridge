@@ -1,0 +1,22 @@
+version: '3'
+services:
+  litecoind:
+    image: quantalabs/litecoin-core:latest
+    ports:
+    - "19332:19332"
+    - "19444:19444"
+    command: litecoind -regtest=1 -rpcallowip=0.0.0.0/0 -rpcuser=user -rpcpassword=123 -deprecatedrpc=signrawtransaction -deprecatedrpc=accounts -rpcport=19332 --reindex
+
+  bitcoin-abc:
+    image: zquestz/bitcoin-abc:0.19.2
+    ports:
+    - "18333:18332"
+    - "18444:18444"
+    command: bitcoind -regtest=1 -rpcallowip=0.0.0.0/0 -rpcuser=user -rpcpassword=123 -deprecatedrpc=signrawtransaction -deprecatedrpc=accounts --reindex
+
+  bitcoind:
+    image: nicolasdorier/docker-bitcoin:0.17.0
+    ports:
+    - "18332:18332"
+    command: bitcoind -regtest=1 -rpcallowip=0.0.0.0/0 -rpcuser=user -rpcpassword=123 -deprecatedrpc=signrawtransaction -deprecatedrpc=accounts -rpcport=18332 --reindex
+

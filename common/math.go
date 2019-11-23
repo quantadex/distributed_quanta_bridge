@@ -86,7 +86,6 @@ func MaxUint64(a, b uint64) uint64 {
 	return b
 }
 
-
 func MaxUint(a, b uint) uint {
 	if a > b {
 		return a
@@ -157,6 +156,13 @@ func MinUint(a, b uint) uint {
 		return a
 	}
 	return b
+}
+
+func AbsInt(a int) int {
+	if a < 0 {
+		return -a
+	}
+	return a
 }
 
 //-----------------------------------------------------------------------------

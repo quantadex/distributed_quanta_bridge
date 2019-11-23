@@ -1,13 +1,13 @@
 package quanta
 
 import (
+	"fmt"
+	"github.com/pkg/errors"
 	"github.com/quantadex/distributed_quanta_bridge/common/kv_store"
+	"github.com/quantadex/distributed_quanta_bridge/trust/db"
 	"github.com/stellar/go/clients/horizon"
 	"net/http"
 	"time"
-	"github.com/quantadex/distributed_quanta_bridge/trust/db"
-	"fmt"
-	"github.com/pkg/errors"
 )
 
 type SubmitWorkerImpl struct {
@@ -40,7 +40,6 @@ func ErrorString(err error, showStackTrace ...bool) string {
 	return errorString
 }
 
-
 func (s *SubmitWorkerImpl) Dispatch() {
 	if s.Logger == nil {
 		panic("Missing logger")
@@ -62,7 +61,7 @@ func (s *SubmitWorkerImpl) Dispatch() {
 				s.Logger.Error("could not submit transaction " + ErrorString(err, false))
 			} else {
 				s.Logger.Infof("Successful tx submission %s,remove %s", res.Hash, k)
-				err = db.ChangeSubmitState(s.Db, v.Tx, db.SUBMIT_SUCCESS)
+				err = db.ChangeSubmitState(s.Db, v.Tx, db.SUBMIT_SUCCESS, "", "")
 				if err != nil {
 					s.Logger.Error("Error removing key=" + v.Tx)
 				}
@@ -74,7 +73,7 @@ func (s *SubmitWorkerImpl) Dispatch() {
 
 func (s *SubmitWorkerImpl) AttachQueue(kv kv_store.KVStore) error {
 	s.horizonClient = &horizon.Client{
-		URL:  s.HorizonUrl,
+		//URL:  s.HorizonUrl,
 		HTTP: http.DefaultClient,
 	}
 

@@ -54,5 +54,11 @@ func createNodeListener(q queue.Queue, listenIp string, listenPort int) listener
 		return nil
 	}
 
+	err = listener.AddEndpoint(queue.ADDR_MSG_QUEUE, "/node/api/address")
+	if err != nil {
+		log.Error("Failed to create endpoint")
+		return nil
+	}
+
 	return listener
 }

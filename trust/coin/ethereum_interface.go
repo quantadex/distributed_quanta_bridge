@@ -5,6 +5,7 @@ import (
 	"github.com/ethereum/go-ethereum"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
+	common2 "github.com/quantadex/distributed_quanta_bridge/common"
 	"github.com/stellar/go/support/log"
 	"math/big"
 )
@@ -41,6 +42,7 @@ type Client interface {
 	SendTransaction(ctx context.Context, tx *types.Transaction) error
 	TransactionReceipt(ctx context.Context, txHash common.Hash) (*types.Receipt, error)
 	EstimateGas(ctx context.Context, msg ethereum.CallMsg) (uint64, error)
+	TransactionBlockHashByHash(ctx context.Context, hash common.Hash) (tx *types.Transaction, blockhash *common.Hash, s string, isPending bool, err error)
 }
 
 // Storage is an interface that must be implemented by an object using
@@ -60,45 +62,76 @@ type Listener struct {
 	Storage            Storage `inject:""`
 	NetworkID          string
 	TransactionHandler TransactionHandler
+	Erc20map           map[string]string
 
 	log *log.Entry
 }
 
-func WeiToStellar(valueInWei int64) int64 {
-	valueEth := new(big.Rat).SetInt64(valueInWei)
+func WeiToStellar(valueInWei big.Int) int64 {
+	valueEth := new(big.Rat).SetInt(&valueInWei)
 	powerDelta := new(big.Rat).SetInt(new(big.Int).Exp(ten, big.NewInt(11), nil))
 	result := new(big.Rat)
 	result = result.Quo(valueEth, powerDelta)
-
 	num, _ := new(big.Int).SetString(result.FloatString(0), 10)
 	return num.Int64()
 }
 
-func Erc20AmountToStellar(valueInWei int64, dec uint8) int64 {
-	valueEth := new(big.Rat).SetInt64(valueInWei)
+func WeiToGraphene(valueInWei big.Int) int64 {
+	valueEth := new(big.Rat).SetInt(&valueInWei)
+	powerDelta := new(big.Rat).SetInt(new(big.Int).Exp(ten, big.NewInt(13), nil))
+	result := new(big.Rat)
+	result = result.Quo(valueEth, powerDelta)
+	num, _ := new(big.Int).SetString(result.FloatString(0), 10)
+	return num.Int64()
+}
+
+func PowerDelta(value big.Int, curPrecision int, targetPrecision int) int64 {
+	valueEth := new(big.Rat).SetInt(&value)
+	powerDelta := new(big.Rat).SetInt(new(big.Int).Exp(ten, big.NewInt(int64(common2.AbsInt(curPrecision-targetPrecision))), nil))
+	result := new(big.Rat)
+	if targetPrecision < curPrecision {
+		result = result.Quo(valueEth, powerDelta)
+	} else {
+		result = result.Mul(valueEth, powerDelta)
+	}
+	num, _ := new(big.Int).SetString(result.FloatString(0), 10)
+	return num.Int64()
+}
+
+func Erc20AmountToGraphene(valueInWei big.Int, dec uint8) int64 {
+	valueEth := new(big.Rat).SetInt(&valueInWei)
 	powerDelta := new(big.Rat).SetInt(new(big.Int).Exp(ten, big.NewInt(18-int64(dec)), nil))
 	result := new(big.Rat)
 	result = result.Mul(valueEth, powerDelta)
 
-	return WeiToStellar(result.Num().Int64())
+	return WeiToGraphene(*result.Num())
 }
 
-func StellarToWei(valueInStellar uint64) uint64 {
+func StellarToWei(valueInStellar uint64) *big.Int {
 	valueWei := new(big.Rat)
 	stellar := new(big.Rat).SetInt(big.NewInt(int64(valueInStellar)))
 	powerDelta := new(big.Rat).SetInt(new(big.Int).Exp(ten, big.NewInt(11), nil))
 
-	return valueWei.Mul(stellar, powerDelta).Num().Uint64()
+	return valueWei.Mul(stellar, powerDelta).Num()
 }
 
-func CheckValidEthereumAddress(address string) bool {
-	return true
+func GrapheneToWei(valueInGraphene uint64) *big.Int {
+	valueWei := new(big.Rat)
+	stellar := new(big.Rat).SetInt(big.NewInt(int64(valueInGraphene)))
+	powerDelta := new(big.Rat).SetInt(new(big.Int).Exp(ten, big.NewInt(13), nil))
+
+	return valueWei.Mul(stellar, powerDelta).Num()
 }
 
-type ForwardInput struct {
-	ContractAddress common.Address
-	Trust           common.Address
-	QuantaAddr      string
-	TxHash			string
-	Blockchain      string
+func GrapheneToERC20(value big.Int, curPrecision int, targetPrecision int) *big.Int {
+	valueEth := new(big.Rat).SetInt(&value)
+	powerDelta := new(big.Rat).SetInt(new(big.Int).Exp(ten, big.NewInt(int64(common2.AbsInt(curPrecision-targetPrecision))), nil))
+	result := new(big.Rat)
+	if targetPrecision < curPrecision {
+		result = result.Quo(valueEth, powerDelta)
+	} else {
+		result = result.Mul(valueEth, powerDelta)
+	}
+	num, _ := new(big.Int).SetString(result.FloatString(0), 10)
+	return num
 }

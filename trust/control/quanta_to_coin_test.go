@@ -4,6 +4,7 @@ import (
 	"crypto/ecdsa"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/go-errors/errors"
+	"github.com/quantadex/distributed_quanta_bridge/common/crypto"
 	"github.com/quantadex/distributed_quanta_bridge/trust/coin"
 )
 
@@ -33,7 +34,7 @@ func (c *MockEthereumCoin) GetDepositsInBlock(blockID int64, trustAddress map[st
 	panic("implement me")
 }
 
-func (c *MockEthereumCoin) GetForwardersInBlock(blockID int64) ([]*coin.ForwardInput, error) {
+func (c *MockEthereumCoin) GetForwardersInBlock(blockID int64) ([]*crypto.ForwardInput, error) {
 	panic("implement me")
 }
 
@@ -53,6 +54,7 @@ func (c *MockEthereumCoin) EncodeRefund(w coin.Withdrawal) (string, error) {
 func (c *MockEthereumCoin) DecodeRefund(encoded string) (*coin.Withdrawal, error) {
 	panic("implement me")
 }
+
 //func TestSubmitWithdrawalRecovery(t *testing.T) {
 //	w := &coin.Withdrawal{
 //		TxId:               1,

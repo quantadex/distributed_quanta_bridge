@@ -3,9 +3,10 @@ package quanta
 import (
 	"github.com/quantadex/distributed_quanta_bridge/common/kv_store"
 	"github.com/quantadex/distributed_quanta_bridge/trust/coin"
+	"github.com/scorum/bitshares-go/apis/database"
+	"github.com/scorum/bitshares-go/apis/networkbroadcast"
+	"time"
 )
-
-const QUANTA_PRECISION = 10000000
 
 /**
  * Refund
@@ -21,6 +22,7 @@ type Refund struct {
 	SourceAddress      string
 	DestinationAddress string // extract from memo
 	Amount             uint64
+	BlockHash          string
 }
 
 /**
@@ -50,7 +52,7 @@ type Quanta interface {
 	 *
 	 * Returns the id of the latest quanta block.
 	 */
-	GetTopBlockID(accountId string) (int64, error)
+	GetTopBlockID() (int64, error)
 
 	/**
 	 * GetRefundsInBlock
@@ -70,12 +72,29 @@ type Quanta interface {
 
 	GetBalance(assetName string, quantaAddress string) (float64, error)
 	GetAllBalances(quantaAddress string) (map[string]float64, error)
-	CreateProposeTransaction(*coin.Deposit) (string, error) // base64 tx envelope
 	DecodeTransaction(base64 string) (*coin.Deposit, error)
+	Broadcast(stx string) (*networkbroadcast.BroadcastResponse, error)
+
+	CreateTransferProposal(dep *coin.Deposit) (string, error)
+	CreateNewAssetProposal(issuer string, symbol string, precision uint8) (string, error)
+	CreateIssueAssetProposal(dep *coin.Deposit) (string, error)
+	AssetExist(issuer string, symbol string) (bool, error)
+	AccountExist(quantaAddr string) bool
+	GetAsset(assetName string) (*database.Asset, error)
+	GetIssuer() string
+	Reconnect()
+
+	GetBlockTime(blockId int64) (time.Time, error)
+
+	GetAccountFromPubKey(pubKey string) (string, error)
 }
 
 func NewQuanta(options QuantaClientOptions) (Quanta, error) {
 	return &QuantaClient{QuantaClientOptions: options}, nil
+}
+
+func NewQuantaGraphene(options QuantaClientOptions) (Quanta, error) {
+	return &QuantaGraphene{QuantaClientOptions: options}, nil
 }
 
 /**
@@ -90,5 +109,5 @@ type SubmitWorker interface {
 }
 
 func NewSubmitWorker(options QuantaClientOptions) SubmitWorker {
-	return &SubmitWorkerImpl{QuantaClientOptions:options}
+	return &SubmitWorkerImpl{QuantaClientOptions: options}
 }

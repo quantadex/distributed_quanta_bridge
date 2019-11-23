@@ -4,28 +4,48 @@ import (
 	"bytes"
 	"crypto/ecdsa"
 	"encoding/binary"
+	"encoding/json"
+	"errors"
+	"github.com/ethereum/go-ethereum/accounts/abi"
+	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	common2 "github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/ethclient"
+	errors2 "github.com/pkg/errors"
 	"github.com/quantadex/distributed_quanta_bridge/common"
+	"github.com/quantadex/distributed_quanta_bridge/common/crypto"
+	"github.com/quantadex/distributed_quanta_bridge/trust/coin/contracts"
 	"math/big"
+	"regexp"
+	"strconv"
 	"strings"
-	"github.com/ethereum/go-ethereum/accounts/abi"
-	"encoding/json"
+	"time"
 )
 
 const sign_prefix = "\x19Ethereum Signed Message:\n"
 
 type EthereumCoin struct {
-	client      *Listener
-	maxRange    int64
-	networkId   string
-	ethereumRpc string
+	client         *Listener
+	maxRange       int64
+	networkId      string
+	ethereumRpc    string
+	ethereumSecret *ecdsa.PrivateKey
+	erc20map       map[string]string
+	EthWithdrawMin float64
+	EthWithdrawFee float64
+	EthWithdrawGasFee int64
+	BlackList      map[string]bool
 }
 
 type EncodedMsg struct {
-	Message string
-	Tx string
-	BlockNumber int64
+	Message         string
+	Tx              string
+	BlockNumber     int64
+	CoinName        string
+	DestinationAddr string
+}
+
+func (c *EthereumCoin) Blockchain() string {
+	return "ETH"
 }
 
 func (c *EthereumCoin) Attach() error {
@@ -36,12 +56,62 @@ func (c *EthereumCoin) Attach() error {
 	}
 
 	c.client.Client = ethereumClient
-	err = c.client.Start()
+	err = c.client.Start(c.erc20map)
 	if err != nil {
 		return err
 	}
 
 	return nil
+}
+
+func (c *EthereumCoin) SetIssuerAddress(address string) {
+
+}
+
+func (c *EthereumCoin) CheckValidAmount(amount uint64) bool {
+	if amount < uint64(c.EthWithdrawMin*CONST_PRECISION) {
+		return false
+	}
+	return true
+}
+
+func (c *EthereumCoin) GetBlockTime(blockId int64) (time.Time, error) {
+	var t time.Time
+	block, err := c.client.GetBlock(blockId)
+	if err != nil {
+		return t, err
+	}
+
+	return time.Unix(block.Time().Int64(), 0), nil
+}
+
+func (c *EthereumCoin) GetBlockInfo(hash string) (string, int64, error) {
+	_, blockHash, blockNumber, _, err := c.client.GetTransactionbyHash(hash)
+	if err != nil {
+		return "", 0, err
+	}
+
+	var blockNum int64
+	if len(blockNumber) != 0 {
+		if strings.HasPrefix(strings.ToLower(blockNumber), "0x") {
+			blockNum, err = strconv.ParseInt(blockNumber[2:], 16, 64)
+			if err != nil {
+				return "", 0, errors2.Wrap(err, "Could not convert block number")
+			}
+		} else {
+			blockNum, err = strconv.ParseInt(blockNumber, 16, 64)
+			if err != nil {
+				return "", 0, errors2.Wrap(err, "Could not convert block number")
+			}
+		}
+	}
+	topBlock, err := c.GetTopBlockID()
+	if err != nil {
+		return "", 0, errors2.Wrap(err, "Could not get top block id")
+	}
+	confirm := topBlock - blockNum
+
+	return blockHash.String(), confirm, err
 }
 
 func (c *EthereumCoin) GetTopBlockID() (int64, error) {
@@ -70,7 +140,30 @@ func (c *EthereumCoin) GetDepositsInBlock(blockID int64, trustAddress map[string
 	return append(ndeposits, deps...), nil
 }
 
-func (c *EthereumCoin) GetForwardersInBlock(blockID int64) ([]*ForwardInput, error) {
+func (c *EthereumCoin) FlushCoin(forwarderAddr string, tokenAddr string) error {
+	forwarder, err := contracts.NewQuantaForwarder(common2.HexToAddress(forwarderAddr), c.client.Client.(bind.ContractBackend))
+	if err != nil {
+		return err
+	}
+
+	if forwarder == nil {
+		return errors.New("Unable to instantiate forwarding address for " + forwarderAddr)
+	}
+
+	auth := bind.NewKeyedTransactor(c.ethereumSecret)
+
+	tx, err := forwarder.FlushTokens(auth, common2.HexToAddress(tokenAddr))
+	if tx != nil {
+		println("Flush coin ", tx.Hash().String())
+	}
+	return err
+}
+
+func (c *EthereumCoin) GetPendingTx(map[string]string) ([]*Deposit, error) {
+	return nil, nil
+}
+
+func (c *EthereumCoin) GetForwardersInBlock(blockID int64) ([]*crypto.ForwardInput, error) {
 	forwarders, err := c.client.GetForwardContract(blockID)
 	if err != nil {
 		return nil, err
@@ -78,42 +171,69 @@ func (c *EthereumCoin) GetForwardersInBlock(blockID int64) ([]*ForwardInput, err
 	return forwarders, nil
 }
 
+func (b *EthereumCoin) GenerateMultisig(accountId string) (string, error) {
+	panic("not implemented")
+}
+
 //
 func (c *EthereumCoin) SendWithdrawal(trustAddress common2.Address,
 	ownerKey *ecdsa.PrivateKey,
 	w *Withdrawal) (string, error) {
-	return c.client.SendWithDrawalToRPC(trustAddress, ownerKey, w)
+	return c.client.SendWithDrawalToRPC(trustAddress, ownerKey, w, c.EthWithdrawFee, c.EthWithdrawGasFee)
+}
+
+func (c *EthereumCoin) FillCrosschainAddress(crosschainAddr map[string]string) {
+
 }
 
 func (c *EthereumCoin) EncodeRefund(w Withdrawal) (string, error) {
-	var encoded bytes.Buffer
-	var smartAddress string
-	parts := strings.Split(w.CoinName, ",")
-
-	if len(parts) == 2 {
-		smartAddress = parts[1]
-	} else {
-		smartAddress = ""
+	if _, ok := c.BlackList[w.SourceAddress]; ok {
+		return "", errors.New("BlackListed user: " + w.SourceAddress)
 	}
 
-	var number = common2.Big256
-	number.SetUint64(w.Amount)
+	var encoded bytes.Buffer
+	var smartAddress string
+
+	amountMinusFee := w.Amount - uint64(c.EthWithdrawFee*CONST_PRECISION)
+	parts := strings.Split(w.CoinName, "0X")
+	var amount *big.Int
+	if len(parts) == 2 {
+		smartAddress = parts[1]
+		erc20, err := contracts.NewSimpleToken(common2.HexToAddress(smartAddress), c.client.Client.(bind.ContractBackend))
+		if err != nil {
+			return "", err
+		}
+		dec, err := erc20.Decimals(nil)
+		if err != nil {
+			return "", err
+		}
+		amount = GrapheneToERC20(*new(big.Int).SetUint64(amountMinusFee), 5, int(dec))
+
+	} else {
+		smartAddress = ""
+		amount = GrapheneToWei(amountMinusFee)
+	}
+	//smartAddress = w.CoinName[11:]
+	//fmt.Println("Smart address = ", smartAddress)
+
 	//encoded.WriteString(sign_prefix + "80")
 	binary.Write(&encoded, binary.BigEndian, uint64(w.TxId))
 	encoded.Write(common2.HexToAddress(strings.ToLower(smartAddress)).Bytes())
 	encoded.Write(common2.HexToAddress(strings.ToLower(w.DestinationAddress)).Bytes())
-	encoded.Write(abi.U256(new(big.Int).SetUint64(uint64(w.Amount))))
+	//encoded.Write(abi.U256(new(big.Int).SetUint64(uint64(w.Amount))))
+	encoded.Write(abi.U256(amount))
 	//binary.Write(&encoded, binary.BigEndian, abi.U256(new(big.Int).SetUint64(uint64(w.Amount))))
 
 	//println("# of bytes " , encoded.Len(), common2.Bytes2Hex(encoded.Bytes()))
-	data, err := json.Marshal(&EncodedMsg{ common2.Bytes2Hex(encoded.Bytes()),  w.Tx, w.QuantaBlockID})
-	return common2.Bytes2Hex(data), err
+	data, err := json.Marshal(&EncodedMsg{common2.Bytes2Hex(encoded.Bytes()), w.Tx, w.QuantaBlockID, w.CoinName, w.DestinationAddress})
+	//return common2.Bytes2Hex(data), err
+	return string(data), err
 }
 
 func (c *EthereumCoin) DecodeRefund(encoded string) (*Withdrawal, error) {
-	decoded := common2.Hex2Bytes(encoded)
+	//decoded := common2.Hex2Bytes(encoded)
 	msg := &EncodedMsg{}
-	err := json.Unmarshal(decoded, msg)
+	err := json.Unmarshal([]byte(encoded), msg)
 	if err != nil {
 		return nil, err
 	}
@@ -121,7 +241,7 @@ func (c *EthereumCoin) DecodeRefund(encoded string) (*Withdrawal, error) {
 	w := &Withdrawal{}
 	w.Tx = msg.Tx
 	w.QuantaBlockID = msg.BlockNumber
-	decoded = common2.Hex2Bytes(msg.Message)
+	decoded := common2.Hex2Bytes(msg.Message)
 
 	//pl := len(sign_prefix)
 	//header := decoded[0:pl]
@@ -155,4 +275,12 @@ func (c *EthereumCoin) DecodeRefund(encoded string) (*Withdrawal, error) {
 	w.Amount = new(big.Int).SetBytes(amount).Uint64()
 
 	return w, nil
+}
+
+func (c *EthereumCoin) CheckValidAddress(address string) bool {
+	var add [20]byte
+	copy(add[:], address)
+	Ma := common2.NewMixedcaseAddress(add)
+	var validAddress = regexp.MustCompile(`^[0x]+[0-9a-fA-F]{40}$`)
+	return Ma.ValidChecksum() && validAddress.MatchString(address)
 }

@@ -10,6 +10,7 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/crypto"
+	crypto2 "github.com/quantadex/distributed_quanta_bridge/common/crypto"
 	"github.com/quantadex/distributed_quanta_bridge/registrar/Forwarder"
 	"github.com/quantadex/distributed_quanta_bridge/trust/coin/contracts"
 	"github.com/stellar/go/support/errors"
@@ -21,7 +22,9 @@ import (
 
 const abiCode = `[{"anonymous":false,"inputs":[{"indexed":true,"name":"from","type":"address"},{"indexed":true,"name":"to","type":"address"},{"indexed":false,"name":"tokens","type":"uint256"}],"name":"Transfer","type":"event"},{"anonymous":false,"inputs":[{"indexed":true,"name":"tokenOwner","type":"address"},{"indexed":true,"name":"spender","type":"address"},{"indexed":false,"name":"tokens","type":"uint256"}],"name":"Approval","type":"event"}]`
 
-func (l *Listener) Start() error {
+func (l *Listener) Start(erc20map map[string]string) error {
+	l.Erc20map = erc20map
+
 	l.log = log.DefaultLogger.WithField("service", "EthereumListener")
 	l.log.Logger.Info("Ethereum listner started")
 
@@ -50,6 +53,15 @@ func (l *Listener) Start() error {
 
 	//go l.processBlocks(blockNumber)
 	return nil
+}
+
+func (l *Listener) GetTransactionbyHash(hash string) (*types.Transaction, *common.Hash, string, bool, error) {
+	d := time.Now().Add(5 * time.Second)
+	ctx, cancel := context.WithDeadline(context.Background(), d)
+	defer cancel()
+
+	tx, blockHash, blockNumber, isPending, err := l.Client.TransactionBlockHashByHash(ctx, common.HexToHash(hash))
+	return tx, blockHash, blockNumber, isPending, err
 }
 
 func (l *Listener) processBlocks(blockNumber int64) {
@@ -120,7 +132,7 @@ func (l *Listener) GetBlock(blockNumber int64) (*types.Block, error) {
 	block, err := l.Client.BlockByNumber(ctx, big.NewInt(blockNumber))
 	if err != nil {
 		if err.Error() == "not found" {
-			return nil, nil
+			return nil, err
 		}
 		err = errors.Wrap(err, "Error getting block from geth")
 		l.log.WithField("block", blockNumber).Error(err)
@@ -188,14 +200,21 @@ func (l *Listener) GetNativeDeposits(blockNumber int64, toAddress map[string]str
 		}
 
 		if quantaAddr, ok := toAddress[strings.ToLower(tx.To().Hex())]; ok {
+			receipt, err := l.Client.TransactionReceipt(context.Background(), tx.Hash())
+			if err != nil {
+				println("Cannot get Receipt ", err.Error())
+			} else if receipt.Status == types.ReceiptStatusFailed {
+				continue
+			}
 			if tx.Value().Cmp(big.NewInt(0)) != 0 {
 				events = append(events, &Deposit{
 					QuantaAddr: quantaAddr,
 					CoinName:   "ETH",
 					SenderAddr: tx.To().Hex(),
-					Amount:     WeiToStellar(tx.Value().Int64()),
+					Amount:     WeiToGraphene(*tx.Value()),
 					BlockID:    blockNumber,
-					Tx: tx.Hash().Hex(),
+					Tx:         tx.Hash().Hex(),
+					BlockHash:  blocks.Hash().String(),
 				})
 			}
 		}
@@ -265,6 +284,12 @@ func (l *Listener) FilterTransferEvent(blockNumber int64, toAddress map[string]s
 				if err != nil {
 
 				}
+
+				symbol, err := erc20.Symbol(nil)
+				if len(symbol) == 0 {
+					symbol = l.Erc20map[strings.ToLower(vLog.Address.Hex())]
+				}
+
 				dec, err := erc20.Decimals(nil)
 				if err != nil {
 					dec = 0
@@ -272,10 +297,12 @@ func (l *Listener) FilterTransferEvent(blockNumber int64, toAddress map[string]s
 
 				events = append(events, &Deposit{
 					QuantaAddr: quantaAddr,
-					CoinName:   vLog.Address.Hex(),
+					BlockID:    int64(vLog.BlockNumber),
+					CoinName:   symbol + vLog.Address.Hex(),
 					SenderAddr: transferEvent.To.Hex(),
-					Amount:     Erc20AmountToStellar(transferEvent.Tokens.Int64(), dec),
-					Tx: vLog.TxHash.Hex(),
+					Amount:     PowerDelta(*transferEvent.Tokens, int(dec), 5),
+					Tx:         vLog.TxHash.Hex(),
+					BlockHash:  vLog.BlockHash.String(),
 				})
 			}
 
@@ -285,13 +312,13 @@ func (l *Listener) FilterTransferEvent(blockNumber int64, toAddress map[string]s
 	return events, nil
 }
 
-func (l *Listener) GetForwardContract(blockNumber int64) ([]*ForwardInput, error) {
+func (l *Listener) GetForwardContract(blockNumber int64) ([]*crypto2.ForwardInput, error) {
 	blocks, err := l.GetBlock(blockNumber)
 	if err != nil {
 		return nil, err
 	}
 
-	ABI, err := abi.JSON(strings.NewReader(Forwarder.ForwarderABI))
+	ABI, err := abi.JSON(strings.NewReader(contracts.QuantaForwarderABI))
 	if err != nil {
 		return nil, err
 	}
@@ -300,23 +327,25 @@ func (l *Listener) GetForwardContract(blockNumber int64) ([]*ForwardInput, error
 		return nil, errors.New("Block not found ")
 	}
 
-	events := []*ForwardInput{}
+	events := []*crypto2.ForwardInput{}
 	for _, tx := range blocks.Transactions() {
 		data := common.Bytes2Hex(tx.Data())
 		//println(data)
 
 		// matches our forwarding contract
-		if strings.HasPrefix(data, Forwarder.ForwarderBin) || strings.HasPrefix(data, Forwarder.ForwarderBinV2) || strings.HasPrefix(data, Forwarder.ForwarderBinV3) {
+		if strings.HasPrefix(data, Forwarder.ForwarderBin) || strings.HasPrefix(data, Forwarder.ForwarderBinV2) || strings.HasPrefix(data, Forwarder.ForwarderBinV3) || strings.HasPrefix(data, Forwarder.ForwarderBinV4) {
 			var remain string
 			if strings.HasPrefix(data, Forwarder.ForwarderBin) {
 				remain = strings.TrimPrefix(data, Forwarder.ForwarderBin)
-			} else if strings.HasPrefix(data, Forwarder.ForwarderBinV2)  {
+			} else if strings.HasPrefix(data, Forwarder.ForwarderBinV2) {
 				remain = strings.TrimPrefix(data, Forwarder.ForwarderBinV2)
-			} else {
+			} else if strings.HasPrefix(data, Forwarder.ForwarderBinV3) {
 				remain = strings.TrimPrefix(data, Forwarder.ForwarderBinV3)
+			} else {
+				remain = strings.TrimPrefix(data, Forwarder.ForwarderBinV4)
 			}
 
-			input := &ForwardInput{}
+			input := &crypto2.ForwardInput{}
 			vals, err := ABI.Constructor.Inputs.UnpackValues(common.Hex2Bytes(remain))
 			if err != nil {
 				println("Cannot unpack ", err.Error())
@@ -335,7 +364,7 @@ func (l *Listener) GetForwardContract(blockNumber int64) ([]*ForwardInput, error
 			}
 
 			input.Blockchain = BLOCKCHAIN_ETH
-			input.ContractAddress = tr.ContractAddress
+			input.ContractAddress = tr.ContractAddress.Hex()
 			input.Trust = vals[0].(common.Address)
 			input.QuantaAddr = vals[1].(string)
 
@@ -348,34 +377,56 @@ func (l *Listener) GetForwardContract(blockNumber int64) ([]*ForwardInput, error
 
 func (l *Listener) SendWithDrawalToRPC(trustAddress common.Address,
 	ownerKey *ecdsa.PrivateKey,
-	w *Withdrawal) (string, error) {
+	w *Withdrawal, fee float64, gasFee int64) (string, error) {
 
-	return l.SendWithdrawal(l.Client.(bind.ContractBackend), trustAddress, ownerKey, w)
+	return l.SendWithdrawal(l.Client.(bind.ContractBackend), trustAddress, ownerKey, w, fee, gasFee)
 }
 
 func (l *Listener) SendWithdrawal(conn bind.ContractBackend,
 	trustAddress common.Address,
 	ownerKey *ecdsa.PrivateKey,
-	w *Withdrawal) (string, error) {
+	w *Withdrawal, fee float64, gasFee int64) (string, error) {
 
 	auth := bind.NewKeyedTransactor(ownerKey)
-	auth.GasLimit = 900000
+	auth.GasLimit = 1500000
+	if gasFee > 0 {
+		auth.GasPrice = big.NewInt(gasFee)
+	} else {
+		auth.GasPrice = nil
+	}
+
 	contract, err := contracts.NewTrustContract(trustAddress, conn)
 
 	if err != nil {
 		return "", err
 	}
 
+	amountMinusFee := w.Amount - uint64(fee*CONST_PRECISION)
+
 	var smartAddress common.Address
-	parts := strings.Split(w.CoinName, ",")
+	var amount *big.Int
+	parts := strings.Split(w.CoinName, "0X")
 	if len(parts) > 1 {
 		smartAddress = common.HexToAddress(parts[1])
-	}
 
+		erc20, err := contracts.NewSimpleToken(smartAddress, l.Client.(bind.ContractBackend))
+		if err != nil {
+			return "", err
+		}
+		dec, err := erc20.Decimals(nil)
+		if err != nil {
+			return "", err
+		}
+		amount = GrapheneToERC20(*new(big.Int).SetUint64(amountMinusFee), 5, int(dec))
+
+	} else {
+		amount = GrapheneToWei(amountMinusFee)
+	}
+	//smartAddress = common.HexToAddress(w.CoinName[11:])
 	toAddr := common.HexToAddress(w.DestinationAddress)
-	amount := big.NewInt(int64(w.Amount))
+
 	fmt.Printf("Sending from %s\n", auth.From.Hex())
-	fmt.Printf("Submit to contract=%s txId=%d erc20=%s to=%s amount=%d\n", trustAddress.Hex(), w.TxId, smartAddress.Hex(), toAddr.Hex(), amount.Uint64())
+	fmt.Printf("Submit to contract=%s txId=%d erc20=%s to=%s amount=%s\n", trustAddress.Hex(), w.TxId, smartAddress.Hex(), toAddr.Hex(), amount.String())
 
 	var r [][32]byte
 	var s [][32]byte
@@ -400,12 +451,29 @@ func (l *Listener) SendWithdrawal(conn bind.ContractBackend,
 
 		v = append(v, data[64]+27)
 	}
-
 	tx, err := contract.PaymentTx(auth, w.TxId, smartAddress, toAddr, amount, v, r, s)
 	if err != nil {
 		return "", err
 	}
 
+	fmt.Printf("Submitted %s\n", tx.Hash().Hex())
+
+	if tx == nil {
+		return "", errors.New("PaymentTX did not produce a transaction")
+	}
+
+	var receipt *types.Receipt
+	timeBefore := time.Now()
+	for receipt == nil {
+		receipt, err = l.Client.TransactionReceipt(context.Background(), tx.Hash())
+	}
+
+	timeTaken := time.Since(timeBefore)
+	if receipt != nil && receipt.Status == types.ReceiptStatusFailed {
+		return tx.Hash().Hex(), errors.New("transaction failed")
+	}
+	fmt.Printf("Successfully submitted transaction %s, took %s sec", tx.Hash().Hex(), timeTaken.String())
+	fmt.Println()
 	return tx.Hash().Hex(), nil
 }
 

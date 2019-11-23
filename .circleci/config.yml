@@ -1,35 +1,46 @@
 version: 2
 jobs:
   build:
+    machine:
+      docker_layer_caching: true
     branches:
       only:
       - graphene
-    docker:
-    - image: circleci/golang:1.12 #
-    working_directory: /go/src/github.com/CircleCI-Public/circleci-demo-go\
-    environment: # environment variables for the build itself
-      TEST_RESULTS: /tmp/test-results # path to where test results will be saved
+    working_directory: ~/go/src/github.com/quantadex/distributed_quanta_bridge
+    environment:
+      GOPATH: /home/circleci/go
     steps:
+    - run:
+        name: Install checkout requirements
+        command: |
+          curl -s https://packagecloud.io/install/repositories/github/git-lfs/script.deb.sh | sudo bash
+          sudo apt-get install git-lfs
+          git lfs install
+    - run: go get -u github.com/tebeka/go2xunit
+    - checkout
+    - run:
+        name: Checkout binaries
+        command: git lfs pull
+    - run: ls -a && pwd
+    - run: tar xvf vendor.tar
+    - run: mkdir -p reports
     - run:
         name: Install Docker Compose
         command: |
           curl -L https://github.com/docker/compose/releases/download/1.19.0/docker-compose-`uname -s`-`uname -m` > ~/docker-compose
           chmod +x ~/docker-compose
           sudo mv ~/docker-compose /usr/local/bin/docker-compose
-    - run: go get -u github.com/tebeka/go2xunit
-    - setup_remote_docker:   # (2)
-        docker_layer_caching: true # (3)
-    - checkout
+    - run: docker run -d -p 5432:5432 postgres
     - run: cd blockchain && docker-compose up -d
-    - run: curl -v http://litecoind:19332
+#    - run: go test -v -parallel 1 ./node/...
     - run:
         name: run_test
         command: |
           for name in common node registrar trust; do
               echo "Testing $name..."
               rm -f ./reports/report_$name.xml
-              2>&1 go test -v ./$name/... | tee gotest_$name.out
-              $WORKSPACE/bin/go2xunit -fail -input gotest_$name.out -output ./reporst/report_$name.xml || :
+              2>&1 go test -parallel 1 -v ./$name/... | tee gotest_$name.out
+              $GOPATH/bin/go2xunit -fail -input gotest_$name.out -output ./reports/report_$name.xml || :
               echo
           done
     - store_test_results:
