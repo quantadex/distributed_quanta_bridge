@@ -63,7 +63,7 @@ func (t *TrustPeerNode) GetMsg() *cosi.CosiMessage {
 func (t *TrustPeerNode) SendMsg(destinationNodeID int, msg interface{}) error {
 	peer := t.man.Nodes[destinationNodeID]
 	url := fmt.Sprintf("http://%s:%s%s", peer.IP, peer.Port, t.apiUrl)
-	//fmt.Println("Send to peer " + url)
+	fmt.Println("Send msg peer " + url)
 
 	data, err := json.Marshal(&msg)
 	if err != nil {
