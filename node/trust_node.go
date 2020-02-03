@@ -358,6 +358,7 @@ func (n *TrustNode) registerNode(config common.Config) bool {
 			// man.ContractAddress = viper.GetString("TRUST_ETHEREUM_ADDR")
 			n.man = man
 			n.nodeID, err = n.man.FindNode(nodeIP, strconv.Itoa(nodePort), nodeKey)
+			n.log.Infof("My node id is %s (%s:%d,%s)", n.nodeID, nodeIP, nodePort, nodeKey)
 			if err != nil {
 				n.log.Error("Node was not added to manifest")
 				return false
