@@ -16,6 +16,8 @@ import (
 	"time"
 )
 
+const ENABLE_SIGN = false
+
 type TrustPeerNode struct {
 	man       *manifest.Manifest
 	peer      PeerContact
@@ -70,9 +72,11 @@ func (t *TrustPeerNode) SendMsg(destinationNodeID int, msg interface{}) error {
 		return errors.New("unable to marshall")
 	}
 
-	_, err = t.km.SignMessage(data)
-	if err != nil {
-		return err
+	if ENABLE_SIGN {
+		_, err = t.km.SignMessage(data)
+		if err != nil {
+			return err
+		}
 	}
 	//println(string(signature))
 

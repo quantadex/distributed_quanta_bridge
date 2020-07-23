@@ -22,6 +22,8 @@ type Server struct {
 	httpService *http.Server
 }
 
+const ENABLE_SIGN = false
+
 func NewServer(registry *Registry, url string, logger logger.Logger) *Server {
 	return &Server{registry: registry, url: url, logger: logger, httpService: &http.Server{Addr: url}}
 }
@@ -89,12 +91,14 @@ func (server *Server) register(w http.ResponseWriter, request *http.Request) {
 		return
 	}
 
-	verified := crypto.VerifyMessage(msg.Body, msg.Body.NodeKey, msg.Signature)
+	if ENABLE_SIGN {
+		verified := crypto.VerifyMessage(msg.Body, msg.Body.NodeKey, msg.Signature)
 
-	if !verified {
-		w.WriteHeader(http.StatusUnauthorized)
-		server.logger.Error("Message fail signature verification")
-		return
+		if !verified {
+			w.WriteHeader(http.StatusUnauthorized)
+			server.logger.Error("Message fail signature verification")
+			return
+		}
 	}
 
 	err = server.registry.AddNode(&msg.Body)

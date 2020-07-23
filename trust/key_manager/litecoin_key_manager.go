@@ -20,6 +20,7 @@ type LitecoinKeyManager struct {
 	bitcoinRPC  string
 	rpcUser     string
 	rpcPassword string
+	signers     []string
 }
 
 func (b *LitecoinKeyManager) CreateNodeKeys() error {
@@ -56,6 +57,10 @@ func (b *LitecoinKeyManager) GetPublicKey() (string, error) {
 		return "", err
 	}
 	return pub.EncodeAddress(), nil
+}
+
+func (r *LitecoinKeyManager) GetSigners() []string {
+	return r.signers
 }
 
 func (b *LitecoinKeyManager) GetPrivateKey() *ecdsa.PrivateKey {

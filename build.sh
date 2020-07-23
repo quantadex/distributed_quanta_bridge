@@ -13,5 +13,7 @@ cd ../../cli/litecoin
 go build
 cd ../../cli/bch
 go build
+cd ../../cli/signer
+go build
 #cd ../../cli/event_notifier
 #go build

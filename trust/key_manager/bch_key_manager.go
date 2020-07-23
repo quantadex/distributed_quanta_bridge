@@ -21,6 +21,7 @@ type BCHKeyManager struct {
 	bitcoinRPC  string
 	rpcUser     string
 	rpcPassword string
+	signers     []string
 }
 
 func (b *BCHKeyManager) CreateNodeKeys() error {
@@ -57,6 +58,10 @@ func (b *BCHKeyManager) GetPublicKey() (string, error) {
 		return "", err
 	}
 	return pub.EncodeAddress(), nil
+}
+
+func (r *BCHKeyManager) GetSigners() []string {
+	return r.signers
 }
 
 func (b *BCHKeyManager) GetPrivateKey() *ecdsa.PrivateKey {

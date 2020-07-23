@@ -30,7 +30,6 @@ func main() {
 	viper.SetConfigType("yaml")
 
 	configFile := flag.String("config", "config.yml", "configuration file")
-	secretsFile := flag.String("secrets", "secrets.yml", "secrets file")
 	enableRegistry := flag.Bool("registry", false, "enables registry")
 
 	encryptFile := flag.String("encrypt", "", "encrypt file")
@@ -57,10 +56,6 @@ func main() {
 		}
 
 	} else {
-		fmt.Print("Password: ")
-		password, err := terminal.ReadPassword(int(syscall.Stdin))
-		secrets, err := crypto.DecryptSecretsFile(*secretsFile, string(password))
-
 		path, err := filepath.Abs(filepath.Dir(*configFile))
 		if err != nil {
 			panic(fmt.Errorf("Could not find file path: %s \n", err))
@@ -85,7 +80,7 @@ func main() {
 		}
 
 		if *enableSyncAddresses != "" {
-			node, success := initNode(config, secrets, false)
+			node, success := initNode(config, false)
 			if !success {
 				panic("Failed to init node")
 			}
@@ -100,7 +95,7 @@ func main() {
 				}
 			}
 		} else if *bounceTx != "" {
-			node, success := initNode(config, secrets, false)
+			node, success := initNode(config, false)
 			if !success {
 				panic("Failed to init node")
 			}
@@ -132,7 +127,7 @@ func main() {
 				fmt.Println("Tx already processed successfully.")
 			}
 		} else if *retryTx != "" {
-			node, success := initNode(config, secrets, false)
+			node, success := initNode(config, false)
 			if !success {
 				panic("Failed to init node")
 			}
@@ -151,7 +146,7 @@ func main() {
 				}
 			}
 		} else if *repair {
-			node, success := initNode(config, secrets, false)
+			node, success := initNode(config, false)
 			if !success {
 				panic("Failed to init node")
 			}
@@ -212,7 +207,7 @@ func main() {
 				config.ListenPort = *portNumber
 			}
 
-			node := bootstrapNode(config, secrets, false)
+			node := bootstrapNode(config, false)
 
 			err = registerNode(config, node)
 			if err != nil {

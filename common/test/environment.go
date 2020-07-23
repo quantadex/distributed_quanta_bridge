@@ -100,6 +100,6 @@ const LOCAL = "LOCAL"
 const QUANTA_ACCOUNT = "QCAO4HRMJDGFPUHRCLCSWARQTJXY2XTAFQUIRG2FAR3SCF26KQLAWZRN"
 
 var ETHER_NETWORKS = map[string]EthereumEnv{
-	ROPSTEN: EthereumEnv{"https://ropsten.infura.io/v3/7b880b2fb55c454985d1c1540f47cbf6", "3"},
+	ROPSTEN: EthereumEnv{"https://ropsten.infura.io/v3/1accc4f03876435daac6dcd88e7bfa80", "3"},
 	LOCAL:   EthereumEnv{"http://localhost:7545", "15"},
 }

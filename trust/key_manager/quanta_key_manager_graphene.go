@@ -49,6 +49,10 @@ func (k *QuantaKeyGraphene) VerifyTransaction(encoded string) (bool, error) {
 	return true, nil
 }
 
+func (r *QuantaKeyGraphene) GetSigners() []string {
+	panic("implement me")
+}
+
 func (k *QuantaKeyGraphene) SignMessageObj(msg interface{}) *string {
 	bData := new(bytes.Buffer)
 	json.NewEncoder(bData).Encode(msg)

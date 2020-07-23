@@ -10,8 +10,10 @@ import (
 	"github.com/quantadex/distributed_quanta_bridge/common/kv_store"
 	"github.com/quantadex/distributed_quanta_bridge/common/logger"
 	"github.com/quantadex/distributed_quanta_bridge/node/common"
+	"github.com/quantadex/distributed_quanta_bridge/trust/coin"
 	"github.com/quantadex/distributed_quanta_bridge/trust/control"
 	"github.com/quantadex/distributed_quanta_bridge/trust/db"
+	"github.com/quantadex/distributed_quanta_bridge/trust/key_manager"
 	"github.com/quantadex/distributed_quanta_bridge/trust/quanta"
 	"github.com/spf13/viper"
 	"golang.org/x/crypto/ssh/terminal"
@@ -120,4 +122,81 @@ func Setup() (*common.Config, quanta.Quanta, *db.DB, kv_store.KVStore, logger.Lo
 	}
 
 	return &config, quanta, rDb, kdb, log, &secrets
+}
+
+func RunSigner(config *common.Config, secrets *common.Secrets, logger logger.Logger, port int) error {
+	var err error
+
+	quanta, err := key_manager.NewGrapheneKeyManager(config.ChainId)
+	if err != nil {
+		logger.Error("Failed to set up quanta keys")
+		return err
+	}
+	err = quanta.LoadNodeKeys(secrets.NodeKey)
+	if err != nil {
+		logger.Error("Failed to set up node keys")
+		return err
+	}
+
+	coinkM, err := key_manager.NewEthKeyManager()
+	if err != nil {
+		logger.Error("Failed to create key manager")
+		return err
+	}
+
+	err = coinkM.LoadNodeKeys(secrets.EthereumKeyStore)
+	if err != nil {
+		logger.Error("Failed to set up ethereum keys")
+		return err
+	}
+
+	btcKM, err := key_manager.NewBitCoinKeyManager(config.BtcRpc, config.BtcNetwork, secrets.BtcRpcUser, secrets.BtcRpcPassword, secrets.BtcSigners)
+	if err != nil {
+		logger.Error("Failed to set up node keys")
+		return err
+	}
+
+	err = btcKM.LoadNodeKeys(secrets.BtcPrivateKey)
+	if err != nil {
+		logger.Error("Failed to set up btc keys")
+		return err
+	}
+
+	ltcKM, err := key_manager.NewLiteCoinKeyManager(config.LtcRpc, config.LtcNetwork, secrets.LtcRpcUser, secrets.LtcRpcPassword, secrets.LtcSigners)
+	if err != nil {
+		logger.Error("Failed to create LTC key manager")
+		return err
+	}
+
+	err = ltcKM.LoadNodeKeys(secrets.LtcPrivateKey)
+	if err != nil {
+		logger.Error("Failed to set up ltc keys")
+		return err
+	}
+	//p,_:=ltcKM.GetPublicKey()
+	//panic(p)
+
+	bchKM, err := key_manager.NewBCHCoinKeyManager(config.BchRpc, config.BchNetwork, secrets.BchRpcUser, secrets.BchRpcPassword, secrets.BchSigners)
+	if err != nil {
+		logger.Error("Failed to create BCH key manager")
+		return err
+	}
+	err = bchKM.LoadNodeKeys(secrets.BchPrivateKey)
+	if err != nil {
+		logger.Errorf("%s : Failed to set up bch keys", err)
+		return err
+	}
+
+	kms := map[string]key_manager.KeyManager{
+		coin.BLOCKCHAIN_QUANTA: quanta,
+		coin.BLOCKCHAIN_BTC:    btcKM,
+		coin.BLOCKCHAIN_ETH:    coinkM,
+		coin.BLOCKCHAIN_BCH:    bchKM,
+		coin.BLOCKCHAIN_LTC:    ltcKM,
+	}
+
+	service := key_manager.NewRemoteKeyManagerService(kms, *secrets)
+	service.Serve(fmt.Sprintf(":%d", port))
+
+	return nil
 }

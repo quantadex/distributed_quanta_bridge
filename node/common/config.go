@@ -4,6 +4,8 @@ type Config struct {
 	ExternalListenPort int
 	ListenIp           string
 	ListenPort         int
+	KmIp               string
+	KmPort             int
 	UsePrevKeys        bool
 	KvDbName           string
 
@@ -22,7 +24,7 @@ type Config struct {
 	EthFailureThreshold  int64
 	EthWithdrawMin       float64
 	EthWithdrawFee       float64
-	EthWithdrawGasFee	 int64
+	EthWithdrawGasFee    int64
 
 	BtcRpc               string
 	BtcBlockStart        int64

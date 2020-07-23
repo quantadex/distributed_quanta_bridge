@@ -2,19 +2,19 @@ package key_manager
 
 import (
 	"bytes"
-	"encoding/json"
+	"crypto/ecdsa"
 	"encoding/base64"
+	"encoding/json"
 	"github.com/quantadex/distributed_quanta_bridge/common/crypto"
-	"github.com/stellar/go/xdr"
 	"github.com/stellar/go/build"
 	"github.com/stellar/go/keypair"
+	"github.com/stellar/go/xdr"
 	"log"
-	"crypto/ecdsa"
 )
 
 type QuantaKeyManager struct {
-	key keypair.KP
-	seed string
+	key     keypair.KP
+	seed    string
 	network string
 }
 
@@ -40,7 +40,6 @@ func (k *QuantaKeyManager) SignTransaction(base64 string) (string, error) {
 	}
 	return xdr.MarshalBase64(b.E.Signatures[0])
 }
-
 
 func (k *QuantaKeyManager) VerifyTransaction(base64 string) (bool, error) {
 	println("verify ", base64)
@@ -87,14 +86,17 @@ func (k *QuantaKeyManager) GetPublicKey() (string, error) {
 	return k.key.Address(), nil
 }
 
-func (k *QuantaKeyManager) GetPrivateKey() (*ecdsa.PrivateKey) {
+func (r *QuantaKeyManager) GetSigners() []string {
+	panic("implement me")
+}
+
+func (k *QuantaKeyManager) GetPrivateKey() *ecdsa.PrivateKey {
 	return nil
 }
 
 func (k *QuantaKeyManager) VerifySignatureObj(msg interface{}, signature string) bool {
 	return crypto.VerifyMessage(msg, k.key.Address(), signature)
 }
-
 
 func (k *QuantaKeyManager) SignMessage(original []byte) ([]byte, error) {
 	return k.key.Sign(original)

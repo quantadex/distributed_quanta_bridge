@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"github.com/quantadex/distributed_quanta_bridge/cli"
 	"github.com/quantadex/distributed_quanta_bridge/common/logger"
 	"github.com/quantadex/distributed_quanta_bridge/common/test"
 	"github.com/quantadex/distributed_quanta_bridge/node/common"
@@ -22,6 +23,7 @@ func generateConfig(quanta *test.QuantaNodeSecrets, ethereum *test.EthereumTrust
 			ExternalListenPort: 5200 + index,
 			ListenIp:           "0.0.0.0",
 			ListenPort:         5100 + index,
+			KmPort:             4000 + index,
 			UsePrevKeys:        true,
 			MinNodes:           2,
 
@@ -136,12 +138,14 @@ func StartNodesWithIndexes(quanta *test.QuantaNodeSecrets, ethereum *test.Ethere
 		}
 
 		config, secrets := generateConfig(quanta, ethereum, etherEnv, currentIndex)
+		logger, _ := logger.NewLogger("common")
 
 		go func(config common.Config, currentIndex int) {
 			defer wg.Done()
 
 			mutex.Lock()
-			node := bootstrapNode(config, *secrets, true)
+			cli.RunSigner(&config, secrets, logger, config.KmPort)
+			node := bootstrapNode(config, true)
 			nodes[currentIndex] = node
 			mutex.Unlock()
 

@@ -17,6 +17,7 @@ import (
 )
 
 const BLOCKCHAIN_ETH = "ETH"
+const BLOCKCHAIN_QUANTA = "QUANTA"
 const CONST_PRECISION = 1e5
 
 /**

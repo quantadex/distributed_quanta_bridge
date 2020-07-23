@@ -74,7 +74,7 @@ type TrustNode struct {
  *
  * Initialize all sub-modules. Attach to databases.
  */
-func initNode(config common.Config, secrets common.Secrets, debugDb bool) (*TrustNode, bool) {
+func initNode(config common.Config, debugDb bool) (*TrustNode, bool) {
 	var err error
 	node := &TrustNode{}
 	node.doneChan = make(chan bool, 1)
@@ -91,65 +91,36 @@ func initNode(config common.Config, secrets common.Secrets, debugDb bool) (*Trus
 		level = logging.INFO
 	}
 	node.log.SetLogLevel(level)
+	kmAddress := fmt.Sprintf("%s:%d", config.KmIp, config.KmPort)
+	quantakM, err := key_manager.NewRemoteKeyManager(coin.BLOCKCHAIN_QUANTA, kmAddress)
+	node.quantakM = quantakM
 
-	node.quantakM, err = key_manager.NewGrapheneKeyManager(config.ChainId)
 	if err != nil {
-		node.log.Error("Failed to create key manager")
-		return nil, false
-	}
-	reuseKeys := config.UsePrevKeys
-	if reuseKeys == true {
-		err = node.quantakM.LoadNodeKeys(secrets.NodeKey)
-	} else {
-		err = node.quantakM.CreateNodeKeys()
-	}
-	if err != nil {
-		node.log.Error("Failed to set up node keys")
+		node.log.Error("Failed to create quanta key manager")
 		return nil, false
 	}
 
-	node.coinkM, err = key_manager.NewEthKeyManager()
+	node.coinkM, err = key_manager.NewRemoteKeyManager(coin.BLOCKCHAIN_ETH, kmAddress)
 	if err != nil {
-		node.log.Error("Failed to create key manager")
+		node.log.Error("Failed to create eth key manager")
 		return nil, false
 	}
 
-	err = node.coinkM.LoadNodeKeys(secrets.EthereumKeyStore)
+	node.btcKM, err = key_manager.NewRemoteKeyManager(coin.BLOCKCHAIN_BTC, kmAddress)
 	if err != nil {
-		node.log.Error("Failed to set up ethereum keys")
+		node.log.Error("Failed to create btc key manager")
 		return nil, false
 	}
 
-	node.btcKM, err = key_manager.NewBitCoinKeyManager(config.BtcRpc, config.BtcNetwork, secrets.BtcRpcUser, secrets.BtcRpcPassword)
+	node.ltcKM, err = key_manager.NewRemoteKeyManager(coin.BLOCKCHAIN_LTC, kmAddress)
 	if err != nil {
-		node.log.Error("Failed to create BTC key manager")
-		return nil, false
-	}
-	err = node.btcKM.LoadNodeKeys(secrets.BtcPrivateKey)
-	if err != nil {
-		node.log.Error("Failed to set up btc keys")
+		node.log.Error("Failed to create ltc key manager")
 		return nil, false
 	}
 
-	node.ltcKM, err = key_manager.NewLiteCoinKeyManager(config.LtcRpc, config.LtcNetwork, secrets.LtcRpcUser, secrets.LtcRpcPassword)
+	node.bchKM, err = key_manager.NewRemoteKeyManager(coin.BLOCKCHAIN_BCH, kmAddress)
 	if err != nil {
-		node.log.Error("Failed to create LTC key manager")
-		return nil, false
-	}
-	err = node.ltcKM.LoadNodeKeys(secrets.LtcPrivateKey)
-	if err != nil {
-		node.log.Error("Failed to set up ltc keys")
-		return nil, false
-	}
-
-	node.bchKM, err = key_manager.NewBCHCoinKeyManager(config.BchRpc, config.BchNetwork, secrets.BchRpcUser, secrets.BchRpcPassword)
-	if err != nil {
-		node.log.Error("Failed to create BCH key manager")
-		return nil, false
-	}
-	err = node.bchKM.LoadNodeKeys(secrets.BchPrivateKey)
-	if err != nil {
-		node.log.Errorf("%s : Failed to set up bch keys", err)
+		node.log.Error("Failed to create bch key manager")
 		return nil, false
 	}
 
@@ -161,7 +132,12 @@ func initNode(config common.Config, secrets common.Secrets, debugDb bool) (*Trus
 		return nil, false
 	}
 
-	println(secrets.DatabaseUrl)
+	secrets, err := quantakM.GetSecretsWithoutKeys()
+	if err != nil {
+		node.log.Error("Unable to get secrets")
+		return nil, false
+	}
+
 	err = node.db.Connect(secrets.DatabaseUrl)
 	if err != nil {
 		node.log.Error("Failed to connect to database")
@@ -204,7 +180,7 @@ func initNode(config common.Config, secrets common.Secrets, debugDb bool) (*Trus
 		return nil, false
 	}
 	blackListLtc := crypto.GetBlackListedUsersByBlockchain(config.BlackList, coin.BLOCKCHAIN_LTC)
-	ltccoin, err := coin.NewLitecoinCoin(config.LtcRpc, crypto.GetChainCfgByStringLTC(config.LtcNetwork), secrets.LtcSigners, secrets.LtcRpcUser, secrets.LtcRpcPassword, secrets.GrapheneSeedPrefix, config.LtcWithdrawMin, config.LtcWithdrawFee, blackListLtc)
+	ltccoin, err := coin.NewLitecoinCoin(config.LtcRpc, crypto.GetChainCfgByStringLTC(config.LtcNetwork), node.ltcKM.GetSigners(), secrets.LtcRpcUser, secrets.LtcRpcPassword, secrets.GrapheneSeedPrefix, config.LtcWithdrawMin, config.LtcWithdrawFee, blackListLtc)
 	if err != nil {
 		panic(fmt.Errorf("cannot create litecoin coin"))
 	}
@@ -216,7 +192,7 @@ func initNode(config common.Config, secrets common.Secrets, debugDb bool) (*Trus
 	node.ltc = ltccoin
 
 	blackListBch := crypto.GetBlackListedUsersByBlockchain(config.BlackList, coin.BLOCKCHAIN_BCH)
-	bchcoin, err := coin.NewBCHCoin(config.BchRpc, crypto.GetChainCfgByStringBCH(config.BchNetwork), secrets.BchSigners, secrets.BchRpcUser, secrets.BchRpcPassword, secrets.GrapheneSeedPrefix, config.BchWithdrawMin, config.BchWithdrawFee, blackListBch)
+	bchcoin, err := coin.NewBCHCoin(config.BchRpc, crypto.GetChainCfgByStringBCH(config.BchNetwork), node.bchKM.GetSigners(), secrets.BchRpcUser, secrets.BchRpcPassword, secrets.GrapheneSeedPrefix, config.BchWithdrawMin, config.BchWithdrawFee, blackListBch)
 	if err != nil {
 		panic(fmt.Errorf("cannot create litecoin coin"))
 	}
@@ -229,7 +205,7 @@ func initNode(config common.Config, secrets common.Secrets, debugDb bool) (*Trus
 
 	// attach bitcoin
 	blackListBtc := crypto.GetBlackListedUsersByBlockchain(config.BlackList, coin.BLOCKCHAIN_BTC)
-	coin, err := coin.NewBitcoinCoin(config.BtcRpc, crypto.GetChainCfgByString(config.BtcNetwork), secrets.BtcSigners, secrets.BtcRpcUser, secrets.BtcRpcPassword, secrets.GrapheneSeedPrefix, config.BtcWithdrawMin, config.BtcWithdrawFee, blackListBtc)
+	coin, err := coin.NewBitcoinCoin(config.BtcRpc, crypto.GetChainCfgByString(config.BtcNetwork), node.btcKM.GetSigners(), secrets.BtcRpcUser, secrets.BtcRpcPassword, secrets.GrapheneSeedPrefix, config.BtcWithdrawMin, config.BtcWithdrawFee, blackListBtc)
 	if err != nil {
 		panic(fmt.Errorf("cannot create ethereum listener"))
 	}
@@ -289,7 +265,7 @@ func initNode(config common.Config, secrets common.Secrets, debugDb bool) (*Trus
 
 	node.config = config
 
-	node.webhook = webhook.NewWebhook(node.rDb)
+	//node.webhook = webhook.NewWebhook(node.rDb)
 
 	return node, true
 }
@@ -318,7 +294,7 @@ func (n *TrustNode) registerNode(config common.Config) bool {
 
 	ltcPub, err := n.ltcKM.GetPublicKey()
 	if err != nil {
-		n.log.Error("Failed to get ltc public key")
+		n.log.Error("Failed to get ltc public key: " + err.Error())
 		return false
 	}
 
@@ -380,7 +356,7 @@ func (n *TrustNode) registerNode(config common.Config) bool {
 	n.restApi = NewApiServer(n, blockchain, pubKey, config.ListenIp, n.db, n.rDb, fmt.Sprintf(":%d", config.ExternalListenPort), n.log)
 	go n.restApi.Start()
 
-	go n.webhook.ProcessEvents()
+	//go n.webhook.ProcessEvents()
 
 	return true
 }
@@ -472,7 +448,9 @@ func (n *TrustNode) initTrust(config common.Config) {
 		coinInfo,
 		map[string]int64{coin.BLOCKCHAIN_ETH: 0, coin.BLOCKCHAIN_BTC: 0, coin.BLOCKCHAIN_LTC: 0, coin.BLOCKCHAIN_BCH: 0},
 		config.Mode,
-		n.webhook.GetEventsChan())
+		//n.webhook.GetEventsChan()
+		nil,
+	)
 
 	n.cTQ = control.NewCoinToQuanta(n.log,
 		n.db,
@@ -493,7 +471,9 @@ func (n *TrustNode) initTrust(config common.Config) {
 			Network:    config.ChainId,
 			Issuer:     config.IssuerAddress,
 		},
-		n.webhook.GetEventsChan())
+		nil,
+		//n.webhook.GetEventsChan()
+	)
 }
 
 /**
@@ -546,8 +526,8 @@ func (n *TrustNode) run() {
 	}
 }
 
-func bootstrapNode(config common.Config, secrets common.Secrets, debugDb bool) *TrustNode {
-	node, success := initNode(config, secrets, debugDb)
+func bootstrapNode(config common.Config, debugDb bool) *TrustNode {
+	node, success := initNode(config, debugDb)
 	if !success {
 		panic("Failed to init node")
 		return nil

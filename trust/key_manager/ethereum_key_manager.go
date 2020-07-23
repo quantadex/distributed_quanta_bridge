@@ -46,6 +46,10 @@ func (e *EthereumKeyManager) GetPublicKey() (string, error) {
 	return crypto.PubkeyToAddress(e.key.PublicKey).Hex(), nil
 }
 
+func (r *EthereumKeyManager) GetSigners() []string {
+	panic("implement me")
+}
+
 func (e *EthereumKeyManager) GetPrivateKey() *ecdsa.PrivateKey {
 	return e.key
 }

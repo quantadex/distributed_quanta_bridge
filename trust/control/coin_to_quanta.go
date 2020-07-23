@@ -437,6 +437,6 @@ func (c *CoinToQuanta) StartConsensus(tx *coin.Deposit, consensus ConsensusType)
 }
 
 func (c *CoinToQuanta) Stop() {
-	c.logger.Infof("CoinToQuanta stopped %p", c)
+	c.logger.Infof("CoinToQuanta stopped")
 	c.doneChan <- true
 }
