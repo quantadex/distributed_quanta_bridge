@@ -144,7 +144,8 @@ func StartNodesWithIndexes(quanta *test.QuantaNodeSecrets, ethereum *test.Ethere
 			defer wg.Done()
 
 			mutex.Lock()
-			cli.RunSigner(&config, secrets, logger, config.KmPort)
+			go cli.RunSigner(&config, secrets, logger, config.KmPort)
+			time.Sleep(time.Second)
 			node := bootstrapNode(config, true)
 			nodes[currentIndex] = node
 			mutex.Unlock()

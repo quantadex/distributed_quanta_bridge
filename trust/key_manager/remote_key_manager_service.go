@@ -102,15 +102,13 @@ func (r *RemoteKeyManagerService) Serve(address string) {
 		return
 	}
 
-	go func() {
-		for {
-			cxn, err := ln.Accept()
-			if err != nil {
-				log.Printf("listen(%q): %s\n", address, err)
-				return
-			}
-			//log.Printf("Server accepted connection to %s from %s\n", cxn.LocalAddr(), cxn.RemoteAddr())
-			go r.server.ServeConn(cxn)
+	for {
+		cxn, err := ln.Accept()
+		if err != nil {
+			log.Printf("listen(%q): %s\n", address, err)
+			return
 		}
-	}()
+		//log.Printf("Server accepted connection to %s from %s\n", cxn.LocalAddr(), cxn.RemoteAddr())
+		go r.server.ServeConn(cxn)
+	}
 }
