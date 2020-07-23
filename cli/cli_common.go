@@ -24,12 +24,12 @@ import (
 
 func Setup(local_km bool) (*common.Config, quanta.Quanta, *db.DB, kv_store.KVStore, logger.Logger, *common.Secrets) {
 	viper.SetConfigType("yaml")
-	var secretsFile string
+	var secretsFile *string
 	var secrets common.Secrets
 	configFile := flag.String("config", "config.yml", "configuration file")
 
 	if local_km {
-		secretsFile = *flag.String("secrets", "secrets.yml", "secrets file")
+		secretsFile = flag.String("secrets", "secrets.yml", "secrets file")
 	}
 	flag.Parse()
 
