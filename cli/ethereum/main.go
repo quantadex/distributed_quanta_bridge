@@ -9,7 +9,7 @@ import (
 )
 
 func main() {
-	config, quanta, rdb, kdb, log, secrets := cli.Setup()
+	config, quanta, rdb, kdb, log, secrets := cli.Setup(false)
 
 	// setup coin
 	blackList := crypto.GetBlackListedUsersByBlockchain(config.BlackList, coin.BLOCKCHAIN_ETH)

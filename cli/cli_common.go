@@ -22,21 +22,18 @@ import (
 	"syscall"
 )
 
-func Setup() (*common.Config, quanta.Quanta, *db.DB, kv_store.KVStore, logger.Logger, *common.Secrets) {
+func Setup(local_km bool) (*common.Config, quanta.Quanta, *db.DB, kv_store.KVStore, logger.Logger, *common.Secrets) {
 	viper.SetConfigType("yaml")
+	var secretsFile string
+	var secrets common.Secrets
 	configFile := flag.String("config", "config.yml", "configuration file")
-	secretsFile := flag.String("secrets", "secrets.yml", "secrets file")
+
+	if local_km {
+		secretsFile = *flag.String("secrets", "secrets.yml", "secrets file")
+	}
 	flag.Parse()
 
 	viper.SetConfigType("yaml")
-
-	fmt.Print("Password: ")
-	password, err := terminal.ReadPassword(int(syscall.Stdin))
-	secrets, err := crypto.DecryptSecretsFile(*secretsFile, string(password))
-
-	if err != nil {
-		panic(fmt.Errorf("Fatal error secrets file: %s \n", err))
-	}
 
 	data, err := ioutil.ReadFile(*configFile)
 	if err != nil {
@@ -52,6 +49,25 @@ func Setup() (*common.Config, quanta.Quanta, *db.DB, kv_store.KVStore, logger.Lo
 	err = viper.Unmarshal(&config)
 	if err != nil {
 		panic(fmt.Errorf("Fatal error config file: %s \n", err))
+	}
+
+	if local_km {
+		fmt.Print("Password: ")
+		password, err := terminal.ReadPassword(int(syscall.Stdin))
+		secrets, err = crypto.DecryptSecretsFile(secretsFile, string(password))
+
+		if err != nil {
+			panic(fmt.Errorf("Fatal error secrets file: %s \n", err))
+		}
+	} else {
+		km, err := key_manager.NewRemoteKeyManager(coin.BLOCKCHAIN_QUANTA, fmt.Sprintf("%s:%d", config.KmIp, config.KmPort))
+		if err != nil {
+			panic(fmt.Errorf("Fatal error secrets file 1: %s \n", err))
+		}
+		secrets, err = km.GetSecretsWithoutKeys()
+		if err != nil {
+			panic(fmt.Errorf("Fatal error secrets file 2: %s \n", err))
+		}
 	}
 
 	// setup logger
