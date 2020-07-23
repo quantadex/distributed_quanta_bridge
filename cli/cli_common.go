@@ -54,7 +54,7 @@ func Setup(local_km bool) (*common.Config, quanta.Quanta, *db.DB, kv_store.KVSto
 	if local_km {
 		fmt.Print("Password: ")
 		password, err := terminal.ReadPassword(int(syscall.Stdin))
-		secrets, err = crypto.DecryptSecretsFile(secretsFile, string(password))
+		secrets, err = crypto.DecryptSecretsFile(*secretsFile, string(password))
 
 		if err != nil {
 			panic(fmt.Errorf("Fatal error secrets file: %s \n", err))
