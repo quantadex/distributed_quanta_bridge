@@ -309,10 +309,18 @@ func (c *AddressConsensus) startNewBlock(txsToProcess []AddressChange, done chan
 				count++
 			}
 		} else {
+			defer func() {
+				if err := recover(); err != nil {
+					fmt.Println(errors.Wrap(err, 2).ErrorStack())
+				}
+			}()
+
 			addr, err := c.trustNode.CreateMultisig(tx.Blockchain, tx.QuantaAddr)
+
 			if err != nil || addr == nil {
 				c.logger.Errorf("cannot create multisig address for %s", tx.QuantaAddr)
 				if err != nil {
+
 					c.logger.Error(err.Error())
 				}
 			}

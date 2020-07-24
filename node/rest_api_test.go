@@ -475,9 +475,9 @@ func TestRepair(t *testing.T) {
 
 	// wait for node to bootup
 	time.Sleep(time.Millisecond * 1000)
-	addr, err := nodes[0].CreateMultisig("BCH", "pooja5")
+	addr, err := nodes[0].CreateMultisig("BTC", "pooja5")
 	assert.NoError(t, err)
-	addr2, err := nodes[0].CreateMultisig("BCH", "pooja7")
+	addr2, err := nodes[0].CreateMultisig("BTC", "pooja7")
 	assert.NoError(t, err)
 
 	for _, n := range nodes {

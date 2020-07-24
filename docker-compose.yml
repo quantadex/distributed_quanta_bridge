@@ -78,7 +78,7 @@ services:
     - "19332:19332"
     - "19444:19444"
     volumes:
-    - "/home/ec2-user/litecoin-data:/data"
+    - "./blockchain/litecoin-data:/data"
     command: litecoind testnet -rpcallowip=0.0.0.0/0 -rpcuser=user -rpcpassword=123 -deprecatedrpc=signrawtransaction -txindex -deprecatedrpc=accounts -printtoconsole -rpcport=19332
 
   bitcoin-abc:
@@ -87,7 +87,7 @@ services:
     - "18332:18332"
     - "18444:18444"
     volumes:
-    - "/home/ec2-user/bch-data:/data"
+    - "./blockchain/bch-data:/data"
     command: bitcoind -testnet -rpcallowip=0.0.0.0/0 -rpcuser=user -rpcpassword=123 -deprecatedrpc=signrawtransaction  -txindex -deprecatedrpc=accounts -printtoconsole
 
 
