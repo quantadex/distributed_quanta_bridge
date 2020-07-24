@@ -25,6 +25,10 @@ reserve=1 # addr=2NF63kkxcegxtMuTKartK4tsyXsoHxhRvpN hdkeypath=m/0'/0'/13'
 
 */
 
+func getBitcoinSigners() []string {
+	return []string{"049C8C4647E016C502766C6F5C40CFD37EE86CD02972274CA50DA16D72016CAB5812F867F27C268923E5DE3ADCB268CC8A29B96D0D8972841F286BA6D9CCF61360", "040C9B0D5324CBAF4F40A215C1D87DF1BEB51A0345E0384942FE0D60F8D796F7B7200CC5B70DDCF101E7804EFA26A0CE6EC6622C2FE90BCFD2DA2482006C455FF1"}
+}
+
 func TestCheckHash(t *testing.T) {
 	scriptBytes, _ := hex.DecodeString("004730440220304a3f60b7f5510e80b086cee9e88e38672c6031c3c2905b39bf5b180ba463b602205a14fcffee23eda01193e4dd281be474b058cc5d58b523f6bbc882469e05647c01473044022036224d12535cb02d597e1e1d0a6baccca9c27531464935110bab23c7a40f0cdd02206de86e931083484f6c23da41455863e6ff0c6b1359f8edf5f54364b83deea39c0147522103c19460f565d12512ee584685bd8d97eb24d79a2acdf0c5b6af0b24ba29ceba0b210333d415aed3103f49346a3898efa137c42e933bbb16b3e4b56f7751670d2e0b6e52ae")
 	addr, _ := btcutil.NewAddressScriptHash(scriptBytes, &chaincfg.RegressionNetParams)
@@ -49,7 +53,7 @@ func TestBitcoinEncodeRefund(t *testing.T) {
 	assert.NoError(t, err)
 	addr2, err := bitcoin.GenerateMultisig("2")
 	assert.NoError(t, err)
-	println(addr1, addr2)
+	println("generated", addr1, addr2)
 
 	bitcoin.issuerAddr = addr1
 
@@ -84,7 +88,7 @@ func TestBitcoinEncodeRefund(t *testing.T) {
 	var encoded EncodedMsg
 	json.Unmarshal([]byte(tx), &encoded)
 
-	km, _ := key_manager.NewBitCoinKeyManager(LOCAL_RPC_HOST, "regnet", "user", "123")
+	km, _ := key_manager.NewBitCoinKeyManager(LOCAL_RPC_HOST, "regnet", "user", "123", getBitcoinSigners())
 
 	err = km.LoadNodeKeys("92REaZhgcw6FF2rz8EnY1HMtBvgh3qh4gs9PxnccPrju6ZCFetk")
 	assert.NoError(t, err)
@@ -182,7 +186,7 @@ func TestDecode(t *testing.T) {
 }
 
 func TestEncodeWithMultipleInputs(t *testing.T) {
-	client, err := NewBitcoinCoin(LOCAL_RPC_HOST, &chaincfg.RegressionNetParams, []string{"049C8C4647E016C502766C6F5C40CFD37EE86CD02972274CA50DA16D72016CAB5812F867F27C268923E5DE3ADCB268CC8A29B96D0D8972841F286BA6D9CCF61360", "040C9B0D5324CBAF4F40A215C1D87DF1BEB51A0345E0384942FE0D60F8D796F7B7200CC5B70DDCF101E7804EFA26A0CE6EC6622C2FE90BCFD2DA2482006C455FF1"}, "user", "123", "", 0.00075, 0.00025, map[string]bool{})
+	client, err := NewBitcoinCoin(LOCAL_RPC_HOST, &chaincfg.RegressionNetParams, getBitcoinSigners(), "user", "123", "", 0.00075, 0.00025, map[string]bool{})
 	assert.NoError(t, err)
 
 	err = client.Attach()

@@ -23,6 +23,10 @@ address: LbLtvETwstn64nnubroJ1898Sfu1yeAGzD
 private: 6vCii4KtPhyt5TYgwXQpMbAuYM92NJCncbH7VJ9sD6ZA5LNifDi
 public: 0485A98A320E559ABF481F874521CDA6CE8A21691E4DF39B0389950C10F07A8CEAA25385B1E3D8807D4980F47082730C38E6A556E7B43F323FFCC6FC78487AEF7C
 */
+
+func getLitecoinSigners() []string {
+	return []string{"03AF8891DA9BBF3CED03F04BC3C17EC4D3AE61D464E9B89A6B6A1FA60E361FDEA4", "038CAFE50CA757FAD36DA592A7C2B19158C0163445BAC2DDF6A59BDDC8F5BF6AD1", "03F8C8D630BB53B2E08FB108E2A951C84E582BB3D585D2127FAE6DE43150A415AE"}
+}
 func TestLTCEncodeRefund(t *testing.T) {
 	client, err := NewLitecoinCoin(LOCAL_RPC_HOST_LTC, &chaincfg.RegressionNetParams, []string{"047AABB69BBE1B5D9E2EFD10D0215A37AE835EAE08DFDF795E5A8411271F690CC8797CF4DEB3508844920E28A42A67D8A3F56D5B6B65401DEDB1E130F9F9908463", "04851D591308AFBE768566060C01A60A5F6AC6C78C3766559C835BEF0485628013ADC7D7E7676B0281FB83E788F4BC11E4CA597D1A53AF5F0BB90D555A28B55504"}, "user", "123", "", 0.00002, 0.000001, map[string]bool{})
 	assert.NoError(t, err)
@@ -69,7 +73,7 @@ func TestLTCEncodeRefund(t *testing.T) {
 	var encoded EncodedMsg
 	json.Unmarshal([]byte(tx), &encoded)
 
-	km, _ := key_manager.NewLiteCoinKeyManager(LOCAL_RPC_HOST_LTC, "regnet", "user", "123")
+	km, _ := key_manager.NewLiteCoinKeyManager(LOCAL_RPC_HOST_LTC, "regnet", "user", "123", getLitecoinSigners())
 
 	err = km.LoadNodeKeys("92P5DpWDiuttphtXV5qrHjMnFU2nAyiR8NpyEkF5s8uAngVgBFb")
 	assert.NoError(t, err)
@@ -225,7 +229,7 @@ func TestEncodeWithMultipleInputsLTC(t *testing.T) {
  * These are the public keys on testnet, and it failed to generate a key for some instances, fixed by adding more to the seed
  */
 func TestGenerateMultisigLTC(t *testing.T) {
-	client, err := NewLitecoinCoin(LOCAL_RPC_HOST_LTC, &chaincfg.RegressionNetParams, []string{"03AF8891DA9BBF3CED03F04BC3C17EC4D3AE61D464E9B89A6B6A1FA60E361FDEA4", "038CAFE50CA757FAD36DA592A7C2B19158C0163445BAC2DDF6A59BDDC8F5BF6AD1", "03F8C8D630BB53B2E08FB108E2A951C84E582BB3D585D2127FAE6DE43150A415AE"}, "user", "123", "", 0.00002, 0.00001, map[string]bool{})
+	client, err := NewLitecoinCoin(LOCAL_RPC_HOST_LTC, &chaincfg.RegressionNetParams, getLitecoinSigners(), "user", "123", "", 0.00002, 0.00001, map[string]bool{})
 	assert.NoError(t, err)
 
 	err = client.Attach()

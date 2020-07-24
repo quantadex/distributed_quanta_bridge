@@ -11,7 +11,6 @@ import (
 	"github.com/quantadex/distributed_quanta_bridge/common/test"
 	"github.com/quantadex/distributed_quanta_bridge/trust/key_manager"
 	"math/big"
-	"os"
 	"os/exec"
 	"strings"
 	"testing"
@@ -233,14 +232,15 @@ func teardownEthereum() {
 }
 
 //https://www.philosophicalhacker.com/post/integration-tests-in-go/
-func TestMain(m *testing.M) {
-	if !testing.Short() {
-		setupEthereum()
-	}
-	result := m.Run()
-
-	if !testing.Short() {
-		teardownEthereum()
-	}
-	os.Exit(result)
-}
+//func TestMain(m *testing.M) {
+//	testing.Init()
+//	if !testing.Short() {
+//		setupEthereum()
+//	}
+//	result := m.Run()
+//
+//	if !testing.Short() {
+//		teardownEthereum()
+//	}
+//	os.Exit(result)
+//}
