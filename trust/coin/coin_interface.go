@@ -2,6 +2,7 @@ package coin
 
 import (
 	"crypto/ecdsa"
+	"fmt"
 	"github.com/btcsuite/btcd/chaincfg"
 	"github.com/btcsuite/btcutil"
 	common2 "github.com/ethereum/go-ethereum/common"
@@ -153,6 +154,7 @@ func NewEthereumCoin(networkId string, ethereumRpc string, secret string, erc20m
 
 func NewBitcoinCoin(rpcHost string, params *chaincfg.Params, signers []string, rpcUser, rpcPassword, grapheneSeedPrefix string, withdrawMin, withdrawFee float64, blackList map[string]bool) (Coin, error) {
 	signersA := []btcutil.Address{}
+	fmt.Printf("BTC Signers: %v\n", signers)
 	for _, s := range signers {
 		addr, err := btcutil.DecodeAddress(s, params)
 		if err != nil {
@@ -166,6 +168,7 @@ func NewBitcoinCoin(rpcHost string, params *chaincfg.Params, signers []string, r
 
 func NewLitecoinCoin(rpcHost string, params *chaincfg2.Params, signers []string, rpcUser, rpcPassword, grapheneSeedPrefix string, withdrawMin, withdrawFee float64, blackList map[string]bool) (Coin, error) {
 	signersA := []ltcutil.Address{}
+	fmt.Printf("LTC Signers: %v\n", signers)
 	for _, s := range signers {
 		addr, err := ltcutil.DecodeAddress(s, params)
 		if err != nil {
@@ -179,6 +182,7 @@ func NewLitecoinCoin(rpcHost string, params *chaincfg2.Params, signers []string,
 
 func NewBCHCoin(rpcHost string, params *chaincfg3.Params, signers []string, rpcUser, rpcPassword, grapheneSeedPrefix string, withdrawMin, withdrawFee float64, blackList map[string]bool) (Coin, error) {
 	signersA := []bchutil.Address{}
+	fmt.Printf("BCH Signers: %v\n", signers)
 	for _, s := range signers {
 		addr, err := bchutil.DecodeAddress(s, params)
 		if err != nil {
