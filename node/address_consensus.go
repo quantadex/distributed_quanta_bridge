@@ -313,6 +313,7 @@ func (c *AddressConsensus) startNewBlock(txsToProcess []AddressChange, done chan
 			if err != nil || addr == nil {
 				c.logger.Errorf("cannot create multisig address for %s", tx.QuantaAddr)
 			}
+			fmt.Printf("startNewBlock::Addr process %v => %v \n", txsToProcess, addr)
 			txsToProcess[i].Address = addr.ContractAddress
 		}
 	}

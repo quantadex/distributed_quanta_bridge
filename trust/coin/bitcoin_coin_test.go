@@ -49,7 +49,7 @@ func TestBitcoinEncodeRefund(t *testing.T) {
 	if blockId < 101 {
 		bitcoin.Client.Generate(101)
 	}
-	addr1, err := bitcoin.GenerateMultisig("crosschain2")
+	addr1, err := bitcoin.GenerateMultisig("quanta-labs")
 	assert.NoError(t, err)
 	addr2, err := bitcoin.GenerateMultisig("2")
 	assert.NoError(t, err)
