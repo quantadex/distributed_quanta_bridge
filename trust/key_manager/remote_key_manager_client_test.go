@@ -22,7 +22,7 @@ func TestKeyManager(t *testing.T) {
 	}
 
 	service := NewRemoteKeyManagerService(kms, common2.Secrets{DatabaseUrl: "db://secret"})
-	service.Serve(":4444")
+	go service.Serve(":4444")
 
 	//time.Sleep(time.Second)
 
@@ -42,6 +42,9 @@ func TestKeyManager(t *testing.T) {
 
 	pubkey, _ := client.GetPublicKey()
 	println("pub key=", pubkey)
+
+	privKey := client.GetPrivateKey()
+	println("priv key=", common.Bytes2Hex(privKey.D.Bytes()))
 
 	var res common2.Secrets
 	res, err = client.GetSecretsWithoutKeys()

@@ -5,6 +5,7 @@ import (
 	"crypto/ecdsa"
 	"encoding/base64"
 	"encoding/json"
+	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/quantadex/distributed_quanta_bridge/node/common"
 	"log"
 	"net"
@@ -32,7 +33,18 @@ func (r *RemoteKeyManager) GetPublicKey() (pub string, err error) {
 }
 
 func (r *RemoteKeyManager) GetPrivateKey() *ecdsa.PrivateKey {
-	panic("implement me")
+	err := r.Connect()
+	var priv string
+	err = r.Client.Call("Signer.GetPrivateKey", r.blockchain, &priv)
+	if err != nil {
+		return nil
+	}
+
+	key, err := crypto.HexToECDSA(priv)
+	if err != nil {
+		return nil
+	}
+	return key
 }
 
 func (r *RemoteKeyManager) SignMessage(original []byte) ([]byte, error) {

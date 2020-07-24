@@ -3,6 +3,7 @@ package key_manager
 import (
 	"errors"
 	"fmt"
+	common2 "github.com/ethereum/go-ethereum/common"
 	"github.com/quantadex/distributed_quanta_bridge/node/common"
 	"log"
 	"net"
@@ -60,6 +61,15 @@ func (h *Signer) GetPublicKey(chain string, pub *string) error {
 		return errors.New("No chain found")
 	}
 
+	return nil
+}
+
+func (h *Signer) GetPrivateKey(chain string, priv *string) error {
+	log.Println("GetPublicKey", chain)
+
+	if km, ok := h.manager[chain]; ok {
+		*priv = common2.Bytes2Hex(km.GetPrivateKey().D.Bytes())
+	}
 	return nil
 }
 
