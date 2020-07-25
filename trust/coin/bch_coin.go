@@ -113,7 +113,7 @@ func (b *BCH) GetBlockInfo(hash string) (string, int64, error) {
 }
 
 func (b *BCH) GenerateMultisig(accountId string) (string, error) {
-	fmt.Println("BCH::GenerateMultisig ", accountId, b.signers, b.grapheneSeedPrefix)
+	fmt.Printf("BCH::GenerateMultisig %v %v %v\n", accountId, b.signers, b.grapheneSeedPrefix)
 
 	addr := []bchutil.Address{}
 	addr = append(addr, b.signers...)
