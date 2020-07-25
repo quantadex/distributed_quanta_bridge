@@ -113,6 +113,8 @@ func (b *BCH) GetBlockInfo(hash string) (string, int64, error) {
 }
 
 func (b *BCH) GenerateMultisig(accountId string) (string, error) {
+	fmt.Println("BCH::GenerateMultisig ", accountId)
+
 	addr := []bchutil.Address{}
 	addr = append(addr, b.signers...)
 	btcAddressStr, err := crypto.GenerateGrapheneKeyWithSeed(accountId, b.grapheneSeedPrefix)
