@@ -14,6 +14,7 @@ import (
 	"github.com/quantadex/distributed_quanta_bridge/trust/control"
 	"github.com/quantadex/distributed_quanta_bridge/trust/db"
 	"github.com/quantadex/distributed_quanta_bridge/trust/peer_contact"
+	"runtime/debug"
 	"time"
 )
 
@@ -311,21 +312,23 @@ func (c *AddressConsensus) startNewBlock(txsToProcess []AddressChange, done chan
 		} else {
 			defer func() {
 				if err := recover(); err != nil {
+					debug.PrintStack()
 					fmt.Println(errors.Wrap(err, 2).ErrorStack())
 				}
 			}()
 
 			addr, err := c.trustNode.CreateMultisig(tx.Blockchain, tx.QuantaAddr)
 
-			if err != nil || addr == nil {
+			if err != nil {
 				c.logger.Errorf("cannot create multisig address for %s", tx.QuantaAddr)
 				if err != nil {
-
 					c.logger.Error(err.Error())
 				}
 			}
-			fmt.Printf("startNewBlock::Addr process %v => %v \n", txsToProcess, addr)
-			txsToProcess[i].Address = addr.ContractAddress
+			if addr != nil {
+				fmt.Printf("startNewBlock::Addr process %v => %v \n", txsToProcess, addr)
+				txsToProcess[i].Address = addr.ContractAddress
+			}
 		}
 	}
 
