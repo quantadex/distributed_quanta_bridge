@@ -401,7 +401,7 @@ func (c *QuantaToCoin) StartConsensus(w *coin.Withdrawal) (string, error) {
 	encoded, err := c.coinChannel[blockchain].EncodeRefund(*w)
 
 	if err != nil {
-		c.eventsChan <- webhook.Event{Withdrawal_Failed, w.SourceAddress, w.Tx}
+		//c.eventsChan <- webhook.Event{Withdrawal_Failed, w.SourceAddress, w.Tx}
 		c.logger.Error("Failed to encode refund " + err.Error())
 		db.ChangeSubmitState(c.rDb, w.Tx, db.ENCODE_FAILURE, db.WITHDRAWAL, w.BlockHash)
 		return HEX_NULL, err
@@ -438,7 +438,7 @@ func (c *QuantaToCoin) SubmitWithdrawal(w *coin.Withdrawal, blockchain string) (
 	tx, err := c.coinChannel[blockchain].SendWithdrawal(common.HexToAddress(c.coinContractAddress), c.coinkM[blockchain].GetPrivateKey(), w)
 
 	if err != nil {
-		c.eventsChan <- webhook.Event{Withdrawal_Failed, w.SourceAddress, w.Tx}
+		//c.eventsChan <- webhook.Event{Withdrawal_Failed, w.SourceAddress, w.Tx}
 		c.logger.Errorf("Error submission: %s", err.Error())
 		if strings.Contains(err.Error(), "known transaction") {
 			db.ChangeSubmitState(c.rDb, w.Tx, db.SUBMIT_FATAL, db.WITHDRAWAL, w.BlockHash)
@@ -452,7 +452,7 @@ func (c *QuantaToCoin) SubmitWithdrawal(w *coin.Withdrawal, blockchain string) (
 			db.ChangeSubmitState(c.rDb, w.Tx, db.SUBMIT_FAILURE, db.WITHDRAWAL, w.BlockHash)
 		}
 	} else {
-		c.eventsChan <- webhook.Event{Withdrawal_Submitted, w.SourceAddress, w.Tx}
+		//c.eventsChan <- webhook.Event{Withdrawal_Submitted, w.SourceAddress, w.Tx}
 		db.ChangeWithdrawalSubmitState(c.rDb, w.Tx, db.SUBMIT_SUCCESS, w.TxId, tx, w.BlockHash)
 		//db.ChangeSubmitState(c.rDb, w.Tx, db.SUBMIT_SUCCESS, db.WITHDRAWAL)
 		c.logger.Infof("Submitted withdrawal in tx=%s SUCCESS", tx)
@@ -509,7 +509,7 @@ func (c *QuantaToCoin) BounceTx(refund *quanta.Refund, reason string, consensus 
 			c.logger.Error("Cannot change submit state:" + err.Error())
 			return err
 		}
-		c.eventsChan <- webhook.Event{Deposit_In_Consensus, dep.QuantaAddr, dep.Tx}
+		//c.eventsChan <- webhook.Event{Deposit_In_Consensus, dep.QuantaAddr, dep.Tx}
 	}
 
 	return nil
@@ -569,7 +569,7 @@ func (c *QuantaToCoin) DoLoop(cursor int64) ([]quanta.Refund, error) {
 		//cursor = refund.PageTokenID
 
 		if isCrosschainAddress || w.DestinationAddress == "0x0000000000000000000000000000000000000000" || !c.coinChannel[blockchain].CheckValidAddress(w.DestinationAddress) || !c.coinChannel[blockchain].CheckValidAmount(w.Amount) {
-			c.eventsChan <- webhook.Event{Withdrawal_Bounced, w.SourceAddress, w.Tx}
+			//c.eventsChan <- webhook.Event{Withdrawal_Bounced, w.SourceAddress, w.Tx}
 			var reason string
 			if !c.coinChannel[blockchain].CheckValidAmount(w.Amount) {
 				c.logger.Error("Amount is less than the minimum withdraw amount")
@@ -587,7 +587,7 @@ func (c *QuantaToCoin) DoLoop(cursor int64) ([]quanta.Refund, error) {
 		} else if c.nodeID == 0 {
 			if c.mode == AUTO {
 
-				c.eventsChan <- webhook.Event{Withdrawal_In_Consensus, w.SourceAddress, w.Tx}
+				//c.eventsChan <- webhook.Event{Withdrawal_In_Consensus, w.SourceAddress, w.Tx}
 
 				db.ChangeSubmitState(c.rDb, w.Tx, db.SUBMIT_CONSENSUS, db.WITHDRAWAL, w.BlockHash)
 			} else if c.mode == MANUAL {
