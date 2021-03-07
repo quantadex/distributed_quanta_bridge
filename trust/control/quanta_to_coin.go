@@ -345,6 +345,8 @@ func (c *QuantaToCoin) DispatchWithdrawal() {
 									c.blockInfo[blockchain] = currentBlock
 								}
 							}
+						} else {
+							c.logger.Error(fmt.Sprintf("Quanta2Coin: dispatchWithdraw currentBlock %v less or equal to lastBlock %v", currentBlock, prevBlock))
 						}
 					}
 				}
