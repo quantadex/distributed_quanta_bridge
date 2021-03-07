@@ -286,6 +286,8 @@ func (c *QuantaToCoin) getBlockchainForCoin(coinName string) (string, bool) {
 	return "", false
 }
 func (c *QuantaToCoin) DispatchWithdrawal() {
+	c.logger.Info("Dispatch withdrawal scans")
+	
 	doneFlag := false
 	for {
 		select {
