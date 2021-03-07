@@ -302,7 +302,8 @@ func (c *QuantaToCoin) DispatchWithdrawal() {
 				}
 			}
 			txs := db.QueryWithdrawalByAge(c.rDb, time.Now().Add(-time.Second*5), []string{db.SUBMIT_CONSENSUS})
-
+			c.logger.Info(fmt.Sprintf("Quanta2Coin: dispatchWithdraw got %v txs", len(txs))
+				      
 			if len(txs) > 0 {
 				c.counter.Add(1)
 
