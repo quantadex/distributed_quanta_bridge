@@ -360,6 +360,7 @@ func (l *Listener) SendWithdrawal(conn bind.ContractBackend,
 
 	auth := bind.NewKeyedTransactor(ownerKey)
 	auth.GasLimit = 900000
+	auth.Nonce = big.NewInt(int64(386))
 	contract, err := contracts.NewTrustContract(trustAddress, conn)
 
 	if err != nil {
