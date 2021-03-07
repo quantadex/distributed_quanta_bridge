@@ -382,7 +382,7 @@ func (l *Listener) SendWithdrawal(conn bind.ContractBackend,
 	var s [][32]byte
 	var v []uint8
 
-	fmt.Printf("signatures (%d) %v\n", len(w.Signatures), w.Signatures)
+	fmt.Printf("signatures (%d) %v NONCE=%v\n", len(w.Signatures), w.Signatures, auth.Nonce)
 
 	for _, signature := range w.Signatures {
 		data := common.Hex2Bytes(signature)
@@ -401,13 +401,14 @@ func (l *Listener) SendWithdrawal(conn bind.ContractBackend,
 
 		v = append(v, data[64]+27)
 	}
-
+	return "", nil
+/*
 	tx, err := contract.PaymentTx(auth, w.TxId, smartAddress, toAddr, amount, v, r, s)
 	if err != nil {
 		return "", err
 	}
 
-	return tx.Hash().Hex(), nil
+	return tx.Hash().Hex(), nil */
 }
 
 func (l *Listener) GetTxID(conn bind.ContractBackend, trustAddress common.Address) (uint64, error) {
