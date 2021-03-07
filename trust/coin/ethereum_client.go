@@ -388,7 +388,7 @@ func (l *Listener) SendWithdrawal(conn bind.ContractBackend,
 	w *Withdrawal, fee float64, gasFee int64) (string, error) {
 
 	auth := bind.NewKeyedTransactor(ownerKey)
-	auth.GasLimit = 1500000
+	auth.GasLimit = 300000
 	if gasFee > 0 {
 		auth.GasPrice = big.NewInt(gasFee)
 	} else {
