@@ -309,7 +309,7 @@ func (c *CoinToQuanta) processSubmissions() {
 
 		resp, err := c.quantaChannel.Broadcast(v.SubmitTx)
 		if err != nil {
-			c.eventsChan <- webhook.Event{Deposit_Failed, v.To, v.Tx}
+			//c.eventsChan <- webhook.Event{Deposit_Failed, v.To, v.Tx}
 
 			msg := quanta.ErrorString(err, false)
 			c.logger.Error("could not submit transaction " + msg)
@@ -317,7 +317,7 @@ func (c *CoinToQuanta) processSubmissions() {
 				db.ChangeSubmitState(c.rDb, v.Tx, db.SUBMIT_FATAL, db.DEPOSIT, v.BlockHash)
 			}
 		} else {
-			c.eventsChan <- webhook.Event{Deposit_Successsful, v.To, v.Tx}
+			//c.eventsChan <- webhook.Event{Deposit_Successsful, v.To, v.Tx}
 
 			c.logger.Infof("Successful tx submission %s,remove %s", "", k)
 
