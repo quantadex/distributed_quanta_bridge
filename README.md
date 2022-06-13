@@ -1,4 +1,4 @@
-# Crosschain Architecture
+# QUANTA Crosschain
 
 The project is part of the QuantaDEX [whitepaper](https://drive.google.com/file/d/1vf0i-pZR24scv4LZHgBEapcCbsczuR5v/view).
 
