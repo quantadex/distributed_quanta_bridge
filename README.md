@@ -1,5 +1,30 @@
 # Crosschain Architecture
 
+The project is part of the QuantaDEX [whitepaper](https://drive.google.com/file/d/1vf0i-pZR24scv4LZHgBEapcCbsczuR5v/view).
+
+## Design
+
+The crosschain facilities the bridging of ETH/BTC/BCH/LTC to/from quanta blockchain (PoS fork of Bitshares). It is a distributed network of nodes, each indexing the host blockchain (Quanta), and the counter blockchains.  When each of the nodes observes the transaction matching addresses to Quanta, or outgoing, it will record the transaction and broadcast to the network. Via a pBFT consensus protocol ([CoSI](https://github.com/dedis/cothority/blob/main/doc/Protocols.md)), the network decides whether to issue or redeem the asset. 
+
+## Directory Structure
+
+    .
+    ├── blockchain                  # BTC/ETH/BCH/LTC Nodes directory
+    ├── cli                         # executables for each of the network
+    ├── common                      # common data structure, utilities, math, logging, metrics, messages
+    │   ├── consensus               # consensus protocol (CoSi)
+    ├── node                        # REST API node, trust node
+    ├── registrar                   # Registrar responsible for registering/bootstrapping the node
+    ├── trust
+    │   ├── coin                    # coin specific implementation for indexing data
+    │   ├── control                 # control code (coin2quanta, quanta2coin) to index block by block, broadcasting, and handling events
+    │   ├── db                      # database layer (postgres)
+    │   ├── key_manager             # all key management related functions for each of the blockchain
+    │   ├── peer_contact            # peer client for http communications with the network
+    │   ├── quanta                  # quanta blockchain (graphene PoS), and Stellar implementation   
+    │   ├── registrar_client        # registrar client for handling bootstrapping nodes    
+    └── README.md
+
 ## Setup
 
 ```
@@ -14,24 +39,6 @@ cd node && go build
 docker run --name bitcoind -v "$PWD/bitcoin-data:/data" nicolasdorier/docker-bitcoin:0.17.0 bitcoind -testnet -deprecatedrpc=signrawtransaction -txindex -deprecatedrpc=accounts
 ```
 
-## Deploy Testnet
-
-```
-ssh -i ~/.ssh/testnet-oregon.pem  ec2-user@ec2-54-188-223-216.us-west-2.compute.amazonaws.com
-ssh -i ~/.ssh/testnet-oregon.pem  ec2-user@ec2-34-221-59-194.us-west-2.compute.amazonaws.com
-ssh -i ~/.ssh/testnet-oregon.pem  ec2-user@ec2-34-219-198-107.us-west-2.compute.amazonaws.com
-
-ssh ec2-user@ec2-54-188-223-216.us-west-2.compute.amazonaws.com
-ssh ec2-user@ec2-34-221-59-194.us-west-2.compute.amazonaws.com
-ssh ec2-user@ec2-34-219-198-107.us-west-2.compute.amazonaws.com
-```
-
-```
-IP Addresses  Public         Internal
-Crosschain1: 54.188.223.216 192.168.137.186
-Crosschain2: 34.221.59.194 192.168.174.110
-Crosschain3: 34.219.198.107 192.168.171.58
-```
 ## Stopping node
 
 ```
@@ -73,10 +80,6 @@ TX: https://ropsten.etherscan.io/tx/0x8784265b4f2aa6c6460cc8bf3be46fb4d269a4d00c
 lumen pay 0.10 TETH --from test2 --to issuer --memohash MHhiYTc1NzNDMGU4MDVlZjcxQUNCN2YxYzRhNTVFN2IwYWY0MTZFOTZB
 
 Sends back to : 0xba7573C0e805ef71ACB7f1c4a55E7b0af416E96A
-
-## Open questions
-
-It's possible that eth timestamp is a head of QUANTA timestamp, vice versa. So we should throttle based on universal time.
 
 # Truffle Contract Interaction Tips
 
